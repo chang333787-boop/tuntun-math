@@ -6,7 +6,7 @@ import { makeSheet, itemOf, lessonName } from '../../paper/js/gen.js';
 import { mascot } from '../../paper/js/mascot.js';
 import * as KS from './kidstore.js';
 import { draw, staticHTML, ansSay } from './item.js';
-import { weeksOf, weekTerm, weekPlan, weekChart, doneThisWeek } from './weekcore.js';
+import { lineOf, weekTerm, weekPlan, weekChart, doneThisWeek } from './weekcore.js';
 import { esc, rand } from './local.js';
 import { go, meOf } from './kid.js';
 
@@ -16,7 +16,7 @@ export function weekView(root) {
   const me = meOf(); if (!me) return go('#/join');
   const K = KS.load(me), rep = KS.reportOf(K), term = weekTerm(K);
   if (doneThisWeek(K.recs)) {
-    root.innerHTML = `<div class="card">${say('cheer', '이번 주 점검은 벌써 했어요. 다음 주에 또 해요!')}${weekChart(weeksOf(K.recs, term))}<div class="acts"><a class="btn big" href="#/me">내 수 다리로</a></div></div>`;
+    root.innerHTML = `<div class="card">${say('cheer', '이번 주 점검은 벌써 했어요. 다음 주에 또 해요!')}${weekChart(lineOf(K.recs, term))}<div class="acts"><a class="btn big" href="#/me">내 수 다리로</a></div></div>`;
     return;
   }
   const plan = weekPlan(K, rep, term);
@@ -44,7 +44,7 @@ export function weekView(root) {
   const fin = () => {
     sh.chapters.forEach((ch) => (R.done[ch.key] = true));
     KS.addSheet(me, K, sh, R, {}, ms);
-    const ws = weeksOf(K.recs, term), cur = ws[ws.length - 1], okN = cur.ok, n = cur.n;
+    const ws = lineOf(K.recs, term), cur = ws[ws.length - 1], okN = cur.ok, n = cur.n;
     KS.setNow(me, { mode: 'home' });
     // 지난 점들(최대 셋) 평균과 견줌 · ±2점 안은 '비슷해요'(열 문제 한 번은 1~2점씩 흔들림 — 흔들림을 '내려갔어요'로 말하지 않게)
     const past = ws.slice(-4, -1), sc = Math.round((okN / n) * 10), avg = past.length ? past.reduce((a, v) => a + (v.ok / v.n) * 10, 0) / past.length : null, diff = avg == null ? null : sc - avg;
@@ -55,6 +55,6 @@ export function weekView(root) {
     const list = miss.length ? `<h3>다시 볼 문제 ${miss.length}개 <small class="muted">(바른 답을 넣어 보여 줘요)</small></h3><ul class="steps">${miss.slice(0, 4).map(li).join('')}</ul>${miss.length > 4 ? `<details><summary>${miss.length - 4}개 더 보기</summary><ul class="steps">${miss.slice(4).map(li).join('')}</ul></details>` : ''}` : `<p>${n}문제 모두 맞혔어요.</p>`;
     root.innerHTML = `<div class="card">${head}<h3>내 선 <small class="muted">(나하고만 견줘요)</small></h3>${weekChart(ws)}${list}<div class="acts"><a class="btn pri big" href="#/me">내 수 다리로</a></div></div>`;
   };
-  root.innerHTML = `<div class="card">${say('hi', `<b>이번 주 점검</b> — ${term ? `${esc(term.slice(1, 2))}학년 ${esc(term.slice(3))}학기로 가는 판자들에서 ` : ''}섞은 문제 ${plan.length}개, 3~5분이면 돼요.<br>맞고 틀림은 끝나고 한꺼번에 보여요. 주마다 한 번 해서 내 선이 어디로 가는지 봐요.`)}${(() => { const ws = weeksOf(K.recs, term); return ws.length ? `<h3>지금까지 내 선</h3>${weekChart(ws)}` : ''; })()}<button class="pri big" id="s">시작</button> <a class="btn" href="#/me">내 수 다리로</a></div>`;
+  root.innerHTML = `<div class="card">${say('hi', `<b>이번 주 점검</b> — ${term ? `${esc(term.slice(1, 2))}학년 ${esc(term.slice(3))}학기로 가는 판자들에서 ` : ''}섞은 문제 ${plan.length}개, 3~5분이면 돼요.<br>맞고 틀림은 끝나고 한꺼번에 보여요. 주마다 한 번 해서 내 선이 어디로 가는지 봐요.`)}${(() => { const ws = lineOf(K.recs, term); return ws.length ? `<h3>지금까지 내 선</h3>${weekChart(ws)}` : ''; })()}<button class="pri big" id="s">시작</button> <a class="btn" href="#/me">내 수 다리로</a></div>`;
   root.querySelector('#s').addEventListener('click', one);
 }

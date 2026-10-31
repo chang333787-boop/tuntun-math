@@ -15,7 +15,7 @@ import { lsGet, lsSet, lsDel, esc, rand } from './local.js';
 import { flush } from './db.js';
 import { runPlan, weekHTML, today } from './run.js';
 import { toolFor, toolBox, TOOLS } from './tools.js';
-import { weeksOf, weekTerm, weekPlan, weekChart, doneThisWeek } from './weekcore.js';
+import { lineOf, weekTerm, weekPlan, weekChart, doneThisWeek } from './weekcore.js';
 import { makeItem as mkItem } from '../../engine/lessons/index.js';
 
 export const go = (h) => { location.hash = h; };
@@ -107,7 +107,7 @@ export async function homeView(root) {
       <div class="plank-list" style="margin-top:10px">${planks.map((p) => `<span class="pk ${KIND(p.st) === 'ok' ? 'ok' : KIND(p.st) === 'gap' ? 'fix' : KIND(p.st)}">${esc(p.label)}</span>`).join('')}</div></div>` : ''}
     <div class="card"><h2>내 스테이지 <small>판자 하나 = 스테이지 하나 · 정확 → 빠르게 → 오래</small></h2>${(() => { const xs = Object.values(K.mx || {}); const n = (t) => xs.filter((m) => m.tier >= t).length; return xs.length ? `<p>정확 <b>${n(1)}</b> · 빠르게 <b>${n(2)}</b> · 오래 <b>${n(3)}</b> <span class="muted small">— 표를 모으면 판자가 나무 → 못 박은 판자 → 돌 판자로 바뀌어요</span></p>` : '<p class="muted">판자를 고치거나 준비 다리에서 셋 다 맞히면 스테이지가 생겨요. 한 번 깨고 끝이 아니라 더 정확하고 빠르게 다듬어요.</p>'; })()}
       <p class="small">이번 주 구보 ${weekHTML(K)}</p>
-      ${(() => { const ws = weeksOf(K.recs, weekTerm(K)); return ws.length ? `<h3>이번 주 점검 — 내 선 <small class="muted">(나하고만 견줘요)</small></h3>${weekChart(ws)}` : ''; })()}
+      ${(() => { const ws = lineOf(K.recs, weekTerm(K)); return ws.length ? `<h3>이번 주 점검 — 내 선 <small class="muted">(나하고만 견줘요)</small></h3>${weekChart(ws)}` : ''; })()}
       <div class="acts"><a class="btn teal" href="#/stages">스테이지 보기</a>${runPlan(K).length ? '<a class="btn" href="#/run">오늘의 구보</a>' : ''}</div></div>
     ${Object.keys(K.tools || {}).length ? `<div class="card"><h2>내 도구함 <small>내 답을 스스로 확인하는 도구</small></h2><div class="plank-list">${Object.entries(K.tools).filter(([t]) => TOOLS[t]).map(([t, x]) => `<span class="pk ok">🔍 ${esc(TOOLS[t].name)}${x.self ? ` · 스스로 고친 ${x.self}번` : ''}</span>`).join('')}</div><p class="small muted">틀렸을 때 '도구로 확인'을 눌러 다시 써 보면, 스스로 고친 횟수가 늘어요.</p></div>` : ''}
     <div class="card"><h2>내 짐작 견주기</h2>${cal.n ? `<p>풀기 전에 고른 짐작이 맞은 정도: <b>${Math.round(cal.match * 100)}%</b> <span class="muted small">(${cal.n}문제)</span></p>

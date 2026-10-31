@@ -35,6 +35,8 @@ export function weeksOf(recs, term = null) {
 // 선 하나 = 마지막 학기의 점들(학기가 바뀌면 새 선)
 export const lastLine = (ws) => { const t = ws.length ? ws[ws.length - 1].term : null; return ws.filter((w) => w.term === t); };
 export const doneThisWeek = (recs) => weeksOf(recs).some((w) => w.wk === weekKey());
+// 아이에게 보일 선 — 학기를 알면 그 학기 · 모르면 마지막 학기(학기가 섞인 선 X)
+export const lineOf = (recs, term) => (term ? weeksOf(recs, term) : lastLine(weeksOf(recs)));
 // 점검 학기 — 마지막 준비 다리 단원의 학기 → 없으면 지난번 점검한 학기
 export const weekTerm = (K) => termOf(K.lastPrep && K.lastPrep.unit) || ((weeksOf(K.recs).slice(-1)[0] || {}).term) || null;
 
