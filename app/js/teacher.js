@@ -19,6 +19,7 @@ import { MIS, misFor, misById, WHY, wantFor, WANT } from '../../engine/mis.js';
 import { TOOLS, CARD_TOOL } from './tools.js';
 import { KIDSAY } from './fix.js';
 import { weeksOf, weekChart, weekTrend, weekKey, lastLine } from './weekcore.js';
+import { packetOf, promptOf } from './copilot.js';
 import { testable, __predict } from '../../engine/errors.js';
 import { go, unitLabel } from './kid.js';
 
@@ -90,7 +91,7 @@ export function guideView(root) {
     <li><b>같은 생각끼리</b> — 틀린 까닭이 같은 아이끼리 묶었어요. <b>이 생각 10분 카드</b>로 2~3명을 모아 함께 짚어요.</li>
     <li><b>같은 판자끼리</b> — 같은 칸을 고칠 아이가 둘 이상이면 묶고 <b>10분 소집단 카드</b>(시범 · 함께 · 혼자 · 마무리)를 줘요. 누구를 넣고 뺄지는 선생님이 정해요.</li>
     <li><b>아이 자세히</b> — 아이 이름을 누르면 봐요. 원인은 짐작이에요. <b>한 번 보임</b>은 한 문제에서만, <b>여러 번 보임</b>은 서로 다른 두 문제 이상에서 같은 틀린 방법이 나온 거예요. 아이 화면엔 원인 이름이 나오지 않아요.</li></ul>
-    <h3>알아 두기</h3><ul class="easy"><li>순위 · 친구 비교는 없어요. 아이가 보는 숫자는 '내 짐작이 맞은 정도' · 내가 고친 판자 · 내 지난 기록(다듬기 · 이번 주 점검의 내 선)뿐이에요.</li><li>고친 판자는 1 · 3 · 7일 뒤 섞어서 다시 봐요(아이의 오늘 할 일에 떠요).</li><li>효과는 앱 안 기록보다 다음 단원 형성평가로 보세요. 연구에 따르면 이런 지도의 효과는 0.2~0.4 표준편차 안팎이에요.</li></ul></div>`;
+    <h3>알아 두기</h3><ul class="easy"><li>순위 · 친구 비교는 없어요. 아이가 보는 숫자는 '내 짐작이 맞은 정도' · 내가 고친 판자 · 내 지난 기록(다듬기 · 이번 주 점검의 내 선)뿐이에요.</li><li>고친 판자는 1 · 3 · 7일 뒤 섞어서 다시 봐요(아이의 오늘 할 일에 떠요).</li><li><b>AI에게 물어보기</b>(아이 자세히 맨 아래) — 번호만 들어간 근거 글을 복사해 Claude에 붙여 넣으면 막힌 까닭 후보 · 발문 · 확인 문항을 받아요. AI 답은 짐작이라 선생님이 확인한 뒤에만 써요.</li><li>효과는 앱 안 기록보다 다음 단원 형성평가로 보세요. 연구에 따르면 이런 지도의 효과는 0.2~0.4 표준편차 안팎이에요.</li></ul></div>`;
 }
 
 export function newClassView(root) {
@@ -302,7 +303,13 @@ export async function kidDetailView(root, C, no) {
       <div class="row"><input id="nx" maxlength="80" placeholder="예: 소집단 수직선 3번 · 구보 판자 줄임" style="flex:1;min-width:220px"><button id="nadd">적기</button></div></div>`; })()}
     ${(() => { const x = st ? storyStep(st.story) : null; if (!x) return ''; const pc = (v) => `${Math.round(v * 100)}%`; return `<h3>이야기 다리(문장제)</h3><p>${x.n}문제 · 이해 ${pc(x.und)} · 바꾸기(식) ${pc(x.conv)} · 계산(답) ${pc(x.calc)}${x.weak ? ` — 먼저 <b>${esc(x.weak)}</b>` : ''}${x.types.length ? `<br><span class="small muted">헷갈리는 이야기: ${x.types.map(esc).join(', ')}</span>` : ''}</p>`; })()}
     <h3>고친 판자 · 다시 보기</h3><p>${Object.keys(st && st.fixed || {}).map((c) => `${esc(lessonName(c))}${rv[c] ? ` <span class="small muted">(다시 보기 ${rv[c].n}/3)</span>` : ''}`).join(', ') || '<span class="muted">아직 없어요.</span>'}</p>
+    <details class="no-print ai"><summary><b>AI에게 물어보기</b> <span class="small muted">— 이 아이 근거를 Claude에 붙여 넣을 글로(번호만 · 이름 X)</span></summary>
+      <p class="small">아래 글을 복사해 Claude(claude.ai)에 붙여 넣으면 막힌 까닭 후보 · 먼저 볼 판자 · 소집단 발문 · 가르는 확인 문항을 받아요. 붙여 넣기 전에 한 번 읽어 보세요. AI 답은 짐작이라, 아이나 가정에 전하기 전에 선생님이 확인해요.</p>
+      <textarea id="aiq" rows="10" readonly style="width:100%;font-size:13px">${esc(promptOf(no, packetOf(rep, st, { unit: K.today && K.today.unit ? unitLabel(K.today.unit) : '', weeks: lastLine(weeksOf(KK.recs)), trend: { up: '올라감', down: '내려감', flat: '그대로' }[weekTrend(lastLine(weeksOf(KK.recs)))], story: st ? storyStep(st.story) : null, fixed: st ? st.fixed : {} }), String(K.g || '')[0] || ''))}</textarea>
+      <div class="acts"><button id="aicp">복사</button><span class="small muted" id="aimsg"></span></div></details>
     <p class="small muted foot">원인은 짐작이에요. '한 번 보임'은 한 문제에서만, '여러 번 보임'은 서로 다른 두 문제 이상에서 같은 틀린 방법이 나온 거예요. 아이 화면엔 원인 이름이 나오지 않아요.</p></div>`;
+  const aicp = root.querySelector('#aicp');
+  if (aicp) aicp.addEventListener('click', async () => { const ta = root.querySelector('#aiq'); let ok = false; try { await navigator.clipboard.writeText(ta.value); ok = true; } catch (e) { ta.select(); try { ok = document.execCommand('copy'); } catch (e2) { ok = false; } } root.querySelector('#aimsg').textContent = ok ? '복사했어요. Claude에 붙여 넣어요.' : '복사가 막혔어요. 글을 길게 눌러 직접 복사해요.'; });
   const nadd = root.querySelector('#nadd');
   if (nadd) nadd.addEventListener('click', () => {
     const inp = root.querySelector('#nx'), x = inp.value.trim().slice(0, 80); if (!x) return inp.focus();

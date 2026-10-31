@@ -1,9 +1,10 @@
 {
- "v": "be89e15befbc",
+ "v": "23ae6ce68cc0",
  "files": [
   "css/app.css",
   "js/back.js",
   "js/bridge.js",
+  "js/copilot.js",
   "js/db.js",
   "js/firebase-config.js",
   "js/fix.js",
