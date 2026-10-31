@@ -1,0 +1,80 @@
+/* 끊긴 곳 찾기 — 종이(A4 · 흑백으로 뽑아도 읽히게 · 바탕색 없음) */
+@page{size:A4;margin:0}
+.paper{--pi:#111}
+.paper .page{width:210mm;height:297mm;padding:8mm 11mm 12mm;background:#fff;color:#111;position:relative;display:flex;flex-direction:column;overflow:hidden;font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;word-break:keep-all;page-break-after:always;break-after:page}
+.paper .page.flow{height:auto;min-height:297mm;overflow:visible}
+.paper header{display:flex;align-items:center;gap:10px;border-bottom:2px dashed #555;padding-bottom:1.6mm;font-size:9.5pt}
+.paper header .hm{width:12mm;height:12mm;flex:none}.paper header .hm svg{width:12mm;height:12mm}
+.paper header .hb{flex:1;color:#444}.paper header .brand{font-size:14pt;font-weight:800;color:#111;letter-spacing:-.3px}.paper header .kt{font-size:9pt;color:#555;margin-left:4px}
+.paper header .hn u,.paper header .hc u{display:inline-block;min-width:28mm;border-bottom:1px solid #555;text-decoration:none;text-align:center;font-weight:700}
+.paper header .hc{color:#444}
+.paper .lead{margin:2mm 0 0;padding-left:6mm}
+.paper .bub{position:relative;display:inline-block;border:1.6px solid #333;border-radius:4mm;padding:1.4mm 3.4mm;font-size:10.2pt;line-height:1.5;color:#222;background:#fff}
+.paper .bub::before{content:'';position:absolute;left:-2.6mm;top:-2.4mm;width:3.6mm;height:3.6mm;border-left:1.6px solid #333;border-top:1.6px solid #333;background:#fff;transform:rotate(30deg) skewX(10deg)}
+.paper .body{flex:1;display:flex;flex-direction:column;gap:2.2mm;min-height:0;padding-top:2mm}
+.paper footer{position:absolute;bottom:3.2mm;left:11mm;right:11mm;font-size:7.5pt;color:#777;text-align:right;display:flex;align-items:center;gap:3mm}
+.paper footer .pl{flex:1;height:5mm;display:block}.paper footer .pl svg{width:100%;height:5mm;display:block}.paper footer .pt{white-space:nowrap}
+.paper .chh{display:flex;align-items:center;gap:1.6mm;border-bottom:1.4px solid #333;font-weight:800;font-size:11pt;padding:1mm 0 .6mm;margin-top:1mm}.paper .chh em{margin-left:auto;font-style:normal;font-weight:400;color:#666;font-size:9pt}
+.paper .chh .ci{width:5mm;height:5mm;display:inline-flex;color:#222}.paper .chh .ci svg{width:5mm;height:5mm}.paper .chh .em svg{width:9mm;height:9mm;display:block;margin:-2mm 0}
+.paper .row{display:grid;gap:2.2mm 3.5mm;flex:1 1 auto}
+.paper .q{position:relative;border:1.2px solid #8a8a8a;border-radius:3mm;padding:1.6mm 2mm 1.6mm 7.5mm;font-family:'Jua','Noto Sans KR',sans-serif;font-size:15pt;line-height:1.45;display:flex;flex-direction:column;justify-content:center;min-width:0}
+.paper .q .no{position:absolute;left:1.6mm;top:1.2mm;font:700 9pt 'Noto Sans KR',sans-serif;color:#111}
+.paper .math{display:inline}.paper .math .br{display:block;height:.6mm}.paper .math .tx{white-space:pre-wrap}
+.paper .math .tx.kr{font-family:'Noto Sans KR',sans-serif;font-weight:500;font-size:11.5pt}
+.paper .blank-s{display:inline-block;min-width:14mm;height:9mm;border:1.4px solid #333;border-radius:1.6mm;background:#fff;vertical-align:middle;margin:0 1mm;font-size:0;color:transparent}
+.paper .fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 1mm;line-height:1.05}.paper .fr-t{border-bottom:1.6px solid currentColor;padding:0 1.2mm .6mm}.paper .fr-b{padding:.6mm 1.2mm 0}
+.paper .fr .blank-s{min-width:9mm;height:6.6mm;margin:.4mm 0}
+.paper .mx{display:inline-flex;align-items:center;gap:.5mm}
+.paper .pic{display:flex;justify-content:center;margin:.5mm 0 1mm}.paper .pic svg{max-width:100%;width:auto;height:auto;max-height:15mm}.paper .ch .pic svg{max-height:11mm}
+.paper .pic .dot{fill:#555}.paper .pic .grp{fill:none;stroke:#555;stroke-width:2;stroke-dasharray:4 3}.paper .pic .cell{fill:#fff;stroke:#222;stroke-width:2}.paper .pic .cell.on{fill:#9a9a9a}
+.paper .ch{display:flex;gap:5mm;flex-wrap:wrap;margin-top:1mm;font-size:13pt}
+.paper .q.f-v,.paper .q.f-d,.paper .q.f-w{justify-content:flex-start;padding-top:3mm}
+.paper .vt{border-collapse:collapse;font-family:'Jua',sans-serif;font-size:17pt;margin:0 auto}
+.paper .vt td{width:7.4mm;height:8.8mm;text-align:center;padding:0}.paper .vt tr.carry td{height:5.5mm}.paper .vt td.op{width:6mm}
+.paper .vt tr.line td{border-top:2px solid #111}
+.paper .ld{font-family:'Jua',sans-serif;font-size:17pt;display:flex;flex-direction:column;align-items:flex-start;flex:1}
+.paper .ldq{height:8.5mm;padding-left:12mm}
+.paper .ldr{display:flex}.paper .dv{padding:0 2.4mm 0 0;line-height:9mm}
+.paper .dd{position:relative;border-top:2px solid #111;padding:0 2.5mm 0 3.6mm;letter-spacing:1.6mm;line-height:9mm}
+.paper .dd::before{content:'';position:absolute;left:-1.6mm;top:-2px;width:3.2mm;height:9.5mm;border-right:2px solid #111;border-radius:0 60% 60% 0/0 50% 50% 0}
+.paper .ldw{flex:1;min-height:6mm;width:100%}
+.paper .lda{font:500 10pt 'Noto Sans KR',sans-serif;display:flex;flex-wrap:wrap;gap:1.2mm 3mm}.paper .lda>span{display:inline-flex;align-items:center;gap:1mm;white-space:nowrap}
+.paper .bx{display:inline-flex;align-items:center;justify-content:center;min-width:14mm;height:8.5mm;border:1.4px solid #333;border-radius:1.6mm}
+.paper .q.f-w .st{font:500 11.5pt/1.75 'Noto Sans KR',sans-serif;margin-top:2.5mm}.paper .q.f-w .st .fr,.paper .q.f-w .st .mx{font-family:'Jua',sans-serif}
+.paper .q.f-w .wk{flex:1;min-height:16mm}
+.paper .wl{display:flex;align-items:flex-end;gap:2.5mm;margin-top:2mm;font:700 11pt 'Noto Sans KR',sans-serif}.paper .wl .ln{flex:1;min-height:8.5mm;border-bottom:1.4px solid #333}
+/* 정답 겹쳐 보기 — 아이 종이 위에 덧씌움(배치는 그대로) */
+.paper .ov{position:absolute;inset:0;pointer-events:none}
+.paper .ov .ka{position:absolute;right:1.2mm;bottom:.8mm;max-width:92%;text-align:right;font:700 11pt 'Noto Sans KR',sans-serif;color:#b3261e;background:rgba(255,255,255,.88);padding:0 1mm;border-radius:1mm;line-height:1.3}
+.paper .q.f-w .ov .ka{font-size:9.5pt}
+.paper .q.f-d .ov .ka{bottom:auto;top:4.2mm}
+.paper .kchip{position:absolute;right:1.2mm;top:.5mm;font:500 6.4pt 'Noto Sans KR',sans-serif;color:#555;max-width:62%;text-align:right;line-height:1.15;background:#fff}
+/* 보충지 · 요약 */
+.paper .pfl{margin-top:4mm;break-inside:avoid-page}.paper .pfl h2{font-size:13pt;margin:0 0 2mm;border-bottom:1px solid #999}
+.paper .pk{font-size:10.5pt;line-height:1.6;margin:0 0 2mm}.paper .pex{border:1px solid #999;border-radius:2mm;padding:2mm 3mm;margin-bottom:2.5mm;font-size:10.5pt}
+.paper .prow{display:flex;justify-content:space-between;gap:4mm;align-items:center;padding:.8mm 0;border-bottom:1px dotted #ccc}.paper .prow .math{font-family:'Jua',sans-serif;font-size:13pt}.paper .prow.fin{font-weight:700;border:0}
+.paper .pq{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2.5mm 4mm}.paper .pq .q{min-height:22mm}.paper .pq .q.f-v{min-height:36mm}.paper .pq .q.f-d{min-height:46mm}
+.paper .pex .blank-s{color:#111;font-size:12.5pt;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 1mm;min-width:9mm;height:7.5mm}
+.paper .pans{margin-top:6mm;font-size:9.5pt;break-before:page}.paper .pak{margin:1mm 0}.paper .pak span{margin-right:3mm}
+.paper .sumpage h2{font-size:12.5pt;margin:5mm 0 1.5mm;border-bottom:1px solid #999}.paper .sumpage ul{margin:0;padding-left:5mm;font-size:10.5pt}.paper .sumpage .note{font-size:9pt;color:#555;margin-top:6mm}
+/* 화면 미리보기 */
+#measure{position:absolute;left:-9999px;top:0;visibility:hidden}
+.preview{zoom:.56;display:flex;flex-wrap:wrap;gap:8mm;justify-content:center;padding:4mm 0}.preview .page{box-shadow:0 1px 6px rgba(0,0,0,.18)}
+#print{display:none}
+@media print{
+  body{background:#fff}
+  body.printing>*:not(#print){display:none!important}
+  body.printing #print{display:block}
+  .paper .page{box-shadow:none;margin:0}
+}
+
+/* 아이에게 주는 다리 편지 */
+.paper .letter h2{font-size:13pt;margin:7mm 0 2mm;display:flex;align-items:center;gap:2mm}.paper .letter h2 svg{width:10mm;height:10mm}
+.paper .lbr{margin-top:6mm;display:flex;flex-direction:column;gap:3.5mm}
+.paper .lrow{display:grid;grid-template-columns:40mm 1fr;align-items:center;gap:3mm}.paper .ln1{display:flex;align-items:center;gap:1.5mm;font-weight:800;font-size:11pt}.paper .ln1 svg{width:5mm;height:5mm}
+.paper .lps{display:flex;flex-wrap:wrap;gap:1.2mm;padding:1.5mm 2mm;border-bottom:2.2px solid #333;border-radius:0 0 2mm 2mm}
+.paper .pk{display:inline-block;width:6.5mm;height:9mm;border:1.4px solid #333;border-radius:1mm;background:#fff}
+.paper .pk.g{background:repeating-linear-gradient(135deg,#bbb 0 1.2mm,#fff 1.2mm 2.2mm)}.paper .pk.f{border-style:dashed;border-width:2px}.paper .pk.m{border-style:dotted}
+.paper .lkey{display:flex;gap:6mm;margin-top:4mm;font-size:9.5pt;color:#333}.paper .lkey span{display:inline-flex;align-items:center;gap:1.5mm}.paper .lkey .pk{width:4mm;height:6mm}
+.paper .lfix{font-size:11.5pt;line-height:1.9;margin:0;padding-left:7mm}
+.paper .lnote,.paper .lme{margin-top:7mm;font-size:10.5pt}.paper .lline{border-bottom:1px solid #777;height:9mm}
