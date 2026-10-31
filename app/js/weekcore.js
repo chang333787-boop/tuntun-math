@@ -54,7 +54,8 @@ export function weekPlan(K, rep, term = weekTerm(K)) {
 // 선 그래프 — 10점으로 맞춤 · 밋밋하게(점 · 선 · 날짜) · marks = 선생님이 지도를 바꾼 때 [{ t, x }] → 세로 점선(번호) — CBM의 '바꾼 때' 줄 [B-R19][B-R20]
 export function weekChart(weeks, { w = 420, h = 130, marks = [] } = {}) {
   const ws = (weeks || []).slice(-8); if (!ws.length) return '';
-  const P = 26, x = (i) => P + (i * (w - 2 * P)) / Math.max(ws.length - 1, 1), y = (v) => h - P - ((h - 2 * P) * v) / 10, sc = (v) => (v.ok / v.n) * 10;
+  const wi = (v) => Math.round((new Date(v.wk) - new Date(ws[0].wk)) / (7 * 864e5)), span = Math.max(wi(ws[ws.length - 1]), 1);   /* 빠진 주는 빈칸으로(점 사이를 주 수대로) */
+  const P = 26, x = (i) => { const a = Math.floor(i), f = i - a, xa = P + (wi(ws[Math.min(a, ws.length - 1)]) * (w - 2 * P)) / span; return f && a + 1 < ws.length ? xa + f * (P + (wi(ws[a + 1]) * (w - 2 * P)) / span - xa) : xa; }, y = (v) => h - P - ((h - 2 * P) * v) / 10, sc = (v) => (v.ok / v.n) * 10;
   const pts = ws.map((v, i) => `${x(i).toFixed(1)},${y(sc(v)).toFixed(1)}`).join(' ');
   // 바꾼 때 → 점 사이 자리(시간 비율) · 첫 점 앞이면 왼쪽 끝 · 마지막 점 뒤면 오른쪽 끝
   const at = (t) => { if (t <= ws[0].t) return P - 10; for (let i = 0; i < ws.length - 1; i++) if (t < ws[i + 1].t) return x(i + (t - ws[i].t) / (ws[i + 1].t - ws[i].t)); return Math.min(w - 6, x(ws.length - 1) + 12); };
