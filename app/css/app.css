@@ -167,3 +167,4 @@ b.q{font-weight:800;border:1.5px dashed var(--ink);border-radius:4px;padding:0 4
 .sb-say{float:right;margin:0 0 6px 10px;padding:4px 12px;min-height:36px;font-size:15px;border-radius:999px;background:#fff;border:1.5px solid var(--line);color:var(--teal);font-weight:700}
 .tcard .sbf{margin:6px 0}.tcard .sbf svg{display:block;width:100%;max-width:330px;height:auto}
 .more{margin-top:8px}.more summary{cursor:pointer;color:var(--teal);font-weight:700;padding:6px 2px}.more .todo{margin-top:8px}
+button:focus-visible,.btn:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
