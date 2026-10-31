@@ -3,6 +3,7 @@ import { mascot } from '../../paper/js/mascot.js';
 import { joinView, homeView, prepView, fixView, reviewView, meOf } from './kid.js';
 import { stagesView, drillView } from './stageview.js';
 import { backView, retryView } from './back.js';
+import { runView } from './run.js';
 import { teacherHome, newClassView, openClassView, cardsView, namesView, classView, kidDetailView, groupCardView, guideView } from './teacher.js';
 import { lsGet, esc } from './local.js';
 import { flush, pending } from './db.js';
@@ -27,6 +28,7 @@ const ROUTES = [
   [/^#\/review$/, () => reviewView(root)],
   [/^#\/stages$/, () => stagesView(root)],
   [/^#\/back$/, () => backView(root)],
+  [/^#\/run$/, () => runView(root)],
   [/^#\/retry$/, () => retryView(root)],
   [/^#\/drill\/([\w:.-]+?)(\?.*)?$/, (m) => drillView(root, decodeURIComponent(m[1]))],
   [/^#\/t$/, () => teacherHome(root)],
@@ -43,7 +45,7 @@ function route() {
   if (typeof cleanup === 'function') { try { cleanup(); } catch (e) { /* */ } }
   cleanup = null;
   const h = location.hash || '#/';
-  const kid = /^#\/(me|prep|fix|review|join|stages|drill|back|retry)/.test(h);
+  const kid = /^#\/(me|prep|fix|review|join|stages|drill|back|retry|run)/.test(h);
   document.body.classList.toggle('kid', kid);
   const me = meOf();
   document.getElementById('who').textContent = kid && me ? `${me.C} · ${me.no}번` : /^#\/t/.test(h) ? '선생님' : '';

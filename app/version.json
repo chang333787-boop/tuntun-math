@@ -1,5 +1,5 @@
 {
- "v": "4fb53332aae0",
+ "v": "32a63d5e625d",
  "files": [
   "css/app.css",
   "js/back.js",
@@ -14,6 +14,7 @@
   "js/main.js",
   "js/model.js",
   "js/prep.js",
+  "js/run.js",
   "js/stage.js",
   "js/stageview.js",
   "js/teacher.js",
