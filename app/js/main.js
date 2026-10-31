@@ -12,6 +12,7 @@ import { lsGet, esc } from './local.js';
 import { flush, pending } from './db.js';
 
 const root = document.getElementById('view');
+addEventListener('touchstart', () => document.body.classList.add('touch'), { once: true, passive: true });   /* 손가락으로 누른 기기 → hover 끔(app.css) */
 document.getElementById('logo-m').innerHTML = mascot('hi', 36);
 let cleanup = null;
 
