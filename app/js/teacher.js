@@ -381,11 +381,10 @@ export function mindCardView(root, C, id) {
 
 // 기록 내려받기(CSV 둘) — 시범 운영 효과 재기용(docs/pilot.md) · 번호만(이름 X · 이름은 이 기기에만 있음)
 //  ① 아이마다 한 줄(요약) ② 아이 × 칸(분석용 긴 꼴)
-function exportCSV(C, K, S, unit) {
+export const csvText = (rows) => '\ufeff' + rows.map((r) => r.map((v) => { const t = v == null ? '' : String(v); return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; }).join(',')).join('\n');
+// 반 숫자 → CSV 줄 둘(아이별 · 칸별) — 화면과 상관없음(tools/pilot.mjs가 같은 칸 이름을 읽음)
+export function csvRows(C, K, S, unit) {
   const loc = (t) => new Date(t).toLocaleString('sv-SE').slice(0, 16);   /* 이 기기 시각(한국 시간) · 2026-10-31 16:12 */
-  const day = loc(Date.now()).slice(0, 10);
-  const q = (v) => { const t = v == null ? '' : String(v); return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
-  const csv = (rows) => '\ufeff' + rows.map((r) => r.map(q).join(',')).join('\n');
   const P = prepPlan(unit);
   const rows1 = [['반', '번호', '마지막 기록', '오늘 단원', '준비 칸 수', '준비 칸 확인', '준비 칸 막힘', '고칠 판자', '여러 번 보인 생각', '고친 생각', '짐작 맞은 정도', "'자신 있어요'인데 틀림", '정확 표', '빠르게 표', '오래 표', '고친 판자 수', '구보(7일)', '도구로 스스로 고침', '빨리 넘김', '이번 주 점검(주 · 10점 · 최근 8주)']];
   const rows2 = [['반', '번호', '차시', '칸 이름', '학기', '상태', '다듬기 표(0~3)', '오늘 단원 준비 칸']];
@@ -400,6 +399,10 @@ function exportCSV(C, K, S, unit) {
       (st.jog || []).filter((d) => Date.now() - new Date(d).getTime() < 7 * 864e5).length, Object.values(st.tools || {}).reduce((a, x) => a + ((x && x.self) || 0), 0), st.rush || 0, (st.wk || []).map((w) => `${w.wk.slice(5)} ${Math.round((w.ok / w.n) * 10)}`).join(' / ')]);
     for (const [c, v] of Object.entries(st.L)) if (LES(c)) rows2.push([C, no, c, lessonName(c), LES(c).g, ST[v] || v, (st.mx || {})[c] || 0, pre.includes(c) ? 'O' : '']);
   }
+  return [rows1, rows2];
+}
+function exportCSV(C, K, S, unit) {
+  const day = new Date().toLocaleString('sv-SE').slice(0, 10), [rows1, rows2] = csvRows(C, K, S, unit), csv = csvText;
   const dl = (name, text) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv' })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); };
   dl(`튼튼수다리_${C}_아이별_${day}.csv`, csv(rows1));
   setTimeout(() => dl(`튼튼수다리_${C}_칸별_${day}.csv`, csv(rows2)), 400);

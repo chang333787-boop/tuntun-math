@@ -148,5 +148,16 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   const v = KS3.mxOut({ mx, jog: Array.from({ length: 80 }, (_, i) => `2026-10-${String(i % 28 + 1).padStart(2, '0')}`), tools: {} }), o = JSON.parse(v);
   ok(v.length <= 60000 && Object.keys(o).filter((c) => !c.startsWith('_')).length === 200 && o[ids[3]].tier === 3 && o._jog.length <= 60, `판자 200개 다듬은 아이: 보낼 글 ${v.length}자 ≤ 60000 · 표 그대로 · 판마다 기록 ${o[ids[0]].runs.length}개`);
 }
+// ⑬ 시범 운영 숫자 — 선생님 CSV(csvRows) 두 장 → tools/pilot.mjs 표 · 이름 없음 · 주간 기울기 · 형성평가(오른 폭 · 편향 경고)
+{
+  const T = await import('../js/teacher.js'), PL = await import('../../tools/pilot.mjs');
+  const K = { n: 3, names: { 1: '하늘' } };
+  const st = (o) => ({ st: { L: {}, start: [], below: [], under: [], sw: {}, fixed: {}, help: {}, due: [], t: Date.now(), last: Date.now(), cal: { n: 10, m: 0.6 }, rush: 0, mx: {}, mis: {}, story: {}, tools: {}, jog: [], wk: [], ...o } });
+  const S1 = { 1: st({ start: ['2-1-6:3'], cal: { n: 10, m: 0.5 }, wk: [{ wk: '2026-10-19', ok: 5, n: 10 }] }), 2: st({}) };
+  const S2 = { 1: st({ fixed: { '2-1-6:3': 1 }, cal: { n: 20, m: 0.7 }, mx: { '2-1-6:3': 2 }, wk: [{ wk: '2026-10-19', ok: 5, n: 10 }, { wk: '2026-10-26', ok: 7, n: 10 }, { wk: '2026-11-02', ok: 8, n: 10 }] }), 2: st({ cal: { n: 15, m: 0.8 } }) };
+  const f = (S, d) => ({ name: `튼튼수다리_ZZ_아이별_${d}.csv`, text: T.csvText(T.csvRows('ZZAAAA', K, S, '2-2-2')[0]) });
+  const md = PL.report([f(S2, '2026-11-02'), f(S1, '2026-10-26')], '번호,사전,사후\n1,40,70\n2,80,85\n');
+  ok(md.includes('2026-10-26 ~ 2026-11-02') && md.includes('고친 판자(평균) 0 → 0.5') && md.includes('짐작 맞은 정도 % 55 → 75') && /주당 기울기 평균 1\.5/.test(md) && md.includes('오른 폭 30') && md.includes('무작위로 나뉜 것이 아님') && !md.includes('하늘'), '시범 숫자: 날짜 차례 · 처음 → 마지막 · 주간 기울기 · 형성평가 오른 폭 · 이름 X');
+}
 console.log(fail ? `FAIL ${fail}` : 'PASS');
 process.exitCode = fail ? 1 : 0;
