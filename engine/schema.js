@@ -3,14 +3,20 @@
 //  유형 이름은 연산 이름과 뗀다 [C-9][C-12] — 덧뺄 = 변화 · 부분과 전체 · 비교 / 곱나눗 = 같은 묶음 · 몇 배 · 똑같이 나누기 · 몇씩 덜어 내기 [C ①3]
 //  막대 틀 = 유형마다 정해진 그림(변화 처음 → 바뀐 양 → 결과 · 부분-전체 한 막대 · 비교 두 막대 + 차 · 같은 묶음 칸 막대 · 몇 배 두 막대) [C ②5]
 //  틀 셋 = 맞는 틀 하나 + 수와 ?를 다르게 놓은 틀 둘 — 틀린 틀은 그 틀이 말하는 답이 맞는 답과 달라야 함(정답이 하나뿐)
+//    틀린 틀도 말이 되는 것만(음수 · 자연수 이야기에 자연수 아닌 답 X) — 둘이 안 서면 그 이야기는 한 판에 내지 않음(storylog findStory)
+//  식 보기 = words.js 보기 + 같은 두 수의 다른 연산(다른 갈래 하나는 꼭 · 그 학년이 배운 연산만 · 값이 정답과 같은 보기 X) → 셋 이상
+//  익숙함 = 모르는 자리(slot)마다 셈 · 처음 수 모름 · 낱말과 셈이 반대인 이야기는 늘 걸음 넷 [C ①2]
 //  시험 = app/test/story.test.mjs
 import { readItem } from './words.js';
-import { txt, val } from './types/kit.js';
+import { byId } from './lessons/index.js';
+import { toText } from './tokens.js';
+import { txt, val, whole, ar, expr, choose } from './types/kit.js';
 import { rng } from './math.js';
 import { P } from './concepts/kit.js';
 
 // ── 유형 표 ──
 //  kid = 아이 카드 이름 · short = 선생님 프로필 이름(st.story 열쇠) · say = 카드 아래 한 줄(상황을 말함 — 연산 이름 X)
+//  FAMILY.kid = 처음 고르는 큰 갈래 카드 — 이것도 상황 말로(연산 이름 X)
 export const TYPES = {
   change: { fam: 'as', kid: '더해지거나 덜어지는 이야기', short: '변화', say: '처음 수에서 무엇이 생기거나 없어져서 수가 바뀌어요.' },
   combine: { fam: 'as', kid: '부분과 전체 이야기', short: '부분과 전체', say: '몇 부분이 모여 전체가 돼요.' },
@@ -21,8 +27,8 @@ export const TYPES = {
   pack: { fam: 'md', kid: '몇씩 덜어 내는 이야기', short: '몇씩 덜어 내기', say: '전체에서 같은 수씩 덜어 내어 몇 번인지 봐요.' },
 };
 export const FAMILY = {
-  as: { kid: '덧셈 · 뺄셈 이야기', types: ['change', 'combine', 'compare'], ask: '수가 생기거나 없어졌나요? 부분이 모여 전체가 되나요? 두 양을 견주나요?' },
-  md: { kid: '곱셈 · 나눗셈 이야기', types: ['groups', 'times', 'share', 'pack'], ask: '같은 수씩 든 묶음이 여럿인가요? 몇 배인가요? 똑같이 나누나요? 같은 수씩 덜어 내나요?' },
+  as: { kid: '늘고 줄고 모이고 견주는 이야기', types: ['change', 'combine', 'compare'], ask: '수가 생기거나 없어졌나요? 부분이 모여 전체가 되나요? 두 양을 견주나요?' },
+  md: { kid: '같은 수씩 묶거나 나누는 이야기', types: ['groups', 'times', 'share', 'pack'], ask: '같은 수씩 든 묶음이 여럿인가요? 몇 배인가요? 똑같이 나누나요? 같은 수씩 덜어 내나요?' },
 };
 // words.js kind → 유형(모든 kind를 덮음 — 시험이 확인)
 export const KIND_TYPE = { join: 'change', take: 'change', start: 'change', change: 'change', combine: 'combine', part: 'combine', add3: 'combine', diff: 'compare', more: 'compare', less: 'compare', groups: 'groups', rows: 'groups', rate: 'groups', times: 'times', of: 'times', share: 'share', pack: 'pack' };
@@ -94,11 +100,11 @@ export function schemaOf(s) {
 // ── 틀 ──
 const num = (sc) => Object.fromEntries(Object.entries(sc.v).map(([k, x]) => [k, val(x)]));
 export const show = (sc, sym) => (sym === 'x' ? '?' : txt(sc.v[sym], sc.st));
-// 틀 f = { R, dir } 가 말하는 ?의 값(수) — 계산이 안 되면 NaN
+// 틀 f = { R, dir, T? } 가 말하는 ?의 값(수) — 계산이 안 되면 NaN · T = 다른 유형의 틀(없으면 이야기 유형)
 export function implied(sc, f) {
   const nv = num(sc), R = f.R, g = (role) => nv[R[role]], xr = Object.keys(R).find((k) => R[k] === 'x');
   const fl = (y) => (sc.rem || sc.need ? Math.floor(y + 1e-9) : y);
-  switch (sc.type) {
+  switch (f.T || sc.type) {
     case 'change': { const sg = f.dir === '+' ? 1 : -1; if (xr === 'res') return g('start') + sg * g('chg'); if (xr === 'start') return g('res') - sg * g('chg'); return sg * (g('res') - g('start')); }
     case 'combine': { const ps = ['p0', 'p1', 'p2'].filter((p) => p in R); if (xr === 'whole') return ps.reduce((t, p) => t + g(p), 0); return g('whole') - ps.filter((p) => p !== xr).reduce((t, p) => t + g(p), 0); }
     case 'compare': if (xr === 'big') return g('small') + g('diff'); if (xr === 'small') return g('big') - g('diff'); return g('big') - g('small');
@@ -109,9 +115,9 @@ export function implied(sc, f) {
 }
 // 보이는 모양이 같으면 같은 틀(부분끼리는 차례가 없음)
 export function frameKey(sc, f) {
-  const parts = Object.entries(f.R).map(([role, sym]) => [role, show(sc, sym)]);
-  const body = sc.type === 'combine' ? [parts.filter(([r]) => r === 'whole'), parts.filter(([r]) => r !== 'whole').map(([, t]) => t).sort()] : parts.sort((x, y) => (x[0] < y[0] ? -1 : 1));
-  return JSON.stringify([sc.type, f.dir || '', body]);
+  const T = f.T || sc.type, parts = Object.entries(f.R).map(([role, sym]) => [role, show(sc, sym)]);
+  const body = T === 'combine' ? [parts.filter(([r]) => r === 'whole'), parts.filter(([r]) => r !== 'whole').map(([, t]) => t).sort()] : parts.sort((x, y) => (x[0] < y[0] ? -1 : 1));
+  return JSON.stringify([T, f.dir || '', body]);
 }
 const near = (x, y) => Math.abs(x - y) < 1e-6 * Math.max(1, Math.abs(y));
 function perms(xs) { if (xs.length <= 1) return [xs]; return xs.flatMap((x, i) => perms([...xs.slice(0, i), ...xs.slice(i + 1)]).map((p) => [x, ...p])); }
@@ -124,24 +130,38 @@ function pref(sc, f) {
   if (sc.type === 'groups' || sc.type === 'share' || sc.type === 'pack') return xr === 'total' && sc.unk !== 'total' ? 0 : 1;
   return 0;
 }
-// 틀 셋(맞는 틀 하나 + 틀린 틀 둘 · seed로 섞음) → { list:[{ R, dir, key, x }], right }
+// 틀 셋(맞는 틀 하나 + 틀린 틀 둘 · seed로 섞음) → { list:[{ R, dir, T?, key, x }], right }
+//  틀린 틀은 말이 되는 것만 — 음수 · 0 · 자연수 이야기에 자연수 아닌 답이 나오는 틀(부분 14 > 전체 6 같은 것)은 쓰지 않음
+//  같은 유형 틀이 먼저 · 모자라면 이웃 유형의 틀(T)로 채움 — 부분과 전체는 틀 모양이 셋뿐이라 하나는 늘 '부분 > 전체'
+//    부분과 전체 ↔ 비교(막대 모델에서 가장 헷갈리는 둘 [C ②5]) · 같은 묶음 ↔ 두 수를 모으거나 견주는 틀(식 보기의 덧 · 뺄과 같은 잘못 읽기)
+//  그래도 둘이 안 되면 list가 셋보다 짧음 → 한 판에 내지 않음(storylog findStory)
+const ROLE_KEYS = { change: ['start', 'chg', 'res'], combine: ['whole', 'p0', 'p1'], compare: ['big', 'small', 'diff'], groups: ['total', 'size', 'count'], times: ['base', 'big', 'tm'] };
+const CROSS = { change: ['compare', 'combine'], combine: ['compare', 'change'], compare: ['combine', 'change'], groups: ['times', 'combine', 'compare', 'change'], times: ['groups', 'compare', 'combine', 'change'], share: ['groups', 'combine', 'compare', 'change'], pack: ['groups', 'combine', 'compare', 'change'] };
 export function framesOf(sc, seed = 1) {
   const r = rng(seed), roles = Object.keys(sc.R), syms = roles.map((k) => sc.R[k]);
   const right = { R: sc.R, dir: sc.dir }, rk = frameKey(sc, right), seen = new Set([rk]), cands = [];
-  for (const pm of perms(syms)) for (const dir of sc.type === 'change' ? ['+', '−'] : [null]) {
-    const f = { R: Object.fromEntries(roles.map((k, i) => [k, pm[i]])), dir }, key = frameKey(sc, f);
-    if (seen.has(key)) continue; seen.add(key);
+  const add = (f, cr) => {
+    const key = frameKey(sc, f);
+    if (seen.has(key)) return; seen.add(key);
     const x = implied(sc, f);
-    if (Number.isFinite(x) && near(x, sc.xf)) continue;   /* 같은 답이 나오는 틀은 '틀린 틀'이 아님 */
+    if (Number.isFinite(x) && near(x, sc.xf)) return;   /* 같은 답이 나오는 틀은 '틀린 틀'이 아님 */
     const fine = Number.isFinite(x) && x > 1e-9 && (sc.st !== 'W' || near(x, Math.round(x)));   /* 자연수 이야기면 자연수가 나오는 틀이 그럴듯함 */
-    cands.push({ ...f, key, x, bad: fine ? 0 : 1, pr: pref(sc, f), z: r.next() });
-  }
-  cands.sort((p, q) => p.bad - q.bad || p.pr - q.pr || p.z - q.z);
+    const T = f.T || sc.type, cnt = f.R.count === 'x' ? x : f.R.count ? val(sc.v[f.R.count]) : 1;
+    if (['groups', 'share', 'pack'].includes(T) && !(cnt >= 1 && near(cnt, Math.round(cnt)))) return;   /* 묶음 수 · 나누는 수는 자연수(3/7 묶음 X) */
+    if (fine) cands.push({ ...f, key, x, cr, pr: cr ? 0 : pref(sc, f), z: r.next() });
+  };
+  for (const pm of perms(syms)) for (const dir of sc.type === 'change' ? ['+', '−'] : [null]) add({ R: Object.fromEntries(roles.map((k, i) => [k, pm[i]])), dir }, 0);
+  /* 이웃 유형 — 수 둘 + ?인 이야기만 · 곱셈 틀은 그 학년이 곱셈을 배웠을 때만 */
+  const two = syms.length === 3 && ['a', 'b', 'x'].every((y) => syms.includes(y));
+  const near2 = [...(CROSS[sc.type] || []), ...(TYPES[sc.type].fam === 'as' && learnedOp(sc.c, '×') && sc.st === 'W' ? ['groups'] : [])];
+  if (two && cands.length < 2) near2.forEach((T, i) => { for (const pm of perms(['a', 'b', 'x'])) for (const dir of T === 'change' ? ['+', '−'] : [null]) add({ T, R: Object.fromEntries(ROLE_KEYS[T].map((k, j) => [k, pm[j]])), dir }, i + 1); });
+  cands.sort((p, q) => p.cr - q.cr || p.pr - q.pr || p.z - q.z);
   const picked = [], take = (test) => { for (const cd of cands) if (picked.length < 2 && !picked.includes(cd) && test(cd)) picked.push(cd); };
-  take((cd) => !cd.bad && !picked.some((y) => near(y.x, cd.x)));   /* 그럴듯하고 서로 다른 답을 말하는 틀 먼저 */
-  take((cd) => !cd.bad);
+  take((cd) => !cd.cr && !picked.some((y) => near(y.x, cd.x)));   /* 같은 유형 · 서로 다른 답을 말하는 틀 먼저 */
+  take((cd) => !cd.cr);
+  take((cd) => !picked.some((y) => near(y.x, cd.x)));
   take(() => true);
-  const list = r.shuffle([{ ...right, key: rk, x: sc.xf }, ...picked.map(({ R, dir, key, x }) => ({ R, dir, key, x }))]);
+  const list = r.shuffle([{ ...right, key: rk, x: sc.xf }, ...picked.map(({ R, dir, T, key, x }) => (T ? { R, dir, T, key, x } : { R, dir, key, x }))]);
   return { list, right: list.findIndex((f) => f.key === rk) };
 }
 
@@ -215,8 +235,10 @@ export function rereadOf(sc) {
 }
 
 // ── 나눠 읽기 — 이야기를 문장 · 마디로 나눔(아는 것 · 모르는 수 · 묻는 것) [C ②4][C-27] ──
-//  나누는 곳: 문장 끝(. ?) · 쉼표 · '~는데' · '~더니' · '~면'(앞 마디에 수가 있을 때만 남김 — 수도 물음도 없는 마디는 뒤에 붙임)
-const BOUND = /([.?]|,|는데|더니|면)\s+/g;
+//  나누는 곳: 문장 끝(. ?) · 쉼표 · '~는데' · '~더니' · '~면' · '~중에서'(앞 마디에 수가 있을 때만 남김 — 수도 물음도 없는 마디는 뒤에 붙임)
+//  꼬리표: 마지막 문장의 물음 = 묻는 것 · 그 앞에 '몇 · 얼마'가 든 마디 = 모르는 수(아는 수가 같이 있어도) · 수만 있으면 아는 것
+//    '30장 중에서 몇 장을 썼더니'는 '30장 중에서'(아는 것) + '몇 장을 썼더니'(모르는 수)로 나뉨
+const BOUND = /([.?]|,|는데|더니|면|중에서)\s+/g;
 const hasNum = (toks) => toks.some((t) => typeof t !== 'string' || /\d/.test(t));
 const hasAsk = (toks) => toks.some((t) => typeof t === 'string' && /몇|얼마|며칠/.test(t));
 export function splitStory(tokens) {
@@ -235,7 +257,7 @@ export function splitStory(tokens) {
     const toks = [...carry, ...(carry.length ? [' '] : []), ...x.toks]; carry = [];
     if (!hasNum(toks) && !hasAsk(toks) && i < raw.length - 1) { carry = toks; return; }
     const fin = i > lastDot;
-    out.push({ toks, tag: fin && hasAsk(toks) ? 'ask' : hasNum(toks) ? 'know' : hasAsk(toks) ? 'unk' : '' });
+    out.push({ toks, tag: hasAsk(toks) ? (fin ? 'ask' : 'unk') : hasNum(toks) ? 'know' : '' });
   });
   return out;
 }
@@ -252,8 +274,75 @@ export function profileOf(log, per = 20) {
   }
   return out;
 }
-// 익숙함 — 그 유형의 마지막 두 문제가 모두 ①② 첫 번에 맞음(또는 건너뛰고 식까지 맞음) → 다음엔 ①②를 건너뜀
-export function familiar(log, type) {
-  const es = (log || []).filter((e) => e && e.type === type).sort((x, y) => x.t - y.t).slice(-2);
+// 늘 걸음 넷으로 — 처음 수 모름 · 낱말과 셈이 반대인 이야기(가장 어려운 둘 [C ①2][C-21][C-23]) · 모르는 칸
+export function noSkip(slot) {
+  const M = MAP[baseSlot(slot)];
+  return !M || !!M.inc || M.R.start === 'x';
+}
+// 익숙함 — 같은 유형 · 같은 모르는 자리(slot)의 마지막 두 문제가 모두 ①② 첫 번에 맞음(또는 건너뛰고 식까지 맞음) → 다음엔 ①②를 건너뜀
+//  자리가 다르면 따로 셈(결과 모름에 익숙해도 처음 모름은 처음부터) · noSkip 자리는 늘 걸음 넷
+export function familiar(log, type, slot) {
+  if (!slot || noSkip(slot)) return false;
+  const es = (log || []).filter((e) => e && e.type === type && e.slot === slot && Array.isArray(e.s)).sort((x, y) => x.t - y.t).slice(-2);
   return es.length === 2 && es.every((e) => (e.s[0] === 1 && e.s[1] === 1) || (e.s[0] == null && e.s[2] === 1));
+}
+// 익숙해진 자리 → 유형(아이 화면 '익숙해진 이야기' 한 줄)
+export function familiarTypes(log) {
+  const slots = [...new Set((log || []).filter((e) => e && e.slot && TYPES[e.type]).map((e) => `${e.type}|${e.slot}`))];
+  return [...new Set(slots.map((k) => k.split('|')).filter(([t, sl]) => familiar(log, t, sl)).map(([t]) => t))];
+}
+
+// ── 식 보기 — words.js 보기(낱말만 보고 · 연산을 바꿈) + 같은 두 수의 다른 연산 → 셋 이상 ──
+//  다른 갈래(덧뺄 이야기면 곱 · 나눗, 곱나눗 이야기면 덧 · 뺄) 하나는 꼭 · 그 차시 학년이 배운 연산만(words.js ⑦과 같은 규칙)
+//    분수 · 소수가 든 보기: 곱은 곱셈을 배운 학년(3학년~ · 셈 방법이 아니라 '곱하는 이야기인가'를 가름) · 나눗은 분수 나눗셈을 배운 뒤(6-1)
+//  정답이 둘이 되지 않게: 값이 정답과 같은 보기(2 + 2 · 2 × 2)는 빼고 · 음수 · 0 · 자연수 이야기에 나누어떨어지지 않는 나눗셈 X
+//  it.short = 셋이 안 될 때 까닭: 'op' 그 학년이 배운 다른 연산이 없음(1학년 덧뺄) · 'num' 이 수에서만(5 × 5 → 5 − 5 = 0) — findStory는 'num'이면 다른 수로
+const OPN = { '+': '덧셈', '−': '뺄셈', '×': '곱셈', '÷': '나눗셈' };
+const GROUP = { '+': 'as', '−': 'as', '×': 'md', '÷': 'md' };
+export function learnedOp(c, op, frac = false) {
+  const u = (byId[c] && byId[c].u) || '', g = Number(u[0]), us = u.slice(0, 3);
+  if (op === '×') return frac ? g >= 3 : !(g === 1 || u.startsWith('2-1'));
+  if (op === '÷') return frac ? us >= '6-1' : g >= 3;
+  return true;
+}
+const NUMS = String.raw`\d+ \d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?`;
+const EQ = new RegExp(`^(${NUMS}) ([+−×÷]) (${NUMS})$`);
+const fv = (t) => String(t).split(' ').reduce((a, x) => a + (x.includes('/') ? Number(x.split('/')[0]) / Number(x.split('/')[1]) : Number(x)), 0);
+// 보기 글 하나의 값 · 연산(읽을 수 없으면 null)
+function eqVal(t) {
+  const m = toText([].concat(t)).trim().match(EQ);
+  if (!m) return null;
+  const x = fv(m[1]), y = fv(m[3]);
+  return { op: m[2], v: m[2] === '+' ? x + y : m[2] === '−' ? x - y : m[2] === '×' ? x * y : x / y };
+}
+export function eqPick(s, seed = 1) {
+  const pk = s && s.steps && s.steps[0] && s.steps[0].item, e = s && readItem(s.steps[1].item);
+  if (!pk || !e || e.c || !pk.choices) return pk;
+  const rt = pk.choices[pk.sol[0]], rv = eqVal(rt);
+  if (!rv) return pk;
+  const W = whole(e.a) && whole(e.b) && e.st === 'W', frac = !(whole(e.a) && whole(e.b)), can = (op) => learnedOp(s.c, op, frac && (op === '×' || op === '÷'));
+  const opts = [{ t: rt, right: true }];
+  pk.choices.forEach((t, i) => {
+    if (i === pk.sol[0]) return;
+    const x = eqVal(t), bug = pk.check([i]).bug;
+    if (x && near(x.v, rv.v)) return;   /* 값이 정답과 같으면 '틀린 식'이 아님 */
+    opts.push({ t, name: bug && bug.name });
+  });
+  const has = (op) => opts.some((o) => { const x = eqVal(o.t); return x && x.op === op; });
+  const big = val(e.a) >= val(e.b) ? [e.a, e.b] : [e.b, e.a];
+  const make = (op) => {
+    if (has(op) || !can(op)) return null;
+    const [x, y] = op === '−' ? big : [e.a, e.b];
+    const z = ar(op, x, y);
+    if (!(z.n > 0) || (W && !whole(z)) || near(val(z), rv.v)) return null;
+    if (op === '÷' && (val(y) < 2 || !whole(z))) return null;   /* 나누어떨어지지 않는 나눗셈은 그럴듯하지 않음 */
+    return { t: expr(op, x, y, e.st), name: `${OPN[e.op]} 대신 ${OPN[op]}${P(OPN[op], '을', '를')} 고름` };
+  };
+  const other = GROUP[e.op] === 'as' ? ['×', '÷'] : ['−', '+'], same = GROUP[e.op] === 'as' ? ['+', '−'] : ['×', '÷'];
+  if (!opts.some((o) => !o.right && GROUP[(eqVal(o.t) || {}).op] !== GROUP[e.op])) for (const op of other) { const o = make(op); if (o) { opts.push(o); break; } }
+  for (const op of [...same, ...other]) { if (opts.length >= 3) break; const o = make(op); if (o) opts.push(o); }
+  const short = opts.length >= 3 ? null : ['+', '−', '×', '÷'].some((op) => !has(op) && can(op)) ? 'num' : 'op';
+  const it = opts.length === pk.choices.length && opts.every((o, i) => toText([].concat(o.t)) === toText([].concat(pk.choices[i]))) ? pk : choose(pk.prompt, opts, rng((seed * 2654435761) >>> 0 || 1));
+  it.short = short;
+  return it;
 }

@@ -154,7 +154,7 @@ ol.easy,ul.easy{padding-left:1.3em;margin:6px 0}ol.easy li,ul.easy li{margin:0 0
 .sb-svg{width:100%;height:auto;display:block}
 .sb-ref{max-width:380px;margin:0 0 10px;border:1.5px dashed #d9c7ad;border-radius:14px;padding:6px 8px;background:#fffdf8}
 .sb-ask{font-size:18px;margin:0 0 6px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.sb-calc{margin:0 0 8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.sb-calc .math,.sb .fb .math{font-size:22px;display:inline-flex}.sb-eq .math,b.sb-eq{font-size:inherit}
+.sb-calc .math,.sb .fb .math{font-size:22px;display:inline-flex}.sb-ans{margin:2px 0 0;font-size:19px;font-weight:700}.sb-ansbox{margin-top:6px}.sb-okmsg{margin:0 0 4px}.sb-eq .math,b.sb-eq{font-size:inherit}
 b.q{font-weight:800;border:1.5px dashed var(--ink);border-radius:4px;padding:0 4px;margin:0 1px}
 .sb-recap{list-style:none;margin:0 0 6px;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
 .sb-recap li{border:1.5px solid var(--line);border-radius:12px;padding:8px 12px;background:#fff;display:flex;flex-direction:column}.sb-recap li span{font-size:13.5px;color:var(--mute)}

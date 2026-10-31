@@ -2,13 +2,16 @@
 //  한 판 = 문장제 여섯 · 모르는 자리를 고루(결과 · 변화 · 처음 / 큰 · 작은 · 차) · 처음 수 모름은 뒤쪽이지만 꼭 · 불일치 이야기를 섞음 [C ②3][C ②7]
 //    덧뺄은 '더'가 있는데 빼는 이야기(차)가 늘 한 문제 · 큰 쪽 · 작은 쪽 모름은 판마다 돌아가며(덜 본 것부터)
 //  차시 = 아이 판정에서 '확인'된 계산 차시 가운데 문장제가 있는 것 → 계산이 걸림돌이 되지 않게(없으면 쉬운 차시)
+//    고른 차시의 연산이 하나뿐이면(곱셈 칸만 확인 등) 쉬운 차시에서 다른 연산 하나를 섞음 — 한 판이 한 연산으로만 흐르지 않게
+//  한 판 안에서 같은 문장 틀(글 첫 8글자)은 두 번까지 · 막대 틀이 셋 서는 이야기만(그럴듯한 틀린 틀 둘 — schema framesOf)
+//  식 보기 = schema eqPick(같은 두 수의 다른 연산을 더해 셋 이상)
 //  기록: 한 판 = 묶음 하나(form 'w' 문항 · 결과 r.w[k] = { f 식 맞음, a 답 맞음 } — 종이와 같은 판정) + r.sb[k] = 걸음별 맞음
 //  K.story = { log:[{ t, sh, k, c, kind, slot, type, inc, s:[유형, 틀, 식, 계산, 답] }] } — 선생님 요약 st.story는 이것 + 서버 기록(다른 기기)
 import { NODES, byId } from '../../engine/lessons/index.js';
 import { hasWords, storyOf, readItem } from '../../engine/words.js';
 import { rng } from '../../engine/math.js';
 import { toText } from '../../engine/tokens.js';
-import { schemaOf, framesOf, slotOf, famOfLesson, profileOf, familiar } from '../../engine/schema.js';
+import { schemaOf, framesOf, slotOf, famOfLesson, profileOf, familiar, eqPick } from '../../engine/schema.js';
 
 export const STORY_N = 6;
 // 한 판의 칸 차례 — 칸마다 고를 수 있는 구조(덜 본 것부터) · 앞은 바로 읽히는 것 · 뒤는 불일치 · 처음 모름 · 나머지 해석
@@ -53,11 +56,20 @@ export function pickLessons(L, fam, seed = 1) {
   cs = [...new Set(cs.filter(Boolean))];
   const bad = (c) => L && L[c] && (L[c].st === 'stuck' || L[c].st === 'shaky');
   if (!cs.length) cs = (EASY[fam].find((xs) => !xs.some(bad)) || EASY[fam][EASY[fam].length - 1]).slice();
+  /* 연산이 하나뿐이면 쉬운 차시에서 다른 연산 하나(막힌 · 흔들린 차시는 X) */
+  const ops = new Set(cs.map((c) => capOf(c).op));
+  for (const op of fam === 'as' ? ['+', '−'] : ['×', '÷']) {
+    if (ops.has(op)) continue;
+    const c = EASY[fam].flat().find((x) => !bad(x) && !cs.includes(x) && capOf(x).op === op);
+    if (c) { cs.push(c); ops.add(op); }
+  }
   return { cs, easy: !ok.length };
 }
 
-// 이야기 하나 찾기 — 이 칸 · 이 차시에서 · 같은 글 두 번 없음 · 틀 셋이 서는 것(같은 두 수 X) · 곱셈구구는 1 · 0이 끼지 않게
-function findStory(cs, slot, r, used) {
+// 이야기 하나 찾기 — 이 칸 · 이 차시에서 · 같은 글 두 번 없음 · 같은 문장 틀(첫 8글자) 두 번까지 · 틀 셋이 서는 것(같은 두 수 X · 말이 되는 틀린 틀 둘) · 곱셈구구는 1 · 0이 끼지 않게
+export const HEAD_MAX = 2;
+export const headOf = (story) => toText(story).slice(0, 8);
+function findStory(cs, slot, r, used, heads = {}) {
   const ok = cs.filter((c) => capOf(c).slots[slot]);
   if (!ok.length) return null;
   for (let k = 0; k < 2000; k++) {
@@ -68,8 +80,9 @@ function findStory(cs, slot, r, used) {
     const sc = schemaOf(s); if (!sc || sc.slot !== slot) continue;
     if (KUKU.has(c)) { const e = readItem(s.steps[1].item); if (!e || val(e.a) < 2 || val(e.b) < 2) continue; }
     if (framesOf(sc, ws).list.length !== 3) continue;
-    const key = toText(s.story); if (used.has(key)) continue;
-    used.add(key);
+    const pk = eqPick(s, ws); if (pk.choices.length < 2 || (pk.choices.length < 3 && pk.short !== 'op')) continue;   /* 식 보기 셋(그 학년이 다른 연산을 안 배웠으면 둘) */
+    const key = toText(s.story), h = headOf(s.story); if (used.has(key) || (heads[h] || 0) >= HEAD_MAX) continue;
+    used.add(key); heads[h] = (heads[h] || 0) + 1;
     return { c, p, ws };
   }
   return null;
@@ -81,16 +94,16 @@ export function planOf(cs, { seed = 1, log = [], n = STORY_N } = {}) {
   for (const e of log || []) if (e && e.slot) seen[e.slot] = (seen[e.slot] || 0) + 1;
   const can = new Set(cs.flatMap((c) => Object.keys(capOf(c).slots)));
   const least = (keys) => { const ks = keys.filter((k) => can.has(k)); if (!ks.length) return null; const m = Math.min(...ks.map((k) => seen[k] || 0)); return r.pick(ks.filter((k) => (seen[k] || 0) === m)); };
-  const used = new Set(), out = [], took = [];
+  const used = new Set(), heads = {}, out = [], took = [];
   for (const alts of SLOTS[fam]) {
     if (out.length >= n) break;
     const k = least(alts.filter((x) => !took.includes(x))) || least(alts); if (!k) continue;
-    const it = findStory(cs, k, r, used); if (it) { out.push(it); took.push(k); }
+    const it = findStory(cs, k, r, used, heads); if (it) { out.push(it); took.push(k); }
   }
   // 못 채운 칸 — 이 차시들이 낼 수 있는 다른 구조(덜 본 것 · 아직 안 낸 것부터)
   for (let g = 0; out.length < n && g < 20; g++) {
     const k = least([...can].filter((x) => !took.includes(x))) || least([...can]); if (!k) break;
-    const it = findStory(cs, k, r, used); if (it) { out.push(it); took.push(k); } else can.delete(k);
+    const it = findStory(cs, k, r, used, heads); if (it) { out.push(it); took.push(k); } else can.delete(k);
   }
   return out;
 }
@@ -99,6 +112,7 @@ export function planOf(cs, { seed = 1, log = [], n = STORY_N } = {}) {
 export function probOf({ c, p, ws }) {
   const s = storyOf(c, p, ws); if (!s) return null;
   const sc = schemaOf(s); if (!sc) return null;
+  s.steps[0].item = eqPick(s, ws);
   return { c, p, ws, s, sc, fr: framesOf(sc, ws) };
 }
 
@@ -145,4 +159,4 @@ export function storyLog(K) {
   return [...log, ...more].sort((a, b) => a.t - b.t);
 }
 export const storySum = (K) => profileOf(storyLog(K));
-export const isFamiliar = (K, type) => familiar(storyLog(K), type);
+export const isFamiliar = (K, type, slot) => familiar(storyLog(K), type, slot);
