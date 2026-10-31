@@ -891,11 +891,13 @@ export default {
     },
     {
       id: '5-2-2:4', fam: 'F14', name: '(자연수)×(진분수)', kid: '자연수 × 진분수', sec: 20,
-      gen: (r) => { const d = r.int(2, 9), n = cop(r, d); if (r.chance(0.7)) return { d, n, N: d * r.int(2, 6) }; let N; do { N = r.int(2, 12); } while (N % d === 0); return { d, n, N }; },
+      // dir: 계산하지 말고 크기 방향만 — '곱하면 늘 커진다'는 계산을 맞혀도 남아 있어 따로 물어야 드러남 [E2-1][E2-3][E3-11]
+      gen: (r) => { const d = r.int(2, 9), n = cop(r, d); if (r.chance(0.2)) return { dir: 1, d, n, N: r.int(6, 30) }; if (r.chance(0.7)) return { d, n, N: d * r.int(2, 6) }; let N; do { N = r.int(2, 12); } while (N % d === 0); return { d, n, N }; },
       is: (p) => !p.mix && p.n < p.d, prev: null, pre: ['3-2-4:3', '3-2-4:4'],
-      make: (p) => (p.N % p.d === 0 ? CF.F14.make(p)
+      make: (p) => (p.dir ? pick(['계산하지 말고 생각해요. ', `${p.N} × `, fx(p.n, p.d), `의 값은 ${p.N}보다 어떨까요?`], [['커요'], ['작아요'], ['같아요']], 1, { bugs: { 0: { name: '곱하면 늘 커진다고 봄 (1보다 작은 수를 곱해도)', to: '5-2-2:2' }, 2: { name: '1보다 작은 수를 곱해도 그대로라고 봄', to: '5-2-2:2' } } })
+        : p.N % p.d === 0 ? CF.F14.make(p)
         : fracAns([`${p.N} × `, fx(p.n, p.d), ' = '], F(p.N * p.n, p.d), [{ test: (v) => v[0] === p.N * p.n && v[1] === p.d * p.N, name: '분모에도 곱함', to: '3-2-4:3' }])),
-      steps: (p) => (p.N % p.d === 0 ? [{ c: 'F4', p: { N: p.N, n: p.n, d: p.d }, why: `${p.N} × ${p.n}/${p.d}${P(p.n, '은', '는')} ${p.N}의 ${p.n}/${p.d}${P(p.n, '이라는', '라는')} 뜻이에요.` }] : [
+      steps: (p) => (p.dir ? [] : p.N % p.d === 0 ? [{ c: 'F4', p: { N: p.N, n: p.n, d: p.d }, why: `${p.N} × ${p.n}/${p.d}${P(p.n, '은', '는')} ${p.N}의 ${p.n}/${p.d}${P(p.n, '이라는', '라는')} 뜻이에요.` }] : [
         p.n > 1 ? { c: 'F3', p: { v: 'count', n: p.n, d: p.d }, why: `${p.n}/${p.d}${P(p.n, '은', '는')} 1/${p.d}이 몇 개인가요?` } : null,
         p.n > 1 ? { c: 'MUL', p: { a: p.n, b: p.N }, why: `그것이 ${p.N}묶음이에요.` } : null,
         { c: 'F3', p: { v: 'build', n: p.N * p.n, d: p.d }, why: `1/${p.d}이 ${p.N * p.n}개를 분수로 써요.` },

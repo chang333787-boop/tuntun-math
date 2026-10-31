@@ -601,9 +601,12 @@ export default {
     },
     {
       id: '6-2-1:5', fam: 'F21', name: '(자연수)÷(분수)', kid: '자연수 ÷ 분수', sec: 25,
-      gen: (r) => { let n, d; do { d = r.int(2, 7); n = r.int(1, d - 1); } while (gcd(n, d) !== 1); return r.chance(0.3) ? { v: 'one', n, d } : { v: 'n', n, d, N: n * r.int(2, 5) }; },
-      is: (p) => p.v === 'one' || p.v === 'n', prev: '6-2-1:2', pre: ['3-1-3:6'],
+      // dir: 계산하지 말고 크기 방향만 — '나누면 늘 작아진다' [E2-1][E3-11][E3-12]
+      gen: (r) => { let n, d; do { d = r.int(2, 7); n = r.int(1, d - 1); } while (gcd(n, d) !== 1); if (r.chance(0.2)) { let k = r.int(2, 5); while (k > 2 && n * k * d > 81) k--; return { v: 'dir', n, d, N: n * k }; /* 옛 개념 다리(N × 분모 ÷ 분자)가 생기는 범위로 */ } return r.chance(0.3) ? { v: 'one', n, d } : { v: 'n', n, d, N: n * r.int(2, 5) }; },
+      is: (p) => p.v === 'one' || p.v === 'n' || p.v === 'dir', prev: '6-2-1:2', pre: ['3-1-3:6'],
+      make: (p) => (p.v === 'dir' ? pick(['계산하지 말고 생각해요. ', `${p.N} ÷ `, fx(p.n, p.d), `의 값은 ${p.N}보다 어떨까요?`], [['커요'], ['작아요'], ['같아요']], 0, { bugs: { 1: { name: '나누면 늘 작아진다고 봄 (1보다 작은 수로 나눠도)', to: '6-2-1:2' }, 2: { name: '1보다 작은 수로 나눠도 그대로라고 봄', to: '6-2-1:2' } } }) : C.F21.make(p)),
       steps: (p) => {
+        if (p.v === 'dir') return [];
         if (p.v === 'one') return [ext('F3', { v: 'whole', w: 1, d: p.d }, `1은 1/${p.d}이 몇 개인가요?`)];
         const k = p.N / p.n;
         if (p.n === 1) return [{ c: 'MUL', p: { a: p.N, b: p.d }, why: `1은 1/${p.d}이 ${p.d}개예요. ${jn(p.N, '은', '는')} 1/${p.d}이 몇 개인가요? ${p.N} × ${p.d}` }];
