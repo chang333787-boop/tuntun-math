@@ -52,7 +52,7 @@ export function teacherHome(root) {
   root.innerHTML = `<div class="card"><h2>선생님 처음 화면</h2>
     ${say('hi', '반을 만들면 아이마다 <b>번호 카드</b>(반 코드 · 번호 · 핀)가 나와요.<br>아이 이름은 이 기기에만 두고 서버에 보내지 않아요.')}
     ${list.length ? `<table class="list"><tr><th>반 코드</th><th>학기</th><th>아이</th><th></th></tr>${list.map(([C, x]) => `<tr><td><b class="code">${esc(C)}</b></td><td>${esc(gl(x.g))}</td><td>${x.n}명</td><td style="text-align:right"><a class="btn teal" href="#/t/c/${C}">반 열기</a></td></tr>`).join('')}</table>` : '<p class="muted">이 기기에서 연 반이 아직 없어요. 처음이면 <b>새 반 만들기</b>부터 하세요.</p>'}
-    <div class="acts"><a class="btn pri" href="#/t/new">새 반 만들기</a><a class="btn" href="#/t/open">다른 기기에서 만든 반 열기</a><a class="btn" href="#/t/guide">한 장 안내(인쇄용)</a></div></div>
+    <div class="acts"><a class="btn pri" href="#/t/new">새 반 만들기</a><a class="btn" href="#/t/open">다른 기기에서 만든 반 열기</a><a class="btn" href="#/t/guide">한 장 안내(인쇄용)</a><a class="btn" href="../paper/" target="_blank" rel="noopener" title="인쇄해서 푸는 진단 · 점검 — 채점 결과는 반 화면의 '종이 결과 가져오기'로">종이 점검(인쇄용)</a></div></div>
     <div class="card"><h2>반 정보 백업</h2>
     ${intro(`반 코드 · 선생님 열쇠 · 핀 · 아이 이름은 <b>이 기기에만</b> 있어요. 브라우저 기록을 지우거나 기기를 바꾸기 전에 내려받아 두세요. 이름이 들어 있으니 학교 기기에만 두세요.`)}
     <div class="acts">${list.length ? '<button id="bk">백업 내려받기</button>' : ''}<label class="btn">백업 불러오기<input type="file" id="rs" accept="application/json" hidden></label></div><p class="qmsg tight" id="bmsg"></p></div>
@@ -461,6 +461,7 @@ export function paperImportView(root, C) {
         <p class="small muted">이름이 같거나 별명이 번호로 시작하면 미리 골라 두었어요. 한 번호에 두 아이를 고르면 넣지 않아요.</p>
         <div class="acts"><button class="pri big" id="go">아이 기록에 넣기</button></div>` : ''}
       <p class="small">다른 기기의 내보내기 파일: <input type="file" id="f" accept=".json,application/json"></p>
+      <p class="small">종이 점검을 아직 안 만들었다면: <a href="../paper/" target="_blank" rel="noopener">종이 점검 열기(새 탭)</a> — 같은 기기 · 같은 브라우저에서 채점하면 여기서 바로 읽어요.</p>
       <div id="msg" role="status"></div>
       <div class="acts"><a class="btn" href="#/t/c/${C}">반 화면으로</a></div></div>`;
     root.querySelector('#f').addEventListener('change', async (e) => { const f = e.target.files[0]; if (!f) return; const D2 = paperData(await f.text()); if (!D2) { root.querySelector('#msg').innerHTML = '<p class="warn">끊긴 곳 찾기에서 내보낸 파일이 아니에요.</p>'; return; } show(D2, `파일 ${esc(f.name)}`); });
