@@ -11,19 +11,21 @@ import { draw, staticHTML, ansSay } from './item.js';
 import { lineOf, weekTerm, weekPlan, weekChart, weekTrend, doneThisWeek } from './weekcore.js';
 import { esc, rand } from './local.js';
 import { go, meOf } from './kid.js';
+import { tile } from './icons.js';
 
-const say = (pose, html, size = 64) => `<div class="say">${mascot(pose, size)}<div class="bub">${html}</div></div>`;
+const say = (pose, html, size = 104) => `<div class="say">${mascot(pose, size)}<div class="bub">${html}</div></div>`;
+const EB = `<p class="eyebrow">${tile('week', 22)}이번 주 점검</p>`;
 
 export function weekView(root) {
   const me = meOf(); if (!me) return go('#/join');
   const K = KS.load(me), rep = KS.reportOf(K), term = weekTerm(K);
   if (doneThisWeek(K.recs)) {
-    root.innerHTML = `<div class="card">${say('cheer', '이번 주 점검은 벌써 했어요. 다음 주에 또 해요!')}${weekChart(lineOf(K.recs, term))}<div class="acts"><a class="btn big" href="#/me">내 수 다리로</a></div></div>`;
+    root.innerHTML = `<div class="card msg act-week">${EB}${say('cheer', '이번 주 점검은 벌써 했어요. 다음 주에 또 해요!')}${weekChart(lineOf(K.recs, term))}<div class="acts"><a class="btn big" href="#/me">내 수 다리로</a></div></div>`;
     return;
   }
   const plan = weekPlan(K, rep, term);
   if (plan.length < 4) {
-    root.innerHTML = `<div class="card">${say('think', '아직 점검할 판자가 적어요. 준비 다리나 판자 고치기를 하고 나서 해요.')}<div class="acts"><a class="btn big" href="#/me">내 수 다리로</a></div></div>`;
+    root.innerHTML = `<div class="card msg act-week">${EB}${say('think', '아직 점검할 판자가 적어요. 준비 다리나 판자 고치기를 하고 나서 해요.')}<div class="acts"><a class="btn big" href="#/me">내 수 다리로</a></div></div>`;
     return;
   }
   const sh = makeSheet({ kind: 'week', words: false, id: rand(6), lessons: plan.map((c) => ({ c, n: 1 })), mixed: true });
@@ -36,7 +38,7 @@ export function weekView(root) {
   const one = () => {
     if (i >= sh.items.length) return fin();
     const it = sh.items[i];
-    draw(root, { prompt: it.snap.prompt, choices: it.snap.choices, tag: '이번 주 점검', dots: [i, sh.items.length], conf: false, onAnswer: (a, cf, t) => {
+    draw(root, { prompt: it.snap.prompt, choices: it.snap.choices, tag: '이번 주 점검', act: 'week', dots: [i, sh.items.length], conf: false, onAnswer: (a, cf, t) => {
       let ok = false;
       if (a.idk) R.it[it.k] = { s: 'q' };
       else { try { ok = !!itemOf(it.c, it.p).check(a.vals, a.raws).ok; } catch (e) { ok = false; } R.it[it.k] = ok ? { s: 'ok' } : { s: 'x', a: a.raws }; }
@@ -44,7 +46,7 @@ export function weekView(root) {
       fast = !ok && !a.idk && t < 2000 ? fast + 1 : a.idk ? fast : 0;   /* 몰라서 넘어감은 찍기가 아님(준비 다리와 같게 — 세지도 끊지도 않음) */
       if (fast < 3) return one();
       fast = 0; pauses++; K.rush = (K.rush || 0) + 1;
-      root.innerHTML = `<div class="card">${say('think', '잠깐! 조금 빨라요. 문제를 <b>끝까지 읽고</b> 풀어요. 모르면 \'몰라서 넘어갈래요\'를 눌러도 돼요.')}<button class="pri big" id="r" disabled>다시 할게요</button></div>`;
+      root.innerHTML = `<div class="card msg">${say('think', '잠깐! 조금 빨라요. 문제를 <b>끝까지 읽고</b> 풀어요. 모르면 \'몰라서 넘어갈래요\'를 눌러도 돼요.')}<div class="acts"><button class="pri big" id="r" disabled>다시 할게요</button></div></div>`;
       const b = root.querySelector('#r'); setTimeout(() => { b.disabled = false; b.focus(); }, 3000); b.addEventListener('click', one);
     } });
   };
@@ -65,8 +67,8 @@ export function weekView(root) {
     const cs = [...new Set(miss.map((it) => it.c))];
     const drill = cs.length ? `<p class="small">틀린 문제의 판자는 <b>다듬기</b>로 바로 연습할 수 있어요.</p><div class="acts">${cs.slice(0, 4).map((c) => `<a class="btn teal" href="#/drill/${encodeURIComponent(c)}">${esc(lessonName(c))} 다듬기</a>`).join('')}</div>` : '';
     const list = miss.length ? `<h3>다시 볼 문제 ${miss.length}개 <small class="muted">(바른 답을 넣어 보여 줘요)</small></h3><ul class="steps">${miss.slice(0, 4).map(li).join('')}</ul>${miss.length > 4 ? `<details><summary>${miss.length - 4}개 더 보기</summary><ul class="steps">${miss.slice(4).map(li).join('')}</ul></details>` : ''}${drill}` : `<p>${n}문제 모두 맞혔어요.</p>`;
-    root.innerHTML = `<div class="card">${head}<h3>내 선 <small class="muted">(나하고만 견줘요)</small></h3>${weekChart(ws)}${list}<div class="acts"><a class="btn pri big" href="#/me">내 수 다리로</a></div></div>`;
+    root.innerHTML = `<div class="card msg msg2 act-week">${EB}${head}<div class="split"><div><h3>내 선 <small class="muted">(나하고만 견줘요)</small></h3>${weekChart(ws)}</div><div>${list}</div></div><div class="acts"><a class="btn pri big" href="#/me">내 수 다리로</a></div></div>`;   /* 넓으면 왼쪽 내 선 · 오른쪽 다시 볼 문제 */
   };
-  root.innerHTML = `<div class="card">${say('hi', `<b>이번 주 점검</b> — ${term ? `${esc(term.slice(1, 2))}학년 ${esc(term.slice(3))}학기로 가는 판자들에서 ` : ''}섞은 문제 ${plan.length}개, 3~5분이면 돼요.<br>맞고 틀림은 끝나고 한꺼번에 보여요. 주마다 한 번 해서 내 선이 어디로 가는지 봐요.`)}${(() => { const ws = lineOf(K.recs, term); return ws.length ? `<h3>지금까지 내 선</h3>${weekChart(ws)}` : ''; })()}<button class="pri big" id="s">시작</button> <a class="btn" href="#/me">내 수 다리로</a></div>`;
+  root.innerHTML = `<div class="card msg act-week">${EB}${say('hi', `<b>이번 주 점검</b> — ${term ? `${esc(term.slice(1, 2))}학년 ${esc(term.slice(3))}학기로 가는 판자들에서 ` : ''}섞은 문제 ${plan.length}개, 3~5분이면 돼요.<br>맞고 틀림은 끝나고 한꺼번에 보여요. 주마다 한 번 해서 내 선이 어디로 가는지 봐요.`)}${(() => { const ws = lineOf(K.recs, term); return ws.length ? `<h3>지금까지 내 선</h3>${weekChart(ws)}` : ''; })()}<div class="acts"><button class="pri big" id="s">시작</button><a class="btn" href="#/me">내 수 다리로</a></div></div>`;
   root.querySelector('#s').addEventListener('click', one);
 }

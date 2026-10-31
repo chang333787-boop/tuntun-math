@@ -8,13 +8,14 @@ import { byId, gradeIdx } from '../../engine/lessons/index.js';
 import { makeSheet, itemOf, LES } from '../../paper/js/gen.js';
 import { mascot } from '../../paper/js/mascot.js';
 import * as KS from './kidstore.js';
-import { draw, ansSay } from './item.js';
+import { draw, ansSay, fbSlot } from './item.js';
 import { P } from '../../engine/concepts/kit.js';
 import { plankSVG } from './bridge.js';
 import { target, TIER, TIER_KID, wantOf, isFact, lastReady } from './stage.js';
 import { esc, rand } from './local.js';
 import { nextStep } from './tools.js';
 import { go, meOf } from './kid.js';
+import { tile } from './icons.js';
 
 const say = (pose, html, size = 64) => `<div class="say">${mascot(pose, size)}<div class="bub">${html}</div></div>`;
 const kid = (c) => (LES(c) ? LES(c).kid : c);
@@ -52,7 +53,7 @@ export function runView(root) {
   const K = KS.load(me);
   const plan = runPlan(K);
   if (!plan.length) {
-    root.innerHTML = `<div class="card">${say('think', '아직 구보할 판자가 없어요.<br><b>준비 다리</b>에서 튼튼한 판자가 생기거나 판자를 고치면 그 판자로 매일 구보를 해요.')}<div class="acts"><a class="btn pri" href="#/back">거꾸로 찾기</a><a class="btn" href="#/me">내 수 다리로</a></div></div>`;
+    root.innerHTML = `<div class="card msg act-run"><p class="eyebrow">${tile('run', 22)}오늘의 구보</p>${say('think', '아직 구보할 판자가 없어요.<br><b>준비 다리</b>에서 튼튼한 판자가 생기거나 판자를 고치면 그 판자로 매일 구보를 해요.', 104)}<div class="acts"><a class="btn pri" href="#/back">거꾸로 찾기</a><a class="btn" href="#/me">내 수 다리로</a></div></div>`;
     return;
   }
   const rep0 = KS.reportOf(K);
@@ -65,7 +66,7 @@ export function runView(root) {
   const one = () => {
     if (i >= sh.items.length) return fin();
     const it = sh.items[i];
-    draw(root, { prompt: it.snap.prompt, choices: it.snap.choices, tag: '오늘의 구보', dots: [i, sh.items.length], conf: false, onAnswer: (a, cf, t) => {
+    draw(root, { prompt: it.snap.prompt, choices: it.snap.choices, tag: '오늘의 구보', act: 'run', dots: [i, sh.items.length], conf: false, onAnswer: (a, cf, t) => {
       let ok = false;
       if (a.idk) R.it[it.k] = { s: 'q' };
       else { try { ok = !!itemOf(it.c, it.p).check(a.vals, a.raws).ok; } catch (e) { ok = false; } R.it[it.k] = ok ? { s: 'ok' } : { s: 'x', a: a.raws }; }
@@ -73,9 +74,9 @@ export function runView(root) {
       if (ok) return one();
       const box = document.createElement('div'); box.className = a.idk ? 'fb' : 'fb no';   /* 넘어간 문제는 ✕ 없이(솔직한 모름 · docs/ui.md) */
       try { nextStep(box, { it: itemOf(it.c, it.p), vals: a.vals || [], c: it.c, idk: !!a.idk, after: '이 판자는 내일 한 번 더 뛰어요.', onSelfFix: (t) => KS.selfFix(me, K, t) }); } catch (e) { box.innerHTML = `${ansSay(it.snap)} 이 판자는 내일 한 번 더 뛰어요.`; }
-      const b = document.createElement('button'); b.className = 'pri'; b.textContent = '다음'; b.style.marginLeft = '10px'; box.appendChild(b);
-      root.querySelector('.qcard').appendChild(box);
+      const b = document.createElement('button'); b.className = 'pri'; b.textContent = '다음'; box.appendChild(b);
       root.querySelectorAll('.qcard input, .qcard .qact button, .qcard .choices button').forEach((x) => (x.disabled = true));
+      fbSlot(root).appendChild(box);
       b.focus(); b.addEventListener('click', one);
     } });
   };
@@ -100,11 +101,11 @@ export function runView(root) {
     const d = today(now); K.jog = [...new Set([...(K.jog || []), d])].slice(-60);
     KS.save(me, K); KS.setReview(me, K); KS.pushMastery(me, K); KS.pushSummary(me, K); KS.setNow(me, { mode: 'home' });
     const okN = Object.values(R.it).filter((x) => x.s === 'ok').length;
-    root.innerHTML = `<div class="card">${up.length ? say('cheer', `<b>${up.map((c) => esc(kid(c))).join(', ')}</b> — 며칠 지나도 그대로 정확해요! <b>'오래'</b> 표를 따서 <b>돌 판자</b>가 됐어요.`, 80) : say(again.length ? 'think' : 'cheer', `오늘 구보 끝! ${okN}/${sh.items.length} 맞혔어요.${again.length ? `<br><b>${again.map((c) => esc(kid(c))).join(', ')}</b>${P(kid(again[again.length - 1]), '은', '는')} 내일 한 번 더 뛰어요.` : ' 판자가 그대로 튼튼해요.'}`, 72)}
+    root.innerHTML = `<div class="card msg act-run"><p class="eyebrow">${tile('run', 22)}오늘의 구보</p>${up.length ? say('cheer', `<b>${up.map((c) => esc(kid(c))).join(', ')}</b> — 며칠 지나도 그대로 정확해요! <b>'오래'</b> 표를 따서 <b>돌 판자</b>가 됐어요.`, 104) : say(again.length ? 'think' : 'cheer', `오늘 구보 끝! ${okN}/${sh.items.length} 맞혔어요.${again.length ? `<br><b>${again.map((c) => esc(kid(c))).join(', ')}</b>${P(kid(again[again.length - 1]), '은', '는')} 내일 한 번 더 뛰어요.` : ' 판자가 그대로 튼튼해요.'}`, 104)}
       <p>이번 주 구보 ${weekHTML(K, now)}</p>
       <div class="plank-list">${plan.map((c) => `<span class="pk ${again.includes(c) ? 'shaky' : 'ok'}">${plankSVG((K.mx[c] && K.mx[c].tier) || 1, 40)} ${esc(kid(c))}</span>`).join('')}</div>
       <div class="acts"><a class="btn pri big" href="#/me">내 수 다리로</a><a class="btn big" href="#/stages">스테이지</a></div></div>`;
   };
-  root.innerHTML = `<div class="card">${say('hi', `<b>오늘의 구보</b> — 3~5분이면 돼요. 매일 조금씩 뛰면 수학 체력이 붙어요.<br>튼튼한 판자 <b>${plan.length}개</b>를 섞어서 두 문제씩 꺼내 풀어요.`, 72)}<p>이번 주 구보 ${weekHTML(K)}</p><button class="pri big" id="s">출발</button> <a class="btn" href="#/me">내 수 다리로</a></div>`;
+  root.innerHTML = `<div class="card msg act-run"><p class="eyebrow">${tile('run', 22)}오늘의 구보</p>${say('hi', `<b>오늘의 구보</b> — 3~5분이면 돼요. 매일 조금씩 뛰면 수학 체력이 붙어요.<br>튼튼한 판자 <b>${plan.length}개</b>를 섞어서 두 문제씩 꺼내 풀어요.`, 104)}<p>이번 주 구보 ${weekHTML(K)}</p><div class="acts"><button class="pri big" id="s">출발</button><a class="btn" href="#/me">내 수 다리로</a></div></div>`;
   root.querySelector('#s').addEventListener('click', one);
 }

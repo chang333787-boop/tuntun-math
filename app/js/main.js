@@ -10,10 +10,22 @@ import { stopSpeak } from './speak.js';
 import { teacherHome, newClassView, openClassView, cardsView, namesView, classView, kidDetailView, groupCardView, guideView, mindCardView, paperImportView, storyCardView, homeLetterView } from './teacher.js';
 import { lsGet, esc } from './local.js';
 import { flush, pending } from './db.js';
+import { icon, tile } from './icons.js';
 
 const root = document.getElementById('view');
 addEventListener('touchstart', () => document.body.classList.add('touch'), { once: true, passive: true });   /* 손가락으로 누른 기기 → hover 끔(app.css) */
-document.getElementById('logo-m').innerHTML = mascot('hi', 36);
+document.getElementById('logo-m').innerHTML = mascot('hi', 34);
+// 누름 손맛 — 터치 · 펜은 :active가 늦거나 안 보여서, 누른 동안 .press를 붙임(짧게 톡 쳐도 120ms는 보이게 · app.css 단추 규칙과 같은 모양)
+const PRESS = 'button, .btn, .tile, .todo .item, .big-pick, .tabs a';
+let pressed = null, pressAt = 0;
+const unpress = () => { const el = pressed; if (!el) return; pressed = null; setTimeout(() => el.classList.remove('press'), Math.max(0, 120 - (Date.now() - pressAt))); };
+addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse') return; const el = e.target.closest && e.target.closest(PRESS); if (!el || el.disabled) return; pressed = el; pressAt = Date.now(); el.classList.add('press'); }, { passive: true });
+['pointerup', 'pointercancel'].forEach((t) => addEventListener(t, unpress, { passive: true }));
+// 아이 탭 넷 — 오늘 · 스테이지 · 이야기 · 거꾸로(지금 탭 표시 · 폰은 가로로 밀림)
+const TABS = [['#/me', '오늘', 'bridge', /^#\/(me|prep|fix|run|week|review)/], ['#/stages', '스테이지', 'stairs', /^#\/(stages|drill)/], ['#/story', '이야기', 'book', /^#\/story/], ['#/back', '거꾸로', 'back', /^#\/(back|retry)/]];
+const tabs = document.getElementById('tabs');
+tabs.innerHTML = TABS.map(([href, t, ic]) => `<a href="${href}">${icon(ic, 20)}<span>${t}</span></a>`).join('');
+const setTabs = (h) => { tabs.hidden = !h; if (h) [...tabs.children].forEach((a, i) => { if (TABS[i][3].test(h)) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); }); };
 let cleanup = null;
 // 같은 크롬북을 여럿이 쓸 때 — 아이 화면은 앱을 열 때 · 날짜가 바뀌었을 때 · 20분 넘게 손대지 않다가 누를 때 'n번 맞아요?'(혹평 17)
 //  idle = 바로 앞 입력과 이번 입력 사이(누른 그 입력이 주소를 바꾸므로 그 앞 공백을 봄)
@@ -25,9 +37,9 @@ addEventListener('keydown', touched, { capture: true, passive: true });
 function startView(r) {
   const me = meOf();
   if (me) { location.hash = '#/me'; return; }
-  r.innerHTML = `<div class="card"><div class="say">${mascot('hi', 84)}<div class="bub">안녕하세요! 저는 다리를 놓는 비버 <b>튼튼이</b>예요.<br>오늘 배울 단원으로 가는 수 다리가 튼튼한지 같이 봐요.</div></div>
-    <div class="grid2"><a class="big-pick" href="#/join"><b>학생이에요</b><span>선생님이 준 카드(반 코드 · 번호 · 핀)로 들어가요</span></a>
-    <a class="big-pick" href="#/t"><b>선생님이에요</b><span>반 만들기 · 오늘 단원 열기 · 반 한눈 보기</span></a></div></div>`;
+  r.innerHTML = `<div class="card msg"><div class="say">${mascot('hi', 104)}<div class="bub">안녕하세요! 저는 다리를 놓는 비버 <b>튼튼이</b>예요.<br>오늘 배울 단원으로 가는 수 다리가 튼튼한지 같이 봐요.</div></div>
+    <div class="grid2"><a class="big-pick" href="#/join">${tile('prep', 28)}<b>학생이에요</b><span>선생님이 준 카드(반 코드 · 번호 · 핀)로 들어가요</span></a>
+    <a class="big-pick" href="#/t">${tile('week', 28)}<b>선생님이에요</b><span>반 만들기 · 오늘 단원 열기 · 반 한눈 보기</span></a></div></div>`;
 }
 const ROUTES = [
   [/^#?\/?$/, () => startView(root)],
@@ -64,12 +76,14 @@ function route() {
   const h = location.hash || '#/';
   const kid = /^#\/(me|prep|fix|review|join|stages|drill|back|retry|run|story|week)/.test(h);
   document.body.classList.toggle('kid', kid);
+  document.body.classList.toggle('wide', /^#\/t\/c\/\w+$/.test(h));   /* 반 화면은 넓게(1440) */
   const me = meOf();
+  setTabs(kid && me && !/^#\/join/.test(h) ? h : null);
   document.getElementById('who').textContent = kid && me ? `${me.C} · ${me.no}번` : /^#\/t/.test(h) ? '선생님' : '';
   if (kid && me && !/^#\/join/.test(h)) {
     if (idle > 20 * 60000) WHO.ok = false;
     idle = 0;
-    if (!whoOk(me)) { window.scrollTo(0, 0); return whoView(root, me, () => { idle = 0; route(); }); }   /* '네'를 누른 그 입력의 쉰 시간으로 다시 묻지 않게(회귀 10-31) */
+    if (!whoOk(me)) { setTabs(null); window.scrollTo(0, 0); return whoView(root, me, () => { idle = 0; route(); }); }   /* '네'를 누른 그 입력의 쉰 시간으로 다시 묻지 않게(회귀 10-31) */
   }
   for (const [re, f] of ROUTES) { const m = h.match(re); if (m) { cleanup = f(m); window.scrollTo(0, 0); return; } }
   startView(root);

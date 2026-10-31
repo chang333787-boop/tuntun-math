@@ -20,7 +20,7 @@ export function plankSVG(k, w = 64) {
 }
 
 export function bridgeSVG(planks, { goal = '오늘 단원' } = {}) {
-  const n = Math.max(planks.length, 1), W = 760, H = 210, x0 = 90, x1 = W - 90, pw = (x1 - x0) / n, y = 110;
+  const n = Math.max(planks.length, 1), W = 640, H = 210, x0 = 90, x1 = W - 90, pw = (x1 - x0) / n, y = 110;   /* 홈 오른쪽 칸(약 440px)에서 글이 13px 넘게 보이게 폭을 줄임(docs/ui.md 2차) */
   const firstGap = planks.findIndex((p) => KIND(p.st) !== 'ok');
   const bx = x0 + pw * (firstGap < 0 ? n : firstGap) - 4;
   const pk = planks.map((p, i) => {
@@ -36,8 +36,8 @@ export function bridgeSVG(planks, { goal = '오늘 단원' } = {}) {
     <path d="M0 126 H${x0} V${H} H0z" fill="#e8d6b4" stroke="${INK}" stroke-width="1.6"/><path d="M${x1} 126 H${W} V${H} H${x1}z" fill="#e8d6b4" stroke="${INK}" stroke-width="1.6"/>
     <path d="M${x0} 108 H${x1}" stroke="${INK}" stroke-width="1.4"/><path d="M${x0} 128 H${x1}" stroke="${INK}" stroke-width="1.4" opacity=".5"/>
     ${pk}
-    <text x="${x0 / 2}" y="148" text-anchor="middle" font-size="15" fill="${INK}">처음</text>
-    <text x="${x1 + (W - x1) / 2}" y="148" text-anchor="middle" font-size="15" fill="${INK}" font-weight="700">${esc(goal)}</text>
+    <text x="${x0 / 2}" y="152" text-anchor="middle" font-size="19" fill="${INK}">처음</text>
+    <text x="${x1 + (W - x1) / 2}" y="152" text-anchor="middle" font-size="18" fill="${INK}" font-weight="700">${esc(goal)}</text>
     <g transform="translate(${Math.min(Math.max(bx - 36, 0), W - 80)} ${y - 74}) scale(.62)">${mascot(firstGap < 0 ? 'cheer' : 'fix', 120).replace('<svg ', '<svg x="0" y="0" ')}</g>
   </svg>`;
 }

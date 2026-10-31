@@ -8,9 +8,9 @@ import { blankCount } from '../../engine/tokens.js';
 import { prepPlan, newPrep, current, answer, summary, asked, LEN, PREP } from './prep.js';
 import { newFix, showNext, showLen, showTalk, blankTalk, factTalk, togetherStep, answerItem, afterReStep, checkItem, answerCheck, compareOf, stepsOf, exampleOf, mergeTip } from './fix.js';
 import * as KS from './kidstore.js';
-import { draw, stepHTML, staticHTML, ansSay, rushGuard, rushPause } from './item.js';
+import { draw, stepHTML, staticHTML, ansSay, rushGuard, rushPause, fbSlot } from './item.js';
 import { P, RO } from '../../engine/concepts/kit.js';
-import { bridgeSVG, KIND } from './bridge.js';
+import { bridgeSVG, KIND, plankSVG } from './bridge.js';
 import { modelHTML } from './model.js';
 import { grantAccurate, nextGoal, target, TIER, isFact } from './stage.js';
 import { lsGet, lsSet, lsDel, esc, rand } from './local.js';
@@ -19,6 +19,7 @@ import { runPlan, weekHTML, today } from './run.js';
 import { toolFor, TOOLS, nextStep } from './tools.js';
 import { lineOf, weekTerm, weekPlan, weekChart, doneThisWeek } from './weekcore.js';
 import { makeItem as mkItem } from '../../engine/lessons/index.js';
+import { icon, tile, ACT } from './icons.js';
 
 export const go = (h) => { location.hash = h; };
 const say = (pose, html, size = 72) => `<div class="say">${mascot(pose, size)}<div class="bub">${html}</div></div>`;
@@ -39,7 +40,7 @@ export const WHO = { ok: false };   // 이 열기에서 확인했나(새로 열�
 export const whoOk = (me) => { const x = lsGet('tt.who'); return WHO.ok && !!x && x.d === today() && x.k === `${me.C}.${me.no}`; };
 const whoMark = (me) => { WHO.ok = true; lsSet('tt.who', { d: today(), k: `${me.C}.${me.no}` }); };
 export function whoView(root, me, onYes) {
-  root.innerHTML = `<div class="card">${say('hi', `이 기기에 <b>${esc(me.no)}번</b>으로 들어와 있어요.<br><b>${esc(me.no)}번</b> 맞아요?`, 84)}
+  root.innerHTML = `<div class="card msg">${say('hi', `이 기기에 <b>${esc(me.no)}번</b>으로 들어와 있어요.<br><b>${esc(me.no)}번</b> 맞아요?`, 104)}
     <div class="acts"><button class="pri big" id="y">네, ${esc(me.no)}번이에요</button><button class="big" id="n">아니에요 — 내 번호로 들어갈게요</button></div></div>`;
   root.querySelector('#y').focus();
   root.querySelector('#y').addEventListener('click', () => { whoMark(me); onYes(); });
@@ -50,7 +51,7 @@ export function whoView(root, me, onYes) {
 export function joinView(root) {
   const q = new URLSearchParams(location.hash.split('?')[1] || '');
   const c0 = (q.get('c') || '').toUpperCase(), n0 = /^\d{1,3}$/.test(q.get('n') || '') ? q.get('n') : '';
-  root.innerHTML = `<div class="card">${say('hi', '안녕하세요! 저는 <b>튼튼이</b>예요. 같이 수 다리를 튼튼하게 놓아요.<br>선생님이 준 카드를 보고 써 주세요.')}
+  root.innerHTML = `<div class="card msg join"><div class="join-a">${say('hi', '안녕하세요! 저는 <b>튼튼이</b>예요. 같이 수 다리를 튼튼하게 놓아요.<br>선생님이 준 카드를 보고 써 주세요.', 120)}</div>
     <form id="f" autocomplete="off">
       <div class="field"><label for="c">반 코드</label><input id="c" maxlength="6" value="${esc(c0)}" autocapitalize="characters" autocomplete="off" placeholder="여섯 글자"></div>
       <div class="field"><label for="n">내 번호</label><input id="n" inputmode="numeric" maxlength="3" autocomplete="off" value="${esc(n0)}"></div>
@@ -107,17 +108,19 @@ export function todoOf(K, rep) {
   return out;
 }
 // 할 일 한 줄 — '선생님과 같이 봐요'는 누르면 펼쳐져 선생님께 보여 줄 문제가 나옴(가는 곳 없음)
+//  활동마다 아이콘 타일 + 왼쪽 띠(icons.js ACT) · 맨 위 할 일(.now)은 크게 · 옅은 활동 바탕 · 주황 단추
 function todoRow(t) {
-  if (t.kind === 'help') return `<details class="item help${t.pri ? ' now' : ''}"><summary><span><b>${esc(t.title)}</b><br><span class="muted small">${esc(t.sub)}</span></span><span class="go btn ${t.pri ? 'pri' : ''}">보기</span></summary>
+  const cls = `item act-${(ACT[t.kind] || ACT.prep)[1]}${t.pri ? ' now' : ''}`, body = `${tile(t.kind)}<span class="it-b"><b>${esc(t.title)}</b><span class="sub">${esc(t.sub)}</span></span>`;
+  if (t.kind === 'help') return `<details class="${cls} help"><summary>${body}<span class="go btn ${t.pri ? 'pri' : ''}">보기</span></summary>
     <div class="helpbox"><p>선생님이 오시면 같이 풀어 볼 문제예요.</p>${t.cs.length ? `<ul>${t.cs.map((c) => `<li><b>${esc(plank(c))}</b></li>`).join('')}</ul>` : ''}<p class="small muted">어려운 판자가 있는 건 괜찮아요. 같이 하면 하나씩 놓을 수 있어요. ${t.wait ? "선생님을 기다리는 동안 아래 '판자 고치기'를 먼저 해도 돼요." : '선생님이 오실 때까지 이 화면을 켜 두어요.'}</p></div></details>`;
-  return `<a class="item${t.pri ? ' now' : ''}" href="${t.href}"><span><b>${esc(t.title)}</b><br><span class="muted small">${esc(t.sub)}</span></span><span class="go btn ${t.pri ? 'pri' : ''}">시작</span></a>`;
+  return `<a class="${cls}" href="${t.href}">${body}<span class="go btn ${t.pri ? 'pri' : ''}">시작${t.pri ? icon('arrow', 20) : ''}</span></a>`;
 }
 
 // ── 내 수 다리(홈) ──
 //  켜 둔 화면도 선생님이 단원을 열면 바뀌게 — 보이는 동안 30초마다 받은 과제(in)만 가볍게 확인(서버 GET 하나 · 열린 연결 X · 혹평 18)
 export async function homeView(root) {
   const me = meOf(); if (!me) return go('#/join');
-  root.innerHTML = `<div class="card">${say('hi', `${esc(me.no)}번, 반가워요! 수 다리를 불러오는 중이에요…`)}</div>`;
+  root.innerHTML = `<div class="card msg">${say('hi', `${esc(me.no)}번, 반가워요! 수 다리를 불러오는 중이에요…`, 104)}</div>`;
   const { K, ok } = await KS.pull(me);
   if (ok) KS.pushSummary(me, K);   // 판정 규칙이 바뀌어도 선생님 화면이 새 요약을 보게(쓰기 한 번)
   flush();
@@ -144,31 +147,39 @@ export async function homeView(root) {
   const goal = unit ? (unitLabel(unit).length <= 5 ? unitLabel(unit) : ct && ct.unit === unit ? '오늘 단원' : '이 단원') : '';   /* 다리 끝 글은 칸이 좁아 다섯 글자까지(긴 이름은 제목에) */
   const fixedN = Object.keys(K.fixed || {}).length, tools = Object.entries(K.tools || {}).filter(([tl]) => TOOLS[tl]);
   const help = helpRow;
-  const head = doneOne ? say('cheer', '판자 하나를 고쳤어요! 이제 <b>선생님 수업</b>으로 가요. 남은 할 일은 다음 시간에 해요.')
-    : help && help.pri ? say('think', '오늘은 <b>선생님과 같이</b> 보는 판자가 있어요. 맨 위를 눌러 선생님께 보여 드려요.')
-    : todo.length ? say('point', '오늘 할 일이에요. 위에서부터 하면 돼요.') : say('cheer', '오늘 할 일을 다 했어요! 아래에서 더 해 볼 수도 있어요.');
+  const head = doneOne ? say('cheer', '판자 하나를 고쳤어요! 이제 <b>선생님 수업</b>으로 가요. 남은 할 일은 다음 시간에 해요.', 88)
+    : help && help.pri ? say('think', '오늘은 <b>선생님과 같이</b> 보는 판자가 있어요. 맨 위를 눌러 선생님께 보여 드려요.', 88)
+    : todo.length ? say('point', '오늘 할 일이에요. 위에서부터 하면 돼요.', 88) : say('cheer', '오늘 할 일을 다 했어요! 아래에서 더 해 볼 수도 있어요.', 88);
   const list = doneOne ? `<details class="more"><summary>다음 시간에 할 일 ${todo.length}개</summary><div class="todo">${todo.map(todoRow).join('')}</div></details>`
     : `<div class="todo">${todo.slice(0, 3).map(todoRow).join('')}</div>${todo.length > 3 ? `<details class="more"><summary>할 일 ${todo.length - 3}개 더</summary><div class="todo">${todo.slice(3).map(todoRow).join('')}</div></details>` : ''}`;
   const tok = rand(4); root.dataset.home = tok;
-  root.innerHTML = `
-    <div class="card">${head}${todo.length ? list : ''}
-      ${ok ? '' : '<p class="warn small">서버에 닿지 않아 이 기기에 저장된 것만 보여요. 푼 것은 이 기기에 모았다가 나중에 보내요.</p>'}
-    </div>
+  // 넓으면 두 칸 — 왼쪽 튼튼이 + 오늘 할 일 · 오른쪽 내 수 다리 + 기록 타일 · 아래 더 해 보기 타일(docs/ui.md 2차)
+  const xs = Object.values(K.mx || {}), tierN = (t) => xs.filter((m) => m.tier >= t).length, ws = lineOf(K.recs, weekTerm(K));
+  const more = [['stages', '#/stages', '스테이지', '판자 다듬기 — 정확 → 빠르게 → 오래'], runPlan(K).length ? ['run', '#/run', '오늘의 구보', '튼튼한 판자를 섞어서 두 문제씩 · 3~5분'] : null, ['story', '#/story', '이야기 다리', '문장제 나눠 읽기'],
+    ['back', '#/back', '막힌 문제 거꾸로 찾기', '풀기 어려운 문제를 그대로 쓰면 튼튼이가 어디서 끊겼는지 거꾸로 따라가 찾아 줘요.'], K.back && K.back.root && !K.back.solved && K.fixed && K.fixed[K.back.root] ? ['retry', '#/retry', '처음 문제 다시 풀기', K.back.text] : null].filter(Boolean);
+  root.innerHTML = `<div class="home">
+    <section class="home-main" aria-label="오늘 할 일">${head}${todo.length ? list : ''}
+      ${ok ? '' : '<p class="warn small">서버에 닿지 않아 이 기기에 저장된 것만 보여요. 푼 것은 이 기기에 모았다가 나중에 보내요.</p>'}</section>
+    <aside class="home-side">
     ${unit ? `<div class="card"><h2>내 수 다리 <small>${esc(unitLabel(unit))}${ro(unitLabel(unit))} 가는 다리</small></h2>${bridgeSVG(planks, { goal })}
       <div class="legend"><span><i style="background:#c99a68"></i>튼튼(정확)</span><span><i style="background:#b07f50"></i>못 박은 판자(빠르게)</span><span><i style="background:#c9c4bb"></i>돌 판자(오래)</span><span><i style="background:#efd6a8"></i>흔들</span><span><i style="border:2px dashed #b4482b;background:none"></i>빈 판자</span><span><i style="background:#fff;opacity:.7"></i>아직 안 봄</span></div>
       ${gapLine ? `<p class="small">${esc(gapLine)}</p>` : ''}
       <details class="more"><summary>판자 이름 보기</summary><div class="plank-list">${planks.map((p) => `<span class="pk ${KIND(p.st) === 'ok' ? 'ok' : KIND(p.st) === 'gap' ? 'fix' : KIND(p.st)}">${esc(p.label)}</span>`).join('')}</div></details></div>` : ''}
     <div class="card"><h2>내 기록 <small>나하고만 견줘요</small></h2>
-      ${(() => { const xs = Object.values(K.mx || {}); const n = (t) => xs.filter((m) => m.tier >= t).length; return xs.length ? `<p>스테이지 표: 정확 <b>${n(1)}</b> · 빠르게 <b>${n(2)}</b> · 오래 <b>${n(3)}</b> <span class="muted small">— 표를 모으면 판자가 나무 → 못 박은 판자 → 돌 판자로 바뀌어요</span></p>` : '<p class="muted">판자를 고치거나 준비 다리에서 셋 다 맞히면 스테이지가 생겨요.</p>'; })()}
-      <p class="small">이번 주 구보 ${weekHTML(K)}</p>
-      ${(() => { const ws = lineOf(K.recs, weekTerm(K)); return ws.length ? `<h3>이번 주 점검 — 내 선</h3>${weekChart(ws)}` : ''; })()}
-      ${cal.n ? `<p>풀기 전에 고른 짐작이 맞은 정도: <b>${Math.round(cal.match * 100)}%</b> <span class="muted small">(${cal.n}문제)</span>${sw ? ` · '자신 있어요'인데 틀린 문제 <b>${sw}개</b> — 다음엔 고르기 전에 한 번 더 살펴봐요.` : ''}</p>` : ''}
-      ${fixedN || tools.length ? `<details class="more"><summary>내가 고친 판자 · 내 도구함</summary>${fixedN ? `<p class="small">내가 고친 판자 <b>${fixedN}개</b>: ${names(Object.keys(K.fixed))}</p>` : ''}${tools.length ? `<div class="plank-list">${tools.map(([tl, x]) => `<span class="pk ok">🔍 ${esc(TOOLS[tl].name)}${x.self ? ` · 스스로 고친 ${x.self}번` : ''}</span>`).join('')}</div><p class="small muted">틀렸을 때 답을 보기 전에 도구로 확인해서 고치면 '스스로 고친 횟수'가 늘어요.</p>` : ''}</details>` : ''}
-      <div class="acts"><a class="btn teal" href="#/stages">스테이지 — 판자 다듬기</a>${runPlan(K).length ? '<a class="btn" href="#/run">오늘의 구보</a>' : ''}</div></div>
-    <div class="card"><h2>더 해 보기</h2>
-      <div class="acts"><a class="btn teal" href="#/story">이야기 다리 — 문장제 나눠 읽기</a><a class="btn" href="#/back">막힌 문제 거꾸로 찾기</a>${K.back && K.back.root && !K.back.solved && K.fixed && K.fixed[K.back.root] ? `<a class="btn" href="#/retry">처음 문제 다시 풀기 — ${esc(K.back.text)}</a>` : ''}</div>
-      <p class="small muted">거꾸로 찾기: 풀기 어려운 문제를 그대로 쓰면 튼튼이가 어디서 끊겼는지 거꾸로 따라가 찾아 줘요.</p>
-      <p class="small"><button class="link" id="out">이 기기에서 나가기</button></p></div>`;
+      <div class="stats">
+        <div class="stat${cal.n ? '' : ' wide'}"><span class="k">스테이지 표</span>${xs.length ? `<span class="tiers"><span>${plankSVG(1, 34)}정확<b>${tierN(1)}</b></span><span>${plankSVG(2, 34)}빠르게<b>${tierN(2)}</b></span><span>${plankSVG(3, 34)}오래<b>${tierN(3)}</b></span></span>` : '<span class="small muted">판자를 고치거나 준비 다리에서 셋 다 맞히면 스테이지가 생겨요.</span>'}</div>
+        ${cal.n ? `<div class="stat"><span class="k">풀기 전 짐작이 맞은 정도</span><span class="v">${Math.round(cal.match * 100)}%<small>${cal.n}문제</small></span></div>` : ''}
+        <div class="stat wide"><span class="k">이번 주 구보</span><span>${weekHTML(K)}</span></div>
+      </div>
+      ${xs.length ? '<p class="small muted">표를 모으면 판자가 나무 → 못 박은 판자 → 돌 판자로 바뀌어요.</p>' : ''}
+      ${sw ? `<p class="small">'자신 있어요'인데 틀린 문제 <b>${sw}개</b> — 다음엔 고르기 전에 한 번 더 살펴봐요.</p>` : ''}
+      ${ws.length ? `<h3>이번 주 점검 — 내 선</h3>${weekChart(ws)}` : ''}
+      ${fixedN || tools.length ? `<details class="more"><summary>내가 고친 판자 · 내 도구함</summary>${fixedN ? `<p class="small">내가 고친 판자 <b>${fixedN}개</b>: ${names(Object.keys(K.fixed))}</p>` : ''}${tools.length ? `<div class="plank-list">${tools.map(([tl, x]) => `<span class="pk ok">${icon('search', 16)} ${esc(TOOLS[tl].name)}${x.self ? ` · 스스로 고친 ${x.self}번` : ''}</span>`).join('')}</div><p class="small muted">틀렸을 때 답을 보기 전에 도구로 확인해서 고치면 '스스로 고친 횟수'가 늘어요.</p>` : ''}</details>` : ''}</div>
+    </aside>
+    <section class="home-more" aria-label="더 해 보기"><h2 class="sec">더 해 보기</h2>
+      <div class="tiles">${more.map(([k, href, t, sub]) => `<a class="tile" href="${href}">${tile(k)}<b>${esc(t)}</b><span class="sub">${esc(sub)}</span></a>`).join('')}</div>
+      <p class="small out"><button class="link" id="out">이 기기에서 나가기</button></p></section>
+  </div>`;
   root.querySelector('#out').addEventListener('click', () => { if (confirm('이 기기에서 나갈까요? 푼 기록은 서버에 남아 있어요.')) { lsDel('tt.me'); lsDel('tt.who'); WHO.ok = false; go('#/'); } });
   const known = K.inbox || {};   /* 같은 날 다시 열면 과제 id(prep<날짜>)가 같음 — 여는 시각(t)으로 견줌 */
   const tick = setInterval(async () => {
@@ -209,7 +220,7 @@ export function prepView(root, unit) {
     if (!it) return finished();
     const sh = S.sheets.find((x) => x.id === S.at.sheet);
     if (Date.now() - lastNow > 5000) { lastNow = Date.now(); KS.setNow(me, { mode: 'prep', unit, n: asked(S) }); }
-    draw(root, { prompt: it.snap.prompt, choices: it.snap.choices, tag: '준비 다리', dots: [asked(S), S.budget || PREP.budget], onAnswer: (a, cf, ms) => {
+    draw(root, { prompt: it.snap.prompt, choices: it.snap.choices, tag: '준비 다리', act: 'prep', dots: [asked(S), S.budget || PREP.budget], onAnswer: (a, cf, ms) => {
       const r = answer(S, a, { conf: cf, ms }); store();
       if (rush(ms, a, r && r.ok) && current(S)) { K.rush = (K.rush || 0) + 1; KS.save(me, K); return rushPause(root, step); }
       step();
@@ -234,7 +245,7 @@ export function prepView(root, unit) {
     let head, acts;
     if (S.why === 'teacher') {
       head = say('think', `오늘은 여기까지 할게요. 어려운 판자가 몇 개 있어요 — 괜찮아요.<br><b>선생님과 같이</b> 하나씩 놓아요. 손을 들고 선생님께 이 화면을 보여 주세요.`);
-      acts = `<div class="qcard"><p class="small muted">선생님과 같이 볼 문제</p><ul>${[...new Set([...fix, ...stuck])].slice(0, 3).map((c) => `<li><b>${esc(plank(c))}</b></li>`).join('')}</ul>${fix.length ? '<p class="small">선생님을 기다리는 동안 튼튼이랑 맨 위 문제부터 먼저 해 볼 수 있어요.</p>' : '<p class="small muted">다음 시간에 이어서 찾아요.</p>'}</div><div class="acts">${fix.length ? `<a class="btn big" href="#/fix/${fix[0]}">튼튼이랑 먼저 해 보기</a>` : ''}<a class="btn big" href="#/me">내 수 다리 보기</a></div>`;
+      acts = `<div class="panel"><p class="small muted">선생님과 같이 볼 문제</p><ul>${[...new Set([...fix, ...stuck])].slice(0, 3).map((c) => `<li><b>${esc(plank(c))}</b></li>`).join('')}</ul>${fix.length ? '<p class="small">선생님을 기다리는 동안 튼튼이랑 맨 위 문제부터 먼저 해 볼 수 있어요.</p>' : '<p class="small muted">다음 시간에 이어서 찾아요.</p>'}</div><div class="acts">${fix.length ? `<a class="btn big" href="#/fix/${fix[0]}">튼튼이랑 먼저 해 보기</a>` : ''}<a class="btn big" href="#/me">내 수 다리 보기</a></div>`;
     } else if (fix.length) {
       head = say('fix', `고칠 판자를 찾았어요: <b>${esc(plank(fix[0]))}</b>.<br>${inClass ? '지금 튼튼이랑 하나 고치고, 그다음 선생님 수업으로 가요.' : '지금 튼튼이랑 고쳐 볼까요?'}${fix.length > 1 ? `<br><span class="small">고칠 판자가 ${fix.length - 1}개 더 있어요 — 다음에 하나씩 해요.</span>` : ''}`);
       acts = `<div class="acts"><a class="btn pri big" href="#/fix/${fix[0]}">고치러 가기</a><a class="btn big" href="#/me">내 수 다리 보기</a></div>`;
@@ -248,10 +259,10 @@ export function prepView(root, unit) {
       head = say('cheer', `<b>${esc(unitLabel(unit))}</b>${ro(unitLabel(unit))} 가는 다리가 튼튼해요! ${inClass ? '이제 선생님 수업으로 가요.' : '오늘 단원으로 건너가요.'}`);
       acts = '<div class="acts"><a class="btn big" href="#/me">내 수 다리 보기</a></div>';
     }
-    root.innerHTML = `<div class="card">${head}${S.why === 'teacher' ? '' : calLine}${acts}</div>`;
+    root.innerHTML = `<div class="card msg act-prep"><p class="eyebrow">${tile('prep', 22)}준비 다리</p>${head}${S.why === 'teacher' ? '' : calLine}${acts}</div>`;
   };
   if (!asked(S) && !S.done) {
-    root.innerHTML = `<div class="card">${say('point', `<b>${esc(unitLabel(unit))}</b> 배우기 전에, 필요한 판자가 튼튼한지 볼게요(${S.prior ? '지난번에 멈춘 곳부터 · ' : ''}${mins(S.budget)}분쯤).<br>문제마다 <b>먼저 짐작</b>을 고르면 답 칸이 열려요. 모르면 넘어가도 돼요.`)}<button class="pri big" id="s">시작</button></div>`;
+    root.innerHTML = `<div class="card msg act-prep"><p class="eyebrow">${tile('prep', 22)}준비 다리</p>${say('point', `<b>${esc(unitLabel(unit))}</b> 배우기 전에, 필요한 판자가 튼튼한지 볼게요(${S.prior ? '지난번에 멈춘 곳부터 · ' : ''}${mins(S.budget)}분쯤).<br>문제마다 <b>먼저 짐작</b>을 고르면 답 칸이 열려요. 모르면 넘어가도 돼요.`, 104)}<div class="acts"><button class="pri big" id="s">시작</button></div></div>`;
     root.querySelector('#s').addEventListener('click', step);
   } else step();
 }
@@ -270,17 +281,21 @@ export function fixView(root, c) {
   const head = (pose, t) => say(pose, t, 64);
   const PH = [['show', '튼튼이 시범'], ['together', '같이 풀기'], ['solo', '혼자 풀기'], ['check', '확인 3문제']];
   const bar = () => { const k = PH.findIndex(([p]) => p === F.phase); return k < 0 ? '' : `<ol class="sb-steps fx-steps" aria-label="고치기 걸음">${PH.map(([, t], i) => `<li class="${i === k ? 'now' : i < k ? 'done' : ''}"${i === k ? ' aria-current="step"' : ''}><i>${i < k ? '✓' : i + 1}</i>${t}</li>`).join('')}</ol>`; };
-  const shell = (top, body) => { root.innerHTML = `<div class="card">${bar()}${top}<div id="b">${body || ''}</div></div>`; return root.querySelector('#b'); };
+  // 화면 틀(docs/ui.md 2차) — 걸음 칩은 위 · 왼쪽(시범 · 모형 · 단계 · 문제) · 오른쪽(튼튼이 말 · 할 일) · 좁으면 튼튼이 말이 맨 위
+  //  shell(말, 왼쪽, 오른쪽 아래) → #b(.still — 왼쪽이 시범 · 비교처럼 위에서부터 읽는 것이라 오른쪽 판도 위로) · slot() → 문제 카드 자리(draw에 lead로 튼튼이 말을 넘김 · 오른쪽 판은 문제와 같은 높이 가운데)
+  const shell = (top, main, side = '') => { root.innerHTML = `<div class="card fx">${bar()}<div id="b"><div class="qcard still"><div class="qgrid"><div class="qmain">${main}</div><div class="qside"><div class="qlead">${top}</div>${side}</div></div></div></div></div>`; return root.querySelector('#b'); };
+  const slot = () => { root.innerHTML = `<div class="card fx">${bar()}<div id="b"><div id="slot"></div></div></div>`; return root.querySelector('#slot'); };
+  const nextAct = (label, id = 'n') => `<div class="qact"><button class="pri big" id="${id}">${label}</button></div>`;
   const tsay = (xs) => (xs.length ? `<div class="tsay">${xs.map((x) => `<p>${esc(x)}</p>`).join('')}</div>` : '');
   // 시범 — 단계가 있으면 단계마다 · 없으면 그 문제 숫자로 말하며 빈칸을 하나씩(보기는 답 보기에 표시)
   function show() {
     const n = showLen(F), done = F.si >= n, has = F.steps.length > 0;
     if (has) {
+      const md = modelHTML(F.ex);   /* 모형이 있으면 모형 · 단계를 나란히(넓을 때) — 1366×768 한 화면에 */
       const b = shell(head('point', '튼튼이가 먼저 풀어 볼게요. 한 단계씩 생각을 말할게요.'),
-        `<div class="qcard">${staticHTML(F.ex.prompt, done ? F.ex.sol : null)}${modelHTML(F.ex)}
-          <ol class="steps">${F.steps.slice(0, F.si).map((st, i) => stepHTML(st, { cls: i === F.si - 1 ? 'now' : '' })).join('')}</ol>
-          ${done ? `<p class="fb ok">${ansSay(F.ex, '그래서 답은')}</p>` : ''}
-          <div class="qact"><button class="pri big" id="n">${done ? '이제 같이 풀어요' : '다음 단계'}</button></div></div>`);
+        `${staticHTML(F.ex.prompt, done ? F.ex.sol : null)}<div class="demo${md ? ' with-model' : ''}">${md}
+          <ol class="steps">${F.steps.slice(0, F.si).map((st, i) => stepHTML(st, { cls: i === F.si - 1 ? 'now' : '' })).join('')}</ol></div>`,
+        `${done ? `<p class="fb ok">${ansSay(F.ex, '그래서 답은')}</p>` : ''}${nextAct(done ? '이제 같이 풀어요' : '다음 단계')}`);
       b.querySelector('#n').addEventListener('click', () => { showNext(F); route(); });
       return;
     }
@@ -289,9 +304,8 @@ export function fixView(root, c) {
     const say1 = F.si ? [...showTalk(F), ...(nb >= 2 ? Array.from({ length: F.si }, (_, i) => blankTalk(F.ex, i)).filter(Boolean) : [])] : [];
     const choices = F.ex.choices ? `<div class="choices static">${F.ex.choices.map((ch, k) => `<button type="button" disabled class="${done && String(k) === String(F.ex.sol[0]) ? 'right' : ''}">${staticHTML(ch, null)}</button>`).join('')}</div>` : '';
     const b = shell(head('point', '튼튼이가 먼저 풀어 볼게요. 생각을 말하면서 풀게요.'),
-      `<div class="qcard">${staticHTML(F.ex.prompt, vals)}${choices}${modelHTML(F.ex)}${tsay(say1)}
-        ${done ? `<p class="fb ok">${ansSay(F.ex, '그래서 답은')}</p>` : ''}
-        <div class="qact"><button class="pri big" id="n">${done ? '이제 같이 풀어요' : F.si ? '다음' : '튼튼이 생각 보기'}</button></div></div>`);
+      `${staticHTML(F.ex.prompt, vals)}${choices}${modelHTML(F.ex)}`,
+      `${tsay(say1)}${done ? `<p class="fb ok">${ansSay(F.ex, '그래서 답은')}</p>` : ''}${nextAct(done ? '이제 같이 풀어요' : F.si ? '다음' : '튼튼이 생각 보기')}`);
     b.querySelector('#n').addEventListener('click', () => { showNext(F); route(); });
   }
   // 함께 — 단계 빈칸을 아이가(단계 있는 칸) · 튼튼이가 일부를 해 주고 아이는 한 곳만(단계 없는 칸)
@@ -299,25 +313,21 @@ export function fixView(root, c) {
     if (F.assist) return assist();
     const st = F.curSteps[F.si];
     if (!st) {   // 단계 다 함 → 원래 문제
-      const b = shell(head('think', '단계를 다 했어요. 이제 처음 문제의 답을 써요.'), '<div id="slot"></div>');
-      draw(b.querySelector('#slot'), { prompt: F.cur.prompt, choices: F.cur.choices, conf: false, idk: false, extra: `<ol class="steps">${F.curSteps.map((s) => stepHTML(s)).join('')}</ol>`, onAnswer: (a) => { const it0 = F.cur; const r = answerItem(F, a.vals, a.raws); feedback({ ...r, it0, how: 'steps' }, route); } });
+      draw(slot(), { lead: head('think', '단계를 다 했어요. 이제 처음 문제의 답을 써요.'), prompt: F.cur.prompt, choices: F.cur.choices, conf: false, idk: false, extra: `<ol class="steps">${F.curSteps.map((s) => stepHTML(s)).join('')}</ol>`, onAnswer: (a) => { const it0 = F.cur; const r = answerItem(F, a.vals, a.raws); feedback({ ...r, it0, how: 'steps' }, route); } });
       return;
     }
-    const b = shell(head('point', '이번엔 같이 풀어요. 단계마다 빈칸을 채워요.'), `<div class="qcard" style="margin-bottom:10px">${staticHTML(F.cur.prompt, null)}<ol class="steps">${F.curSteps.slice(0, F.si).map((s) => stepHTML(s)).join('')}</ol></div><p><b>${esc(st.why)}</b></p><div id="slot"></div>`);
-    draw(b.querySelector('#slot'), { prompt: st.prompt, conf: false, idk: false, onAnswer: (a) => { const r = togetherStep(F, a.vals); if (r.ok) together(); else feedback({ ok: false, msg: `${ansSay({ sol: r.sol }, '이 단계의 답은')} ${esc(r.why)}` }, together); } });
+    draw(slot(), { lead: head('point', '이번엔 같이 풀어요. 단계마다 빈칸을 채워요.'), extra: `<div class="ctx">${staticHTML(F.cur.prompt, null)}${F.si ? `<ol class="steps">${F.curSteps.slice(0, F.si).map((s) => stepHTML(s)).join('')}</ol>` : ''}</div><p class="stepwhy"><b>${esc(st.why)}</b></p>`, prompt: st.prompt, conf: false, idk: false, onAnswer: (a) => { const r = togetherStep(F, a.vals); if (r.ok) together(); else feedback({ ok: false, msg: `${ansSay({ sol: r.sol }, '이 단계의 답은')} ${esc(r.why)}` }, together); } });
   }
   function assist() {
     const A = F.assist;
     const top = A.kind === 'given' ? '이번엔 같이 풀어요. 앞 빈칸은 튼튼이가 채웠어요 — <b>마지막 빈칸</b>을 채워요.'
       : A.kind === 'pick' ? '이번엔 같이 풀어요. 튼튼이가 <b>답이 아닌 보기</b>를 지웠어요. 남은 것 중에서 골라요.'
       : A.say.length ? '이번엔 같이 풀어요. 튼튼이가 <b>첫 생각</b>을 말해 줄게요. 그다음은 내가 풀어요.' : '이번엔 같이 풀어요. 천천히 풀어 봐요 — 틀려도 튼튼이가 바로 알려 줘요.';
-    const b = shell(head('point', top), '<div id="slot"></div>');
-    draw(b.querySelector('#slot'), { prompt: F.cur.prompt, choices: F.cur.choices, conf: false, idk: false, given: A.given, hide: A.hide, say: A.say, onAnswer: (a) => { const it0 = F.cur; const r = answerItem(F, a.vals, a.raws); feedback({ ...r, it0, how: A.kind }, route); } });
+    draw(slot(), { lead: head('point', top), prompt: F.cur.prompt, choices: F.cur.choices, conf: false, idk: false, given: A.given, hide: A.hide, say: A.say, onAnswer: (a) => { const it0 = F.cur; const r = answerItem(F, a.vals, a.raws); feedback({ ...r, it0, how: A.kind }, route); } });
   }
   function solo() {
     if (F.reStep) return reStep();
-    const b = shell(head('hi', `이제 혼자 풀어 봐요. <span class="muted small">(맞힌 것 ${F.solo.ok} / 3)</span>`), '<div id="slot"></div>');
-    draw(b.querySelector('#slot'), { prompt: F.cur.prompt, choices: F.cur.choices, conf: false, idk: false, onAnswer: (a) => { const it0 = F.cur; const r = answerItem(F, a.vals, a.raws); soloBack(r, it0, a); } });
+    draw(slot(), { lead: head('hi', `이제 혼자 풀어 봐요. <span class="muted small">(맞힌 것 ${F.solo.ok} / 3)</span>`), prompt: F.cur.prompt, choices: F.cur.choices, conf: false, idk: false, onAnswer: (a) => { const it0 = F.cur; const r = answerItem(F, a.vals, a.raws); soloBack(r, it0, a); } });
   }
   // 혼자에서 틀린 뒤 — 세 번 내리 틀림이면 같이 한 번 더 / 선생님과 · 아니면 다음에 할 한 가지: 검산 도구(답 보기 전에) → 같은 숫자로 나눠 보기 → 방법 한 줄
   function soloBack(r, it0, a) {
@@ -342,23 +352,22 @@ export function fixView(root, c) {
     let i = 0, miss = null;
     const one = () => {
       if (i >= steps.length) {
-        const b = shell(head('think', miss == null ? `단계는 모두 맞았어요! ${esc(mergeTip(F.cur))}` : `<b>${miss + 1}번째 단계</b>에서 어긋났어요: ${esc(steps[miss].why)}`), `<ol class="steps">${steps.map((s, k) => stepHTML(s, { cls: k === miss ? 'miss' : '' })).join('')}</ol><p>처음 문제는 ${staticHTML(F.cur.prompt, F.cur.choices ? null : F.cur.sol)} ${F.cur.choices ? ansSay(F.cur) : ''}</p><div class="qact"><button class="pri big" id="n">다음 문제</button></div>`);
+        const b = shell(head('think', miss == null ? `단계는 모두 맞았어요! ${esc(mergeTip(F.cur))}` : `<b>${miss + 1}번째 단계</b>에서 어긋났어요: ${esc(steps[miss].why)}`), `<ol class="steps">${steps.map((s, k) => stepHTML(s, { cls: k === miss ? 'miss' : '' })).join('')}</ol><p>처음 문제는 ${staticHTML(F.cur.prompt, F.cur.choices ? null : F.cur.sol)} ${F.cur.choices ? ansSay(F.cur) : ''}</p>`, nextAct('다음 문제'));
         b.querySelector('#n').addEventListener('click', () => { afterReStep(F); route(); });
         return;
       }
-      const b = shell(head('think', '어디서 어긋났는지 같은 숫자로 나눠서 풀어 봐요.'), `<ol class="steps">${steps.slice(0, i).map((s, k) => stepHTML(s, { cls: k === miss ? 'miss' : '' })).join('')}</ol><p><b>${esc(steps[i].why)}</b></p><div id="slot"></div>`);
-      draw(b.querySelector('#slot'), { prompt: steps[i].prompt, conf: false, idk: false, onAnswer: (a) => { const ok = steps[i].sol.every((s, k) => Number(a.vals[k]) === Number(s)); if (!ok && miss == null) miss = i; i++; one(); } });
+      draw(slot(), { lead: head('think', '어디서 어긋났는지 같은 숫자로 나눠서 풀어 봐요.'), extra: `${i ? `<ol class="steps">${steps.slice(0, i).map((s, k) => stepHTML(s, { cls: k === miss ? 'miss' : '' })).join('')}</ol>` : ''}<p class="stepwhy"><b>${esc(steps[i].why)}</b></p>`, prompt: steps[i].prompt, conf: false, idk: false, onAnswer: (a) => { const ok = steps[i].sol.every((s, k) => Number(a.vals[k]) === Number(s)); if (!ok && miss == null) miss = i; i++; one(); } });
     };
     one();
   }
-  const fbBox = (ok) => {
+  const fbBox = (ok) => {   /* 오른쪽 칸(문제 단추 자리)에 — 쓴 문제 칸 · 단추는 잠그고 숨김 */
     const b = root.querySelector('#b') || root;
     const box = document.createElement('div'); box.className = `fb ${ok ? 'ok' : 'no'}`;
-    b.appendChild(box);
     b.querySelectorAll('.qcard button, .qcard input').forEach((x) => (x.disabled = true));
+    fbSlot(b).appendChild(box);
     return box;
   };
-  const nextBtn = (box, then) => { const btn = document.createElement('button'); btn.className = 'pri'; btn.textContent = '다음'; btn.style.marginTop = '8px'; box.appendChild(document.createElement('br')); box.appendChild(btn); btn.focus(); btn.addEventListener('click', then); };
+  const nextBtn = (box, then) => { const btn = document.createElement('button'); btn.className = 'pri'; btn.textContent = '다음'; box.appendChild(btn); btn.focus(); btn.addEventListener('click', then); };
   // 함께에서의 되먹임 — 칭찬은 실제로 한 것만('단계를 차례로'는 단계를 했을 때만) · 틀리면 답 + 그 문제 숫자로 한 생각
   function feedback(r, then) {
     const box = fbBox(r.ok);
@@ -374,8 +383,7 @@ export function fixView(root, c) {
   function check() {
     const it = checkItem(F);
     if (!it) return done();
-    const b = shell(head('point', '마지막! 새 숫자 3문제를 <b>도움 없이</b> 풀어요. 먼저 짐작도 골라요.'), '<div id="slot"></div>');
-    draw(b.querySelector('#slot'), { prompt: it.snap.prompt, choices: it.snap.choices, tag: '확인', dots: [F.ci, F.check.items.length], onAnswer: (a, cf, ms) => { answerCheck(F, a, { conf: cf, ms }); route(); } });
+    draw(slot(), { lead: head('point', '마지막! 새 숫자 3문제를 <b>도움 없이</b> 풀어요. 먼저 짐작도 골라요.'), prompt: it.snap.prompt, choices: it.snap.choices, tag: '확인', act: 'fix', dots: [F.ci, F.check.items.length], onAnswer: (a, cf, ms) => { answerCheck(F, a, { conf: cf, ms }); route(); } });
   }
   function done() {
     const now = Date.now();
@@ -385,39 +393,42 @@ export function fixView(root, c) {
     else { K.help = K.help || {}; K.help[c] = now; K.helpWhy = { ...(K.helpWhy || {}), [c]: F.help ? 'solo' : 'check' }; }   /* 'solo' = 혼자에서 세 번씩 두 번 내리 틀려 확인 없이 끝 · 'check' = 확인 3문제를 못 넘음(메인이 요약에 넣을 값) */
     KS.save(me, K); KS.setReview(me, K); KS.pushSummary(me, K); KS.setNow(me, { mode: 'home' });
     const ex = plank(c);
+    const endCard = (top, body) => { root.innerHTML = `<div class="card msg act-fix"><p class="eyebrow">${tile('fix', 22)}판자 고치기</p>${top}${body}</div>`; };
     if (F.help) {   // 혼자에서 세 번씩 두 번 내리 틀림 — 확인 문제 없이 선생님과(혹평 4)
-      shell(say('think', `오늘은 여기까지 해요. 이 판자는 <b>선생님과 같이</b> 놓아요.<br>손을 들고 선생님께 이 화면을 보여 주세요.`),
-        `<div class="qcard"><p class="small muted">선생님과 같이 볼 문제</p><p><b>${esc(ex)}</b></p><p class="small">어려운 판자가 있는 건 괜찮아요. 같이 하면 하나씩 놓을 수 있어요.</p></div><div class="acts"><a class="btn big" href="#/me">내 수 다리로</a></div>`);
+      endCard(say('think', `오늘은 여기까지 해요. 이 판자는 <b>선생님과 같이</b> 놓아요.<br>손을 들고 선생님께 이 화면을 보여 주세요.`, 104),
+        `<div class="panel"><p class="small muted">선생님과 같이 볼 문제</p><p><b>${esc(ex)}</b></p><p class="small">어려운 판자가 있는 건 괜찮아요. 같이 하면 하나씩 놓을 수 있어요.</p></div><div class="acts"><a class="btn big" href="#/me">내 수 다리로</a></div>`);
       return;
     }
     const was = before && before.tot ? `처음엔 ${before.ok}/${before.tot} → 지금 ${okN}/${F.check.items.length}` : `${okN}/${F.check.items.length}`;
     const retry = F.passed && K.back && K.back.root === c && !K.back.solved;
-    const top = F.passed ? say('cheer', `판자를 고쳤어요! <b>${esc(ex)}</b> — ${was}.<br>${inClass ? '이제 <b>선생님 수업</b>으로 가요. 남은 판자는 다음 시간에 해요.' : '1일 · 3일 · 7일 뒤에 다시 보면 오래 튼튼해요.'}`)
-      : say('think', `아직 조금 흔들려요(${okN}/${F.check.items.length}). 괜찮아요 — 선생님과 함께 한 번 더 봐요.${inClass ? '<br>지금은 선생님 수업으로 가요.' : ''}`);
-    shell(top, `<div class="acts">${retry ? `<a class="btn pri big" href="#/retry">처음 문제 다시 풀기 — ${esc(K.back.text)}</a>` : `<a class="btn ${inClass ? '' : 'pri '}big" href="#/me">내 수 다리로</a>`}${F.passed && !inClass ? `<a class="btn big" href="#/drill/${c}">이어서 다듬기</a>` : ''}</div>`);
+    const top = F.passed ? say('cheer', `판자를 고쳤어요! <b>${esc(ex)}</b> — ${was}.<br>${inClass ? '이제 <b>선생님 수업</b>으로 가요. 남은 판자는 다음 시간에 해요.' : '1일 · 3일 · 7일 뒤에 다시 보면 오래 튼튼해요.'}`, 104)
+      : say('think', `아직 조금 흔들려요(${okN}/${F.check.items.length}). 괜찮아요 — 선생님과 함께 한 번 더 봐요.${inClass ? '<br>지금은 선생님 수업으로 가요.' : ''}`, 104);
+    endCard(top, `<div class="acts">${retry ? `<a class="btn pri big" href="#/retry">처음 문제 다시 풀기 — ${esc(K.back.text)}</a>` : `<a class="btn ${inClass ? '' : 'pri '}big" href="#/me">내 수 다리로</a>`}${F.passed && !inClass ? `<a class="btn big" href="#/drill/${c}">이어서 다듬기</a>` : ''}</div>`);
   }
   // 비교하기 — 함께 풀기 뒤, 혼자 풀기 전에 한 번(맞는 풀이 · 친구 같은 틀린 풀이 · 어디서 어긋났나)
   function compare(X) {
     const A = X.rightFirst ? X.it.sol : X.wrong, B = X.rightFirst ? X.wrong : X.it.sol;
-    const b = shell(head('think', '친구 둘이 같은 문제를 풀었어요. <b>누가 맞았을까요?</b>'), `<div class="qcard"><div class="cmp">
+    const b = shell(head('think', '친구 둘이 같은 문제를 풀었어요. <b>누가 맞았을까요?</b>'), `<div class="cmp">
       <button type="button" class="cmpc" data-w="${X.rightFirst ? 1 : 0}"><span class="who2">가 친구</span>${staticHTML(X.rightFirst ? X.it.prompt : (X.wrongPrompt || X.it.prompt), A)}</button>
-      <button type="button" class="cmpc" data-w="${X.rightFirst ? 0 : 1}"><span class="who2">나 친구</span>${staticHTML(X.rightFirst ? (X.wrongPrompt || X.it.prompt) : X.it.prompt, B)}</button></div></div>`);
+      <button type="button" class="cmpc" data-w="${X.rightFirst ? 0 : 1}"><span class="who2">나 친구</span>${staticHTML(X.rightFirst ? (X.wrongPrompt || X.it.prompt) : X.it.prompt, B)}</button></div>`);
+    /* 고른 뒤 왼쪽에 두 풀이를 그대로 두고 맞음 ✓ · 어긋남 ✕ 표시(오른쪽에서 까닭을 고르는 동안 볼 수 있게) */
+    const cmpStatic = () => `<div class="cmp">${[0, 1].map((k) => { const right = X.rightFirst ? k === 0 : k === 1; return `<div class="cmpc ${right ? 'right' : 'no'}"><span class="who2">${k ? '나' : '가'} 친구 <span class="mk">${right ? '✓ 맞음' : '✕ 어긋남'}</span></span>${staticHTML(right ? X.it.prompt : (X.wrongPrompt || X.it.prompt), right ? X.it.sol : X.wrong)}</div>`; }).join('')}</div>`;
     b.querySelectorAll('.cmpc').forEach((btn) => btn.addEventListener('click', () => why(btn.dataset.w === '1')));
     // 도구로 확인 — 친구의 틀린 답에 검산 도구를 써 봄(처음 배우는 자리) → 그다음 어디서 어긋났나
     let T = null; try { T = toolFor({ it: mkItem(X.it.c, X.it.p), vals: X.wrong, c, bug: X.bug }); } catch (e) { T = null; }
     function why(gotIt) {
       if (T && !why.shown) {
         why.shown = true;
-        const w = X.wrongText || X.wrong.join(', '), bt = shell(head(gotIt ? 'cheer' : 'think', `${gotIt ? '맞아요! ' : '다시 봐요. '}${X.rightFirst ? '나' : '가'} 친구가 쓴 ${esc(w)}${P(w, '이', '가')} 맞는지 <b>${esc(T.ro)}</b> 확인해 볼까요?<br><span class="small">${esc(T.how)}</span>`), `<div class="qcard"><p class="tcheck">${T.html}</p></div><div class="qact"><button class="pri big" id="n3">그럼 어디서 어긋났을까?</button></div>`);
+        const w = X.wrongText || X.wrong.join(', '), bt = shell(head(gotIt ? 'cheer' : 'think', `${gotIt ? '맞아요! ' : '다시 봐요. '}${X.rightFirst ? '나' : '가'} 친구가 쓴 ${esc(w)}${P(w, '이', '가')} 맞는지 <b>${esc(T.ro)}</b> 확인해 볼까요?<br><span class="small">${esc(T.how)}</span>`), `${cmpStatic()}<div class="panel"><p class="tcheck">${icon('search', 22)} ${T.html}</p></div>`, nextAct('그럼 어디서 어긋났을까?', 'n3'));
         bt.querySelector('#n3').addEventListener('click', () => why(gotIt));
         return;
       }
-      const w2 = X.wrongText || X.wrong.join(', '), b2 = shell(head(gotIt ? 'cheer' : 'think', `${gotIt ? '맞아요! ' : '다시 봐요. '}맞게 푼 건 ${staticHTML(X.it.prompt, X.it.sol)} 이에요.<br>그럼 <b>${esc(w2)}</b>${P(w2, '이라고', '라고')} 쓴 친구는 <b>어디서 어긋났을까요?</b>`), `<div class="todo">${X.reasons.map((t, i) => `<button type="button" class="item rs" data-i="${i}" style="text-align:left">${esc(t)}</button>`).join('')}</div>`);
+      const w2 = X.wrongText || X.wrong.join(', '), b2 = shell(head(gotIt ? 'cheer' : 'think', `${gotIt ? '맞아요! ' : '다시 봐요. '}맞게 푼 건 ${staticHTML(X.it.prompt, X.it.sol)} 이에요.<br>그럼 <b>${esc(w2)}</b>${P(w2, '이라고', '라고')} 쓴 친구는 <b>어디서 어긋났을까요?</b>`), cmpStatic(), `<div class="rsn">${X.reasons.map((t, i) => `<button type="button" class="rs" data-i="${i}">${esc(t)}</button>`).join('')}</div>`);
       b2.querySelectorAll('.rs').forEach((btn) => btn.addEventListener('click', () => {
         const ok = X.reasons[Number(btn.dataset.i)] === X.right;
         const st = stepsOf({ c: X.it.c, p: X.it.p });
         if (T) KS.learnTool(me, K, T.tool);
-        shell(head(ok ? 'cheer' : 'point', `${ok ? '맞아요! ' : '아쉬워요. '}틀린 친구는 <b>${esc(X.right)}</b>. 그래서 ${esc(w2)}${P(w2, '이', '가')} 나왔어요.${T ? `<br>🔍 <b>${esc(T.name)}</b> 도구를 내 도구함에 넣었어요. 내 답도 이렇게 확인해요.` : ''}`), `${st.length ? `<p class="small muted">바르게 풀면 이렇게 이어져요</p><ol class="steps">${st.map((x) => stepHTML(x)).join('')}</ol>` : ''}<div class="qact"><button class="pri big" id="n2">이제 혼자 풀어요</button></div>`);
+        shell(head(ok ? 'cheer' : 'point', `${ok ? '맞아요! ' : '아쉬워요. '}틀린 친구는 <b>${esc(X.right)}</b>. 그래서 ${esc(w2)}${P(w2, '이', '가')} 나왔어요.${T ? `<br>${icon('search', 18)} <b>${esc(T.name)}</b> 도구를 내 도구함에 넣었어요. 내 답도 이렇게 확인해요.` : ''}`), st.length ? `<p class="small muted">바르게 풀면 이렇게 이어져요</p><ol class="steps">${st.map((x) => stepHTML(x)).join('')}</ol>` : cmpStatic(), nextAct('이제 혼자 풀어요', 'n2'));
         root.querySelector('#n2').addEventListener('click', route);
       }));
     }

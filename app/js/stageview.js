@@ -5,7 +5,7 @@ import { LES } from '../../paper/js/gen.js';
 import { mascot } from '../../paper/js/mascot.js';
 import * as KS from './kidstore.js';
 import { prepPlan } from './prep.js';
-import { draw, ansSay, rushGuard, rushPause } from './item.js';
+import { draw, ansSay, rushGuard, rushPause, fbSlot } from './item.js';
 import { plankSVG } from './bridge.js';
 import { TIER, TIER_KID, target, drillN, need, newDrill, drillItem, answerDrill, resultOf, applyRun, nextGoal, elapsed, wantOf, isFact, tiersOf } from './stage.js';
 import { esc, rand, lsGet, lsSet } from './local.js';
@@ -13,6 +13,7 @@ import { nextStep } from './tools.js';
 import { exampleOf } from './fix.js';
 import { itemOf } from '../../paper/js/gen.js';
 import { go, meOf, unitLabel } from './kid.js';
+import { tile, icon } from './icons.js';
 
 const say = (pose, html, size = 64) => `<div class="say">${mascot(pose, size)}<div class="bub">${html}</div></div>`;
 const kidName = (c) => (LES(c) ? LES(c).kid : c);
@@ -41,10 +42,12 @@ export function stagesView(root) {
       <div class="st-b"><b>${esc(plank(c))}</b>${marks(tier, c)}<span class="small muted">${gap ? '빈 판자예요 — 먼저 고쳐요' : esc(nextGoal(m, c))}${m && m.best ? ` · 내 최고 ${m.best.ok}/${m.best.n}${isFact(c) ? ` · 한 문제 ${sec(m.best.med)}` : ''}` : ''}</span></div>${btn}</div>`;
   };
   const counts = [1, 2, 3].map((t) => list.filter((c) => K.mx[c] && K.mx[c].tier >= t).length);
-  root.innerHTML = `<div class="card">${say('point', `판자 하나가 <b>스테이지</b> 하나예요.<br><b>정확 → 빠르게 → 오래</b> 표를 모으면 판자가 단단해져요.`)}
-    <p class="small">모은 표: 정확 <b>${counts[0]}</b> · 빠르게 <b>${counts[1]}</b> · 오래 <b>${counts[2]}</b> <span class="muted">(판자 ${list.length}개) · 판자는 나무 → 못 박은 판자 → 돌 판자로 바뀌어요. '빠르게'는 셈을 외워 두면 좋은 판자(한 자리 셈 · 곱셈구구 같은)에만 있어요.</span></p>
+  // 위: 튼튼이 + 모은 표 타일 · 아래: 판자마다 한 칸(넓으면 두 줄 · 카드 속 카드 X — 바탕 위에 칸만)
+  root.innerHTML = `<section class="stage-top">${say('point', `판자 하나가 <b>스테이지</b> 하나예요.<br><b>정확 → 빠르게 → 오래</b> 표를 모으면 판자가 단단해져요.`, 88)}
+    <div class="stats"><div class="stat"><span class="k">모은 표 <small class="muted">(판자 ${list.length}개)</small></span><span class="tiers"><span>${plankSVG(1, 34)}정확<b>${counts[0]}</b></span><span>${plankSVG(2, 34)}빠르게<b>${counts[1]}</b></span><span>${plankSVG(3, 34)}오래<b>${counts[2]}</b></span></span></div></div>
+    <p class="small muted note">판자는 나무 → 못 박은 판자 → 돌 판자로 바뀌어요. '빠르게'는 셈을 외워 두면 좋은 판자(한 자리 셈 · 곱셈구구 같은)에만 있어요.</p></section>
     <div class="stages">${list.map(card).join('') || '<p class="muted">아직 판자가 없어요. 먼저 준비 다리를 해요.</p>'}</div>
-    <div class="acts"><a class="btn" href="#/me">내 수 다리로</a></div></div>`;
+    <div class="acts"><a class="btn" href="#/me">내 수 다리로</a></div>`;
 }
 
 // 다듬기 한 판
@@ -65,8 +68,8 @@ export function drillView(root, c) {
   const one = () => {
     const it = drillItem(D);
     if (!it) return fin();
-    const clockHTML = showClock ? `<div class="clock" aria-live="off"><span id="ck">${clock(elapsed(D))}</span>${best ? `<span class="muted"> · 내 최고 ${clock(best)}</span>` : ''}</div>` : '';
-    draw(root, { prompt: it.snap.prompt, choices: it.snap.choices, tag: `${TIER[Math.min(tier0 + 1, 3)] || '다듬기'} 판`, dots: [D.i, D.sheet.items.length], conf: false, extra: clockHTML, onAnswer: (a, cf, ms) => {
+    const clockHTML = showClock ? `<div class="clock" aria-live="off">${icon('clock', 20)}<span id="ck">${clock(elapsed(D))}</span>${best ? `<span class="muted"> · 내 최고 ${clock(best)}</span>` : ''}</div>` : '';
+    draw(root, { prompt: it.snap.prompt, choices: it.snap.choices, tag: `${TIER[Math.min(tier0 + 1, 3)] || '다듬기'} 판`, act: 'drill', dots: [D.i, D.sheet.items.length], conf: false, extra: clockHTML, onAnswer: (a, cf, ms) => {
       clearInterval(tick);
       const r = answerDrill(D, a, ms);
       if (rush(ms, a, r.ok) && drillItem(D)) { K.rush = (K.rush || 0) + 1; KS.save(me, K); return rushPause(root, one); }
@@ -75,9 +78,9 @@ export function drillView(root, c) {
       const box = document.createElement('div'); box.className = a.idk ? 'fb' : 'fb no';   /* 넘어간 문제는 ✕ 없이(docs/ui.md) */
       const prev = D.sheet.items[D.i - 1];
       try { nextStep(box, { it: itemOf(prev.c, prev.p), vals: a.vals || [], c, idk: !!a.idk, onSelfFix: (t) => KS.selfFix(me, K, t) }); } catch (e) { box.innerHTML = ansSay({ sol: r.sol, choices: it.snap.choices }); }
-      const btn = document.createElement('button'); btn.className = 'pri'; btn.textContent = '다음'; btn.style.marginLeft = '10px'; box.appendChild(btn);
-      root.querySelector('.qcard').appendChild(box);
-      root.querySelectorAll('.qcard > .math input, .qcard .qact button, .qcard .choices button').forEach((x) => (x.disabled = true));
+      const btn = document.createElement('button'); btn.className = 'pri'; btn.textContent = '다음'; box.appendChild(btn);
+      root.querySelectorAll('.qcard .qmain .math input, .qcard .qact button, .qcard .choices button').forEach((x) => (x.disabled = true));
+      fbSlot(root).appendChild(box);
       btn.addEventListener('click', one); btn.focus();   /* 자판 Enter로 넘어가게(회귀 10-31) */
     } });
     if (showClock) { const t0 = performance.now(), base = elapsed(D), el = root.querySelector('#ck'); tick = setInterval(() => { if (el.isConnected) el.textContent = clock(base + performance.now() - t0); else clearInterval(tick); }, 250); }
@@ -89,13 +92,13 @@ export function drillView(root, c) {
     const g = applyRun(K.mx, c, res);
     KS.save(me, K); KS.pushMastery(me, K); KS.pushSummary(me, K); KS.setNow(me, { mode: 'home' });
     const m = K.mx[c];
-    const head = g.gained.length ? say('cheer', `<b>'${g.gained.join("' · '")}'</b> 표를 땄어요! 판자가 <b>${esc(TIER_KID[m.tier])}</b>로 바뀌었어요.`, 72)
-      : g.record ? say('cheer', '내 최고 기록을 넘었어요!', 72)
-      : !g.good ? say('think', `${res.ok}/${res.n} — 빠르기보다 <b>정확하게</b> 먼저 해요. 다음 판은 천천히 해 봐요.`, 72)
-      : say('hi', `좋아요! ${esc(nextGoal(m, c))}`, 72);
+    const head = g.gained.length ? say('cheer', `<b>'${g.gained.join("' · '")}'</b> 표를 땄어요! 판자가 <b>${esc(TIER_KID[m.tier])}</b>로 바뀌었어요.`, 104)
+      : g.record ? say('cheer', '내 최고 기록을 넘었어요!', 104)
+      : !g.good ? say('think', `${res.ok}/${res.n} — 빠르기보다 <b>정확하게</b> 먼저 해요. 다음 판은 천천히 해 봐요.`, 104)
+      : say('hi', `좋아요! ${esc(nextGoal(m, c))}`, 104);
     const runs = m.runs.filter((r) => r.med != null);
-    root.innerHTML = `<div class="card">${head}
-      <div class="drill-res">${g.gained.length ? `${plankSVG(g.before, 96)}<span style="font-size:26px">→</span>` : ''}${plankSVG(m.tier || (g.good ? 1 : 0), 120)}<div><b>${esc(plank(c))}</b> ${marks(m.tier, c)}
+    root.innerHTML = `<div class="card msg act-drill"><p class="eyebrow">${tile('drill', 22)}다듬기</p>${head}
+      <div class="drill-res panel">${g.gained.length ? `${plankSVG(g.before, 96)}<span class="arr">→</span>` : ''}${plankSVG(m.tier || (g.good ? 1 : 0), 120)}<div><b>${esc(plank(c))}</b> ${marks(m.tier, c)}
         <p>맞힌 문제 <b>${res.ok}/${res.n}</b>${fact ? ` · 한 문제에 보통 <b>${sec(res.med)}</b> <span class="muted small">('빠르게'는 ${sec(g.T)} 안)</span>` : ''}${showClock ? ` · 모두 ${clock(res.total)}` : ''}</p>
         <p class="small muted">${esc(nextGoal(m, c))}</p></div></div>
       ${fact && runs.length >= 2 ? `<h3>내 기록 <small>한 문제에 보통 걸린 시간 · 아래로 갈수록 빨라요 · 점선은 '빠르게'</small></h3>${runChart(runs, g.T)}` : ''}
@@ -107,8 +110,8 @@ export function drillView(root, c) {
       : !fact ? `이 판자는 <b>정확 → 오래</b> 두 표예요. 시계 없이 정확하게 해요.`
       : m0 && m0.slow ? '지난번엔 조금 헷갈렸어요. 이번 판은 시계 없이 <b>정확하게</b> 해 봐요.'
       : showClock ? '시계가 켜져 있어요 — 친구가 아니라 <b>내 기록</b>과 겨뤄요. 정확한 게 먼저예요!' : '정확하게 풀어요. 원하면 시계를 켜고 내 기록과 겨룰 수 있어요.';
-    root.innerHTML = `<div class="card">${say('point', `<b>${esc(plank(c))}</b> ${marks(tier0, c)}<br>${top}`)}
-      <div class="acts"><button class="pri big" id="s">시작</button>${canClock ? `<button type="button" class="big" id="ck" aria-pressed="${showClock}">${showClock ? '시계 끄기' : '시계 켜기'}</button>` : ''}<a class="btn" href="#/stages">스테이지로</a></div></div>`;
+    root.innerHTML = `<div class="card msg act-drill"><p class="eyebrow">${tile('drill', 22)}다듬기</p>${say('point', `<b>${esc(plank(c))}</b> ${marks(tier0, c)}<br>${top}`, 104)}
+      <div class="acts"><button class="pri big" id="s">시작</button>${canClock ? `<button type="button" class="big" id="ck" aria-pressed="${showClock}">${icon('clock', 22)}${showClock ? '시계 끄기' : '시계 켜기'}</button>` : ''}<a class="btn" href="#/stages">스테이지로</a></div></div>`;
     root.querySelector('#s').addEventListener('click', one);
     const cb = root.querySelector('#ck');
     if (cb) cb.addEventListener('click', () => { showClock = !showClock; D.clock = showClock; lsSet(CK, showClock); start(); });
