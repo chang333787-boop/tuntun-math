@@ -71,15 +71,14 @@ export function kidReport(sheets, results, kid, { from = '1-1', to = '4-1' } = {
   // 실수로만 틀림 · 경계선 — 막힘으로 단정하지 않음
   for (const x of Object.values(L)) {
     const wrong = (x.use || []).filter((r) => !r.ok);
-    if (x.st === 'stuck' && wrong.length && wrong.every((r) => r.d && !r.d.hyps.length && r.d.slip)) { x.st = 'shaky'; x.slipOnly = true; continue; }
+    if (x.st === 'stuck' && x.ok >= 1 && wrong.length && wrong.every((r) => r.d && !r.d.hyps.length && r.d.slip)) { x.st = 'shaky'; x.slipOnly = true; continue; }   // 하나도 못 맞혔으면 '실수'가 아님(같은 자리를 늘 틀림 — 10-31)
     const q = (x.use || []).filter((r) => r.s === 'q').length, sure = x.why && x.why.sure.length;
     if (x.st === 'stuck' && x.ok >= 1 && wrong.length - q <= 2 && q < 2 && !sure) { x.st = 'shaky'; x.borderline = true; }
   }
   // 관문 미루기 — 도움 없이 확인한 관문만 아래를 '관문 통과'로 · 막힌 관문만 아래를 '자세히 볼 것'으로 · 흔들림 · 도움은 관문부터 다시
-  for (const x of Object.values(L)) {
-    if (!x.gate || !x.covers || !(x.st === 'ok' || x.st === 'stuck')) continue;
-    for (const c of x.covers) if (c !== x.c && !L[c]) L[c] = { c, st: x.st === 'ok' ? 'pass' : 'need', ok: 0, tot: 0, via: x.c, recs: [] };
-  }
+  //  맞힌 관문을 먼저(같은 칸이 맞힌 관문 아래이기도 하고 막힌 관문 아래이기도 하면 '관문 통과'가 이김 — 먼저 본 관문이 이기던 것 10-31)
+  const gatesSeen = Object.values(L).filter((x) => x.gate && x.covers && (x.st === 'ok' || x.st === 'stuck')).sort((a, b) => (a.st === 'ok' ? 0 : 1) - (b.st === 'ok' ? 0 : 1));
+  for (const x of gatesSeen) for (const c of x.covers) if (c !== x.c && !L[c]) L[c] = { c, st: x.st === 'ok' ? 'pass' : 'need', ok: 0, tot: 0, via: x.c, recs: [] };
   const good = (p) => L[p] && (L[p].st === 'ok' || L[p].st === 'pass' || (L[p].st === 'near' && !L[p].help));
   // 고립 — 이 차시에 기대는 위 차시를 셋 이상 다 맞힌 것이 둘 이상이면 진짜 빈 곳이 아닐 수 있음(빈 곳은 위로 번짐) → 여기서부터에서 빼고 다시 확인
   const deps = (c) => Object.values(L).filter((y) => y.c !== c && y.st === 'ok' && y.tot >= 3 && byPre(y.c).length && closureOf(y.c).has(c));

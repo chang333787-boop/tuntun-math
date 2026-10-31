@@ -36,13 +36,14 @@
             ".read": "root.child('cown').child($C).exists() && root.child('tc').child($C).child(root.child('cown').child($C).val()).child('pins').child($no).val() === $pin",
             ".write": "root.child('cown').child($C).exists() && root.child('tc').child($C).child(root.child('cown').child($C).val()).child('pins').child($no).val() === $pin",
             "r": {
-              "$id": { ".validate": "$id.matches(/^[A-Za-z0-9_.-]{1,40}$/) && newData.isString() && newData.val().length <= 1500" }
+              "$id": { ".validate": "$id.matches(/^[A-Za-z0-9_.-]{1,40}$/) && newData.isString() && newData.val().length <= 8000" }
             },
             "st": { ".validate": "newData.isString() && newData.val().length <= 30000" },
             "in": {
               "$id": { ".validate": "$id.matches(/^[A-Za-z0-9_-]{1,24}$/) && newData.isString() && newData.val().length <= 20000" }
             },
             "now": { ".validate": "newData.isString() && newData.val().length <= 1000" },
+            "rv": { ".validate": "newData.isString() && newData.val().length <= 20000" },
             "$other": { ".validate": false }
           }
         }

@@ -25,7 +25,7 @@ await expect('아이 1이 아이 2 칸에(자기 핀으로)', false, req('PUT', 
 await expect('번호 칸 위 훑기(핀 찾기)', false, req('GET', `k/${C}/1`));
 await expect('반 전체 훑기', false, req('GET', `k/${C}`));
 await expect('아이 칸에 모르는 갈래', false, req('PUT', `k/${C}/1/1234/zzz`, 'x'));
-await expect('기록이 너무 김', false, req('PUT', `k/${C}/1/1234/r/a2`, 'x'.repeat(2000)));
+await expect('기록이 너무 김', false, req('PUT', `k/${C}/1/1234/r/a2`, 'x'.repeat(9000)));
 await expect('선생님 · 아이 2 칸에 할 일 넣기', true, req('PUT', `k/${C}/2/5678/in/t1`, '{"task":"check"}'));
 await expect('선생님 · 아이 1 기록 읽기', true, req('GET', `k/${C}/1/1234/r`));
 await expect('없는 반 아이 칸', false, req('PUT', `k/ZZ2222/1/1234/r/a1`, 'x'));
