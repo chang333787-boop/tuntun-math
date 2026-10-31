@@ -4,7 +4,7 @@
 import { UNITS } from '../../engine/lessons/index.js';
 import { readExpr, testable, __predict } from '../../engine/errors.js';
 import { rng } from '../../engine/math.js';
-import { closure } from '../../paper/js/gen.js';
+import { closure, LES } from '../../paper/js/gen.js';
 import { prepPlan, newPrep, current, answer, summary, PREP } from '../js/prep.js';
 const N = Number(process.argv[2] || 6), SLIP = Number(process.argv[3] || 0.05);
 const r = rng(7);
@@ -47,7 +47,10 @@ for (const u of UNITS) {
   const all = [...new Set([...P.pre, ...P.below])].filter((c) => !c.startsWith('est:'));
   let uh = 0, ur = 0, ui = 0;
   for (let i = 0; i < N; i++) {
-    const gap = all[Math.floor(r.next() * all.length)];
+    // 빈 곳 고르기 — 기본은 고르게(가장 어려운 가정) · NEAR=1이면 단원과 가까운 학기일수록 잦게(한 학기 멀어질 때마다 반)
+    const gi = (c) => { const L = LES(c); return L ? Number(L.g[0]) * 2 + Number(L.g[2]) : 0; }, ug = Number(u.g[0]) * 2 + Number(u.g[2]);
+    const wts = all.map((c) => (process.env.NEAR ? 0.5 ** Math.max(0, ug - gi(c) - 1) : 1)), tot = wts.reduce((a, b) => a + b, 0);
+    let pick = r.next() * tot, gap = all[all.length - 1]; for (let k = 0; k < all.length; k++) { pick -= wts[k]; if (pick <= 0) { gap = all[k]; break; } }
     const { S, sum, unknown } = run(u.id, gap, null, DAYS); gRuns++; ur++; items += sum.n; ui += sum.n; maxItems = Math.max(maxItems, sum.n);
     if (S.why === 'budget') budget++;
     if (sum.fix.includes(gap)) { hit++; uh++; }
@@ -73,7 +76,7 @@ for (const u of UNITS) {
 }
 const pct = (a, b) => `${((a / Math.max(b, 1)) * 100).toFixed(1)}%`;
 if (process.env.UNITS) console.log(perUnit.join('\n'));
-console.log(`준비 다리(${DAYS}일) · 빈 아이 ${gRuns}명(실수 ${SLIP * 100}%): 고칠 판자가 바로 그 칸 ${pct(hit, gRuns)} · 이웃 칸 ${pct(near, gRuns)} · 아직 아래 확인 ${pct(below, gRuns)} · 엉뚱한 칸 ${pct(falseS, gRuns)} · 평균 ${(items / gRuns).toFixed(1)}문항(최대 ${maxItems}) · 예산에서 멈춤 ${pct(budget, gRuns)}`);
+console.log(`준비 다리(${DAYS}일${process.env.NEAR ? ' · 가까운 학기 빈 곳' : ''}) · 빈 아이 ${gRuns}명(실수 ${SLIP * 100}%): 고칠 판자가 바로 그 칸 ${pct(hit, gRuns)} · 이웃 칸 ${pct(near, gRuns)} · 아직 아래 확인 ${pct(below, gRuns)} · 엉뚱한 칸 ${pct(falseS, gRuns)} · 평균 ${(items / gRuns).toFixed(1)}문항(최대 ${maxItems}) · 예산에서 멈춤 ${pct(budget, gRuns)}`);
 console.log(`빈 곳 없는 아이 ${cRuns}명: 헛짚음 ${pct(cFalse, cRuns)} · 평균 ${(cItems / cRuns).toFixed(1)}문항`);
 console.log(`절차 버그 아이 ${bRuns}명: 그 칸을 보여 줌 ${pct(bShown, bRuns)}`);
 const HIT = DAYS >= 2 ? 0.95 : 0.8;   // 하루 한 판에 80% · 못 찾으면 다음 시간에 이어서 — 이틀 안에 95%
