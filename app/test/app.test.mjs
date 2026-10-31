@@ -140,5 +140,13 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   ok(pk.고칠_판자.length && pk.고칠_판자[0].틀린_문항.length && pk.고칠_판자[0].틀린_문항[0].mine && pk.고칠_판자[0].틀린_문항[0].right, `고칠 판자 · 틀린 문항(내 답 · 바른 답) — ${pk.고칠_판자.map((x) => x.칸).join(', ')}`);
   ok(q.includes('7번 아이(이름 X)') && !/이름[":]\s*"/.test(q) && q.length < 6000 && q.includes('모름'), `붙여 넣을 글 ${q.length}자 · 이름 칸 없음`);
 }
+// ⑫ 다듬기 기록이 많아도 서버 규칙(mx 6만 자) 안 — 판마다 최근 기록만 보냄 · 표(tier)는 그대로
+{
+  const KS3 = await import('../js/kidstore.js'), LX3 = await import('../../engine/lessons/index.js');
+  const ids = LX3.NODES.map((n) => n.id).filter((c) => LX3.byId[c]).slice(0, 200), mx = {};
+  ids.forEach((c, i) => { mx[c] = { tier: i % 4, t2: 1730000000000, best: { ok: 6, n: 6, med: 4321, total: 30000 }, runs: Array.from({ length: 10 }, (_, j) => ({ t: 1730000000000 + j * 864e5, ok: 5, n: 6, med: 4000 + j })) }; });
+  const v = KS3.mxOut({ mx, jog: Array.from({ length: 80 }, (_, i) => `2026-10-${String(i % 28 + 1).padStart(2, '0')}`), tools: {} }), o = JSON.parse(v);
+  ok(v.length <= 60000 && Object.keys(o).filter((c) => !c.startsWith('_')).length === 200 && o[ids[3]].tier === 3 && o._jog.length <= 60, `판자 200개 다듬은 아이: 보낼 글 ${v.length}자 ≤ 60000 · 표 그대로 · 판마다 기록 ${o[ids[0]].runs.length}개`);
+}
 console.log(fail ? `FAIL ${fail}` : 'PASS');
 process.exitCode = fail ? 1 : 0;

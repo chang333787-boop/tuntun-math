@@ -53,7 +53,13 @@ export function addSheet(me, K, sh, R, conf = {}, ms = {}) {
   db.queuePut(`${base(me)}/r/${sh.id}`, db.enc(K.recs[sh.id]));
   pushSummary(me, K);
 }
-export function pushMastery(me, K) { db.queuePut(`${base(me)}/mx`, db.enc({ ...(K.mx || {}), _jog: K.jog || [], _tools: K.tools || {} })); }   // 스테이지 표 · 내 기록 · 구보한 날(_jog)
+// 스테이지 표 · 내 기록 · 구보한 날(_jog) — 서버 규칙 6만 자 안: 판자를 많이 다듬은 아이는 판마다 기록(runs)을 최근 것만 보냄(이 기기엔 그대로)
+export function mxOut(K, max = 56000) {
+  const pack1 = (keep) => db.enc({ ...Object.fromEntries(Object.entries(K.mx || {}).map(([c, m]) => [c, keep == null || !m || !Array.isArray(m.runs) ? m : { ...m, runs: m.runs.slice(-keep) }])), _jog: (K.jog || []).slice(-60), _tools: K.tools || {} });
+  for (const keep of [null, 5, 3, 1, 0]) { const v = pack1(keep); if (v.length <= max) return v; }
+  return pack1(0);
+}
+export function pushMastery(me, K) { db.queuePut(`${base(me)}/mx`, mxOut(K)); }
 export function setReview(me, K) { save(me, K); db.queuePut(`${base(me)}/rv`, db.enc(K.rv)); }   // 규칙에 rv 칸 있음
 export function setNow(me, now) { db.put(`${base(me)}/now`, db.enc({ ...now, t: Date.now() })).catch(() => {}); }
 
