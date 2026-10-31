@@ -85,5 +85,50 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   G3.applyRun(mx, '2-1-3:10', { n: 6, ok: 6, med: 1000, total: 1, trapN: 3, trapOk: 3 });
   ok(mx['2-1-3:10'].tier === 3, '함정까지 맞으면 오래');
 }
+// ⑨ 이번 주 점검 — 월요일로 주 가름 · 같은 주 둘이면 먼저 것 · 범위는 학기 준비 칸 전체에서 고르게(학기 내내 같은 범위) · 선 방향 · 학기 표시는 단원 id와 안 겹침
+{
+  const W = await import('../js/weekcore.js'), PP = await import('../js/prep.js'), LX = await import('../../engine/lessons/index.js');
+  ok(W.weekKey(new Date(2026, 10, 1, 9).getTime()) === '2026-10-26' && W.weekKey(new Date(2026, 9, 26, 0, 5).getTime()) === '2026-10-26', '일요일 · 월요일 새벽이 같은 주(월요일 날짜)');
+  const rec = (made, okN, unit = 'T3-1') => ({ s: { id: 'w' + made, kind: 'week', made, unit, it: Array.from({ length: 10 }, (_, i) => ['k' + i, '2-1-3:1', {}, 0, 'A']) }, r: { done: { A: true }, it: Object.fromEntries(Array.from({ length: 10 }, (_, i) => ['k' + i, { s: i < okN ? 'ok' : 'x' }])) }, ms: Object.fromEntries(Array.from({ length: 10 }, (_, i) => ['k' + i, 3000 + i])) });
+  const d0 = new Date(2026, 9, 5, 10).getTime(), wk = 7 * 864e5;
+  const recs = { a: rec(d0, 4), b: rec(d0 + 3600e3, 9), c: rec(d0 + wk, 6), d: rec(d0 + 2 * wk, 8), e: rec(d0 + 3 * wk, 8, 'T4-1') };
+  const ws = W.weeksOf(recs, 'T3-1');
+  ok(ws.length === 3 && ws[0].ok === 4 && ws[0].med === 3002, `같은 주 두 번이면 먼저 푼 것 · 맞힌 문제 시간 가운데값 — ${ws.map((w) => w.ok).join(',')}`);
+  const pts = (xs) => xs.map((ok) => ({ ok, n: 10 }));
+  ok(W.weekTrend(pts([4, 6, 7, 8])) === 'up' && W.weekTrend(pts([8, 8, 6, 5])) === 'down' && W.weekTrend(pts([8, 7, 8, 7, 8, 7])) === 'flat' && W.weekTrend(pts([8, 8, 6])) === null, '선 방향(점 넷부터 · 기울기)');
+  { let fa = 0; for (let t = 0; t < 4000; t++) { const ys = Array.from({ length: 5 }, () => { let k = 0; for (let i = 0; i < 10; i++) if (Math.random() < 0.8) k++; return { ok: k, n: 10 }; }); if (W.weekTrend(ys) === 'down') fa++; } ok(fa / 4000 < 0.09, `변화 없는 아이를 '내려가요'로 잘못 짚는 비율 ${(100 * fa / 4000).toFixed(1)}% < 9%`); }
+  ok(W.lastLine(W.weeksOf(recs)).length === 1 && W.lastLine(W.weeksOf(recs))[0].term === 'T4-1', '학기가 바뀌면 새 선');
+  ok(W.weekTerm({ recs, lastPrep: { unit: '4-2-1' } }) === 'T4-2' && W.weekTerm({ recs }) === 'T4-1', '점검 학기 = 마지막 준비 단원의 학기 → 없으면 지난 점검 학기');
+  ok(!LX.UNITS.some((u) => u.id === 'T4-2'), "학기 표시('T4-2')는 단원 id와 겹치지 않음(홈의 '오늘 단원 준비했나'를 건드리지 않음)");
+  const pool = W.termPool('T4-1'), units = LX.UNITS.filter((u) => u.g === '4-1');
+  ok(pool.length >= 10 && units.every((u) => PP.prepPlan(u.id).pre.filter((c) => LX.byId[c] && LX.gradeIdx(LX.byId[c].g) < LX.gradeIdx('4-1')).every((c) => pool.includes(c))) && pool.every((c) => LX.gradeIdx(LX.byId[c].g) < LX.gradeIdx('4-1')), `4학년 1학기 범위 = 단원 ${units.length}개 준비 칸 가운데 지난 학기까지 ${pool.length}칸(이번 학기 칸 X)`);
+  const K = { recs: {}, lastPrep: { unit: '4-1-3' }, fixed: {} }, rep = { L: {} };
+  const p1 = W.weekPlan(K, rep);
+  ok(p1.length === 10 && new Set(p1).size === 10 && p1.every((c) => pool.includes(c)), '학기 범위에서 서로 다른 10칸');
+  const gi = LX.gradeIdx, LES = (await import('../../paper/js/gen.js')).LES, grades = (p) => p.map((c) => gi(LES(c).g)).join('');
+  ok(grades(p1) === [...grades(p1)].sort().join(''), `학년 차례로 고르게 뽑음 — ${grades(p1)}`);
+  ok(W.weekChart(ws).includes('<polyline') && W.weekChart(ws.slice(0, 1)).includes('<circle') && !W.weekChart(ws.slice(0, 1)).includes('<polyline'), '선 그래프(점 하나면 선 없이)');
+  const mk = W.weekChart(ws, { marks: [{ t: d0 + 1.5 * wk, x: '소집단' }, { t: d0 - 30 * 864e5, x: '너무 옛날' }] });
+  ok((mk.match(/stroke-dasharray/g) || []).length === 1 && !W.weekChart(ws).includes('stroke-dasharray'), '지도를 바꾼 때 = 점선 하나(선보다 한참 앞은 뺌)');
+}
+// ⑩ 종이 결과 → 아이 기록 — 문장제 칸은 빼고 · 채점 안 한 장은 X · 큰 장은 칸 덩이로 나눠 8000자 안 · 바꾼 기록으로 판정해도 종이에서 판정한 것과 칸 상태가 같음 · 번호 짐작
+{
+  const T = await import('../js/teacher.js'), G = await import('../../paper/js/gen.js'), J = await import('../../paper/js/judge.js'), KS2 = await import('../js/kidstore.js');
+  for (const [from, to, kind, seed] of [['2-1', '3-1', 'gate', 7], ['1-1', '4-1', 'gate', 3], ['1-1', '4-1', 'check', 2]]) {
+    const sh = G.makeSheet({ kind, from, to, id: 'PAPER' + seed, seed });
+    const r = { done: Object.fromEntries(sh.chapters.map((c) => [c.key, true])), it: {}, w: {}, t: {}, at: Date.now() };
+    sh.items.forEach((it, i) => { if (it.form === 'w') r.w[it.k] = { f: 1, a: 0 }; else r.it[it.k] = i % 4 === 1 ? { s: 'x', a: ['1'], t: 5 } : { s: 'ok', t: 5 }; });
+    const recs = T.paperRecs(sh, r, 'P' + seed + '_kid1'), sizes = recs.map((x) => db.enc(x).length);
+    const nIt = recs.reduce((a, x) => a + x.s.it.length, 0), nSh = sh.items.filter((it) => it.form !== 'w').length;
+    ok(recs.length && recs.every(KS2.okRec) && sizes.every((n) => n <= 8000) && nIt === nSh && !recs.some((x) => x.s.it.some((i) => i[4] === 'W')), `${kind} ${from}~${to}: ${nSh}문제 → 기록 ${recs.length}개(가장 긴 것 ${Math.max(...sizes)}자 ≤ 8000) · 문장제 칸 뺌`);
+    const sh2 = { ...sh, items: sh.items.filter((it) => it.form !== 'w'), chapters: sh.chapters.filter((c) => c.key !== 'W') };
+    const a = J.kidReport([sh2], { [sh.id]: { me: { ...r, w: {} } } }, 'me', { from: '1-1', to: '6-2' }), b = KS2.reportOf({ recs: Object.fromEntries(recs.map((x) => [x.s.id, x])) });
+    const diff = Object.keys({ ...a.L, ...b.L }).filter((c) => (a.L[c] || {}).st !== (b.L[c] || {}).st);
+    ok(!diff.length && Object.keys(b.L).length > 0 && a.start.map((x) => x.c).join() === b.start.map((x) => x.c).join(), `${kind} ${from}~${to}: 종이 판정과 앱 판정의 칸 상태 · 고칠 판자가 같음(${Object.keys(b.L).length}칸${diff.length ? ` · 다름 ${diff.slice(0, 5).join(',')}` : ''})`);
+  }
+  ok(T.paperRecs(G.makeSheet({ kind: 'gate', from: '2-1', to: '3-1', id: 'X', seed: 1 }), { done: {}, it: {} }).length === 0, '채점 안 한 장은 넣지 않음');
+  const K = { n: 25, names: { 7: '하늘', 12: '바다' } };
+  ok(T.guessNo('3번', K) === '3' && T.guessNo('12 바다', K) === '12' && T.guessNo('하늘', K) === '7' && T.guessNo('구름', K) === '' && T.guessNo('31', K) === '', '번호 짐작(번호 · 이름 · 없음 · 반 밖)');
+}
 console.log(fail ? `FAIL ${fail}` : 'PASS');
 process.exitCode = fail ? 1 : 0;

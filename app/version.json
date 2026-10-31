@@ -1,5 +1,5 @@
 {
- "v": "f4d593b0b8ea",
+ "v": "e11c5c2338e6",
  "files": [
   "css/app.css",
   "js/back.js",
@@ -17,8 +17,12 @@
   "js/run.js",
   "js/stage.js",
   "js/stageview.js",
+  "js/story.js",
+  "js/storylog.js",
   "js/teacher.js",
   "js/tools.js",
+  "js/week.js",
+  "js/weekcore.js",
   "../engine/bridges.js",
   "../engine/concepts/dec.js",
   "../engine/concepts/div.js",
@@ -45,6 +49,7 @@
   "../engine/mis.js",
   "../engine/parse.js",
   "../engine/practice.js",
+  "../engine/schema.js",
   "../engine/tokens.js",
   "../engine/types/index.js",
   "../engine/types/kit.js",

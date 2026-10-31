@@ -4,7 +4,9 @@ import { joinView, homeView, prepView, fixView, reviewView, meOf } from './kid.j
 import { stagesView, drillView } from './stageview.js';
 import { backView, retryView } from './back.js';
 import { runView } from './run.js';
-import { teacherHome, newClassView, openClassView, cardsView, namesView, classView, kidDetailView, groupCardView, guideView, mindCardView } from './teacher.js';
+import { weekView } from './week.js';
+import { storyView } from './story.js';
+import { teacherHome, newClassView, openClassView, cardsView, namesView, classView, kidDetailView, groupCardView, guideView, mindCardView, paperImportView } from './teacher.js';
 import { lsGet, esc } from './local.js';
 import { flush, pending } from './db.js';
 
@@ -29,6 +31,8 @@ const ROUTES = [
   [/^#\/stages$/, () => stagesView(root)],
   [/^#\/back$/, () => backView(root)],
   [/^#\/run$/, () => runView(root)],
+  [/^#\/week$/, () => weekView(root)],
+  [/^#\/story(?:\/([^?]+))?(\?.*)?$/, (m) => storyView(root, m[1] ? decodeURIComponent(m[1]) : '')],
   [/^#\/retry$/, () => retryView(root)],
   [/^#\/drill\/([\w:.-]+?)(\?.*)?$/, (m) => drillView(root, decodeURIComponent(m[1]))],
   [/^#\/t$/, () => teacherHome(root)],
@@ -38,6 +42,7 @@ const ROUTES = [
   [/^#\/t\/c\/(\w+)$/, (m) => classView(root, m[1])],
   [/^#\/t\/c\/(\w+)\/cards$/, (m) => cardsView(root, m[1])],
   [/^#\/t\/c\/(\w+)\/names$/, (m) => namesView(root, m[1])],
+  [/^#\/t\/c\/(\w+)\/paper$/, (m) => paperImportView(root, m[1])],
   [/^#\/t\/c\/(\w+)\/k\/(\d+)$/, (m) => kidDetailView(root, m[1], m[2])],
   [/^#\/t\/c\/(\w+)\/g\/(.+)$/, (m) => groupCardView(root, m[1], decodeURIComponent(m[2]))],
   [/^#\/t\/c\/(\w+)\/m\/([\w.]+)$/, (m) => mindCardView(root, m[1], m[2])],
@@ -46,7 +51,7 @@ function route() {
   if (typeof cleanup === 'function') { try { cleanup(); } catch (e) { /* */ } }
   cleanup = null;
   const h = location.hash || '#/';
-  const kid = /^#\/(me|prep|fix|review|join|stages|drill|back|retry|run)/.test(h);
+  const kid = /^#\/(me|prep|fix|review|join|stages|drill|back|retry|run|story|week)/.test(h);
   document.body.classList.toggle('kid', kid);
   const me = meOf();
   document.getElementById('who').textContent = kid && me ? `${me.C} · ${me.no}번` : /^#\/t/.test(h) ? '선생님' : '';

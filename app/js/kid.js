@@ -15,6 +15,7 @@ import { lsGet, lsSet, lsDel, esc, rand } from './local.js';
 import { flush } from './db.js';
 import { runPlan, weekHTML, today } from './run.js';
 import { toolFor, toolBox, TOOLS } from './tools.js';
+import { weeksOf, weekTerm, weekPlan, weekChart, doneThisWeek } from './weekcore.js';
 import { makeItem as mkItem } from '../../engine/lessons/index.js';
 
 export const go = (h) => { location.hash = h; };
@@ -83,6 +84,7 @@ export async function homeView(root) {
   flush();
   const rep = KS.reportOf(K);
   const todo = todoOf(K, rep);
+  if (!doneThisWeek(K.recs) && weekPlan(K, rep).length >= 4) todo.push({ kind: 'week', pri: !todo.length, title: '이번 주 점검 — 섞은 문제 10개', sub: '주마다 한 번 · 3~5분 · 내 선이 어디로 가나', href: '#/week' });
   const unit = (todo.find((x) => x.unit) || {}).unit || (K.lastPrep && K.lastPrep.unit) || null;
   const cal = KS.calOf(K);
   const sw = Object.values(cal.sureWrong).reduce((a, b) => a + b, 0);
@@ -105,11 +107,13 @@ export async function homeView(root) {
       <div class="plank-list" style="margin-top:10px">${planks.map((p) => `<span class="pk ${KIND(p.st) === 'ok' ? 'ok' : KIND(p.st) === 'gap' ? 'fix' : KIND(p.st)}">${esc(p.label)}</span>`).join('')}</div></div>` : ''}
     <div class="card"><h2>내 스테이지 <small>판자 하나 = 스테이지 하나 · 정확 → 빠르게 → 오래</small></h2>${(() => { const xs = Object.values(K.mx || {}); const n = (t) => xs.filter((m) => m.tier >= t).length; return xs.length ? `<p>정확 <b>${n(1)}</b> · 빠르게 <b>${n(2)}</b> · 오래 <b>${n(3)}</b> <span class="muted small">— 표를 모으면 판자가 나무 → 못 박은 판자 → 돌 판자로 바뀌어요</span></p>` : '<p class="muted">판자를 고치거나 준비 다리에서 셋 다 맞히면 스테이지가 생겨요. 한 번 깨고 끝이 아니라 더 정확하고 빠르게 다듬어요.</p>'; })()}
       <p class="small">이번 주 구보 ${weekHTML(K)}</p>
+      ${(() => { const ws = weeksOf(K.recs, weekTerm(K)); return ws.length ? `<h3>이번 주 점검 — 내 선 <small class="muted">(나하고만 견줘요)</small></h3>${weekChart(ws)}` : ''; })()}
       <div class="acts"><a class="btn teal" href="#/stages">스테이지 보기</a>${runPlan(K).length ? '<a class="btn" href="#/run">오늘의 구보</a>' : ''}</div></div>
     ${Object.keys(K.tools || {}).length ? `<div class="card"><h2>내 도구함 <small>내 답을 스스로 확인하는 도구</small></h2><div class="plank-list">${Object.entries(K.tools).filter(([t]) => TOOLS[t]).map(([t, x]) => `<span class="pk ok">🔍 ${esc(TOOLS[t].name)}${x.self ? ` · 스스로 고친 ${x.self}번` : ''}</span>`).join('')}</div><p class="small muted">틀렸을 때 '도구로 확인'을 눌러 다시 써 보면, 스스로 고친 횟수가 늘어요.</p></div>` : ''}
     <div class="card"><h2>내 짐작 견주기</h2>${cal.n ? `<p>풀기 전에 고른 짐작이 맞은 정도: <b>${Math.round(cal.match * 100)}%</b> <span class="muted small">(${cal.n}문제)</span></p>
       ${sw ? `<p>'자신 있어요'라고 했는데 틀린 문제가 <b>${sw}개</b> 있어요. 그 판자부터 다시 보면 좋아요.</p>` : '<p>\'자신 있어요\'라고 한 문제는 다 맞았어요. 내 짐작을 믿어도 돼요.</p>'}` : '<p class="muted">문제를 풀 때마다 먼저 짐작을 골라요. 짐작이 결과와 점점 맞아 가는 것도 실력이 느는 거예요.</p>'}
       ${fixedN ? `<p>내가 고친 판자: <b>${fixedN}개</b> — ${Object.keys(K.fixed).map((c) => esc(kidName(c))).join(', ')}</p>` : ''}</div>
+    <div class="card"><h2>이야기 다리 <small>문장제를 나눠 읽기</small></h2>${say('think', '문장제를 <b>무슨 이야기 → 막대 틀 → 식 → 답</b>으로 나눠 풀어요.', 56)}<div class="acts"><a class="btn teal" href="#/story">이야기 다리</a></div></div>
     <div class="card"><h2>막힌 문제 거꾸로 찾기</h2>${say('think', '풀기 어려운 문제를 그대로 쓰면, 튼튼이가 <b>거꾸로</b> 따라가며 어디서 끊겼는지 찾아 줘요.', 56)}
       <div class="acts"><a class="btn pri" href="#/back">거꾸로 찾기</a>${K.back && K.back.root && !K.back.solved && K.fixed && K.fixed[K.back.root] ? `<a class="btn" href="#/retry">처음 문제 다시 풀기 — ${esc(K.back.text)}</a>` : ''}</div>
       <p class="small"><button class="link" id="out">이 기기에서 나가기</button></p></div>`;

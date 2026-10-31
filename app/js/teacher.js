@@ -18,6 +18,7 @@ import { modelHTML } from './model.js';
 import { MIS, misFor, misById, WHY, wantFor, WANT } from '../../engine/mis.js';
 import { TOOLS, CARD_TOOL } from './tools.js';
 import { KIDSAY } from './fix.js';
+import { weeksOf, weekChart, weekTrend, weekKey, lastLine } from './weekcore.js';
 import { testable, __predict } from '../../engine/errors.js';
 import { go, unitLabel } from './kid.js';
 
@@ -83,12 +84,13 @@ export function guideView(root) {
     <div class="acts no-print"><button class="pri" onclick="print()">인쇄</button><a class="btn" href="#/t">처음으로</a></div>
     <h3>처음 한 번</h3><ol class="easy"><li><b>새 반 만들기</b> — 학기와 아이 수를 넣으면 반 코드와 번호마다 핀이 생겨요.</li><li><b>카드 인쇄</b> — 아이 카드는 잘라 나눠 주고, <b>선생님 열쇠 카드</b>는 따로 보관해요(다른 기기에서 반을 열 때 필요해요).</li><li><b>이름 적기</b>(골라서) — 이름은 이 기기에만 저장되고 서버엔 번호만 가요. 처음 화면에서 <b>백업</b>을 내려받아 두세요.</li></ol>
     <h3>수업 때(5~10분)</h3><ol class="easy"><li>반 화면에서 오늘 배울 단원을 골라 <b>오늘 단원으로 열기</b>를 눌러요.</li><li>아이들이 카드로 들어가면 맨 위에 <b>오늘 단원 준비하기</b>가 떠요. 이미 켜 둔 화면은 새로고침해요.</li><li>아이마다 그 단원에 꼭 필요한 앞 칸만 3문제씩 풀어요. 막히면 반씩 좁혀 <b>고칠 판자</b>를 찾고, 찾으면 바로 <b>판자 고치기</b>를 한 바퀴 해요. 끝나면 오늘 수업으로 돌아가요.</li></ol>
+    <h3>주마다 한 번(3~5분)</h3><ol class="easy"><li>금요일 같은 날을 정해 아이들이 <b>이번 주 점검</b>을 해요(아이 오늘 할 일에 떠요). 이번 학기 단원들의 앞 칸(지난 학기까지 배운 것) 전체에서 고르게 뽑은 10문제라 학기 내내 견줄 수 있어요.</li><li>반 화면 <b>선이 어디로 가나</b>에서 <b>내려가요 · 낮게 그대로</b>인 아이는 다음 주에 지도 방법을 바꿔 봐요(소집단 · 도구 · 다른 모형). 점검의 효과는 선생님이 선을 보고 수업을 바꿀 때 나요.</li><li>종이 학습지(<b>끊긴 곳 찾기</b>)로 채점한 결과는 반 화면 <b>종이 결과 가져오기</b>로 아이 기록에 넣을 수 있어요.</li></ol>
     <h3>반 화면 읽기</h3><div class="legend2">${LEGEND.map(([c, s, t]) => `<span><i class="${c}">${s}</i>${t}</span>`).join('')}</div>
-    <ul class="easy"><li><b>먼저 봐 줄 아이</b> — 막힌 칸이 많거나, 고치고도 흔들리거나, '자신 있었는데 틀린' 문제가 많거나, 2초 안에 찍은 아이예요. 앱보다 선생님이 먼저 봐 주세요.</li>
+    <ul class="easy"><li><b>먼저 봐 줄 아이</b> — 막힌 칸이 많거나, 고치고도 흔들리거나, 이번 주 점검 선이 내려가거나, '자신 있었는데 틀린' 문제가 많거나, 2초 안에 찍은 아이예요. 앱보다 선생님이 먼저 봐 주세요.</li>
     <li><b>같은 생각끼리</b> — 틀린 까닭이 같은 아이끼리 묶었어요. <b>이 생각 10분 카드</b>로 2~3명을 모아 함께 짚어요.</li>
     <li><b>같은 판자끼리</b> — 같은 칸을 고칠 아이가 둘 이상이면 묶고 <b>10분 소집단 카드</b>(시범 · 함께 · 혼자 · 마무리)를 줘요. 누구를 넣고 뺄지는 선생님이 정해요.</li>
     <li><b>아이 자세히</b> — 아이 이름을 누르면 봐요. 원인은 짐작이에요. <b>한 번 보임</b>은 한 문제에서만, <b>여러 번 보임</b>은 서로 다른 두 문제 이상에서 같은 틀린 방법이 나온 거예요. 아이 화면엔 원인 이름이 나오지 않아요.</li></ul>
-    <h3>알아 두기</h3><ul class="easy"><li>점수 · 순위 · 친구 비교는 없어요. 아이는 '내 짐작이 맞은 정도'와 '내가 고친 판자'만 봐요.</li><li>고친 판자는 1 · 3 · 7일 뒤 섞어서 다시 봐요(아이의 오늘 할 일에 떠요).</li><li>효과는 앱 안 기록보다 다음 단원 형성평가로 보세요. 연구에 따르면 이런 지도의 효과는 0.2~0.4 표준편차 안팎이에요.</li></ul></div>`;
+    <h3>알아 두기</h3><ul class="easy"><li>순위 · 친구 비교는 없어요. 아이가 보는 숫자는 '내 짐작이 맞은 정도' · 내가 고친 판자 · 내 지난 기록(다듬기 · 이번 주 점검의 내 선)뿐이에요.</li><li>고친 판자는 1 · 3 · 7일 뒤 섞어서 다시 봐요(아이의 오늘 할 일에 떠요).</li><li>효과는 앱 안 기록보다 다음 단원 형성평가로 보세요. 연구에 따르면 이런 지도의 효과는 0.2~0.4 표준편차 안팎이에요.</li></ul></div>`;
 }
 
 export function newClassView(root) {
@@ -161,7 +163,7 @@ function normSt(st) {
   if (!st || typeof st !== 'object') return null;
   const L = {}; for (const [c, v] of Object.entries(obj(st.L))) if (LES(c) && typeof v === 'string' && ST[v]) L[c] = v;
   const num = (o) => Object.fromEntries(Object.entries(obj(o)).filter(([c, v]) => LES(c) && Number.isFinite(Number(v))).map(([c, v]) => [c, Number(v)]));
-  return { L, start: arr(st.start), below: arr(st.below), under: arr(st.under), sw: num(st.sw), fixed: num(st.fixed), help: num(st.help), due: arr(st.due), t: Number(st.t) || 0, last: Number(st.last) || 0, cal: obj(st.cal), rush: Number(st.rush) || 0, mx: num(st.mx), mis: Object.fromEntries(Object.entries(obj(st.mis)).filter(([k, v]) => misById[k] && (v === 's' || v === 'm' || v === 'r'))), jog: Array.isArray(st.jog) ? st.jog.filter((d) => typeof d === 'string' && /^\d{4}-\d\d-\d\d$/.test(d)) : [] };
+  return { L, start: arr(st.start), below: arr(st.below), under: arr(st.under), sw: num(st.sw), fixed: num(st.fixed), help: num(st.help), due: arr(st.due), t: Number(st.t) || 0, last: Number(st.last) || 0, cal: obj(st.cal), rush: Number(st.rush) || 0, mx: num(st.mx), mis: Object.fromEntries(Object.entries(obj(st.mis)).filter(([k, v]) => misById[k] && (v === 's' || v === 'm' || v === 'r'))), story: Object.fromEntries(Object.entries(obj(st.story)).filter(([k, v]) => /^[\w가-힣 ·]{1,24}$/.test(k) && v && typeof v === 'object').map(([k, v]) => [k, { n: Number(v.n) || 0, type: Number(v.type) || 0, frame: Number(v.frame) || 0, eq: Number(v.eq) || 0, ans: Number(v.ans) || 0 }])), tools: Object.fromEntries(Object.entries(obj(st.tools)).filter(([k, v]) => /^[a-z]+$/.test(k) && v && typeof v === 'object').map(([k, v]) => [k, { self: Number(v.self) || 0 }])), jog: Array.isArray(st.jog) ? st.jog.filter((d) => typeof d === 'string' && /^\d{4}-\d\d-\d\d$/.test(d)) : [], wk: Array.isArray(st.wk) ? st.wk.filter((a) => Array.isArray(a) && /^\d{4}-\d\d-\d\d$/.test(a[0]) && Number.isFinite(Number(a[1])) && Number(a[2]) > 0).map((a) => ({ wk: a[0], ok: Number(a[1]), n: Number(a[2]), term: typeof a[3] === 'string' ? a[3] : null })).slice(-12) : [] };
 }
 const normNow = (n) => (n && typeof n === 'object' ? { mode: String(n.mode || ''), c: typeof n.c === 'string' ? n.c : '', n: Number(n.n) || 0, t: Number(n.t) || 0 } : null);
 // 아이 요약 모으기(8개씩 동시에) — 열린 연결 없이 짧은 요청만
@@ -205,13 +207,13 @@ export function classView(root, C) {
     rows.forEach((no) => { const st = S[no] && S[no].st; if (st) st.start.forEach((c) => (groups[c] = groups[c] || []).push(no)); });
     const glist = Object.entries(groups).filter(([, v]) => v.length >= 2).sort((a, b) => b[1].length - a[1].length);
     // 먼저 볼 아이 — 고치기를 해도 흔들림 · 막힌 칸이 많음(깊은 결손 — 자동 처방보다 선생님 먼저 [A-R27]) · 자신 있었는데 틀림 [D-1]
-    const first = rows.map((no) => { const st = S[no] && S[no].st; if (!st) return null; const why = []; const help = Object.keys(st.help || {}); if (help.length) why.push(`고치고도 흔들림: ${help.map(lessonName).join(', ')}`); const deep = st.start.length + st.under.length; if (deep >= 4) why.push(`막힌 칸 ${deep}개`); const sw = Object.values(st.sw || {}).reduce((a, b) => a + b, 0); if (sw >= 3) why.push(`자신 있었는데 틀림 ${sw}문제`); if (st.rush >= 2) why.push(`2초 안에 찍기 ${st.rush}번(결과를 그대로 믿기 어려워요)`); return why.length ? { no, why } : null; }).filter(Boolean);
+    const first = rows.map((no) => { const st = S[no] && S[no].st; if (!st) return null; const why = []; const help = Object.keys(st.help || {}); if (help.length) why.push(`고치고도 흔들림: ${help.map(lessonName).join(', ')}`); const deep = st.start.length + st.under.length; if (deep >= 4) why.push(`막힌 칸 ${deep}개`); const sw = Object.values(st.sw || {}).reduce((a, b) => a + b, 0); if (sw >= 3) why.push(`자신 있었는데 틀림 ${sw}문제`); if (st.rush >= 2) why.push(`2초 안에 찍기 ${st.rush}번(결과를 그대로 믿기 어려워요)`); const wl = lastLine(st.wk || []); if (weekTrend(wl) === 'down') why.push(`이번 주 점검 선이 내려감(${wl.slice(-3).map((v) => Math.round((v.ok / v.n) * 10)).join('→')}점)`); return why.length ? { no, why } : null; }).filter(Boolean);
     const seen = rows.filter((no) => S[no] && S[no].st).length;
     const uName = unitLabel(unit);
     root.innerHTML = `<div class="card no-print"><h2>${esc(C)} <small>${esc(gl(K.g))} · ${K.n}명 · 기록 있는 아이 ${seen}명</small></h2>
       ${intro('반 전체를 한눈에 보는 화면이에요. 오늘 배울 단원을 고르고 <b>오늘 단원으로 열기</b>를 누르면, 아이들 화면 맨 위에 그 단원 준비 문제가 떠요. 아이들 기록은 15초마다 저절로 새로 들어와요.')}
       <div class="acts"><select id="u" class="sel">${units.map((u) => `<option value="${u.id}" ${u.id === unit ? 'selected' : ''}>${esc(gl(u.g))} · ${esc(u.nm)}</option>`).join('')}</select>
-      <button class="pri" id="open">오늘 단원으로 열기</button><button id="re">새로 보기</button></div>
+      <button class="pri" id="open">오늘 단원으로 열기</button><button id="re">새로 보기</button><button id="csv" title="효과를 재거나 기록해 둘 때 — 번호만 들어가요(이름 X)">기록 내려받기(CSV)</button><a class="btn" href="#/t/c/${C}/paper" title="종이로 푼 진단 · 점검 결과를 아이 기록에 넣어요">종이 결과 가져오기</a></div>
       <div class="acts sub"><a class="btn" href="#/t/c/${C}/cards">아이 카드 인쇄</a><a class="btn" href="#/t/c/${C}/names">이름 적기</a><a class="btn" href="#/t/guide">한 장 안내</a></div>
       ${K.today ? `<p class="small">지금 열린 단원: <b>${esc(unitLabel(K.today.unit))}</b> <span class="muted">(${new Date(K.today.t).toLocaleString('ko-KR')}에 열었어요)</span></p>` : `<p class="small muted">아이 주소: ${esc(appURL())}</p>`}
       <p class="qmsg tight" id="msg"></p></div>
@@ -221,6 +223,13 @@ export function classView(root, C) {
       return list.length ? `<div class="card"><h2>같은 생각끼리</h2>${intro('틀린 칸이 아니라 <b>틀린 까닭</b>이 같은 아이끼리 묶었어요. 2~3명을 모아 <b>이 생각 10분 카드</b>로 함께 짚어 주세요. 누구를 넣고 뺄지는 선생님이 정해요.')}<div class="groups">${list.map(([id, e]) => { const m = misById[id], t = TOOLS[CARD_TOOL[id]]; return `<div class="grp"><b class="g-t">${esc(m.title)}</b><p class="g-p">${esc(whyOf(m))}</p><p class="g-ex">예: ${esc(m.shows)}</p>
         <p class="g-who">${e.s.length ? `여러 번 보인 아이 <b>${e.s.map((no) => esc(nm(K, no))).join(', ')}</b>` : ''}${e.m.length ? `${e.s.length ? ' · ' : ''}한 번 보임 ${e.m.length}명` : ''}${e.r.length ? `${e.s.length || e.m.length ? ' · ' : ''}<span class="okc">고친 아이 ${e.r.length}명</span>` : ''}</p>
         ${t ? `<p class="g-tool">앱 도구 🔍 ${esc(t.name)}</p>` : ''}${e.s.length ? `<div class="acts"><a class="btn teal" href="#/t/c/${C}/m/${id}">이 생각 10분 카드</a></div>` : ''}${misCard(m, '', '이 생각 자세히')}</div>`; }).join('')}</div></div>` : ''; })()}
+    ${(() => { const L2 = rows.map((no) => { const st = S[no] && S[no].st; const x = st ? storyStep(st.story) : null; return x ? { no, ...x } : null; }).filter(Boolean); if (!L2.length) return '';
+      const g = {}; L2.forEach((x) => { if (x.weak) (g[x.weak] = g[x.weak] || []).push(x.no); });
+      return `<div class="card"><h2>이야기 다리 — 문장제가 어디서 끊기나</h2><p class="small muted">이야기 다리를 세 문제 넘게 푼 아이 ${L2.length}명을, 이해(무슨 이야기인지 · 막대 틀) → 바꾸기(식) → 계산(답) 가운데 처음 끊기는 곳으로 묶었어요. 이해에서 끊기는 아이는 계산 연습보다 '나눠 읽기'부터예요.</p>${Object.keys(g).length ? `<ul>${Object.entries(g).map(([w, nos]) => `<li><b>${esc(w)}</b> — ${nos.map((no) => esc(nm(K, no))).join(', ')}</li>`).join('')}</ul>` : '<p>세 걸음 모두 잘하고 있어요.</p>'}</div>`; })()}
+    ${(() => { const W = rows.map((no) => { const st = S[no] && S[no].st; const all = st ? st.wk : [], ws = lastLine(all); return { no, ws, last: all[all.length - 1], tr: weekTrend(ws) }; }); const any = W.filter((x) => x.ws.length); if (!any.length) return '';
+      const sc = (v) => Math.round((v.ok / v.n) * 10), wk = weekKey(), list = (xs) => xs.map((x) => `${esc(nm(K, x.no))}(${x.ws.slice(-4).map(sc).join('→')})`).join(', ');
+      const down = any.filter((x) => x.tr === 'down'), low = any.filter((x) => x.tr !== 'down' && x.ws.length >= 3 && x.ws.slice(-3).reduce((a, v) => a + sc(v), 0) / 3 <= 5.5), up = any.filter((x) => x.tr === 'up'), not = W.filter((x) => !(x.last && x.last.wk === wk));
+      return `<div class="card"><h2>이번 주 점검 — 선이 어디로 가나</h2><p class="small muted">주 1회 섞은 열 문제 — 이번 학기 단원들의 앞 칸(지난 학기까지 배운 것) 전체에서 고르게 뽑아 학기 내내 같은 범위예요. 기초 체력이 느는지 봐요(이번 학기 진도는 형성평가로). 점 넷부터 방향을 봐요(열 문제 한 번은 1~2점씩 흔들려서). 선이 내려가거나 낮게 그대로면, 그 아이에게 하던 방법을 바꿔 볼 때예요.</p><ul>${down.length ? `<li><b>내려가요</b> — ${list(down)}</li>` : ''}${low.length ? `<li><b>낮게 그대로</b> — ${list(low)}</li>` : ''}${up.length ? `<li>올라가요 — ${list(up)}</li>` : ''}<li class="muted">이번 주 아직 — ${not.length ? not.map((x) => esc(nm(K, x.no))).join(', ') : '없음'}</li></ul></div>`; })()}
     <div class="card"><h2>같은 판자끼리</h2>${intro('같은 칸(판자)을 고쳐야 하는 아이끼리예요. <b>10분 소집단 카드</b>로 시범 → 함께 → 혼자 차례로 가르칠 수 있어요.')}
       ${glist.length ? `<div class="groups">${glist.map(([c, nos]) => `<div class="grp"><b class="g-t">${esc(lessonName(c))}</b><p class="g-who">${nos.map((no) => esc(nm(K, no))).join(', ')} <span class="muted">(${nos.length}명)</span></p><div class="acts"><a class="btn teal" href="#/t/c/${C}/g/${encodeURIComponent(c)}">10분 소집단 카드</a></div></div>`).join('')}</div>` : '<p class="muted">아직 같은 판자에 둘 이상 몰린 곳이 없어요.</p>'}</div>
     <div class="card"><h2>${esc(uName)}${ro(uName)} 가는 칸 × 아이</h2>
@@ -233,6 +242,7 @@ export function classView(root, C) {
       <p class="small muted">${data ? '15초마다 새로 봐요(이 화면이 열려 있을 때만).' : '불러오는 중…'}</p></div>`;
     root.querySelector('#u').addEventListener('change', (e) => { unit = e.target.value; render(); });
     root.querySelector('#re').addEventListener('click', refresh);
+    root.querySelector('#csv').addEventListener('click', () => exportCSV(C, K, S, unit));
     root.querySelector('#open').addEventListener('click', openToday);
   }
   async function openToday() {
@@ -252,7 +262,7 @@ function nowText(n) {
   if (!n || !n.t) return '';
   const m = Math.round((Date.now() - n.t) / 60000);
   if (m > 20) return '';
-  return n.mode === 'prep' ? `준비 다리 ${n.n || 0}문제` : n.mode === 'fix' ? `고치는 중: ${esc(lessonName(n.c))}` : n.mode === 'drill' ? `다듬는 중: ${esc(lessonName(n.c))}` : n.mode === 'run' ? '구보 중' : n.mode === 'back' ? `거꾸로 찾는 중: ${esc(lessonName(n.c))}` : '';
+  return n.mode === 'prep' ? `준비 다리 ${n.n || 0}문제` : n.mode === 'fix' ? `고치는 중: ${esc(lessonName(n.c))}` : n.mode === 'drill' ? `다듬는 중: ${esc(lessonName(n.c))}` : n.mode === 'run' ? '구보 중' : n.mode === 'back' ? `거꾸로 찾는 중: ${esc(lessonName(n.c))}` : n.mode === 'story' ? '이야기 다리' : n.mode === 'week' ? '이번 주 점검 중' : '';
 }
 
 // 아이 자세히 — 종이와 같은 판정 · 원인은 '한 번 보임'(가설) / '되풀이됨'(서로 다른 문항 둘 이상) [A-R11][A-R12]
@@ -264,6 +274,7 @@ export async function kidDetailView(root, C, no) {
   if (raw && raw.r) for (const [id, s] of Object.entries(raw.r)) { const o = db.dec(s); if (o) KK.recs[id] = o; }
   const st = raw && raw.st ? normSt(db.dec(raw.st)) : null;
   const rv = obj(raw && raw.rv ? db.dec(raw.rv) : null);
+  let notes = []; try { const v = db.dec(await db.get(`tc/${C}/${K.T}/notes/${no}`)); if (Array.isArray(v)) notes = v.filter((m) => m && Number.isFinite(m.t) && typeof m.x === 'string').slice(-20); } catch (e) { notes = []; }
   const rep = KS.reportOf(KK), cal = KS.calOf(KK);
   const why = (c) => { const x = rep.L[c]; if (!x || !x.why) return ''; const a = x.why.sure.map((h) => `<span class="pill strong">여러 번 보임: ${esc(bugName(h.id))} (${h.ev.length}문제)</span>`), b = x.why.maybe.map((h) => `<span class="pill">한 번 보임: ${esc(bugName(h.id))}</span>`); return [...a, ...b].join(' '); };
   // 시간 — 맞힌 문제의 한 문제 가운데값(모든 기록 · 준비 다리 · 확인 · 다시 보기 · 다듬기)
@@ -286,8 +297,20 @@ export async function kidDetailView(root, C, no) {
     ${rep.under.length ? `<h3>아래 칸 때문일 수도 <small>아래 칸을 고치면 함께 풀릴 수 있어요</small></h3><ul class="lines">${rep.under.map((u) => line(u.c, `← ${u.because.map((x) => esc(lessonName(x))).join(', ')}`)).join('')}</ul>` : ''}
     <h3>짐작과 결과</h3>${cal.n ? `<p>풀기 전 짐작이 결과와 맞은 정도 <b>${Math.round(cal.match * 100)}%</b> <span class="muted small">(${cal.n}문제)</span></p><p>자신 있었는데 틀린 문제 ${swList.length ? `<span class="whys">${swList.map(([c, n]) => `<span class="pill">${esc(lessonName(c))} ${n}</span>`).join('')}</span>` : '없어요.'}</p>` : '<p class="muted">아직 없어요.</p>'}
     ${Object.keys(mxK).length ? `<h3>다듬은 판자(스테이지)</h3><ul class="lines">${Object.keys(mxK).filter((c) => LES(c)).sort(byGrade).map((c) => line(c)).join('')}</ul>` : ''}
+    ${(() => { const ws = lastLine(weeksOf(KK.recs)); if (!ws.length) return ''; const tr = weekTrend(ws); return `<h3>이번 주 점검</h3><div id="wkc">${weekChart(ws, { marks: notes })}</div><p class="small muted">${ws.length}주 · ${tr === 'up' ? '올라가요' : tr === 'down' ? '내려가요 — 하던 방법을 바꿔 볼 때' : tr === 'flat' ? '그대로예요' : '점 넷부터 방향을 봐요'}</p>
+      <div class="no-print"><b class="small">지도를 바꾼 때</b> <span class="small muted">(선생님만 봐요 · 그래프에 점선으로 · 이름은 적지 않아요)</span><ol class="small" id="nl">${notes.map((m) => `<li>${esc(new Date(m.t).toLocaleDateString('sv-SE').slice(5))} ${esc(m.x)}</li>`).join('')}</ol>
+      <div class="row"><input id="nx" maxlength="80" placeholder="예: 소집단 수직선 3번 · 구보 판자 줄임" style="flex:1;min-width:220px"><button id="nadd">적기</button></div></div>`; })()}
+    ${(() => { const x = st ? storyStep(st.story) : null; if (!x) return ''; const pc = (v) => `${Math.round(v * 100)}%`; return `<h3>이야기 다리(문장제)</h3><p>${x.n}문제 · 이해 ${pc(x.und)} · 바꾸기(식) ${pc(x.conv)} · 계산(답) ${pc(x.calc)}${x.weak ? ` — 먼저 <b>${esc(x.weak)}</b>` : ''}${x.types.length ? `<br><span class="small muted">헷갈리는 이야기: ${x.types.map(esc).join(', ')}</span>` : ''}</p>`; })()}
     <h3>고친 판자 · 다시 보기</h3><p>${Object.keys(st && st.fixed || {}).map((c) => `${esc(lessonName(c))}${rv[c] ? ` <span class="small muted">(다시 보기 ${rv[c].n}/3)</span>` : ''}`).join(', ') || '<span class="muted">아직 없어요.</span>'}</p>
     <p class="small muted foot">원인은 짐작이에요. '한 번 보임'은 한 문제에서만, '여러 번 보임'은 서로 다른 두 문제 이상에서 같은 틀린 방법이 나온 거예요. 아이 화면엔 원인 이름이 나오지 않아요.</p></div>`;
+  const nadd = root.querySelector('#nadd');
+  if (nadd) nadd.addEventListener('click', () => {
+    const inp = root.querySelector('#nx'), x = inp.value.trim().slice(0, 80); if (!x) return inp.focus();
+    notes = [...notes, { t: Date.now(), x }].slice(-20);
+    db.queuePut(`tc/${C}/${K.T}/notes/${no}`, db.enc(notes)); db.flush();
+    root.querySelector('#nl').insertAdjacentHTML('beforeend', `<li>${esc(new Date().toLocaleDateString('sv-SE').slice(5))} ${esc(x)}</li>`);
+    root.querySelector('#wkc').innerHTML = weekChart(lastLine(weeksOf(KK.recs)), { marks: notes }); inp.value = '';
+  });
 }
 
 // 10분 소집단 카드 — 명시적 지도 차례(시범 · 생각 말하기 → 함께 → 혼자 · 바로 고치기) [B-R11][B-R12][B-R13]
@@ -347,4 +370,108 @@ export function mindCardView(root, C, id) {
     </ol>
     ${m.has === 'no' ? '<p class="warn small">이 생각은 아직 앱 문제로 잡지 못해요. 수업에서 직접 물어봐 주세요.</p>' : ''}
     <details class="refs"><summary>근거</summary><p>docs/research ${esc(m.refs)} · 근거 강도 ${esc(m.str)}</p></details></div>`;
+}
+
+// 기록 내려받기(CSV 둘) — 시범 운영 효과 재기용(docs/pilot.md) · 번호만(이름 X · 이름은 이 기기에만 있음)
+//  ① 아이마다 한 줄(요약) ② 아이 × 칸(분석용 긴 꼴)
+function exportCSV(C, K, S, unit) {
+  const loc = (t) => new Date(t).toLocaleString('sv-SE').slice(0, 16);   /* 이 기기 시각(한국 시간) · 2026-10-31 16:12 */
+  const day = loc(Date.now()).slice(0, 10);
+  const q = (v) => { const t = v == null ? '' : String(v); return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
+  const csv = (rows) => '\ufeff' + rows.map((r) => r.map(q).join(',')).join('\n');
+  const P = prepPlan(unit);
+  const rows1 = [['반', '번호', '마지막 기록', '오늘 단원', '준비 칸 수', '준비 칸 확인', '준비 칸 막힘', '고칠 판자', '여러 번 보인 생각', '고친 생각', '짐작 맞은 정도', "'자신 있어요'인데 틀림", '정확 표', '빠르게 표', '오래 표', '고친 판자 수', '구보(7일)', '도구로 스스로 고침', '빨리 넘김', '이번 주 점검(주 · 10점 · 최근 8주)']];
+  const rows2 = [['반', '번호', '차시', '칸 이름', '학기', '상태', '다듬기 표(0~3)', '오늘 단원 준비 칸']];
+  for (let i = 1; i <= K.n; i++) {
+    const no = String(i), st = S[no] && S[no].st; if (!st) { rows1.push([C, no]); continue; }
+    const pre = P.pre.filter((c) => LES(c)), ok = pre.filter((c) => ['ok', 'pass'].includes(st.L[c])).length, bad = pre.filter((c) => st.L[c] === 'stuck').length;
+    const mis = Object.entries(st.mis || {}), mx = Object.values(st.mx || {});
+    rows1.push([C, no, st.last ? loc(st.last) : '', unitLabel(unit), pre.length, ok, bad, st.start.map(lessonName).join(' / '),
+      mis.filter(([, v]) => v === 's').map(([id]) => misById[id].title).join(' / '), mis.filter(([, v]) => v === 'r').map(([id]) => misById[id].title).join(' / '),
+      st.cal && st.cal.m != null ? Math.round(st.cal.m * 100) : '', Object.values(st.sw || {}).reduce((a, b) => a + b, 0),
+      mx.filter((t) => t >= 1).length, mx.filter((t) => t >= 2).length, mx.filter((t) => t >= 3).length, Object.keys(st.fixed || {}).length,
+      (st.jog || []).filter((d) => Date.now() - new Date(d).getTime() < 7 * 864e5).length, Object.values(st.tools || {}).reduce((a, x) => a + ((x && x.self) || 0), 0), st.rush || 0, (st.wk || []).map((w) => `${w.wk.slice(5)} ${Math.round((w.ok / w.n) * 10)}`).join(' / ')]);
+    for (const [c, v] of Object.entries(st.L)) if (LES(c)) rows2.push([C, no, c, lessonName(c), LES(c).g, ST[v] || v, (st.mx || {})[c] || 0, pre.includes(c) ? 'O' : '']);
+  }
+  const dl = (name, text) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv' })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); };
+  dl(`튼튼수다리_${C}_아이별_${day}.csv`, csv(rows1));
+  setTimeout(() => dl(`튼튼수다리_${C}_칸별_${day}.csv`, csv(rows2)), 400);
+}
+
+// 이야기 구조 프로필 — 문장제가 어디서 끊기나(뉴먼: 이해 · 바꾸기 · 계산 [C-28]) · st.story = { 유형: { n 푼 수, type 유형 맞힘, frame 틀 맞힘, eq 식 맞힘, ans 답 맞힘 } }
+export function storyStep(sto) {
+  const t = Object.values(sto || {}).reduce((a, v) => ({ n: a.n + v.n, type: a.type + v.type, frame: a.frame + v.frame, eq: a.eq + v.eq, ans: a.ans + v.ans }), { n: 0, type: 0, frame: 0, eq: 0, ans: 0 });
+  if (t.n < 3) return null;
+  const r = (x) => x / t.n, und = Math.min(r(t.type), r(t.frame)), conv = r(t.eq), calc = r(t.ans);
+  const weak = und < 0.7 ? '이해(무슨 이야기 · 막대 틀)' : conv < 0.7 ? '바꾸기(식 세우기)' : calc < 0.8 ? '계산' : null;
+  return { n: t.n, und, conv, calc, weak, types: Object.entries(sto).filter(([, v]) => v.n >= 2 && (v.type + v.frame) / (2 * v.n) < 0.6).map(([k]) => k) };
+}
+
+// ── 종이 결과 가져오기 ──
+//  같은 주소의 '끊긴 곳 찾기'(paper/)는 이 브라우저에만 저장(kkg.v1) → 같은 기기 · 같은 브라우저면 파일 없이 바로 읽음 · 다른 기기면 종이 앱에서 내보낸 파일
+//  종이 아이(별명) ↔ 반 번호를 맞춰 아이 기록(r)에 넣음 → 아이가 다음에 앱을 열면 판정 · 다리 · 반 화면에 들어감(선생님 '자세히'에는 바로)
+//  기록 이름 = P + 장 id + 아이 id 줄임 → 두 번 가져와도 겹치지 않음 · 문장제 칸은 종이 앱에서만(앱 기록 꼴에 없음)
+const PKEY = 'kkg.v1';
+export function paperData(text = null) {
+  let x = null; try { x = JSON.parse(text != null ? text : localStorage.getItem(PKEY) || 'null'); } catch (e) { return null; }
+  return x && x.v === 1 && Array.isArray(x.kids) && x.sheets && typeof x.sheets === 'object' && x.res && typeof x.res === 'object' ? x : null;
+}
+const pid = (sid, kid) => `P${String(sid).replace(/[^A-Za-z0-9]/g, '').slice(0, 18)}_${String(kid).replace(/[^A-Za-z0-9]/g, '').slice(0, 12)}`;
+// 종이 장 하나 · 아이 하나 → 앱 기록 여러 개({ s: 묶음 꼴, r, cf, ms }) — 기록 하나는 8000자 규칙 안(종이 장은 4만 자까지 감)
+//  나누는 단위 = 같은 칸 · 같은 장(chapter)의 문항 덩이(한 칸이 두 기록으로 갈리지 않게 → 판정이 종이와 같음) · 같은 made라 한 번 푼 것으로 읽힘
+//  문장제 · 채점 안 한 장 · 모양이 이상한 장은 []
+const REC_MAX = 7600;
+export function paperRecs(sh, r, id = sh && sh.id) {
+  if (!sh || !Array.isArray(sh.items) || !r || !r.done || !Object.keys(r.done).length) return [];
+  const items = sh.items.filter((it) => it.form !== 'w' && it.ch !== 'W' && LES(it.c) && it.p && typeof it.p === 'object' && r.done[it.ch]);
+  if (!items.length) return [];
+  const made = Number(sh.made) || Date.now(), kind = sh.kind || 'paper';
+  const recOf = (its, pid) => { const ks = new Set(its.map((it) => String(it.k))), chs = new Set(its.map((it) => it.ch)); const s = KS.pack({ id: pid, kind, made, unit: null, items: its }); s.src = 'paper'; return { s, r: { done: Object.fromEntries([...chs].map((k) => [k, true])), it: Object.fromEntries(Object.entries(r.it || {}).filter(([k]) => ks.has(String(k))).map(([k, v]) => [k, v && typeof v === 'object' ? { s: v.s, ...(v.a ? { a: v.a } : {}) } : v])) }, cf: {}, ms: {} }; };
+  const lumps = []; for (const it of items) { const last = lumps[lumps.length - 1]; if (last && last[0].ch === it.ch && last[0].c === it.c) last.push(it); else lumps.push([it]); }
+  const parts = []; let cur = [];
+  for (const L of lumps) { const next = [...cur, ...L]; if (cur.length && JSON.stringify(recOf(next, id)).length > REC_MAX) { parts.push(cur); cur = [...L]; } else cur = next; }
+  if (cur.length) parts.push(cur);
+  return parts.map((its, i) => recOf(its, parts.length > 1 ? `${id}_${i + 1}` : id)).filter((x) => JSON.stringify(x).length <= 8000);
+}
+// 이름이 같으면 그 번호 · '3' · '3번' · '3 하늘' 같은 별명이면 그 번호
+export function guessNo(label, K) {
+  const t = String(label || '').trim(), m = t.match(/^(\d{1,3})\s*번?(\s|$)/);
+  if (m && Number(m[1]) >= 1 && Number(m[1]) <= K.n) return m[1];
+  const hit = Object.entries(K.names || {}).find(([, v]) => v && (v === t || t.endsWith(v)));
+  return hit ? hit[0] : '';
+}
+export function paperImportView(root, C) {
+  const K = cls(C); if (!K) return go('#/t');
+  const DONE = `tt.paper.${C}`;
+  const show = (D, from) => {
+    const sent = lsGet(DONE, {});
+    const rows = D ? D.kids.map((k) => { const recs = Object.entries(D.res).filter(([sid, m]) => m && m[k.id] && D.sheets[sid]).map(([sid, m]) => ({ sid, recs: paperRecs(D.sheets[sid], m[k.id], pid(sid, k.id)) })).filter((x) => x.recs.length); return { k, recs, no: (sent[k.id] && sent[k.id].no) || guessNo(k.label, K), newN: recs.filter((x) => !(sent[k.id] && sent[k.id].ids && sent[k.id].ids.includes(x.sid))).length }; }).filter((x) => x.recs.length) : [];
+    const opts = (v) => `<option value="">— 넣지 않음 —</option>${Array.from({ length: K.n }, (_, i) => String(i + 1)).map((no) => `<option value="${no}"${no === v ? ' selected' : ''}>${esc(nm(K, no))}</option>`).join('')}`;
+    root.innerHTML = `<div class="card"><h2>종이 결과 가져오기 <small>${esc(K.title || C)}</small></h2>
+      ${intro('종이 학습지(<b>끊긴 곳 찾기</b>)로 진단 · 점검을 하고 채점까지 했다면, 그 결과를 아이 기록에 넣을 수 있어요. 아이가 다음에 앱을 열면 <b>내 수 다리</b>와 반 화면에 들어가요. 문장제 칸은 종이 앱에서만 봐요.')}
+      ${!D ? `<p>이 브라우저에는 종이 앱 기록이 없어요. 다른 기기에서 채점했다면 종이 앱 <b>설정 → 내보내기</b> 파일을 골라 주세요.</p>` : `<p class="small muted">${from} · 종이 아이 ${D.kids.length}명 가운데 채점한 장이 있는 아이 ${rows.length}명</p>`}
+      ${rows.length ? `<table class="list"><thead><tr><th>종이 별명</th><th>채점한 장</th><th>반 번호</th></tr></thead><tbody>${rows.map((x, i) => `<tr><td>${esc(x.k.label || '(별명 없음)')}</td><td>${x.recs.length}장${x.newN < x.recs.length ? ` <span class="muted small">(${x.recs.length - x.newN}장은 이미 넣음)</span>` : ''}</td><td><select data-i="${i}">${opts(x.no)}</select></td></tr>`).join('')}</tbody></table>
+        <p class="small muted">이름이 같거나 별명이 번호로 시작하면 미리 골라 두었어요. 한 번호에 두 아이를 고르면 넣지 않아요.</p>
+        <div class="acts"><button class="pri big" id="go">아이 기록에 넣기</button></div>` : ''}
+      <p class="small">다른 기기의 내보내기 파일: <input type="file" id="f" accept=".json,application/json"></p>
+      <div id="msg" role="status"></div>
+      <div class="acts"><a class="btn" href="#/t/c/${C}">반 화면으로</a></div></div>`;
+    root.querySelector('#f').addEventListener('change', async (e) => { const f = e.target.files[0]; if (!f) return; const D2 = paperData(await f.text()); if (!D2) { root.querySelector('#msg').innerHTML = '<p class="warn">끊긴 곳 찾기에서 내보낸 파일이 아니에요.</p>'; return; } show(D2, `파일 ${esc(f.name)}`); });
+    const btn = root.querySelector('#go'); if (!btn) return;
+    btn.addEventListener('click', () => {
+      const pick = [...root.querySelectorAll('select[data-i]')].map((el) => ({ x: rows[Number(el.dataset.i)], no: el.value })).filter((p) => p.no);
+      const dup = pick.map((p) => p.no).filter((no, i, a) => a.indexOf(no) !== i);
+      if (dup.length) { root.querySelector('#msg').innerHTML = `<p class="warn">${[...new Set(dup)].map((no) => esc(nm(K, no))).join(', ')}에 두 아이를 골랐어요. 하나만 골라 주세요.</p>`; return; }
+      let n = 0;
+      for (const { x, no } of pick) {
+        const ids = [];
+        for (const { sid, recs } of x.recs) { for (const rec of recs) db.queuePut(`k/${C}/${no}/${K.pins[no]}/r/${rec.s.id}`, db.enc(rec)); ids.push(sid); n++; }
+        sent[x.k.id] = { no, ids: [...new Set([...((sent[x.k.id] && sent[x.k.id].ids) || []), ...ids])], t: Date.now() };
+      }
+      lsSet(DONE, sent); db.flush();
+      root.querySelector('#msg').innerHTML = `<p>${pick.length}명 · ${n}장을 보냈어요. 아이 <b>자세히</b>에는 바로 보이고, 반 화면은 아이가 앱을 한 번 열면 바뀌어요.</p>`;
+    });
+  };
+  const D = paperData();
+  show(D, '이 브라우저의 종이 앱 기록');
 }

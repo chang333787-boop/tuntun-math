@@ -1,0 +1,69 @@
+// 이번 주 점검의 계산(화면 X) — 주 가르기 · 묶음 → 주마다 점 · 고를 칸 · 선 그래프 · 선 방향
+//  근거 · 설계는 week.js 머리말 · 아이 기기(kidstore 요약)와 선생님 화면이 같이 씀
+import { byId, gradeIdx, UNITS, unitById } from '../../engine/lessons/index.js';
+import { LES } from '../../paper/js/gen.js';
+import { prepPlan } from './prep.js';
+import { esc } from './local.js';
+
+const okRec = (x) => !!(x && x.s && Array.isArray(x.s.it) && Number.isFinite(x.s.made) && x.r && x.r.it && typeof x.r.it === 'object');
+export const WEEK = { n: 10 };
+// 월요일 날짜로 주를 가름(이 기기 시각)
+export const weekKey = (t = Date.now()) => { const d = new Date(t); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.toLocaleDateString('sv-SE'); };
+const median = (xs) => { const s = xs.slice().sort((a, b) => a - b); return s.length ? s[Math.floor(s.length / 2)] : null; };
+
+// 범위 = 학기 하나(T4-2) — 그 학기 단원들의 준비 칸 가운데 지난 학기까지 배운 칸(이번 학기에 새로 배울 칸은 뺌 — 못 배운 것을 '빈 곳'으로 읽지 않게)
+//  한 학기 내내 같은 범위라 선이 이어짐(CBM은 같은 범위에서 고르게 뽑은 같은 꼴의 점검) · 재는 것 = 기초 체력(앞 판자가 튼튼해지나) · 이번 학기 진도는 선생님 형성평가로
+//  묶음의 unit 칸엔 'T' + 학기를 적음 — 진짜 단원 id('4-2-1')와 겹치지 않게(홈의 '오늘 단원 준비했나'가 단원 id로 봄)
+export const termOf = (u) => (u && unitById[u] ? `T${unitById[u].g}` : null);
+const termG = (t) => (typeof t === 'string' && /^T\d-\d$/.test(t) ? t.slice(1) : null);
+export function termPool(term) {
+  const g = termG(term); if (!g) return [];
+  const pool = new Set(); UNITS.filter((u) => u.g === g).forEach((u) => prepPlan(u.id).pre.forEach((c) => { if (byId[c] && gradeIdx(LES(c).g) < gradeIdx(g)) pool.add(c); }));
+  return [...pool].sort((a, b) => gradeIdx(LES(a).g) - gradeIdx(LES(b).g) || (a < b ? -1 : 1));
+}
+
+// 푼 묶음들 → 주마다 점 { t, wk, term, ok, n, med } · 같은 주에 둘이면 먼저 푼 것
+export function weeksOf(recs, term = null) {
+  const out = new Map();
+  Object.values(recs || {}).filter((x) => okRec(x) && x.s.kind === 'week' && (!term || x.s.unit === term)).sort((a, b) => a.s.made - b.s.made).forEach((x) => {
+    const wk = weekKey(x.s.made); if (out.has(wk)) return;
+    const ks = x.s.it.map((i) => i[0]), okK = ks.filter((k) => x.r.it[k] && x.r.it[k].s === 'ok');
+    out.set(wk, { t: x.s.made, wk, term: x.s.unit || null, ok: okK.length, n: ks.length, med: median(okK.map((k) => Number((x.ms || {})[k]) || 0).filter((v) => v > 0)) });
+  });
+  return [...out.values()];
+}
+// 선 하나 = 마지막 학기의 점들(학기가 바뀌면 새 선)
+export const lastLine = (ws) => { const t = ws.length ? ws[ws.length - 1].term : null; return ws.filter((w) => w.term === t); };
+export const doneThisWeek = (recs) => weeksOf(recs).some((w) => w.wk === weekKey());
+// 점검 학기 — 마지막 준비 다리 단원의 학기 → 없으면 지난번 점검한 학기
+export const weekTerm = (K) => termOf(K.lastPrep && K.lastPrep.unit) || ((weeksOf(K.recs).slice(-1)[0] || {}).term) || null;
+
+// 점검할 칸 — 학기 범위에서 학기 · 학년 차례로 고르게 n칸(칸마다 한 문제 · 시작점은 주마다 다름) · 학기를 모르면 판정에 나온 칸
+export function weekPlan(K, rep, term = weekTerm(K)) {
+  let pool = termPool(term);
+  if (pool.length < 4) pool = [...new Set([...pool, ...Object.keys(K.fixed || {}), ...Object.values(rep.L).filter((x) => x.st && x.st !== 'none').map((x) => x.c)])].filter((c) => byId[c]).sort((a, b) => gradeIdx(LES(a).g) - gradeIdx(LES(b).g) || (a < b ? -1 : 1));
+  if (pool.length <= WEEK.n) return pool;
+  const off = Math.random(), step = pool.length / WEEK.n;
+  return Array.from({ length: WEEK.n }, (_, i) => pool[Math.min(pool.length - 1, Math.floor((i + off) * step))]);
+}
+// 선 그래프 — 10점으로 맞춤 · 밋밋하게(점 · 선 · 날짜) · marks = 선생님이 지도를 바꾼 때 [{ t, x }] → 세로 점선(번호) — CBM의 '바꾼 때' 줄 [B-R19][B-R20]
+export function weekChart(weeks, { w = 420, h = 130, marks = [] } = {}) {
+  const ws = (weeks || []).slice(-8); if (!ws.length) return '';
+  const P = 26, x = (i) => P + (i * (w - 2 * P)) / Math.max(ws.length - 1, 1), y = (v) => h - P - ((h - 2 * P) * v) / 10, sc = (v) => (v.ok / v.n) * 10;
+  const pts = ws.map((v, i) => `${x(i).toFixed(1)},${y(sc(v)).toFixed(1)}`).join(' ');
+  // 바꾼 때 → 점 사이 자리(시간 비율) · 첫 점 앞이면 왼쪽 끝 · 마지막 점 뒤면 오른쪽 끝
+  const at = (t) => { if (t <= ws[0].t) return P - 10; for (let i = 0; i < ws.length - 1; i++) if (t < ws[i + 1].t) return x(i + (t - ws[i].t) / (ws[i + 1].t - ws[i].t)); return Math.min(w - 6, x(ws.length - 1) + 12); };
+  const ms = (marks || []).filter((m) => m && Number.isFinite(m.t) && m.t >= ws[0].t - 7 * 864e5).slice(-6);
+  return `<svg class="runs" viewBox="0 0 ${w} ${h}" role="img" aria-label="이번 주 점검 ${ws.length}번 · 마지막 ${Math.round(sc(ws[ws.length - 1]))}점${ms.length ? ` · 지도를 바꾼 때 ${ms.length}번` : ''}">
+    <path d="M${P} ${y(10)} H${w - P} M${P} ${y(5)} H${w - P}" stroke="#e6d9c6" stroke-width="1"/><text x="4" y="${y(10) + 4}" font-size="11" fill="#6f6355">10</text><text x="4" y="${y(5) + 4}" font-size="11" fill="#6f6355">5</text>
+    ${ms.map((m, i) => { const mx = at(m.t).toFixed(1); return `<path d="M${mx} ${y(10) - 6} V${h - P + 4}" stroke="#2d6f6a" stroke-width="1.5" stroke-dasharray="4 3"/><text x="${mx}" y="${y(10) - 8}" text-anchor="middle" font-size="11" fill="#2d6f6a">${i + 1}</text>`; }).join('')}
+    ${ws.length > 1 ? `<polyline points="${pts}" fill="none" stroke="#3b2a1e" stroke-width="2"/>` : ''}${ws.map((v, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(sc(v)).toFixed(1)}" r="4.5" fill="#c99a68" stroke="#3b2a1e" stroke-width="1.5"/><text x="${x(i).toFixed(1)}" y="${h - 6}" text-anchor="middle" font-size="11" fill="#6f6355">${esc(v.wk.slice(5).replace('-', '/'))}</text>`).join('')}</svg>`;
+}
+// 선이 어디로 가나(선생님용) — 마지막 4~6점의 기울기(최소제곱) × 기간 ≥ 2.5점이면 오름/내림 · 점 넷 전엔 말하지 않음
+//  열 문제 한 번의 흔들림은 ±1.3점 안팎 — 처음 둘 · 끝 둘 평균을 견주면 변화 없는 아이의 27%를 '내려가요'로 잘못 짚음(시뮬레이션) · 이 규칙은 약 5% · 3점 내림은 약 60% 잡음
+const slope = (ys) => { const n = ys.length, mx = (n - 1) / 2, my = ys.reduce((a, b) => a + b, 0) / n; let sxy = 0, sxx = 0; ys.forEach((v, i) => { sxy += (i - mx) * (v - my); sxx += (i - mx) ** 2; }); return sxx ? sxy / sxx : 0; };
+export function weekTrend(weeks) {
+  const ws = (weeks || []).slice(-6); if (ws.length < 4) return null;
+  const d = slope(ws.map((v) => (v.ok / v.n) * 10)) * (ws.length - 1);
+  return d >= 2.5 ? 'up' : d <= -2.5 ? 'down' : 'flat';
+}

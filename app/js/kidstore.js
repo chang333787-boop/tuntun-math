@@ -6,20 +6,23 @@
 import { closure, itemOf, formOf, LES } from '../../paper/js/gen.js';
 import { kidReport } from '../../paper/js/judge.js';
 import { mindsOf } from '../../engine/mis.js';
+import { sheetOf, storySum } from './storylog.js';
 import { lsGet, lsSet } from './local.js';
 import * as db from './db.js';
+import { weeksOf } from './weekcore.js';
 
 export const DAY = 864e5;
 export const REVIEW_DAYS = [1, 3, 7];
 const KID = 'me';
 
-export function pack(sh) { return { id: sh.id, kind: sh.kind, made: sh.made, unit: sh.unit || null, it: sh.items.map((it) => [it.k, it.c, it.p, it.gate ? 1 : 0, it.ch]) }; }
+export function pack(sh) { return { id: sh.id, kind: sh.kind, made: sh.made, unit: sh.unit || null, it: sh.items.map((it) => (it.form === 'w' && it.word ? [it.k, it.c, it.p, 0, it.ch, it.word.ws] : it.gate && Array.isArray(it.covers) && it.covers.length !== closure(it.c).size ? [it.k, it.c, it.p, 1, it.ch, null, it.covers] : [it.k, it.c, it.p, it.gate ? 1 : 0, it.ch])) }; }   /* 문장제(이야기 다리)는 여섯째에 이야기 seed · 일곱째 = 관문이 덮는 칸(아래 전부와 다를 때만 · 종이 관문은 구간만 덮음) */
 export function unpack(o) {
   const items = [], chs = new Map();
-  for (const [k, c, p, g, ch] of o.it) {
+  for (const [k, c, p, g, ch, ws, cov] of o.it) {
     if (!LES(c)) continue;
+    if (ws != null) { const w = sheetOf({ id: o.id, items: [{ c, p, ws }] }).items[0]; if (!w) continue; items.push({ ...w, k, ch }); if (!chs.has(ch)) chs.set(ch, []); chs.get(ch).push(k); continue; }   /* 문장제 — form 'w'(판정이 식 · 답으로 읽음) */
     let it; try { it = itemOf(c, p); } catch (e) { continue; }
-    items.push({ k, c, p, gate: !!g, covers: g ? [...closure(c)] : null, ch, form: formOf(it), cls: '', snap: { prompt: it.prompt, sol: it.sol, choices: it.choices || null } });
+    items.push({ k, c, p, gate: !!g, covers: g ? (Array.isArray(cov) ? cov.filter((x) => typeof x === 'string' && LES(x)) : [...closure(c)]) : null, ch, form: formOf(it), cls: '', snap: { prompt: it.prompt, sol: it.sol, choices: it.choices || null } });
     if (!chs.has(ch)) chs.set(ch, []); chs.get(ch).push(k);
   }
   return { v: 1, id: o.id, kind: o.kind, made: o.made, unit: o.unit, items, chapters: [...chs].map(([key, ks]) => ({ key, ks })) };
@@ -99,7 +102,7 @@ export function summaryOf(K) {
   for (const [id, v] of Object.entries(mis)) if (v === 's') K.minds[id] = { s: (K.minds[id] && K.minds[id].s) || now, fixed: 0 };
   for (const [id, x] of Object.entries(K.minds)) if (!mis[id] && x.s && !x.fixed) { x.fixed = now; }
   for (const [id, x] of Object.entries(K.minds)) if (x.fixed && !mis[id]) mis[id] = 'r';
-  return { t: now, last, mis, L, start: rep.start.map((s) => s.c), below: rep.below.map((b) => b.c), under: rep.under.map((u) => u.c), sw: cal.sureWrong, cal: { n: cal.n, m: cal.match }, fixed: K.fixed, due, help: K.help || {}, rush: K.rush || 0, jog: (K.jog || []).slice(-14), tools: K.tools || {}, mx: Object.fromEntries(Object.entries(K.mx || {}).filter(([c]) => c !== '_jog' && c !== '_tools').map(([c, x]) => [c, x.tier || 0])) };
+  return { t: now, last, mis, L, start: rep.start.map((s) => s.c), below: rep.below.map((b) => b.c), under: rep.under.map((u) => u.c), sw: cal.sureWrong, cal: { n: cal.n, m: cal.match }, fixed: K.fixed, due, help: K.help || {}, rush: K.rush || 0, jog: (K.jog || []).slice(-14), tools: K.tools || {}, story: storySum(K), wk: weeksOf(K.recs).slice(-12).map((w) => [w.wk, w.ok, w.n, w.term]), mx: Object.fromEntries(Object.entries(K.mx || {}).filter(([c]) => c !== '_jog' && c !== '_tools').map(([c, x]) => [c, x.tier || 0])) };
 }
 export function pushSummary(me, K) { db.queuePut(`${base(me)}/st`, db.enc(summaryOf(K))); }
 
