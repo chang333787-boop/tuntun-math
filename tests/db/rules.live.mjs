@@ -1,0 +1,35 @@
+// 보안 규칙 실제 DB 시험(REST · 로그인 없음): node tests/db/rules.live.mjs
+//   시험 반 코드는 ZZ로 시작 · 끝나면 지움: firebase database:remove /cown/<코드> 등(관리자 권한 · 출력 끝에 명령)
+const DB = 'https://tuntun-math-2026-default-rtdb.asia-southeast1.firebasedatabase.app';
+const AL = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const rnd = (n, a) => Array.from({ length: n }, () => a[Math.floor(Math.random() * a.length)]).join('');
+const C = 'ZZ' + rnd(4, AL), T = rnd(24, 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'), T2 = rnd(24, 'abcdefghijklmnopqrstuvwxyz');
+const req = async (method, path, body) => { const r = await fetch(`${DB}/${path}.json`, { method, body: body === undefined ? undefined : JSON.stringify(body) }); return { ok: r.ok, status: r.status, body: await r.text() }; };
+let fail = 0;
+const expect = async (name, want, p) => { const r = await p; const ok = want ? r.ok : r.status === 401 || r.status === 403 || (r.status === 400 && /denied|validat/i.test(r.body)); if (!ok) fail++; console.log(ok ? '✓' : '✗', name, r.status, ok ? '' : r.body.slice(0, 120)); return r; };
+await expect('반 만들기(열쇠 · 정보 · 핀 한꺼번에)', true, req('PATCH', '', { [`cown/${C}`]: T, [`tc/${C}/${T}/info`]: '{"g":"4-2"}', [`tc/${C}/${T}/pins/1`]: '1234', [`tc/${C}/${T}/pins/2`]: '5678' }));
+await expect('같은 반 코드를 다른 열쇠로 빼앗기', false, req('PUT', `cown/${C}`, T2));
+await expect('열쇠 읽기', false, req('GET', `cown/${C}`));
+await expect('반 목록 훑기', false, req('GET', 'cown'));
+await expect('선생님 칸 읽기(맞는 열쇠)', true, req('GET', `tc/${C}/${T}`));
+await expect('선생님 칸 읽기(틀린 열쇠)', false, req('GET', `tc/${C}/${T2}`));
+await expect('선생님 칸 위 훑기', false, req('GET', `tc/${C}`));
+await expect('틀린 열쇠로 선생님 칸 쓰기', false, req('PUT', `tc/${C}/${T2}/info`, 'x'));
+await expect('틀린 열쇠로 핀 바꾸기', false, req('PUT', `tc/${C}/${T2}/pins/1`, '0000'));
+await expect('선생님 칸에 모르는 갈래', false, req('PUT', `tc/${C}/${T}/zzz`, 'x'));
+await expect('핀 모양 틀림(다섯 자리)', false, req('PUT', `tc/${C}/${T}/pins/3`, '12345'));
+await expect('아이 1 · 맞는 핀으로 기록 쓰기', true, req('PUT', `k/${C}/1/1234/r/a1`, '{"c":"3-1-1:2","s":"ok"}'));
+await expect('아이 1 · 자기 기록 읽기', true, req('GET', `k/${C}/1/1234`));
+await expect('아이 1 · 틀린 핀', false, req('PUT', `k/${C}/1/0000/r/a1`, 'x'));
+await expect('아이 1이 아이 2 칸에(자기 핀으로)', false, req('PUT', `k/${C}/2/1234/r/a1`, 'x'));
+await expect('번호 칸 위 훑기(핀 찾기)', false, req('GET', `k/${C}/1`));
+await expect('반 전체 훑기', false, req('GET', `k/${C}`));
+await expect('아이 칸에 모르는 갈래', false, req('PUT', `k/${C}/1/1234/zzz`, 'x'));
+await expect('기록이 너무 김', false, req('PUT', `k/${C}/1/1234/r/a2`, 'x'.repeat(2000)));
+await expect('선생님 · 아이 2 칸에 할 일 넣기', true, req('PUT', `k/${C}/2/5678/in/t1`, '{"task":"check"}'));
+await expect('선생님 · 아이 1 기록 읽기', true, req('GET', `k/${C}/1/1234/r`));
+await expect('없는 반 아이 칸', false, req('PUT', `k/ZZ2222/1/1234/r/a1`, 'x'));
+await expect('ZZ가 아닌 모양 반 코드(소문자)', false, req('PUT', `cown/zzabcd`, T2));
+console.log(fail ? `FAIL ${fail}` : 'PASS', '· 시험 반', C);
+console.log(`지우기: firebase database:remove /cown/${C} -f --project tuntun-math-2026 && firebase database:remove /tc/${C} -f --project tuntun-math-2026 && firebase database:remove /k/${C} -f --project tuntun-math-2026`);
+process.exit(fail ? 1 : 0);
