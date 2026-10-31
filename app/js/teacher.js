@@ -61,7 +61,7 @@ export function teacherHome(root) {
     ${intro(`반 코드 · 선생님 열쇠 · 핀 · 아이 이름은 <b>이 기기에만</b> 있어요. 브라우저 기록을 지우거나 기기를 바꾸기 전에 내려받아 두세요. 이름이 들어 있으니 학교 기기에만 두세요.`)}
     <div class="acts">${list.length ? '<button id="bk">백업 내려받기</button>' : ''}<label class="btn">백업 불러오기<input type="file" id="rs" accept="application/json" hidden></label></div><p class="qmsg tight" id="bmsg"></p></div>
     <div class="card"><h2>이 앱이 하는 일</h2>
-    <ol class="easy"><li><b>오늘 단원 열기</b> — 선생님이 오늘 배울 단원을 열면, 아이마다 그 단원에 꼭 필요한 앞 칸(판자)만 5~10분 점검해요. 막히면 반씩 좁혀 끊긴 곳을 찾아요.</li>
+    <ol class="easy"><li><b>오늘 단원 열기</b> — 선생님이 오늘 배울 단원을 열면, 아이마다 그 단원에 꼭 필요한 앞 칸(판자)만 점검해요(한 판 길이를 고름 — 보통 24문제 · 약 10분). 막히면 반씩 좁혀 끊긴 곳을 찾아요.</li>
     <li><b>판자 고치기</b> — 끊긴 곳이 나온 아이는 그 자리에서 한 바퀴(튼튼이 시범 → 함께 → 혼자 → 새 숫자로 확인) 고치고 오늘 수업으로 돌아가요. 아래를 다 메울 때까지 붙잡지 않아요.</li>
     <li><b>반 화면</b> — 먼저 봐 줄 아이, 같은 생각으로 틀린 아이 묶음, 같은 칸을 고칠 아이 묶음, 칸 × 아이 표가 떠요. 묶음마다 <b>10분 카드</b>(인쇄용 수업 안내)가 있어요.</li>
     <li><b>다시 보기</b> — 고친 판자는 1 · 3 · 7일 뒤 섞어서 다시 풀어요.</li></ol></div>`;
@@ -90,7 +90,7 @@ export function guideView(root) {
     ${intro('처음 쓰기 전에 한 번 읽어 보세요. 인쇄해서 교탁에 두어도 좋아요.', 'no-print')}
     <div class="acts no-print"><button class="pri" onclick="print()">인쇄</button><a class="btn" href="#/t">처음으로</a></div>
     <h3>처음 한 번</h3><ol class="easy"><li><b>새 반 만들기</b> — 학기와 아이 수를 넣으면 반 코드와 번호마다 핀이 생겨요.</li><li><b>카드 인쇄</b> — 아이 카드는 잘라 나눠 주고, <b>선생님 열쇠 카드</b>는 따로 보관해요(다른 기기에서 반을 열 때 필요해요).</li><li><b>이름 적기</b>(골라서) — 이름은 이 기기에만 저장되고 서버엔 번호만 가요. 처음 화면에서 <b>백업</b>을 내려받아 두세요.</li></ol>
-    <h3>수업 때(5~10분)</h3><ol class="easy"><li>반 화면에서 오늘 배울 단원을 골라 <b>오늘 단원으로 열기</b>를 눌러요.</li><li>아이들이 카드로 들어가면 맨 위에 <b>오늘 단원 준비하기</b>가 떠요. 이미 켜 둔 화면은 새로고침해요.</li><li>아이마다 그 단원에 꼭 필요한 앞 칸만 3문제씩 풀어요. 막히면 반씩 좁혀 <b>고칠 판자</b>를 찾고, 찾으면 바로 <b>판자 고치기</b>를 한 바퀴 해요. 끝나면 오늘 수업으로 돌아가요.</li></ol>
+    <h3>수업 때(8~15분)</h3><ol class="easy"><li>반 화면에서 오늘 배울 단원과 <b>준비 다리 길이</b>(짧게 18 · 보통 24 · 길게 36문제)를 골라 <b>오늘 단원으로 열기</b>를 눌러요. 한 판에 못 찾은 아이는 다음 시간에 이어서 찾아요. 막힌 칸이 많은 아이는 일찍 멈추고 '선생님과 같이'로 와요.</li><li>아이들이 카드로 들어가면 맨 위에 <b>오늘 단원 준비하기</b>가 떠요. 이미 켜 둔 화면은 새로고침해요.</li><li>아이마다 그 단원에 꼭 필요한 앞 칸만 3문제씩 풀어요. 막히면 반씩 좁혀 <b>고칠 판자</b>를 찾고, 찾으면 바로 <b>판자 고치기</b>를 한 바퀴 해요. 끝나면 오늘 수업으로 돌아가요.</li></ol>
     <h3>주마다 한 번(3~5분)</h3><ol class="easy"><li>금요일 같은 날을 정해 아이들이 <b>이번 주 점검</b>을 해요(아이 오늘 할 일에 떠요). 이번 학기 단원들의 앞 칸(지난 학기까지 배운 것) 전체에서 고르게 뽑은 10문제라 학기 내내 견줄 수 있어요.</li><li>반 화면 <b>선이 어디로 가나</b>에서 <b>내려가요 · 낮게 그대로</b>인 아이는 다음 주에 지도 방법을 바꿔 봐요(소집단 · 도구 · 다른 모형). 점검의 효과는 선생님이 선을 보고 수업을 바꿀 때 나요.</li><li>문장제가 약한 아이는 <b>이야기 다리</b>(무슨 이야기 → 막대 틀 → 식 → 답)를 권해요. 반 화면 '이야기 다리'에서 이해가 끊기는 유형의 <b>10분 카드</b>로 소집단을 해요.</li><li>종이 학습지(<b>끊긴 곳 찾기</b>)로 채점한 결과는 반 화면 <b>종이 결과 가져오기</b>로 아이 기록에 넣을 수 있어요.</li></ol>
     <h3>반 화면 읽기</h3><div class="legend2">${LEGEND.map(([c, s, t]) => `<span><i class="${c}">${s}</i>${t}</span>`).join('')}</div>
     <ul class="easy"><li><b>먼저 봐 줄 아이</b> — 막힌 칸이 많거나, 고치고도 흔들리거나, 이번 주 점검 선이 내려가거나, '자신 있었는데 틀린' 문제가 많거나, 2초 안에 찍은 아이예요. 앱보다 선생님이 먼저 봐 주세요.</li>
@@ -215,7 +215,7 @@ export function classView(root, C) {
     rows.forEach((no) => { const st = S[no] && S[no].st; if (st) st.start.forEach((c) => (groups[c] = groups[c] || []).push(no)); });
     const glist = Object.entries(groups).filter(([, v]) => v.length >= 2).sort((a, b) => b[1].length - a[1].length);
     // 먼저 볼 아이 — 고치기를 해도 흔들림 · 막힌 칸이 많음(깊은 결손 — 자동 처방보다 선생님 먼저 [A-R27]) · 자신 있었는데 틀림 [D-1]
-    const first = rows.map((no) => { const st = S[no] && S[no].st; if (!st) return null; const why = []; const help = Object.keys(st.help || {}); if (help.length) why.push(`고치고도 흔들림: ${help.map(lessonName).join(', ')}`); const deep = st.start.length + st.under.length; if (deep >= 4) why.push(`막힌 칸 ${deep}개`); const sw = Object.values((st.sw14 || st.sw) || {}).reduce((a, b) => a + b, 0), rush = st.rush14 != null ? st.rush14 : st.rush; if (sw >= 3) why.push(`자신 있었는데 틀림 ${sw}문제(최근 2주)`); if (rush >= 2) why.push(`2초 안에 찍기 ${rush}번(최근 2주 · 결과를 그대로 믿기 어려워요)`); const stuckN = Object.entries(st.L).filter(([c, v]) => v === 'stuck' && P.below.includes(c)).length; if (!st.start.some((c) => P.below.includes(c)) && stuckN >= 3) why.push(`막힌 칸 ${stuckN}개인데 고칠 판자를 아직 못 찾음 — 같이 봐 주세요`); const wl = lastLine(st.wk || []); if (weekTrend(wl) === 'down') why.push(`이번 주 점검 선이 내려감(${wl.slice(-3).map((v) => Math.round((v.ok / v.n) * 10)).join('→')}점)`); return why.length ? { no, why } : null; }).filter(Boolean);
+    const first = rows.map((no) => { const st = S[no] && S[no].st; if (!st) return null; const why = []; if (st.prep && st.prep.why === 'teacher' && K.today && st.prep.u === K.today.unit && st.prep.t >= K.today.t) why.unshift('준비 다리에서 막힌 칸이 많아 일찍 멈춤 — 같이 봐 주세요'); const help = Object.keys(st.help || {}); if (help.length) why.push(`고치고도 흔들림: ${help.map(lessonName).join(', ')}`); const deep = st.start.length + st.under.length; if (deep >= 4) why.push(`막힌 칸 ${deep}개`); const sw = Object.values((st.sw14 || st.sw) || {}).reduce((a, b) => a + b, 0), rush = st.rush14 != null ? st.rush14 : st.rush; if (sw >= 3) why.push(`자신 있었는데 틀림 ${sw}문제(최근 2주)`); if (rush >= 2) why.push(`2초 안에 찍기 ${rush}번(최근 2주 · 결과를 그대로 믿기 어려워요)`); const stuckN = Object.entries(st.L).filter(([c, v]) => v === 'stuck' && P.below.includes(c)).length; if (!st.start.some((c) => P.below.includes(c)) && stuckN >= 3) why.push(`막힌 칸 ${stuckN}개인데 고칠 판자를 아직 못 찾음 — 같이 봐 주세요`); const wl = lastLine(st.wk || []); if (weekTrend(wl) === 'down') why.push(`이번 주 점검 선이 내려감(${wl.slice(-3).map((v) => Math.round((v.ok / v.n) * 10)).join('→')}점)`); return why.length ? { no, why } : null; }).filter(Boolean);
     const seen = rows.filter((no) => S[no] && S[no].st).length;
     const uName = unitLabel(unit);
     /* 다시 그려도 선생님이 보던 것은 그대로 — 열어 둔 접힘 · 표 가로 스크롤 · 화면 높이(15초마다 새로 볼 때 닫히고 처음으로 돌아가던 것 · 혹평 10-31) */
@@ -223,23 +223,26 @@ export function classView(root, C) {
     root.innerHTML = `<div class="card no-print"><h2>${esc(C)} <small>${esc(gl(K.g))} · ${K.n}명 · 기록 있는 아이 ${seen}명</small></h2>
       ${intro('반 전체를 한눈에 보는 화면이에요. 오늘 배울 단원을 고르고 <b>오늘 단원으로 열기</b>를 누르면, 아이들 화면 맨 위에 그 단원 준비 문제가 떠요. 아이들 기록은 15초마다 저절로 새로 들어와요.')}
       <div class="acts"><select id="u" class="sel">${units.map((u) => `<option value="${u.id}" ${u.id === unit ? 'selected' : ''}>${esc(gl(u.g))} · ${esc(u.nm)}</option>`).join('')}</select>
+      <select id="len" class="sel" title="아이 한 명이 한 판에 푸는 준비 문제 수 — 못 찾으면 다음 시간에 이어서">${[[18, '짧게 · 18문제(약 8분)'], [24, '보통 · 24문제(약 10분)'], [36, '길게 · 36문제(약 15분)']].map(([v, t]) => `<option value="${v}" ${v === (K.len || 24) ? 'selected' : ''}>준비 다리 ${t}</option>`).join('')}</select>
       <button class="pri" id="open">오늘 단원으로 열기</button><button id="re">새로 보기</button><button id="csv" title="효과를 재거나 기록해 둘 때 — 번호만 들어가요(이름 X)">기록 내려받기(CSV)</button><a class="btn" href="#/t/c/${C}/paper" title="종이로 푼 진단 · 점검 결과를 아이 기록에 넣어요">종이 결과 가져오기</a></div>
       <div class="acts sub"><a class="btn" href="#/t/c/${C}/cards">아이 카드 인쇄</a><a class="btn" href="#/t/c/${C}/names">이름 적기</a><a class="btn" href="#/t/guide">한 장 안내</a></div>
       ${K.today ? `<p class="small">지금 열린 단원: <b>${esc(unitLabel(K.today.unit))}</b> <span class="muted">(${new Date(K.today.t).toLocaleString('ko-KR')}에 열었어요)</span></p>` : `<p class="small muted">아이 주소: ${esc(appURL())}</p>`}
       <p class="qmsg tight" id="msg"></p></div>
     ${(() => { const today = K.today && K.today.unit === unit ? K.today : null, fresh = (n) => n && n.t && Date.now() - n.t < 3 * 60000;
       const MODE = { prep: '준비 다리', fix: '고치는 중', drill: '다듬기', run: '구보', back: '거꾸로 찾기', story: '이야기 다리', week: '이번 주 점검', review: '다시 보기' };
-      const g = { out: [], in: [], doing: [], done: [], fix: [] };
+      const g = { out: [], in: [], doing: [], done: [], fix: [], help: [] };
       rows.forEach((no) => { const x = S[no] || {}, st = x.st, n = x.now;
         if (!st && !fresh(n)) return g.out.push(no);
         if (fresh(n) && n.mode && n.mode !== 'home') return g.doing.push([no, MODE[n.mode] || n.mode]);
         const done = st && st.prep && today && st.prep.u === unit && st.prep.t >= today.t;
+        if (done && st.prep.why === 'teacher') return g.help.push(no);
         if (done && st.start.some((c) => P.below.includes(c))) return g.fix.push(no);
         if (done) return g.done.push(no);
         g.in.push(no); });
       const names = (xs) => xs.map((no) => `<a href="#/t/c/${C}/k/${no}">${esc(nm(K, no))}</a>`).join(' ');
       return `<div class="card strip"><h2>지금 반 <small>${today ? `${esc(uName)} — ${new Date(today.t).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}에 열었어요` : '오늘 단원을 열면 준비를 끝낸 아이가 보여요'}</small></h2>
         <div class="st-row"><span class="st-k">하는 중 <b>${g.doing.length}</b></span><span class="st-v">${g.doing.map(([no, m]) => `<a href="#/t/c/${C}/k/${no}">${esc(nm(K, no))}</a><i>${esc(m)}</i>`).join(' ') || '<span class="muted">없음</span>'}</span></div>
+        ${today && g.help.length ? `<div class="st-row help"><span class="st-k">선생님과 같이 <b>${g.help.length}</b></span><span class="st-v">${names(g.help)} <span class="muted small">— 막힌 칸이 많아 앱이 일찍 멈췄어요. 먼저 들러 주세요.</span></span></div>` : ''}
         ${today ? `<div class="st-row"><span class="st-k">준비 끝 · 고칠 판자 있음 <b>${g.fix.length}</b></span><span class="st-v">${names(g.fix) || '<span class="muted">없음</span>'}</span></div><div class="st-row"><span class="st-k">준비 끝 · 튼튼 <b>${g.done.length}</b></span><span class="st-v">${names(g.done) || '<span class="muted">없음</span>'}</span></div>` : ''}
         <div class="st-row"><span class="st-k">${today ? '아직 준비 전' : '들어온 적 있음'} <b>${g.in.length}</b></span><span class="st-v">${names(g.in) || '<span class="muted">없음</span>'}</span></div>
         <div class="st-row"><span class="st-k">안 들어옴 <b>${g.out.length}</b></span><span class="st-v">${names(g.out) || '<span class="muted">없음</span>'}</span></div></div>`; })()}
@@ -278,10 +281,10 @@ export function classView(root, C) {
   }
   async function openToday() {
     const msg = root.querySelector('#msg'); msg.textContent = '여는 중…';
-    const t = Date.now(), id = `prep${new Date(t).toISOString().slice(0, 10).replace(/-/g, '')}`, up = {};
-    for (let no = 1; no <= K.n; no++) up[`k/${C}/${no}/${K.pins[no]}/in/${id}`] = db.enc({ kind: 'prep', unit, t });
+    const t = Date.now(), id = `prep${new Date(t).toISOString().slice(0, 10).replace(/-/g, '')}`, up = {}, len = Number((root.querySelector('#len') || {}).value) || 24;
+    for (let no = 1; no <= K.n; no++) up[`k/${C}/${no}/${K.pins[no]}/in/${id}`] = db.enc({ kind: 'prep', unit, t, len });
     up[`tc/${C}/${K.T}/live`] = db.enc({ unit, t });
-    try { await db.patch('', up); const X = tget(); X.classes[C].today = { unit, t }; tset(X); Object.assign(K, X.classes[C]); render(); root.querySelector('#msg').textContent = '열었어요! 아이들이 새로고침하면 맨 위에 떠요.'; }
+    try { await db.patch('', up); const X = tget(); X.classes[C].today = { unit, t, len }; X.classes[C].len = len; tset(X); Object.assign(K, X.classes[C]); render(); root.querySelector('#msg').textContent = '열었어요! 아이들이 새로고침하면 맨 위에 떠요.'; }
     catch (e) { msg.textContent = `열지 못했어요: ${e.message}`; }
   }
   async function refresh() { if (!alive) return; data = await pullAll(C, K); if (!alive) return; const a = document.activeElement; if (a && root.contains(a) && /SELECT|INPUT|TEXTAREA/.test(a.tagName)) return; render(); }   /* 고르는 중엔 다시 그리지 않음 */

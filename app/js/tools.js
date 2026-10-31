@@ -5,7 +5,8 @@ import { readExpr } from '../../engine/errors.js';
 import { misFor } from '../../engine/mis.js';
 import { toText, toHTML } from '../../engine/tokens.js';
 import { esc } from './local.js';
-import { ansSay } from './item.js';
+import { ansSay, stepHTML } from './item.js';
+import { stepsOf, ruleFor } from './fix.js';
 
 export const TOOLS = {
   inverse: { name: '거꾸로 셈', ro: '거꾸로 셈으로', how: '뺄셈은 더해 보고, 나눗셈은 곱해 봐요 — 처음 수가 나오나요?' },
@@ -26,17 +27,21 @@ const num = (x) => String(Math.round(x * 1000) / 1000);
 const josa = (n, a, b) => { const s = String(n), last = s[s.length - 1]; return /[013678]$/.test(last) ? a : /\d$/.test(last) ? b : a; };   // 숫자 끝소리로 이/가 · 은/는(영 · 일 · 삼 · 육 · 칠 · 팔 = 받침)
 const valOfChoice = (ch) => { const t = (ch || []).find((x) => x && typeof x === 'object' && 'f' in x); if (t) return t.f[0] / t.f[1]; const s = toText(ch).replace(/[^\d.]/g, ''); return s && !Number.isNaN(Number(s)) ? Number(s) : null; };
 
+function inv(X, A, B, w, vals) {
+  if (X.op === '−') { const s = w + B; return s === A ? null : { html: `${w} + ${B} = <b>${s}</b> → 처음 수 ${A}${josa(A, '이', '가')} 나와야 해요!` }; }
+  if (X.op === '+') { const s = w - B; return s === A ? null : { html: `${w} − ${B} = <b>${s}</b> → 처음 수 ${A}${josa(A, '이', '가')} 나와야 해요!` }; }
+  if (X.op === '×') { if (w % B) return { html: `${w} ÷ ${B}${josa(B, '은', '는')} 나누어떨어지지 않아요 → ${A} × ${B}의 답이 아니에요!` }; const q = w / B; return q === A ? null : { html: `${w} ÷ ${B} = <b>${q}</b> → ${A}${josa(A, '이', '가')} 나와야 해요!` }; }
+  if (X.op === '÷' && vals.length >= 2) { const r = Number(vals[1]) || 0, s = B * w + r; if (r >= B) return { html: `남은 수 ${r}${josa(r, '이', '가')} 나누는 수 ${B}보다 크거나 같아요 → 한 번 더 나눌 수 있어요!` }; return s === A ? null : { html: `${B} × ${w} + ${r} = <b>${s}</b> → 처음 수 ${A}${josa(A, '이', '가')} 나와야 해요!` }; }
+  if (X.op === '÷') { const s = B * w; return s === A ? null : { html: `${B} × ${w} = <b>${s}</b> → ${A}${josa(A, '이', '가')} 나와야 해요!` }; }
+  return null;
+}
 // 도구 하나로 확인 — 어긋남을 보이면 { tool, html, off:true } · 맞거나 계산 못 하면 null
 function check(tool, it, vals) {
   let X = null; try { X = readExpr(it); } catch (e) { X = null; }
   const w = vals && vals.length ? Number(vals[0]) : null;
   if (tool === 'inverse' && X && X.st === 'W' && w != null && !Number.isNaN(w)) {
-    const A = X.A.i, B = X.B.i;
-    if (X.op === '−') { const s = w + B; return s === A ? null : { html: `${w} + ${B} = <b>${s}</b> → 처음 수 ${A}${josa(A, '이', '가')} 나와야 해요!` }; }
-    if (X.op === '+') { const s = w - B; return s === A ? null : { html: `${w} − ${B} = <b>${s}</b> → 처음 수 ${A}${josa(A, '이', '가')} 나와야 해요!` }; }
-    if (X.op === '×') { if (w % B) return { html: `${w} ÷ ${B}${josa(B, '은', '는')} 나누어떨어지지 않아요 → ${A} × ${B}의 답이 아니에요!` }; const q = w / B; return q === A ? null : { html: `${w} ÷ ${B} = <b>${q}</b> → ${A}${josa(A, '이', '가')} 나와야 해요!` }; }
-    if (X.op === '÷' && vals.length >= 2) { const r = Number(vals[1]) || 0, s = B * w + r; if (r >= B) return { html: `남은 수 ${r}${josa(r, '이', '가')} 나누는 수 ${B}보다 크거나 같아요 → 한 번 더 나눌 수 있어요!` }; return s === A ? null : { html: `${B} × ${w} + ${r} = <b>${s}</b> → 처음 수 ${A}${josa(A, '이', '가')} 나와야 해요!` }; }
-    if (X.op === '÷') { const s = B * w; return s === A ? null : { html: `${B} × ${w} = <b>${s}</b> → ${A}${josa(A, '이', '가')} 나와야 해요!` }; }
+    const A = X.A.i, B = X.B.i, how = { '+': '덧셈은 빼 봐요', '−': '뺄셈은 더해 봐요', '×': '곱셈은 나눠 봐요', '÷': '나눗셈은 곱해 봐요' }[X.op] + ' — 처음 수가 나오나요?';   /* 그 문제의 셈에 맞는 말로 */
+    const r = inv(X, A, B, w, vals); return r ? { ...r, how } : null;
   }
   if (tool === 'estimate' && X && w != null && !Number.isNaN(w)) {
     if (X.st === 'W') {
@@ -82,12 +87,13 @@ export function toolFor({ it, vals, c, bug = null }) {
   if (bug) misFor({ bug, lesson: c }).forEach((m) => push(CARD_TOOL[m.id]));
   misFor({ lesson: c }).forEach((m) => push(CARD_TOOL[m.id]));
   ['inverse', 'balance', 'estimate', 'line'].forEach(push);   // 그 밖에 계산되는 것
-  for (const t of order) { if (t === 'reread') continue; const r = check(t, it, vals); if (r) return { tool: t, ...r, ...TOOLS[t] }; }
+  for (const t of order) { if (t === 'reread') continue; const r = check(t, it, vals); if (r) return { tool: t, ...TOOLS[t], ...r }; }
   return null;
 }
 // 화면 조각 — 틀린 답 아래 '🔍 도구로 확인' → 보여 주고 → 한 번 다시 써 보기(스스로 고침)
-export function toolBox(box, { it, vals, c, bug = null, onSelfFix, onDone }) {
-  const T = toolFor({ it, vals, c, bug });
+//  seen() = 아이가 이미 답을 봤나 — 봤으면 다시 써서 맞혀도 '스스로 고친 횟수'에 넣지 않음(답을 베낀 것 · 혹평 11-01)
+export function toolBox(box, { it, vals, c, bug = null, onSelfFix, onDone, seen = () => false, T = null }) {
+  T = T || toolFor({ it, vals, c, bug });
   if (!T) return false;
   const b = document.createElement('div'); b.className = 'toolbox';
   b.innerHTML = `<button type="button" class="tbtn">🔍 ${esc(T.ro)} 확인해 볼까요?</button>`;
@@ -95,13 +101,42 @@ export function toolBox(box, { it, vals, c, bug = null, onSelfFix, onDone }) {
   b.querySelector('.tbtn').addEventListener('click', () => {
     b.innerHTML = `<p class="small muted">${esc(T.how)}</p><p class="tcheck">${T.html}</p>${it.choices ? '' : `<div class="retry"><span class="math">${toHTML(it.prompt)}</span><button type="button" class="pri" id="rt">다시 써 보기</button></div>`}`;
     const rt = b.querySelector('#rt');
+    if (rt) { const f = b.querySelector('.blank'); if (f) f.focus(); }
+    if (!rt && onDone) onDone(null);
     if (rt) rt.addEventListener('click', () => {
       const raws = [...b.querySelectorAll('.blank')].sort((x, y) => x.dataset.i - y.dataset.i).map((x) => x.value.trim());
+      if (raws.some((x) => !x)) return;
       let ok = false; try { ok = !!it.check(raws.map(Number), raws).ok; } catch (e) { ok = false; }
-      b.querySelector('.retry').innerHTML = ok ? `<b>스스로 고쳤어요!</b> ${esc(T.name)} 도구가 도왔어요.` : `아직 아니에요. ${ansSay(it)}`;
-      if (ok && onSelfFix) onSelfFix(T.tool);
+      const self = ok && !seen();
+      b.querySelector('.retry').innerHTML = self ? `<b>스스로 고쳤어요!</b> ${esc(T.name)} 도구로 찾아서 고쳤어요.` : ok ? '맞게 고쳐 썼어요.' : `아직 아니에요. ${ansSay(it)}`;
+      if (self && onSelfFix) onSelfFix(T.tool);
       if (onDone) onDone(ok);
     });
   });
   return T;
+}
+
+// 틀린 뒤 — 다음에 할 한 가지([D-13][D-15] · 혹평 11-01 '답은 X예요'만 주지 않게)
+//  ① 검산 도구가 맞는 문항: 답을 보기 전에 도구로 먼저(답 보기는 작은 단추) · 도구로 고치면 '스스로 고친 횟수'
+//  ② 도구가 없으면: 답 + 그 칸의 첫 단계(같은 숫자로) · ③ 단계도 없으면: 답 + 방법 한 줄(이 문제 숫자만)
+//  it = 문항(check · prompt · sol · choices) · 돌려주는 값 = 쓴 방법('tool' | 'step' | 'rule' | 'ans')
+export function nextStep(box, { it, vals = [], c, bug = null, idk = false, onSelfFix, after = '' }) {
+  let seen = false;
+  const T = idk ? null : toolFor({ it, vals, c, bug });
+  const p = document.createElement('div'); p.className = 'next';
+  box.appendChild(p);
+  const showAns = (el) => { seen = true; el.innerHTML = `${ansSay(it)}${after ? ` ${esc(after)}` : ''}`; };
+  if (T) {
+    p.innerHTML = `<p>아직 아니에요. 답을 보기 전에 <b>${esc(T.ro)}</b> 내 답을 확인해 봐요.</p><p class="ans small"><button type="button" class="link" data-ans>답 보기</button></p>`;
+    const a = p.querySelector('.ans');
+    a.querySelector('[data-ans]').addEventListener('click', () => showAns(a));
+    toolBox(p, { it, vals, c, bug, T, onSelfFix, seen: () => seen, onDone: (ok) => { if (ok === null) { if (!seen) showAns(a); return; } if (ok === false) seen = true; if (ok === false || !seen) a.innerHTML = after ? esc(after) : ''; } });   /* 보기 문항(다시 쓰기 없음) → 도구 뒤 답 · 다시 써서 틀림 → 답은 다시 쓰기 칸에 */
+    p.insertBefore(p.querySelector('.toolbox'), a);
+    return 'tool';
+  }
+  let st = null; try { st = (stepsOf({ c: it.c || c, p: it.p }) || [])[0] || null; } catch (e) { st = null; }
+  const rule = st ? '' : ruleFor(c, it);
+  seen = true;
+  p.innerHTML = `<p>${idk ? '' : '아직 아니에요. '}${ansSay(it)}${after ? ` ${esc(after)}` : ''}</p>${st ? `<p class="small">다음엔 이렇게 시작해요 — <b>${esc(st.why)}</b></p><ol class="steps">${stepHTML(st)}</ol>` : rule ? `<p class="small">다음엔 — ${esc(rule)}</p>` : ''}`;
+  return st ? 'step' : rule ? 'rule' : 'ans';
 }

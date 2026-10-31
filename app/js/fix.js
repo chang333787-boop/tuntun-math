@@ -1,19 +1,25 @@
-// 판자 고치기 — 한 칸(차시)을 근거 있는 차례로(화면과 상관없는 순수 로직)
-//  시범(튼튼이가 같은 숫자로 쪼개 풀며 생각 말하기) → 함께(쪼갠 단계를 아이가 채움) → 혼자(틀리면 그 문제를 단계로 나눠 어긋난 곳 찾기)
-//  → 확인(새 숫자 3문제 · 도움 없음 · 판정 묶음으로 기록) — 명시적 · 체계적 지도 [B-R11][B-R12][B-R13] · 다른 문항으로 두 번째 확인 [A-R19]
-//  F = { c, id, phase:'show'|'together'|'solo'|'check'|'done', ex, steps, si, solo:{ n, ok, log }, check: 묶음, R, conf, ms }
+// 판자 고치기 — 한 칸(차시)을 차례로(화면과 상관없는 순수 로직)
+//  시범(튼튼이가 그 문제의 숫자로 풀며 생각 말하기) → 함께 → 혼자(틀리면 다음에 할 한 가지) → 확인(새 숫자 3문제 · 도움 없음 · 판정 묶음으로 기록)
+//    함께 = 쪼갤 단계가 있는 칸은 단계 빈칸을 아이가 채움 · 단계가 없는 칸(229칸 중 약 1/3)은 튼튼이가 일부를 해 줌(assistOf):
+//      빈칸 여럿 → 앞 빈칸은 튼튼이가 채우고 마지막 하나만 아이 · 보기 → 답이 아닌 보기를 지워 둘 중에서 · 빈칸 하나 → 그 문제 숫자로 첫 생각만 말해 줌
+//    시범 → 안내된 연습 → 혼자의 차례는 명시적 · 체계적 지도를 따른 것 [B-R11][B-R12][B-R13] — 그 연구의 효과 크기를 이 화면이 낸다는 뜻은 아님
+//    다른 문항으로 두 번째 확인 [A-R19]
+//  혼자에서 세 번 내리 틀리면 '함께'로 한 번 돌아가고, 또 세 번이면 확인 없이 '선생님과 같이'로 끝(아홉 번 내리 틀리게 두지 않음 — 혹평 11-01)
+//  F = { c, id, phase:'show'|'together'|'solo'|'check'|'done', ex, steps, si, cur, curSteps, assist, solo:{ n, ok, run, log }, back, help, check: 묶음, R, conf, ms }
 import { byId } from '../../engine/lessons/index.js';
 import { workedSteps } from '../../engine/practice.js';
 import { rng } from '../../engine/math.js';
 import { itemOf, makeSheet, pickItems } from '../../paper/js/gen.js';
-import { testable, __predict } from '../../engine/errors.js';
+import { testable, __predict, readExpr } from '../../engine/errors.js';
+import { toText, blankCount } from '../../engine/tokens.js';
+import { P } from '../../engine/concepts/kit.js';
 
-export const FIX = { soloNeed: 3, soloMax: 6, check: 3 };
+export const FIX = { soloNeed: 3, soloMax: 6, check: 3, miss: 3 };   // 혼자 셋 맞히면 확인 · 여섯 문제까지 · 세 번 내리 틀리면 함께로(한 번) → 또 세 번이면 선생님과
 const hash = (s) => [...String(s)].reduce((h, ch) => (Math.imul(h, 31) + ch.charCodeAt(0)) >>> 0, 7);
 
 export function newFix({ c, id }) {
   const r = rng(hash(id + c));
-  const F = { v: 1, c, id, seq: 0, phase: 'show', solo: { n: 0, ok: 0, log: [] }, R: { done: {}, it: {} }, conf: {}, ms: {}, used: [] };
+  const F = { v: 1, c, id, seq: 0, phase: 'show', solo: { n: 0, ok: 0, run: 0, log: [] }, back: 0, help: false, R: { done: {}, it: {} }, conf: {}, ms: {}, used: [] };
   F.ex = example(F, r);
   F.steps = stepsOf(F.ex);
   F.si = 0;
@@ -35,19 +41,132 @@ function example(F, r) {
 }
 export function stepsOf(it) { try { return workedSteps(it.c, it.p).map((s) => ({ why: s.why, c: s.c, prompt: s.item.prompt, sol: s.sol, p: s.item.p })); } catch (e) { return []; } }
 export const hintOf = (c) => (byId[c] && (byId[c].hint || byId[c].tip)) || '';
+// 판자를 이름 대신 예시 문제로 부르기('10에서 빼기' 대신 '10 − 6 = □ 같은 문제' · 낮은 학년 이름이 크게 보이지 않게 · 혹평 11-01)
+//  같은 칸은 늘 같은 예(씨앗 고정) · 짧고 그림 없는 것 · 34자를 넘거나 그림뿐이면 '' (부르는 쪽이 이름으로)
+const EXC = {};
+export function exampleOf(c) {
+  if (c in EXC) return EXC[c];
+  let best = null;
+  for (let k = 0; k < 12 && byId[c]; k++) {
+    let it = null; try { [it] = pickItems(c, 1, rng(hash(`ex:${c}:${k}`)), new Set()); } catch (e) { it = null; }
+    if (!it) continue;
+    const t = toText(it.prompt) + (it.choices ? ` (${it.choices.map((ch) => toText(ch)).join(' · ')})` : ''), sc = t.length + (t.includes('[그림]') ? 60 : 0);
+    if (!best || sc < best.sc) best = { t, sc };
+  }
+  return (EXC[c] = best && best.t.length <= 34 && !best.t.includes('[그림]') ? best.t : '');
+}
+
+// ── 그 문제의 숫자로 말하기(시범 · 함께 · 틀린 뒤) ──
+//  ruleFor: 차시 힌트에서 '방법' 문장만 — 이 문제와 다른 숫자로 든 예(3씩 4묶음은 … · 한 명이 4개씩 …)는 뺌(시범 문제와 따로 놀지 않게 · 혹평 11-01)
+//    남기는 문장 = 숫자가 뜻을 말하는 수(0 · 1 · 2 · 10 · 100 · 1000 · 10000 · 0.1 · 0.01 · 0.001)뿐 · '○씩 · ○배 · ○단'은 이 문제 글에 같은 말이 있을 때만
+//    noAns = 이 문제의 답 수가 든 문장도 뺌(함께 · 틀린 뒤에 답을 미리 알려 주지 않게)
+const KEEPN = new Set(['0', '1', '2', '10', '100', '1000', '10000', '0.1', '0.01', '0.001']);
+const NUM = /\d+(?:\.\d+)?(?:만|억|조)?(?:씩|배|단)?/g;
+const KNUM = /[일이삼사오육칠팔구십백천]{2,}|스물|서른|마흔|쉰|예순|일흔|여든|아흔/g;   /* 수를 읽는 말(삼십 · 서른 · 사백육) — 이 문제에 없는 수를 읽어 주면 따로 놂 */
+export function ruleFor(c, it, { noAns = false } = {}) {
+  const h = hintOf(c); if (!h || !it) return '';
+  const txt = toText(it.prompt), ans = new Set((it.sol || []).map(String).filter((v) => !KEEPN.has(v)));
+  const keep = (x) => (x.match(NUM) || []).every((t) => (/[씩배단]$/.test(t) ? txt.includes(t) : KEEPN.has(t)) && !(noAns && ans.has(t))) && (x.match(KNUM) || []).every((w) => txt.includes(w));
+  return h.split(/(?<=[.!?])\s+/).map((x) => x.trim()).filter((x) => x && keep(x)).join(' ');
+}
+// 수 늘어놓기(5, 10, □, □ · □, 617, 627 … · 7451만, 6451만, □만)에서 빈칸 i — 같은 수씩 커지거나 작아지면 '○씩 커져요. 10 다음은 15'
+//  빈칸은 글자 □와 헷갈리지 않게 표지(§번호)로 바꿔 읽음
+function seqOf(it) {
+  const nb = blankCount(it.prompt), t = toText(it.prompt, Array.from({ length: nb }, (_, i) => `§${i}`));
+  const m = t.match(/(?:(?:-?\d+|§\d+)(?:만|억|조)?\s*,\s*){2,}(?:-?\d+|§\d+)(?:만|억|조)?/);
+  if (!m) return null;
+  const raw = m[0].split(',').map((x) => x.trim()), units = new Set(raw.map((x) => (x.match(/(만|억|조)$/) || [''])[0]));
+  if (units.size > 1) return null;   /* 7451만, …, □만, □처럼 단위가 섞이면 말하지 않음 */
+  const u = [...units][0], xs = raw.map((x) => x.replace(/(만|억|조)$/, '')), known = xs.map((x, i) => [i, x.startsWith('§') ? null : Number(x)]).filter(([, v]) => v != null);
+  if (known.length < 2) return null;
+  const [i0, v0] = known[0], [i1, v1] = known[1], d = (v1 - v0) / (i1 - i0);
+  if (!d || !Number.isInteger(d) || known.some(([i, v]) => v !== v0 + d * (i - i0))) return null;
+  return { xs, d, v0, i0, u };
+}
+//  full = 시범(값까지) · 아니면 함께(값은 아이가)
+export function blankTalk(it, i, full = true) {
+  const S = seqOf(it); if (!S) return '';
+  const pos = S.xs.indexOf(`§${i}`); if (pos < 0) return '';
+  const u = S.u, v = S.v0 + S.d * (pos - S.i0), up = S.d > 0, step = Math.abs(S.d), how = `${step}${u}씩 ${up ? '커져요' : '작아져요'}.`;
+  if (pos > 0) { const p = S.v0 + S.d * (pos - 1 - S.i0); return full ? `${how} ${p}${u} 다음은 ${v}${u}.` : `${how} ${p}${u} 다음은 얼마일까요?`; }
+  const n = S.v0 + S.d * (1 - S.i0); return full ? `${how} ${n}${u}보다 ${step}${u}만큼 ${up ? '작은' : '큰'} 수는 ${v}${u}.` : `${how} ${n}${u}보다 ${step}${u}만큼 ${up ? '작은' : '큰'} 수를 찾아요.`;
+}
+// 한 자리 셈 사실 — 이어 세기 · 뛰어 세기 · 곱셈으로 몫 찾기(full = 시범 · 답까지 / 아니면 첫 생각만)
+const upto = (a, n, d = 1) => Array.from({ length: n }, (_, k) => a + d * (k + 1));
+export function factTalk(it, full = true) {
+  let X = null; try { X = readExpr(it); } catch (e) { X = null; }
+  if (!X || X.st !== 'W') return '';
+  const A = X.A.i, B = X.B.i;
+  if (![A, B].every(Number.isInteger)) return '';
+  if (X.op === '+' && Math.min(A, B) <= 9 && A + B <= 20) {
+    const big = Math.max(A, B), sm = Math.min(A, B);
+    if (!sm) return '0을 더하면 그대로예요.';
+    if (sm === 1) return full ? `${big}보다 1만큼 더 큰 수는 ${big + 1}.` : `${big}보다 1만큼 더 큰 수를 생각해요.`;
+    return full ? `큰 수 ${big}에서 시작해 ${sm}만큼 이어 세어요: ${upto(big, sm).join(', ')} → ${A + B}.` : `큰 수 ${big}에서 시작해 ${sm}만큼 이어 세어 봐요: ${upto(big, Math.min(2, sm - 1)).join(', ')}, …`;
+  }
+  if (X.op === '−' && A <= 20 && A - B >= 0 && A - B <= 9) {
+    if (!B) return '0을 빼면 그대로예요.';
+    if (A === B) return '같은 수를 빼면 0이에요.';
+    if (B === 1) return full ? `${A}보다 1만큼 더 작은 수는 ${A - 1}.` : `${A}보다 1만큼 더 작은 수를 생각해요.`;
+    if (B <= 5) return full ? `${A}에서 ${B}만큼 거꾸로 세어요: ${upto(A, B, -1).join(', ')} → ${A - B}.` : `${A}에서 ${B}만큼 거꾸로 세어 봐요: ${upto(A, Math.min(2, B - 1), -1).join(', ')}, …`;
+    if (A - B === 1) return full ? `${B}에서 한 번만 더 세면 ${A}${P(A, '이에요', '예요')} → 1.` : `${B}에서 ${A}까지 몇 번 더 세면 되는지 봐요.`;
+    return full ? `${B}에서 ${A}까지 몇 번 더 세면 되는지 봐요: ${upto(B, A - B).join(', ')} → ${A - B}번.` : `${B}에서 ${A}까지 이어 세어 봐요: ${upto(B, Math.min(2, A - B - 1)).join(', ')}, …`;
+  }
+  if (X.op === '×' && A <= 10 && B <= 10) {
+    if (!A || !B) return '0이 있으면 곱은 0이에요.';
+    if (A === 1 || B === 1) return `1을 곱하면 그대로예요. ${A} × ${B} = ${A * B}.`;
+    return full ? `${A}씩 ${B}번 뛰어 세어요: ${upto(0, B, A).join(', ')} → ${A * B}.` : `${A}씩 ${B}번 뛰어 세어 봐요: ${upto(0, Math.min(2, B - 1), A).join(', ')}, …`;
+  }
+  if (X.op === '÷' && X.intQ && B <= 10 && A / B <= 10 && Number.isInteger(A / B)) {
+    return full ? `${B} × □ = ${A}${P(A, '이', '가')} 되는 □를 찾아요. ${B} × ${A / B} = ${A}.` : `${B} × □ = ${A}${P(A, '이', '가')} 되는 □를 찾아 봐요.`;
+  }
+  return '';
+}
+// 시범에서 튼튼이가 하는 말 — 단계가 없는 칸: 셈 사실 말 → 방법 한 줄(이 문제 숫자만)
+//  이 문제 숫자로 할 말이 없으면 차시 힌트를 '다른 숫자로 든 예'라고 밝혀 그대로(이 문제의 답 수가 들어 있으면 X)
+export function otherEx(c, it) {
+  const h = hintOf(c), ans = (it.sol || []).map(String).filter((v) => !KEEPN.has(v));
+  return h && !(h.match(NUM) || []).some((t) => ans.includes(t)) ? `다른 숫자로 든 예: ${h}` : '';
+}
+export const showTalk = (F) => { const t = [factTalk(F.ex, true), ruleFor(F.c, F.ex)].filter(Boolean); return t.length ? t : [otherEx(F.c, F.ex)].filter(Boolean); };
+export function talkOf(it, c) { const t = [factTalk(it, false) || (it.choices ? '' : blankTalk(it, blankCount(it.prompt) - 1, false)), ruleFor(c, it, { noAns: true })].filter(Boolean); return t.length ? t : [otherEx(c, it)].filter(Boolean); }
+// 단계 답은 다 맞았는데 합친 답이 틀렸을 때 — 그 셈에 맞는 말(뺄셈에 '받아올림'이라 하지 않게)
+export function mergeTip(it) {
+  let X = null; try { X = readExpr(it); } catch (e) { X = null; }
+  const w = X && { '+': '자리 · 받아올림', '−': '자리 · 받아내림', '×': '자리 · 올림', '÷': '몫의 자리 · 나머지' }[X.op];
+  return w ? `단계 답을 합쳐 쓸 때(${w})를 한 번 더 살펴요.` : '단계 답을 합쳐 쓸 때를 한 번 더 살펴요.';
+}
 const nextR = (F) => rng(hash(`${F.id}:${++F.seq}`));
 
 // 화면이 부르는 것: 시범 다음 단계 · 함께 단계 답 · 혼자 답 · 확인 답
+// 시범에서 보일 차례 수 — 단계가 있으면 단계마다 · 없으면 빈칸마다 하나씩(보기 문항은 한 번)
+export const showLen = (F) => F.steps.length || (F.ex.choices ? 1 : Math.max(1, blankCount(F.ex.prompt)));
 export function showNext(F) {
   if (F.phase !== 'show') return F;
-  if (F.si < F.steps.length) F.si++;
-  else { F.phase = F.steps.length ? 'together' : 'solo'; startItem(F); }
+  if (F.si < showLen(F)) F.si++;
+  else { F.phase = 'together'; startItem(F); }
   return F;
 }
 function startItem(F) {
   F.cur = example(F, nextR(F));
   F.curSteps = stepsOf(F.cur);
   F.si = 0; F.miss = null;
+  F.assist = F.phase === 'together' && !F.curSteps.length ? assistOf(F.cur, F.c, nextR(F)) : null;
+}
+// 단계가 없는 칸의 '함께' — 튼튼이가 일부를 해 주고 아이는 한 곳만
+//  { kind:'given', given:{ 빈칸: 값 }, say:[…] } · { kind:'pick', hide:[보기 번호] } · { kind:'start', say:[…] }
+export function assistOf(it, c, r = rng(1)) {
+  if (it.choices && it.choices.length >= 3) {
+    const s = Number(it.sol[0]), wrong = it.choices.map((_, k) => k).filter((k) => k !== s), keep = wrong[Math.floor(r.next() * wrong.length)];
+    return { kind: 'pick', hide: wrong.filter((k) => k !== keep), say: [ruleFor(c, it, { noAns: true })].filter(Boolean) };
+  }
+  const nb = it.choices ? 0 : blankCount(it.prompt), last = it.sol ? String(it.sol[nb - 1]) : '';
+  if (nb >= 2 && !it.sol.slice(0, nb - 1).some((v) => String(v) === last)) {   /* 앞 빈칸 답이 마지막 답과 같으면 베끼기가 되니 X */
+    const given = {}; for (let i = 0; i < nb - 1; i++) given[i] = it.sol[i];
+    const say = [...Object.keys(given).map((i) => blankTalk(it, Number(i))), blankTalk(it, nb - 1, false)].filter(Boolean);
+    return { kind: 'given', given, say: say.length ? say : [ruleFor(c, it, { noAns: true })].filter(Boolean) };
+  }
+  return { kind: 'start', say: talkOf(it, c).slice(0, 1) };
 }
 // 함께: 단계 칸을 하나씩 → 끝나면 원래 문제의 답 · 틀리면 맞는 답을 보여 주고 다음 단계로(같이 푸는 중이라 막지 않음)
 export function togetherStep(F, vals) {
@@ -64,16 +183,23 @@ export function answerItem(F, vals, raws) {
   const ok = !!(res && res.ok);
   if (F.phase === 'together') { F.phase = 'solo'; startItem(F); return { ok, sol: it.sol, bug: res && res.bug }; }
   if (F.phase === 'solo') {
-    F.solo.n++; if (ok) F.solo.ok++;
+    F.solo.n++; if (ok) { F.solo.ok++; F.solo.run = 0; } else F.solo.run++;
     F.solo.log.push({ ok, p: F.cur.p, a: raws });
-    const out = { ok, sol: it.sol, bug: res && res.bug, steps: ok ? null : stepsOf(F.cur) };
-    if (F.solo.ok >= FIX.soloNeed || F.solo.n >= FIX.soloMax) toCheck(F); else if (ok) startItem(F); else F.reStep = true;   // 틀리면 그 문제를 단계로(화면이 reStep을 보고 나눠 풀기)
+    const steps = ok ? null : stepsOf(F.cur);
+    const out = { ok, sol: it.sol, bug: res && res.bug, steps: steps && steps.length ? steps : null };
+    if (F.solo.ok >= FIX.soloNeed) toCheck(F);
+    else if (F.solo.run >= FIX.miss && !F.back) { F.back = 1; F.solo.run = 0; F.phase = 'together'; startItem(F); out.back = true; }   // 세 번 내리 틀림 → 한 번 더 같이
+    else if (F.solo.run >= FIX.miss || (F.solo.n >= FIX.soloMax && F.solo.ok <= 1)) { toHelp(F); out.help = true; }   // 또 세 번(또는 여섯 중 하나뿐) → 확인 없이 선생님과
+    else if (F.solo.n >= FIX.soloMax) toCheck(F);
+    else if (ok || !out.steps) startItem(F);
+    else F.reStep = true;   // 틀리면 그 문제를 단계로(화면이 reStep을 보고 나눠 풀기) — 단계가 없는 칸은 나누지 않음
     return out;
   }
   return { ok, sol: it.sol };
 }
 // 혼자에서 틀린 문제를 단계로 나눠 본 뒤 → 다음 문제
 export function afterReStep(F) { F.reStep = false; if (F.phase === 'solo') startItem(F); return F; }
+function toHelp(F) { F.phase = 'done'; F.help = true; F.passed = false; F.check = null; }
 function toCheck(F) {
   F.phase = 'check';
   F.check = makeSheet({ kind: 'fix-check', words: false, id: `${F.id}-c`, lessons: [{ c: F.c, n: FIX.check }], mixed: true });

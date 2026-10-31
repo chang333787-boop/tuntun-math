@@ -179,5 +179,120 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   const st = KS4.reportOf(K).L['2-1-3:5'];
   ok(st && st.st === 'ok' && st.tot === 3, `점검에서 틀려도 판정은 그대로 '${st && st.st}'(${st && st.tot}문제)`);
 }
+// ⑯ 준비 다리 한 판 = 선생님이 고른 길이 안(기본 24 · 18 · 36) · 막힌 칸이 넷 넘으면 일찍 '선생님과 같이'(teacher) · 다음 판은 지난 기록과 이어 감(물었던 바깥 칸을 다시 묻지 않음)
+{
+  const P6 = await import('../js/prep.js');
+  ok(P6.PREP.budget === 24 && P6.LEN.join() === '18,24,36' && P6.newPrep({ unit: '2-1-3', id: 'L', budget: 18 }).budget === 18 && P6.newPrep({ unit: '2-1-3', id: 'L2', budget: 99 }).budget === 24, `한 판 길이 기본 ${P6.PREP.budget} · 고른 길이(18) 따름 · 이상한 값은 기본`);
+  const wrong = (it) => (it.snap.choices ? { vals: [(Number(it.snap.sol[0]) + 1) % it.snap.choices.length], raws: [String((Number(it.snap.sol[0]) + 1) % it.snap.choices.length)] } : { vals: it.snap.sol.map((v) => Number(v) + 7), raws: it.snap.sol.map((v) => String(Number(v) + 7)) });
+  const S = P6.newPrep({ unit: '2-1-3', id: 'WEAK' });
+  let it, n = 0; while ((it = P6.current(S)) && n++ < 60) P6.answer(S, wrong(it));
+  ok(S.done && S.why === 'teacher' && P6.asked(S) <= 18 && P6.stuckHere(S) >= 4, `다 틀리는 아이: ${P6.asked(S)}문항에서 '${S.why}'로 멈춤(막힌 칸 ${P6.stuckHere(S)})`);
+  const first = new Set(S.sheets[0].items.map((x) => x.c));
+  const S2 = P6.newPrep({ unit: '2-1-3', id: 'WEAK2', prior: { sheets: S.sheets, res: S.res } });
+  const again = S2.sheets.length ? S2.sheets[0].items.filter((x) => first.has(x.c) && x.gate).length : 0;
+  ok(!S2.done && S2.sheets.length && !again, `다음 판은 이어서 — 첫 묶음에 지난번 바깥 칸 ${again}개`);
+  const C = P6.newPrep({ unit: '2-1-3', id: 'GOOD' });
+  while ((it = P6.current(C))) P6.answer(C, { vals: it.snap.sol.map(Number), raws: it.snap.sol.map(String) });
+  ok(P6.asked(C) <= 18 && C.why !== 'teacher', `다 맞히는 아이: ${P6.asked(C)}문항 · 끝 '${C.why}'`);
+}
+// ⑰ 단계 없는 칸도 '시범 → 함께 → 혼자' — 시범 다음은 늘 함께 · 함께는 튼튼이가 일부를 해 줌(보기는 지움 · 빈칸 여럿은 마지막만 · 하나는 첫 생각) · 앞 빈칸 답이 마지막과 같으면 채워 주지 않음
+{
+  const FX = await import('../js/fix.js'), LX = await import('../../engine/lessons/index.js'), TK = await import('../../engine/tokens.js');
+  let none = 0, bad = [];
+  for (const n of LX.NODES) {
+    if (!LX.byId[n.id]) continue;
+    const F = FX.newFix({ c: n.id, id: 'T17' });
+    if (F.steps.length) continue;
+    none++;
+    let g = 0; while (F.phase === 'show' && g++ < 20) FX.showNext(F);
+    const A = F.assist, nb = F.cur.choices ? 0 : TK.blankCount(F.cur.prompt);
+    if (F.phase !== 'together') bad.push(`${n.id}:${F.phase}`);
+    else if (!F.curSteps.length && !A) bad.push(`${n.id}:도움 없음`);
+    else if (A && A.kind === 'pick' && !(A.hide.length && !A.hide.includes(Number(F.cur.sol[0])))) bad.push(`${n.id}:지운 보기`);
+    else if (A && A.kind === 'given' && (Object.keys(A.given).length !== nb - 1 || Object.values(A.given).map(String).includes(String(F.cur.sol[nb - 1])))) bad.push(`${n.id}:채운 빈칸`);
+  }
+  ok(none > 60 && !bad.length, `단계 없는 칸 ${none}개: 시범 → 함께(튼튼이가 일부) ${bad.length ? `— ${bad.slice(0, 6).join(' ')}` : ''}`);
+}
+// ⑱ 혼자에서 세 번 내리 틀리면 함께로 한 번 · 또 세 번이면 확인 없이 '선생님과 같이'(아홉 번 내리 틀리지 않음)
+{
+  const FX = await import('../js/fix.js');
+  const F = FX.newFix({ c: '2-2-2:4', id: 'T18' });
+  const bad = () => ({ vals: F.cur.sol.map((v) => Number(v) + 1), raws: F.cur.sol.map((v) => String(Number(v) + 1)) });
+  let g = 0; while (F.phase === 'show' && g++ < 20) FX.showNext(F);
+  const sol = () => ({ vals: F.cur.sol.map(Number), raws: F.cur.sol.map(String) });
+  if (F.assist) { const s = sol(); FX.answerItem(F, s.vals, s.raws); } else { while (F.curSteps[F.si]) FX.togetherStep(F, F.curSteps[F.si].sol); const s = sol(); FX.answerItem(F, s.vals, s.raws); }
+  const seen = [];
+  for (let k = 0; k < 12 && F.phase !== 'done' && F.phase !== 'check'; k++) {
+    if (F.phase === 'together') { seen.push('함께'); const s = sol(); if (F.assist) FX.answerItem(F, s.vals, s.raws); else { while (F.curSteps[F.si]) FX.togetherStep(F, F.curSteps[F.si].sol); FX.answerItem(F, s.vals, s.raws); } continue; }
+    if (F.reStep) FX.afterReStep(F);
+    const b = bad(); const r = FX.answerItem(F, b.vals, b.raws); seen.push(r.back ? '돌아감' : r.help ? '선생님' : '틀림');
+  }
+  ok(F.phase === 'done' && F.help && !F.passed && !F.check && F.solo.n === 6, `혼자 흐름: ${seen.join(' → ')} · 확인 문제 없음`);
+}
+// ⑲ 시범 · 함께 · 틀린 뒤 말은 그 문제 숫자로 — 힌트의 다른 숫자 예('3씩 4묶음' · '한 명이 4개씩')를 붙이지 않음 · 셈 사실은 그 문제 수로 이어 세기 · 뺄셈에 '받아올림'이라 하지 않음
+{
+  const FX = await import('../js/fix.js'), LX = await import('../../engine/lessons/index.js'), G9 = await import('../../paper/js/gen.js'), M9 = await import('../../engine/math.js'), TK = await import('../../engine/tokens.js');
+  const KEEP = new Set(['0', '1', '2', '10', '100', '1000', '10000', '0.1', '0.01', '0.001']);
+  const bad = [];
+  for (const n of LX.NODES) {
+    if (!LX.byId[n.id]) continue;
+    for (let k = 0; k < 3; k++) {
+      const [it] = G9.pickItems(n.id, 1, M9.rng(31 + k), new Set()); if (!it) continue;
+      const rule = FX.ruleFor(n.id, it), txt = TK.toText(it.prompt);
+      for (const t of rule.match(/\d+(?:\.\d+)?(?:만|억|조)?(?:씩|배|단)?/g) || []) if (/[씩배단]$/.test(t) ? !txt.includes(t) : !KEEP.has(t)) bad.push(`${n.id}:${t}`);
+    }
+  }
+  ok(!bad.length, `방법 한 줄에 이 문제와 다른 수가 없음${bad.length ? ` — ${bad.slice(0, 6).join(' ')}` : ''}`);
+  const io = G9.itemOf;
+  ok(FX.factTalk(io('2-2-2:4', { a: 6, b: 4 }), true).includes('6, 12, 18, 24') || FX.factTalk(io('2-2-2:4', { a: 6, b: 4 }), true).includes('4, 8, 12'), `곱셈구구 시범: ${FX.factTalk(io('2-2-2:4', { a: 6, b: 4 }), true)}`);
+  const sub = G9.pickItems('2-1-3:6', 1, M9.rng(5), new Set())[0];
+  ok(sub && /받아내림/.test(FX.mergeTip(sub)) && !/받아올림/.test(FX.mergeTip(sub)), `뺄셈 단계 합치기 말: ${sub && FX.mergeTip(sub)}`);
+  ok(FX.blankTalk({ prompt: ['5씩 뛰어 세어 보세요. ', '5, 10, ', { b: 0 }, ', ', { b: 1 }], sol: [15, 20] }, 1) === '5씩 커져요. 15 다음은 20.', '뛰어 세기 빈칸은 그 문제 수로');
+}
+// ⑳ 오늘 할 일 — 준비했나는 lastPrep 시각으로(문제 0개로 끝난 판도 '했음') · '선생님과 같이 로 멈춤'은 맨 위 '선생님과 같이 봐요' · 다음 날엔 '이어서 찾기' · 판자는 예시 문제로 부름
+{
+  const KD = await import('../js/kid.js'), KS5 = await import('../js/kidstore.js');
+  const now = Date.now(), K0 = (o) => ({ recs: {}, rv: {}, fixed: {}, log: [], inbox: { a1: { kind: 'prep', unit: '4-1-3', t: now - 60000 } }, ...o });
+  const rep0 = KS5.reportOf(K0({}));
+  ok(KD.todoOf(K0({}), rep0)[0].title === '오늘 단원 준비하기', '단원을 열면 맨 위가 준비하기');
+  ok(!KD.todoOf(K0({ lastPrep: { unit: '4-1-3', why: 'clear', t: now - 1000 } }), rep0).some((x) => x.title === '오늘 단원 준비하기'), "문제 0개로 끝난 판(기록 없음)도 '했음'");
+  const P7 = await import('../js/prep.js');
+  const S = P7.newPrep({ unit: '2-1-3', id: 'TD' }); let it;
+  while ((it = P7.current(S))) P7.answer(S, { vals: it.snap.sol.map((v) => Number(v) + 7), raws: it.snap.sol.map((v) => String(Number(v) + 7)) });
+  const recs = {}; for (const sh of S.sheets) { sh.unit = '2-1-3'; recs[sh.id] = { s: KS5.pack(sh), r: S.res[sh.id].me, cf: {}, ms: {} }; }
+  const Kt = K0({ inbox: {}, recs, lastPrep: { unit: '2-1-3', why: S.why, t: now } }), rept = KS5.reportOf(Kt), td = KD.todoOf(Kt, rept);
+  ok(S.why === 'teacher' && td[0].kind === 'help' && td[0].cs.length >= 1 && td[0].cs.length <= 3, `'선생님과 같이'로 멈춘 날: 맨 위 '${td[0].title}' · 같이 볼 문제 ${td[0].cs.length}개`);
+  const Ky = { ...Kt, lastPrep: { ...Kt.lastPrep, t: now - 864e5 * 1.5 } }, ty = KD.todoOf(Ky, KS5.reportOf(Ky));
+  ok(ty[0] && ty[0].title === '이어서 찾기' && !ty.some((x) => x.kind === 'help'), `다음 날엔 맨 위가 '이어서 찾기'(${ty.map((x) => x.title).join(' · ')})`);
+  ok(!td.concat(ty).some((x) => /— (10에서 빼기|한 자리 수 빼기)$/.test(x.title)), '판자 할 일 이름은 예시 문제로');
+}
+// ㉑ '빠르게'는 셈 사실 칸만 — 큰 수 · 비교 같은 칸은 정확 → (3일 뒤) 오래 · 셈 사실은 그대로 정확 → 빠르게 → 오래
+{
+  const G5 = await import('../js/stage.js');
+  ok(G5.isFact('2-2-2:4') && G5.isFact('1-2-6:4') && G5.isFact('3-1-3:6') && !G5.isFact('4-1-1:3') && !G5.isFact('2-1-1:7') && !G5.isFact('3-1-6:6'), '셈 사실 칸(구구 · 한 자리 받아내림 · 구구단으로 나누기) / 아닌 칸(큰 수 · 비교 · 분수)');
+  const c = '4-1-1:3', mx = {}, t0 = Date.now(), n = G5.drillN(c), day = 864e5;
+  G5.applyRun(mx, c, { n, ok: n, med: 500, total: 1 }, t0);
+  ok(mx[c].tier === 1, `셈 사실이 아닌 칸은 아주 빨라도 '빠르게' X (표 ${mx[c].tier})`);
+  G5.applyRun(mx, c, { n, ok: n, med: 99999, total: 1 }, t0 + day);
+  ok(mx[c].tier === 1, '하루 뒤엔 아직');
+  const g = G5.applyRun(mx, c, { n, ok: n, med: 99999, total: 1 }, t0 + 3 * day + 1000);
+  ok(mx[c].tier === 3 && g.gained.join() === '오래', `3일 뒤 그대로 정확하면 오래(느려도) — 얻은 표 ${g.gained.join()}`);
+  ok(G5.tiersOf(c).join() === '1,3' && G5.tiersOf('2-2-2:4').join() === '1,2,3', '표 칸: 정확 · 오래 / 정확 · 빠르게 · 오래');
+}
+// ㉒ 구보는 방금 준비 다리에서 맞힌 판자를 맨 앞에 내지 않음 — 마지막으로 푼 때에 모든 기록 시각
+{
+  const RN = await import('../js/run.js'), G6 = await import('../../paper/js/gen.js'), KS6 = await import('../js/kidstore.js');
+  const now = Date.now(), day = 864e5;
+  const mk = (c, made) => { const sh = G6.makeSheet({ kind: 'prep', words: false, id: 'R' + made, lessons: [{ c, n: 3 }], mixed: true }); sh.items = sh.items.filter((x) => x.ch !== 'END'); sh.chapters = sh.chapters.filter((x) => x.key !== 'END'); sh.made = made; return { s: KS6.pack(sh), r: { done: Object.fromEntries(sh.chapters.map((x) => [x.key, true])), it: Object.fromEntries(sh.items.map((x) => [x.k, { s: 'ok' }])) }, cf: {}, ms: {} }; };
+  const K = { recs: { a: mk('2-2-2:4', now - 60000), b: mk('2-2-2:3', now - 5 * day) }, rv: {}, fixed: {}, mx: { '2-2-2:4': { tier: 1, runs: [] }, '2-2-2:3': { tier: 1, runs: [] } } };
+  const plan = RN.runPlan(K, now);
+  ok(plan[0] === '2-2-2:3' && plan.indexOf('2-2-2:4') > 0, `방금 푼 판자는 뒤로 — ${plan.join(' · ')}`);
+}
+// ㉓ 판자 부르기 = 예시 문제 — 그림 없음 · 짧음 · 같은 칸은 늘 같은 예
+{
+  const FX = await import('../js/fix.js'), LX = await import('../../engine/lessons/index.js');
+  const xs = LX.NODES.filter((n) => LX.byId[n.id]).map((n) => [n.id, FX.exampleOf(n.id)]);
+  ok(xs.filter(([, x]) => x).length >= 180 && xs.every(([, x]) => !x.includes('[그림]') && x.length <= 34) && xs.every(([c, x]) => FX.exampleOf(c) === x), `예시 문제가 있는 칸 ${xs.filter(([, x]) => x).length}/${xs.length} · 예: ${FX.exampleOf('1-2-4:5')}`);
+}
 console.log(fail ? `FAIL ${fail}` : 'PASS');
 process.exitCode = fail ? 1 : 0;

@@ -9,7 +9,12 @@ import { makeSheet, closure, LES, itemOf } from '../../paper/js/gen.js';
 import { kidReport } from '../../paper/js/judge.js';
 import { mindsOf, wantFor } from '../../engine/mis.js';
 
-export const PREP = { n: 3, cap: 6, budget: 36, rounds: 16, fresh: 14 };   // 칸마다 3문제 · 한 묶음에 칸 여섯까지 · 한 판 36문제 안 · 지난 기록은 14일 안
+//  한 판 = 18문제(약 8분 · 40분 수업에서 준비 다리가 수업을 먹지 않게 — 혹평 11-01) · 못 찾으면 다음 시간에 지난 기록(14일)과 함께 이어서
+//  첫 묶음은 바깥 칸 넷까지(12문제) · 그다음 묶음은 칸 셋까지(9문제) — 묶음이 작을수록 막힌 곳 아래로 빨리 내려감
+//  이 판에서 막힌 칸이 넷 이상인데 고칠 판자를 못 좁혔으면 일찍 멈추고 '선생님과 같이'(why 'teacher') — 틀리는 문제만 이어 풀게 두지 않음
+export const PREP = { n: 3, first: 4, cap: 3, budget: 24, rounds: 8, fresh: 14, stuck: 4 };
+// 한 판 길이 — 선생님이 단원을 열 때 고름(짧게 18 · 약 8분 / 보통 24 · 약 10분 / 길게 36 · 약 15분) · 가까운 학기 빈 곳 모의: 하루 39 · 63 · 80% · 이틀 87 · 92.5 · 94.5%(10-31)
+export const LEN = [18, 24, 36];
 const KID = 'me', DAY = 864e5;
 const gi = (c) => { const x = LES(c); return x ? Number(x.g[0]) * 10 + Number(x.g[2]) : 99; };
 const SEEN = new Set(['ok', 'pass', 'near', 'stuck', 'shaky']);
@@ -31,16 +36,16 @@ const allRes = (S) => ({ ...(S.prior ? S.prior.res : {}), ...S.res });
 export const report = (S) => kidReport(allSheets(S), allRes(S), KID, { from: '1-1', to: '6-2' });
 
 // prior = { sheets, res } — res[묶음 id] = { me: 결과 } · 오래된 것(14일 넘음)은 뺀다
-export function newPrep({ unit, id, now = Date.now(), prior = null }) {
+export function newPrep({ unit, id, now = Date.now(), prior = null, budget = null }) {
   const P = prepPlan(unit);
   const keep = prior ? prior.sheets.filter((sh) => now - sh.made < PREP.fresh * DAY && prior.res[sh.id]) : [];
-  const S = { v: 1, id, unit, made: now, sheets: [], res: {}, conf: {}, ms: {}, at: null, done: false, why: '', plan: { fringe: P.fringe, below: P.below },
+  const S = { v: 1, id, unit, made: now, budget: LEN.includes(Number(budget)) ? Number(budget) : PREP.budget, sheets: [], res: {}, conf: {}, ms: {}, at: null, done: false, why: '', plan: { fringe: P.fringe, below: P.below },
     prior: keep.length ? { sheets: keep, res: Object.fromEntries(keep.map((sh) => [sh.id, prior.res[sh.id]])) } : null };
   if (!P.fringe.length) return finish(S, 'none');
   const rep = S.prior ? report(S) : null;
   const first = P.fringe.filter((c) => !(rep && rep.L[c] && SEEN.has(rep.L[c].st) && rep.L[c].st !== 'shaky'));
   if (!first.length) { advance(S); return S; }   // 바깥 칸은 지난번에 다 봤음 — 이어서(막힌 곳 아래로)
-  push(S, first.slice(0, PREP.cap * 2).map(probe), 'prep');
+  push(S, first.slice(0, Math.min(PREP.first, Math.floor(S.budget / PREP.n))).map(probe), 'prep');
   return S;
 }
 const probe = (c) => ({ c, n: PREP.n, gate: true, covers: [...closure(c)] });   // 묻는 칸은 모두 관문 — 맞히면 그 아래 전부 '관문 통과'
@@ -84,7 +89,7 @@ export function nextLessons(rep, plan = null) {
   rep.iso.forEach((x) => { if (!again.includes(x.c)) again.push(x.c); });
   // 반 가르기 — 막힌 칸마다 따로 묻지 않고, 여러 갈래를 한꺼번에 반으로 가르는 칸을 고름(깊은 빈 곳 하나가 위 칸 여럿을 막는 일이 흔함 → 뿌리는 대개 하나)
   //  칸 m의 점수 = m을 품은 갈래마다 (m 아래가 그 갈래 후보의 절반에 가까운 정도)의 합 · 고른 칸이 품은 갈래는 빼고 다음 칸 · 한 묶음 cap칸까지
-  //  막힌 칸마다 따로 물을 때보다 하루 한 판에 찾는 비율 74 → 86% · 문항 27 → 24 · 이틀 97 → 98%(app/test/prep.sim.mjs · 10-31)
+  //  막힌 칸마다 따로 물을 때보다 하루 한 판에 찾는 비율 74 → 86% · 문항 27 → 24 · 이틀 97 → 98%(app/test/prep.sim.mjs · 10-31 · 한 판 36문항 때)
   const probes = [], seen = (c) => L[c] && SEEN.has(L[c].st);
   let B = rep.below.filter((b) => !plan || plan.includes(b.c)).map((b) => ({ c: b.c, U: new Set([...closure(b.c)].filter((c) => c !== b.c && byId[c] && !seen(c))) })).filter((b) => b.U.size);
   while (B.length && probes.length < PREP.cap) {
@@ -100,13 +105,15 @@ export function nextLessons(rep, plan = null) {
   }
   return { again: (plan ? again.filter((c) => plan.includes(c)) : again).sort((a, b) => gi(b) - gi(a)), probes };
 }
+// 이 판에서 물은 칸 가운데 막힌 칸 수(지난 기록의 막힘은 세지 않음 — 다음 시간에 이어 갈 때 곧바로 멈추지 않게)
+export const stuckHere = (S, rep = report(S)) => [...new Set(S.sheets.flatMap((sh) => sh.items.map((it) => it.c)))].filter((c) => rep.L[c] && rep.L[c].st === 'stuck').length;
 // 이 판에서 그 칸을 몇 묶음에서 물었나 — 다시 묻기는 한 번까지(같은 꼴로 늘 틀리면 판정에 맡김)
 const timesAsked = (S, c) => S.sheets.filter((sh) => sh.items.some((it) => it.c === c)).length;
 function advance(S) {
   for (let guard = 0; guard < 4; guard++) {
-    const left = PREP.budget - asked(S);
+    const left = (S.budget || PREP.budget) - asked(S);
     if (left < PREP.n) return finish(S, 'budget');
-    if (S.sheets.length >= PREP.rounds) return finish(S, 'budget');
+    if (S.sheets.length >= Math.max(PREP.rounds, Math.ceil((S.budget || PREP.budget) / PREP.n))) return finish(S, 'budget');
     const rep = report(S);
     const nx = nextLessons(rep, S.plan.below), probes = nx.probes, again = nx.again.filter((c) => timesAsked(S, c) < 2);
     // 다른 꼴로 한 번 더 — 한 번 보인 생각은 이름 대신 그 생각을 가려내는 함정 꼴 문항으로(아이는 그냥 다음 문제를 풂) [docs/mis_flow.md]
@@ -115,6 +122,7 @@ function advance(S) {
     // 오늘 고칠 판자를 찾았으면 그만 묻고 고치러 간다 — 아래를 다 메울 때까지 붙잡지 않음 [A-R16] · 남은 갈래는 다음 시간에 지난 기록과 함께 이어서
     //  이 단원 준비 칸 안에서 찾은 것만(다른 단원 기록의 고칠 판자가 오늘 점검을 막지 않게 — 코덱스 10-31)
     const inPlan = rep.start.filter((x) => S.plan.below.includes(x.c));
+    if (stuckHere(S, rep) >= PREP.stuck) return finish(S, 'teacher');   // 막힌 칸이 넷 이상 — 찾은 판자가 있어도 선생님과 먼저(찾은 판자는 끝 화면 · 홈에 그대로)
     if (inPlan.length && !again.some((c) => inPlan.some((x) => x.c === c))) return finish(S, 'found');
     if (!again.length && !probes.length && !traps.length) return finish(S, 'clear');
     const room = Math.min(PREP.cap, Math.floor(left / PREP.n));

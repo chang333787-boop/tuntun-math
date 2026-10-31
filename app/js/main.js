@@ -1,6 +1,6 @@
 // 튼튼 수 다리 — 화면 나누기(#/주소)
 import { mascot } from '../../paper/js/mascot.js';
-import { joinView, homeView, prepView, fixView, reviewView, meOf } from './kid.js';
+import { joinView, homeView, prepView, fixView, reviewView, meOf, whoView, whoOk, WHO } from './kid.js';
 import { stagesView, drillView } from './stageview.js';
 import { backView, retryView } from './back.js';
 import { runView } from './run.js';
@@ -15,6 +15,12 @@ const root = document.getElementById('view');
 addEventListener('touchstart', () => document.body.classList.add('touch'), { once: true, passive: true });   /* 손가락으로 누른 기기 → hover 끔(app.css) */
 document.getElementById('logo-m').innerHTML = mascot('hi', 36);
 let cleanup = null;
+// 같은 크롬북을 여럿이 쓸 때 — 아이 화면은 앱을 열 때 · 날짜가 바뀌었을 때 · 20분 넘게 손대지 않다가 누를 때 'n번 맞아요?'(혹평 17)
+//  idle = 바로 앞 입력과 이번 입력 사이(누른 그 입력이 주소를 바꾸므로 그 앞 공백을 봄)
+let lastIn = Date.now(), idle = 0;
+const touched = () => { const n = Date.now(); idle = n - lastIn; lastIn = n; };
+addEventListener('pointerdown', touched, { capture: true, passive: true });
+addEventListener('keydown', touched, { capture: true, passive: true });
 
 function startView(r) {
   const me = meOf();
@@ -60,6 +66,11 @@ function route() {
   document.body.classList.toggle('kid', kid);
   const me = meOf();
   document.getElementById('who').textContent = kid && me ? `${me.C} · ${me.no}번` : /^#\/t/.test(h) ? '선생님' : '';
+  if (kid && me && !/^#\/join/.test(h)) {
+    if (idle > 20 * 60000) WHO.ok = false;
+    idle = 0;
+    if (!whoOk(me)) { window.scrollTo(0, 0); return whoView(root, me, route); }
+  }
   for (const [re, f] of ROUTES) { const m = h.match(re); if (m) { cleanup = f(m); window.scrollTo(0, 0); return; } }
   startView(root);
 }
