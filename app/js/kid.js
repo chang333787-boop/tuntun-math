@@ -47,7 +47,9 @@ function todoOf(K, rep) {
   const t = tasks[0];
   const preppedAfter = (u, since) => Object.values(K.recs).some((x) => x.s.unit === u && x.s.made >= since);
   if (t && !preppedAfter(t.unit, t.t)) out.push({ kind: 'prep', unit: t.unit, pri: true, title: `오늘 단원 준비하기`, sub: `선생님이 연 단원: ${unitLabel(t.unit)} — 필요한 판자가 튼튼한지 봐요`, href: `#/prep/${t.unit}` });
-  const fixes = rep.start.map((s) => s.c).sort(byGrade);
+  if (K.back && K.back.root && byId[K.back.root] && !(K.fixed && K.fixed[K.back.root] > K.back.t)) out.push({ kind: 'fix', c: K.back.root, pri: !out.length, title: `끊긴 곳 고치기 — ${kidName(K.back.root)}`, sub: `'${K.back.text}'을(를) 거꾸로 따라가서 찾은 곳이에요`, href: `#/fix/${K.back.root}` });
+  else if (K.back && K.back.root && !K.back.solved && K.fixed && K.fixed[K.back.root]) out.push({ kind: 'retry', pri: !out.length, title: `처음 문제 다시 풀기 — ${K.back.text}`, sub: '끊긴 곳을 고쳤어요. 이제 풀릴 거예요', href: '#/retry' });
+  const fixes = rep.start.map((s) => s.c).sort(byGrade).filter((c) => !(K.back && K.back.root === c && !(K.fixed && K.fixed[c] > K.back.t)));
   const shakyFixed = Object.keys(K.fixed || {}).filter((c) => rep.L[c] && (rep.L[c].st === 'shaky' || rep.L[c].st === 'stuck') && !fixes.includes(c));
   [...fixes, ...shakyFixed].slice(0, 3).forEach((c, i) => out.push({ kind: 'fix', c, pri: !out.length && i === 0, title: `판자 고치기 — ${kidName(c)}`, sub: K.help && K.help[c] ? '지난번엔 조금 흔들렸어요. 선생님과 함께 봐도 좋아요.' : '튼튼이가 먼저 풀어 보이고, 같이 풀고, 혼자 풀어요', href: `#/fix/${c}` }));
   Object.keys(K.firm || {}).filter((c) => byId[c] && rep.L[c] && rep.L[c].st === 'shaky' && !fixes.includes(c) && !shakyFixed.includes(c)).slice(0, 2)
@@ -97,10 +99,9 @@ export async function homeView(root) {
     <div class="card"><h2>내 짐작 견주기</h2>${cal.n ? `<p>풀기 전에 고른 짐작이 결과와 맞은 정도: <b>${Math.round(cal.match * 100)}%</b> <span class="muted small">(${cal.n}문제)</span></p>
       ${sw ? `<p>'자신 있어요'라고 했는데 틀린 문제가 <b>${sw}개</b> 있어요. 이게 가장 중요한 신호예요 — 그 판자부터 다시 봐요.</p>` : '<p>\'자신 있어요\'라고 한 문제는 다 맞았어요. 내 짐작을 믿어도 돼요.</p>'}` : '<p class="muted">문제를 풀 때마다 먼저 짐작을 골라요. 짐작이 결과와 점점 맞아 가는 것도 실력이 느는 거예요.</p>'}
       ${fixedN ? `<p>내가 고친 판자: <b>${fixedN}개</b> — ${Object.keys(K.fixed).map((c) => esc(kidName(c))).join(', ')}</p>` : ''}</div>
-    <div class="card"><h2>단원 골라 준비하기</h2><p class="muted small">배울 단원을 고르면 그 단원에 필요한 판자를 봐요.</p>
-      <div class="acts"><select id="u" style="font:inherit;font-size:17px;padding:8px;border-radius:10px">${UNITS.filter((u) => prepPlan(u.id).fringe.length).map((u) => `<option value="${u.id}" ${u.id === unit ? 'selected' : ''}>${esc(u.g.replace('-', '학년 ') + '학기')} · ${esc(u.nm)}</option>`).join('')}</select><button id="go" class="teal">준비 다리 시작</button></div>
+    <div class="card"><h2>막힌 문제 거꾸로 찾기</h2>${say('think', '풀기 어려운 문제를 그대로 쓰면, 튼튼이가 <b>거꾸로</b> 따라가며 어디서 끊겼는지 찾아 줘요.', 56)}
+      <div class="acts"><a class="btn pri" href="#/back">거꾸로 찾기</a>${K.back && K.back.root && !K.back.solved && K.fixed && K.fixed[K.back.root] ? `<a class="btn" href="#/retry">처음 문제 다시 풀기 — ${esc(K.back.text)}</a>` : ''}</div>
       <p class="small"><button class="link" id="out">이 기기에서 나가기</button></p></div>`;
-  root.querySelector('#go').addEventListener('click', () => go(`#/prep/${root.querySelector('#u').value}`));
   root.querySelector('#out').addEventListener('click', () => { if (confirm('이 기기에서 나갈까요? 푼 기록은 서버에 남아 있어요.')) { lsDel('tt.me'); go('#/'); } });
 }
 
@@ -248,7 +249,7 @@ export function fixView(root, c) {
     KS.save(me, K); KS.setReview(me, K); KS.pushSummary(me, K); KS.setNow(me, { mode: 'home' });
     const was = before && before.tot ? `처음엔 ${before.ok}/${before.tot} → 지금 ${okN}/${F.check.items.length}` : `${okN}/${F.check.items.length}`;
     shell(F.passed ? say('cheer', `판자를 고쳤어요! <b>${esc(kidName(c))}</b> — ${was}.<br>1일 · 3일 · 7일 뒤에 다시 보면 오래 튼튼해요.`) : say('think', `아직 조금 흔들려요(${okN}/${F.check.items.length}). 괜찮아요 — 선생님과 함께 한 번 더 봐요.`),
-      `<div class="acts"><a class="btn pri big" href="#/me">내 수 다리로</a>${F.passed ? `<a class="btn big" href="#/drill/${c}">이어서 다듬기 — '빠르게' 표</a>` : ''}</div>`);
+      `<div class="acts">${F.passed && K.back && K.back.root === c && !K.back.solved ? `<a class="btn pri big" href="#/retry">처음 문제 다시 풀기 — ${esc(K.back.text)}</a>` : `<a class="btn pri big" href="#/me">내 수 다리로</a>`}${F.passed ? `<a class="btn big" href="#/drill/${c}">이어서 다듬기 — '빠르게' 표</a>` : ''}</div>`);
   }
   function route() { ({ show, together, solo, check, done })[F.phase](); }
   route();

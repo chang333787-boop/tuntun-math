@@ -1,7 +1,8 @@
 {
- "v": "d57ea650f04e",
+ "v": "4fb53332aae0",
  "files": [
   "css/app.css",
+  "js/back.js",
   "js/bridge.js",
   "js/db.js",
   "js/firebase-config.js",

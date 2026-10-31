@@ -37,11 +37,19 @@ const UNIT = '2-2-2', GAP = '2-1-6:3';
     await w(150);
   }
   const end = (await pg.textContent('#view')).slice(0, 80);
+  // 다듬기 한 판(곱셈구구 3·6단 — 다 맞힘) → 표를 땀
+  await pg.goto(BASE + '#/drill/2-2-2:4'); await w(900); await pg.click('#s'); await w(200);
+  for (let i = 0; i < 20; i++) {
+    if (!(await pg.$('.qcard'))) break;
+    const q = (await pg.textContent('.qcard #q')).replace(/\s/g, '').replace(/=.*$/, '').replace(/×/g, '*');
+    await pg.fill('.qcard .blank', String(Function(`return (${q})`)())); await pg.click('#ok'); await w(120);
+  }
+  const drill = (await pg.textContent('#view')).slice(0, 70);
   await w(3000);
   await pg.goto(BASE + `#/t/c/${C}`); await w(3500);
   const head = await pg.textContent('h2 small');
   const row1 = await pg.evaluate(() => { const tr = document.querySelectorAll('.ctab tr')[1]; return tr ? [...tr.children].slice(-3).map((x) => x.textContent).join(' | ') : ''; });
   await pg.screenshot({ path: '/private/tmp/claude-501/-Users-dobuk-Projects-school-metaverse/f26e2d45-7adb-4b24-ba6f-51b1bd61efd5/scratchpad/live_teacher.png' });
-  console.log(JSON.stringify({ C, opened, todo: todo.slice(0, 60), items: n, end, head, row1, errs }, null, 1));
+  console.log(JSON.stringify({ C, opened, todo: todo.slice(0, 60), items: n, end: end.trim(), drill, head, row1, errs }, null, 1));
   await b.close();
 })().catch((e) => { console.error('ERR', e.message); process.exit(1); });
