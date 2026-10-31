@@ -5,14 +5,14 @@ import { byId, unitById, gradeIdx } from '../../engine/lessons/index.js';
 import { LES, itemOf } from '../../paper/js/gen.js';
 import { mascot } from '../../paper/js/mascot.js';
 import { blankCount } from '../../engine/tokens.js';
-import { prepPlan, newPrep, current, answer, summary, asked } from './prep.js';
+import { prepPlan, newPrep, current, answer, summary, asked, LEN } from './prep.js';
 import { newFix, showNext, showLen, showTalk, blankTalk, factTalk, togetherStep, answerItem, afterReStep, checkItem, answerCheck, compareOf, stepsOf, exampleOf, mergeTip } from './fix.js';
 import * as KS from './kidstore.js';
 import { draw, stepHTML, staticHTML, ansSay, rushGuard, rushPause } from './item.js';
 import { P, RO } from '../../engine/concepts/kit.js';
 import { bridgeSVG, KIND } from './bridge.js';
 import { modelHTML } from './model.js';
-import { grantAccurate, nextGoal, target, TIER } from './stage.js';
+import { grantAccurate, nextGoal, target, TIER, isFact } from './stage.js';
 import { lsGet, lsSet, lsDel, esc, rand } from './local.js';
 import { flush, get as dbGet, dec } from './db.js';
 import { runPlan, weekHTML, today } from './run.js';
@@ -99,8 +99,8 @@ export function todoOf(K, rep) {
   // 다듬기 하나 — '오래'를 딸 날이 된 판자 → '빠르게'에 가까운 판자 → 정확만 있는 판자 (주인공 할 일이 없을 때만 맨 위)
   const mx = K.mx || {};
   const pickD = Object.entries(mx).filter(([c, m]) => byId[c] && m.tier === 2 && now - m.t2 >= 3 * KS.DAY)[0]
-    || Object.entries(mx).filter(([c, m]) => byId[c] && m.tier === 1 && m.best && m.best.med != null).sort((a, b) => a[1].best.med / target(a[0]) - b[1].best.med / target(b[0]))[0]
-    || Object.entries(mx).filter(([c, m]) => byId[c] && m.tier === 1)[0];
+    || Object.entries(mx).filter(([c, m]) => byId[c] && m.tier === 1 && isFact(c) && m.best && m.best.med != null).sort((a, b) => a[1].best.med / target(a[0]) - b[1].best.med / target(b[0]))[0]
+    || Object.entries(mx).filter(([c, m]) => byId[c] && m.tier === 1 && (isFact(c) || now - (m.t1 || 0) >= 3 * KS.DAY))[0];   /* 셈 사실이 아닌 칸은 '오래'를 딸 날(3일 뒤)이 돼야 할 일에(회귀 10-31) */
   if (pickD) { const [c, m] = pickD; out.push({ kind: 'drill', c, pri: !out.length, title: `다듬기 — ${plank(c)}`, sub: `다음 표: ${nextGoal(m, c)}`, href: `#/drill/${c}` }); }
   // 이어서 찾기 — 지난번에 18문제를 다 써서 멈췄거나, 지난 시간에 '선생님과 같이'로 멈춘 판(지난 기록 14일과 함께 이어 감)
   if (lp && unitById[lp.unit] && (lp.why === 'budget' || (lp.why === 'teacher' && today(lp.t) !== td)) && !out.some((x) => x.kind === 'prep')) out.push({ kind: 'prep', unit: lp.unit, pri: !out.length, title: '이어서 찾기', sub: `${unitLabel(lp.unit)} — 지난번에 멈춘 곳부터(${mins((tasks.find((x) => x.unit === lp.unit) || {}).len)}분쯤)`, href: `#/prep/${lp.unit}` });
@@ -127,7 +127,7 @@ export async function homeView(root) {
   const wp = doneThisWeek(K.recs) ? [] : weekPlan(K, rep);
   if (wp.length >= 4) todo.push({ kind: 'week', pri: !todo.length, title: `이번 주 점검 — 섞은 문제 ${wp.length}개`, sub: '주마다 한 번 · 3~5분 · 내 선이 어디로 가나', href: '#/week' });
   const ct = classTask(K);
-  const doneOne = ct && Object.values(K.fixed || {}).some((t) => t >= ct.t);   // 이번 수업에 판자 하나를 고침 → 이제 선생님 수업으로(혹평 13)
+  const doneOne = ct && Date.now() - ct.t < 3 * 3600e3 && Object.values(K.fixed || {}).some((t) => t >= ct.t) && !todo.some((x) => x.kind === 'prep' || x.kind === 'help');   // 이번 수업에 판자 하나를 고침 → 이제 선생님 수업으로(혹평 13) · 준비 · 선생님과 같이가 남았거나 수업 뒤(3시간)면 접지 않음(회귀 10-31)
   const unit = (todo.find((x) => x.unit) || {}).unit || (ct && ct.unit) || (K.lastPrep && K.lastPrep.unit) || null;
   const cal = KS.calOf(K);
   const sw = Object.values(cal.sureWrong).reduce((a, b) => a + b, 0);
@@ -140,7 +140,7 @@ export async function homeView(root) {
   }
   const gapN = planks.filter((p) => KIND(p.st) === 'gap').length, fixN = planks.filter((p) => KIND(p.st) === 'gap' && rep.start.some((s) => s.c === p.c)).length;
   const helpRow = todo.find((x) => x.kind === 'help');
-  const gapLine = !gapN ? '' : helpRow ? '점선은 빈 판자예요. 선생님과 같이 하나씩 놓아요.' : fixN ? `점선은 빈 판자예요. 위 '판자 고치기'로 하나씩 놓으면 다리가 이어져요.` : K.lastPrep && K.lastPrep.why === 'budget' ? `점선은 빈 판자예요. '이어서 찾기'로 어디부터 놓을지 찾아요.` : '점선은 빈 판자예요. 선생님과 같이 하나씩 놓아요.';
+  const gapLine = !gapN ? '' : helpRow ? '점선은 빈 판자예요. 선생님과 같이 하나씩 놓아요.' : fixN ? `점선은 빈 판자예요. 위 '판자 고치기'로 하나씩 놓으면 다리가 이어져요.` : K.lastPrep && K.lastPrep.why === 'budget' ? `점선은 빈 판자예요. '이어서 찾기'로 어디부터 놓을지 찾아요.` : '점선은 빈 판자예요. 다음 준비 다리에서 이어서 찾고, 하나씩 놓아요.';
   const goal = unit ? (unitLabel(unit).length <= 5 ? unitLabel(unit) : ct && ct.unit === unit ? '오늘 단원' : '이 단원') : '';   /* 다리 끝 글은 칸이 좁아 다섯 글자까지(긴 이름은 제목에) */
   const fixedN = Object.keys(K.fixed || {}).length, tools = Object.entries(K.tools || {}).filter(([tl]) => TOOLS[tl]);
   const help = helpRow;
@@ -188,9 +188,12 @@ export function prepView(root, unit) {
   const K = KS.load(me);
   const SK = `tt.prep.${me.C}.${me.no}`;
   let S = lsGet(SK);
-  if (!S || S.unit !== unit || S.done || Date.now() - S.made > 3 * 3600e3) { const task = Object.values(K.inbox || {}).filter((x) => x && x.kind === 'prep' && x.unit === unit).sort((a, b) => b.t - a.t)[0]; S = newPrep({ unit, id: rand(6), prior: KS.history(K), budget: task && task.len }); }   /* 길이는 선생님이 연 과제(len)대로 */
+  let fresh = false;
+  if (!S || S.unit !== unit || S.done || Date.now() - S.made > 3 * 3600e3) { fresh = true; const task = Object.values(K.inbox || {}).filter((x) => x && x.kind === 'prep' && x.unit === unit).sort((a, b) => b.t - a.t)[0]; S = newPrep({ unit, id: rand(6), prior: KS.history(K), budget: task && task.len }); }   /* 길이는 선생님이 연 과제(len)대로 */
   const saved = new Set(S.saved || []);
   const keep = () => { S.saved = [...saved]; lsSet(SK, S); };
+  // 선생님이 방금 다른 길이로 다시 열었는데 이 기기 과제가 아직 옛것이면 — 서버 과제를 한 번 읽어 아직 하나도 안 풀었으면 길이를 맞춤(회귀 10-31)
+  if (fresh) (async () => { try { const v = await dbGet(`k/${me.C}/${me.no}/${me.pin}/in`); const ts = Object.values(v || {}).map(dec).filter((x) => x && x.kind === 'prep' && x.unit === unit).sort((a, b) => b.t - a.t)[0]; if (ts && LEN.includes(Number(ts.len)) && Number(ts.len) !== S.budget && asked(S) === 0) { S.budget = Number(ts.len); keep(); } } catch (e) { /* 그대로 */ } })();
   const store = () => {
     for (const sh of S.sheets) {
       const R = S.res[sh.id].me;
@@ -224,7 +227,7 @@ export function prepView(root, unit) {
     KS.save(me, K); KS.pushSummary(me, K);
     KS.setNow(me, { mode: 'home' });
     lsDel(SK);
-    const ct = classTask(K), inClass = !!(ct && ct.unit === unit);
+    const ct = classTask(K), inClass = !!(ct && ct.unit === unit && Date.now() - ct.t < 3 * 3600e3);
     const cal = sum.cal, sw = cal.sureWrong.length, swFix = cal.sureWrong.some((x) => sum.fix.includes(x.c));
     const calLine = cal.sure ? `<p>'자신 있어요'라고 한 문제 ${cal.sure}개 가운데 ${sw ? `<b>${sw}개</b>는 틀렸어요 — ${swFix ? '그 판자를 고칠 때 꼭 다시 봐요.' : "다음엔 '자신 있어요'를 고르기 전에 한 번 더 살펴봐요."}` : '모두 맞았어요. 내 짐작을 믿어도 돼요.'}</p>` : '';
     const fix = sum.fix.slice().sort(byGrade), stuck = Object.values(sum.rep.L).filter((x) => x.st === 'stuck' && S.plan.below.includes(x.c)).map((x) => x.c).sort(byGrade);
@@ -262,7 +265,7 @@ export function fixView(root, c) {
   const K = KS.load(me);
   const before = KS.reportOf(K).L[c];
   const F = newFix({ c, id: rand(6) });
-  const inClass = !!classTask(K);
+  const ct0 = classTask(K), inClass = !!(ct0 && Date.now() - ct0.t < 3 * 3600e3);   /* 수업 중(연 뒤 3시간)만 — 저녁 집에서는 보통 끝 화면(회귀 10-31) */
   KS.setNow(me, { mode: 'fix', c });
   const head = (pose, t) => say(pose, t, 64);
   const shell = (top, body) => { root.innerHTML = `<div class="card">${top}<div id="b">${body || ''}</div></div>`; return root.querySelector('#b'); };

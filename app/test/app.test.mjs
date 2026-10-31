@@ -186,7 +186,7 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   const wrong = (it) => (it.snap.choices ? { vals: [(Number(it.snap.sol[0]) + 1) % it.snap.choices.length], raws: [String((Number(it.snap.sol[0]) + 1) % it.snap.choices.length)] } : { vals: it.snap.sol.map((v) => Number(v) + 7), raws: it.snap.sol.map((v) => String(Number(v) + 7)) });
   const S = P6.newPrep({ unit: '2-1-3', id: 'WEAK' });
   let it, n = 0; while ((it = P6.current(S)) && n++ < 60) P6.answer(S, wrong(it));
-  ok(S.done && S.why === 'teacher' && P6.asked(S) <= 18 && P6.stuckHere(S) >= 4, `다 틀리는 아이: ${P6.asked(S)}문항에서 '${S.why}'로 멈춤(막힌 칸 ${P6.stuckHere(S)})`);
+  ok(S.done && S.why === 'teacher' && P6.asked(S) <= S.budget && P6.stuckHere(S) >= 4, `다 틀리는 아이: ${P6.asked(S)}문항에서 '${S.why}'로 멈춤(막힌 칸 ${P6.stuckHere(S)})`);
   const first = new Set(S.sheets[0].items.map((x) => x.c));
   const S2 = P6.newPrep({ unit: '2-1-3', id: 'WEAK2', prior: { sheets: S.sheets, res: S.res } });
   const again = S2.sheets.length ? S2.sheets[0].items.filter((x) => first.has(x.c) && x.gate).length : 0;
@@ -263,7 +263,7 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   const Kt = K0({ inbox: {}, recs, lastPrep: { unit: '2-1-3', why: S.why, t: now } }), rept = KS5.reportOf(Kt), td = KD.todoOf(Kt, rept);
   ok(S.why === 'teacher' && td[0].kind === 'help' && td[0].cs.length >= 1 && td[0].cs.length <= 3, `'선생님과 같이'로 멈춘 날: 맨 위 '${td[0].title}' · 같이 볼 문제 ${td[0].cs.length}개`);
   const Ky = { ...Kt, lastPrep: { ...Kt.lastPrep, t: now - 864e5 * 1.5 } }, ty = KD.todoOf(Ky, KS5.reportOf(Ky));
-  ok(ty[0] && ty[0].title === '이어서 찾기' && !ty.some((x) => x.kind === 'help'), `다음 날엔 맨 위가 '이어서 찾기'(${ty.map((x) => x.title).join(' · ')})`);
+  ok(ty[0] && (ty[0].title === '이어서 찾기' || ty[0].kind === 'fix') && ty.some((x) => x.title === '이어서 찾기') && !ty.some((x) => x.kind === 'help'), `다음 날엔 '선생님과 같이' 대신 찾은 판자 고치기 · 이어서 찾기(${ty.map((x) => x.title).join(' · ')})`);
   ok(!td.concat(ty).some((x) => /— (10에서 빼기|한 자리 수 빼기)$/.test(x.title)), '판자 할 일 이름은 예시 문제로');
 }
 // ㉑ '빠르게'는 셈 사실 칸만 — 큰 수 · 비교 같은 칸은 정확 → (3일 뒤) 오래 · 셈 사실은 그대로 정확 → 빠르게 → 오래

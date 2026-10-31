@@ -39,7 +39,14 @@ export async function pull(me) {
   let srv = null;
   try { srv = await db.get(base(me)); } catch (e) { return { K, ok: false, err: e }; }
   if (srv && srv.r) for (const [id, s] of Object.entries(srv.r)) { const o = db.dec(s); if (o && !K.recs[id]) K.recs[id] = o; }
-  if (srv) for (const [id, x] of Object.entries(K.recs)) if (x && x.s && x.s.src === 'paper' && !(srv.r && srv.r[id])) delete K.recs[id];   /* 선생님이 뺀 종이 기록(번호를 잘못 골랐을 때) — 종이 기록은 서버가 정본 */
+  if (srv) for (const [id, x] of Object.entries(K.recs)) if (x && x.s && x.s.src === 'paper' && !(srv.r && db.dec(srv.r[id]))) delete K.recs[id];   /* 예전에 남은 글자 "null"도 없는 것으로 */
+  // 다른 기기에서 쓴 상태 되살리기 — 요약(st)의 준비 다리 끝 · 고친 판자 · 도움이 이 기기보다 새로우면(새 크롬북에서 들어오면 선생님 띠에서 사라지던 것 · 회귀 10-31)
+  const st0 = srv && srv.st ? db.dec(srv.st) : null;
+  if (st0 && typeof st0 === 'object') {
+    const p = st0.prep; if (p && typeof p.u === 'string' && Number(p.t) > ((K.lastPrep && K.lastPrep.t) || 0)) K.lastPrep = { unit: p.u, why: String(p.why || ''), t: Number(p.t) };
+    if (st0.fixed && typeof st0.fixed === 'object') { K.fixed = K.fixed || {}; for (const [c, t] of Object.entries(st0.fixed)) if (Number(t) > (K.fixed[c] || 0)) K.fixed[c] = Number(t); }
+    if (st0.help && typeof st0.help === 'object') { K.help = K.help || {}; for (const [c, n] of Object.entries(st0.help)) if (Number(n) > (K.help[c] || 0)) K.help[c] = Number(n); }
+  }   /* 선생님이 뺀 종이 기록(번호를 잘못 골랐을 때) — 종이 기록은 서버가 정본 */
   if (srv && srv.rv) { const rv = db.dec(srv.rv); if (rv) for (const [c, x] of Object.entries(rv)) if (!K.rv[c] || (x.t || 0) > (K.rv[c].t || 0)) K.rv[c] = x; }
   if (srv && srv.mx) { const mx = db.dec(srv.mx); K.mx = K.mx || {}; if (mx && Array.isArray(mx._jog)) K.jog = [...new Set([...(K.jog || []), ...mx._jog.filter((d) => typeof d === 'string')])].sort().slice(-60); if (mx && mx._tools && typeof mx._tools === 'object') { K.tools = K.tools || {}; for (const [t, v] of Object.entries(mx._tools)) if (v && (!K.tools[t] || (v.self || 0) > (K.tools[t].self || 0))) K.tools[t] = v; } if (mx && typeof mx === 'object') for (const [c, x] of Object.entries(mx)) { if (c === '_jog' || c === '_tools') continue; const a = K.mx[c]; if (x && (!a || (x.tier || 0) > (a.tier || 0) || ((x.tier || 0) === (a.tier || 0) && (x.runs || []).length > (a.runs || []).length))) K.mx[c] = x; } }
   K.inbox = srv && srv.in ? Object.fromEntries(Object.entries(srv.in).map(([id, s]) => [id, db.dec(s)])) : {};
@@ -112,6 +119,7 @@ export function summaryOf(K) {
   for (const [id, x] of Object.entries(K.minds)) if (x.fixed && !mis[id]) mis[id] = 'r';
   // 최근 14일 — '먼저 봐 줄 아이'가 쌓이기만 하지 않게(혹평 10-31) · 찍기는 횟수만 있어 늘어난 때를 여기서 적어 둠
   const sw14 = calOf(K, now - 14 * DAY).sureWrong;
+  if (K.rushSeen == null) K.rushSeen = K.rush || 0;   /* 고친 앞의 찍기 횟수는 '최근 2주'로 세지 않음(회귀 10-31) */
   if ((K.rush || 0) > (K.rushSeen || 0)) { K.rushLog = [...(K.rushLog || []), ...Array.from({ length: Math.min(20, K.rush - (K.rushSeen || 0)) }, () => now)].slice(-40); K.rushSeen = K.rush; }
   const rush14 = (K.rushLog || []).filter((t) => now - t < 14 * DAY).length;
   const prep = K.lastPrep && K.lastPrep.unit ? { u: K.lastPrep.unit, why: K.lastPrep.why || '', t: K.lastPrep.t || 0 } : null;

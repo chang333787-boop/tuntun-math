@@ -11,7 +11,7 @@ import { mindsOf, wantFor } from '../../engine/mis.js';
 
 //  한 판 = 선생님이 고른 길이(기본 24문제 · 약 10분 · 40분 수업에서 준비 다리가 수업을 먹지 않게 — 혹평 10-31) · 못 찾으면 다음 시간에 지난 기록(14일)과 함께 이어서
 //  첫 묶음은 바깥 칸 넷까지(12문제) · 그다음 묶음은 칸 셋까지(9문제) — 묶음이 작을수록 막힌 곳 아래로 빨리 내려감
-//  이 판에서 막힌 칸이 넷 이상인데 고칠 판자를 못 좁혔으면 일찍 멈추고 '선생님과 같이'(why 'teacher') — 틀리는 문제만 이어 풀게 두지 않음
+//  서로 다른 뿌리의 막힌 칸이 넷 이상이면 일찍 멈추고 '선생님과 같이'(why 'teacher') · 한 판을 다 묻고도 막힌 칸 넷 이상인데 못 좁혔어도 — 틀리는 문제만 이어 풀게 두지 않음
 export const PREP = { n: 3, first: 4, cap: 3, budget: 24, rounds: 8, fresh: 14, stuck: 4 };
 // 한 판 길이 — 선생님이 단원을 열 때 고름(짧게 18 · 약 8분 / 보통 24 · 약 10분 / 길게 36 · 약 15분) · 가까운 학기 빈 곳 모의: 하루 39 · 63 · 80% · 이틀 87 · 92.5 · 94.5%(10-31)
 export const LEN = [18, 24, 36];
@@ -107,12 +107,21 @@ export function nextLessons(rep, plan = null) {
 }
 // 이 판에서 물은 칸 가운데 막힌 칸 수(지난 기록의 막힘은 세지 않음 — 다음 시간에 이어 갈 때 곧바로 멈추지 않게)
 export const stuckHere = (S, rep = report(S)) => [...new Set(S.sheets.flatMap((sh) => sh.items.map((it) => it.c)))].filter((c) => rep.L[c] && rep.L[c].st === 'stuck').length;
+// 막힌 칸이 여럿이어도 뿌리 하나로 설명되면(모두의 아래에 함께 있는 아직 모르는 칸 · 또는 모두의 아래에 있는 막힌 칸) 계속 좁힘 — 빈 곳 하나인 아이가 '선생님과 같이'로 멈추던 것(회귀 10-31)
+export function manyRoots(S, rep = report(S)) {
+  const st = [...new Set(S.sheets.flatMap((sh) => sh.items.map((it) => it.c)))].filter((c) => rep.L[c] && rep.L[c].st === 'stuck');
+  if (st.length < PREP.stuck) return false;
+  if (st.some((c) => st.every((o) => o === c || closure(o).has(c)))) return false;
+  const seen = (c) => rep.L[c] && SEEN.has(rep.L[c].st);
+  const sets = st.map((c) => new Set([...closure(c)].filter((d) => d !== c && byId[d] && !seen(d))));
+  return ![...sets[0]].some((d) => sets.every((x) => x.has(d)));
+}
 // 이 판에서 그 칸을 몇 묶음에서 물었나 — 다시 묻기는 한 번까지(같은 꼴로 늘 틀리면 판정에 맡김)
 const timesAsked = (S, c) => S.sheets.filter((sh) => sh.items.some((it) => it.c === c)).length;
 function advance(S) {
   for (let guard = 0; guard < 4; guard++) {
     const left = (S.budget || PREP.budget) - asked(S);
-    if (left < PREP.n) return finish(S, 'budget');
+    if (left < PREP.n) { const r0 = report(S); return finish(S, stuckHere(S, r0) >= PREP.stuck + 2 && !r0.start.some((x) => S.plan.below.includes(x.c)) ? 'teacher' : 'budget'); }   /* 다 묻고도 못 좁힌 막힌 칸 넷 이상 → 선생님과 같이 */
     if (S.sheets.length >= Math.max(PREP.rounds, Math.ceil((S.budget || PREP.budget) / PREP.n))) return finish(S, 'budget');
     const rep = report(S);
     const nx = nextLessons(rep, S.plan.below), probes = nx.probes, again = nx.again.filter((c) => timesAsked(S, c) < 2);
@@ -122,7 +131,7 @@ function advance(S) {
     // 오늘 고칠 판자를 찾았으면 그만 묻고 고치러 간다 — 아래를 다 메울 때까지 붙잡지 않음 [A-R16] · 남은 갈래는 다음 시간에 지난 기록과 함께 이어서
     //  이 단원 준비 칸 안에서 찾은 것만(다른 단원 기록의 고칠 판자가 오늘 점검을 막지 않게 — 코덱스 10-31)
     const inPlan = rep.start.filter((x) => S.plan.below.includes(x.c));
-    if (stuckHere(S, rep) >= PREP.stuck) return finish(S, 'teacher');   // 막힌 칸이 넷 이상 — 찾은 판자가 있어도 선생님과 먼저(찾은 판자는 끝 화면 · 홈에 그대로)
+    if (manyRoots(S, rep) || stuckHere(S, rep) >= PREP.stuck + 2) return finish(S, 'teacher');   /* 막힌 칸 여섯이면 뿌리가 하나여도 선생님과 먼저 */   // 서로 다른 뿌리의 막힌 칸이 넷 이상 — 찾은 판자가 있어도 선생님과 먼저(찾은 판자는 끝 화면 · 홈에 그대로)
     if (inPlan.length && !again.some((c) => inPlan.some((x) => x.c === c))) return finish(S, 'found');
     if (!again.length && !probes.length && !traps.length) return finish(S, 'clear');
     const room = Math.min(PREP.cap, Math.floor(left / PREP.n));

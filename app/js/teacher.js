@@ -90,7 +90,7 @@ export function guideView(root) {
     ${intro('처음 쓰기 전에 한 번 읽어 보세요. 인쇄해서 교탁에 두어도 좋아요.', 'no-print')}
     <div class="acts no-print"><button class="pri" onclick="print()">인쇄</button><a class="btn" href="#/t">처음으로</a></div>
     <h3>처음 한 번</h3><ol class="easy"><li><b>새 반 만들기</b> — 학기와 아이 수를 넣으면 반 코드와 번호마다 핀이 생겨요.</li><li><b>카드 인쇄</b> — 아이 카드는 잘라 나눠 주고, <b>선생님 열쇠 카드</b>는 따로 보관해요(다른 기기에서 반을 열 때 필요해요).</li><li><b>이름 적기</b>(골라서) — 이름은 이 기기에만 저장되고 서버엔 번호만 가요. 처음 화면에서 <b>백업</b>을 내려받아 두세요.</li></ol>
-    <h3>수업 때(8~15분)</h3><ol class="easy"><li>반 화면에서 오늘 배울 단원과 <b>준비 다리 길이</b>(짧게 18 · 보통 24 · 길게 36문제)를 골라 <b>오늘 단원으로 열기</b>를 눌러요. 한 판에 못 찾은 아이는 다음 시간에 이어서 찾아요. 막힌 칸이 많은 아이는 일찍 멈추고 '선생님과 같이'로 와요.</li><li>아이들이 카드로 들어가면 맨 위에 <b>오늘 단원 준비하기</b>가 떠요. 이미 켜 둔 화면은 새로고침해요.</li><li>아이마다 그 단원에 꼭 필요한 앞 칸만 3문제씩 풀어요. 막히면 반씩 좁혀 <b>고칠 판자</b>를 찾고, 찾으면 바로 <b>판자 고치기</b>를 한 바퀴 해요. 끝나면 오늘 수업으로 돌아가요.</li></ol>
+    <h3>수업 때(8~15분)</h3><ol class="easy"><li>반 화면에서 오늘 배울 단원과 <b>준비 다리 길이</b>(짧게 18 · 보통 24 · 길게 36문제)를 골라 <b>오늘 단원으로 열기</b>를 눌러요. 한 판에 못 찾은 아이는 다음 시간에 이어서 찾아요. 막힌 칸이 많은 아이는 일찍 멈추고 '선생님과 같이'로 와요.</li><li>아이들이 카드로 들어가면 맨 위에 <b>오늘 단원 준비하기</b>가 떠요. 이미 켜 둔 화면에도 30초 안에 저절로 떠요(새로고침하지 않아도 돼요).</li><li>아이마다 그 단원에 꼭 필요한 앞 칸만 3문제씩 풀어요. 막히면 반씩 좁혀 <b>고칠 판자</b>를 찾고, 찾으면 바로 <b>판자 고치기</b>를 한 바퀴 해요. 끝나면 오늘 수업으로 돌아가요.</li></ol>
     <h3>주마다 한 번(3~5분)</h3><ol class="easy"><li>금요일 같은 날을 정해 아이들이 <b>이번 주 점검</b>을 해요(아이 오늘 할 일에 떠요). 이번 학기 단원들의 앞 칸(지난 학기까지 배운 것) 전체에서 고르게 뽑은 10문제라 학기 내내 견줄 수 있어요.</li><li>반 화면 <b>선이 어디로 가나</b>에서 <b>내려가요 · 낮게 그대로</b>인 아이는 다음 주에 지도 방법을 바꿔 봐요(소집단 · 도구 · 다른 모형). 점검의 효과는 선생님이 선을 보고 수업을 바꿀 때 나요.</li><li>문장제가 약한 아이는 <b>이야기 다리</b>(무슨 이야기 → 막대 틀 → 식 → 답)를 권해요. 반 화면 '이야기 다리'에서 이해가 끊기는 유형의 <b>10분 카드</b>로 소집단을 해요.</li><li>종이 학습지(<b>끊긴 곳 찾기</b>)로 채점한 결과는 반 화면 <b>종이 결과 가져오기</b>로 아이 기록에 넣을 수 있어요.</li></ol>
     <h3>반 화면 읽기</h3><div class="legend2">${LEGEND.map(([c, s, t]) => `<span><i class="${c}">${s}</i>${t}</span>`).join('')}</div>
     <ul class="easy"><li><b>먼저 봐 줄 아이</b> — 막힌 칸이 많거나, 고치고도 흔들리거나, 이번 주 점검 선이 내려가거나, '자신 있었는데 틀린' 문제가 많거나, 2초 안에 찍은 아이예요. 앱보다 선생님이 먼저 봐 주세요.</li>
@@ -200,7 +200,7 @@ const LEGEND = [['c-ok', '✓', '됨'], ['c-near', '○', '거의'], ['c-shaky',
 export function classView(root, C) {
   const K = cls(C); if (!K) return go('#/t');
   let unit = (K.today && K.today.unit) || UNITS.find((u) => u.g === K.g && prepPlan(u.id).fringe.length)?.id || '4-2-1';
-  let data = null, timer = null, alive = true;
+  let data = null, timer = null, alive = true, len = K.len || 24;   /* 고른 길이는 다시 그려도 그대로(회귀 10-31) */
   const units = UNITS.filter((u) => prepPlan(u.id).fringe.length && gradeIdx(u.g) <= gradeIdx(K.g) + 1);
   function render() {
     const P = prepPlan(unit);
@@ -223,27 +223,28 @@ export function classView(root, C) {
     root.innerHTML = `<div class="card no-print"><h2>${esc(C)} <small>${esc(gl(K.g))} · ${K.n}명 · 기록 있는 아이 ${seen}명</small></h2>
       ${intro('반 전체를 한눈에 보는 화면이에요. 오늘 배울 단원을 고르고 <b>오늘 단원으로 열기</b>를 누르면, 아이들 화면 맨 위에 그 단원 준비 문제가 떠요. 아이들 기록은 15초마다 저절로 새로 들어와요.')}
       <div class="acts"><select id="u" class="sel">${units.map((u) => `<option value="${u.id}" ${u.id === unit ? 'selected' : ''}>${esc(gl(u.g))} · ${esc(u.nm)}</option>`).join('')}</select>
-      <select id="len" class="sel" title="아이 한 명이 한 판에 푸는 준비 문제 수 — 못 찾으면 다음 시간에 이어서">${[[18, '짧게 · 18문제(약 8분)'], [24, '보통 · 24문제(약 10분)'], [36, '길게 · 36문제(약 15분)']].map(([v, t]) => `<option value="${v}" ${v === (K.len || 24) ? 'selected' : ''}>준비 다리 ${t}</option>`).join('')}</select>
+      <select id="len" class="sel" title="아이 한 명이 한 판에 푸는 준비 문제 수 — 못 찾으면 다음 시간에 이어서">${[[18, '짧게 · 18문제(약 8분)'], [24, '보통 · 24문제(약 10분)'], [36, '길게 · 36문제(약 15분)']].map(([v, t]) => `<option value="${v}" ${v === len ? 'selected' : ''}>준비 다리 ${t}</option>`).join('')}</select>
       <button class="pri" id="open">오늘 단원으로 열기</button><button id="re">새로 보기</button><button id="csv" title="효과를 재거나 기록해 둘 때 — 번호만 들어가요(이름 X)">기록 내려받기(CSV)</button><a class="btn" href="#/t/c/${C}/paper" title="종이로 푼 진단 · 점검 결과를 아이 기록에 넣어요">종이 결과 가져오기</a></div>
       <div class="acts sub"><a class="btn" href="#/t/c/${C}/cards">아이 카드 인쇄</a><a class="btn" href="#/t/c/${C}/names">이름 적기</a><a class="btn" href="#/t/guide">한 장 안내</a></div>
       ${K.today ? `<p class="small">지금 열린 단원: <b>${esc(unitLabel(K.today.unit))}</b> <span class="muted">(${new Date(K.today.t).toLocaleString('ko-KR')}에 열었어요)</span></p>` : `<p class="small muted">아이 주소: ${esc(appURL())}</p>`}
       <p class="qmsg tight" id="msg"></p></div>
     ${(() => { const today = K.today && K.today.unit === unit ? K.today : null, fresh = (n) => n && n.t && Date.now() - n.t < 3 * 60000;
       const MODE = { prep: '준비 다리', fix: '고치는 중', drill: '다듬기', run: '구보', back: '거꾸로 찾기', story: '이야기 다리', week: '이번 주 점검', review: '다시 보기' };
-      const g = { out: [], in: [], doing: [], done: [], fix: [], help: [] };
+      const g = { out: [], in: [], doing: [], done: [], fix: [], help: [], more: [] };
       rows.forEach((no) => { const x = S[no] || {}, st = x.st, n = x.now;
         if (!st && !fresh(n)) return g.out.push(no);
         if (fresh(n) && n.mode && n.mode !== 'home') return g.doing.push([no, MODE[n.mode] || n.mode]);
         const done = st && st.prep && today && st.prep.u === unit && st.prep.t >= today.t;
         if (done && st.prep.why === 'teacher') return g.help.push(no);
         if (done && st.start.some((c) => P.below.includes(c))) return g.fix.push(no);
+        if (done && (st.prep.why === 'budget' || P.below.some((c) => ['stuck', 'shaky', 'need'].includes(st.L[c])))) return g.more.push(no);   /* 문제 수에서 멈췄거나 흔들 · 막힌 칸이 남음 — '튼튼'이 아님(회귀 10-31) */
         if (done) return g.done.push(no);
         g.in.push(no); });
       const names = (xs) => xs.map((no) => `<a href="#/t/c/${C}/k/${no}">${esc(nm(K, no))}</a>`).join(' ');
       return `<div class="card strip"><h2>지금 반 <small>${today ? `${esc(uName)} — ${new Date(today.t).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}에 열었어요` : '오늘 단원을 열면 준비를 끝낸 아이가 보여요'}</small></h2>
         <div class="st-row"><span class="st-k">하는 중 <b>${g.doing.length}</b></span><span class="st-v">${g.doing.map(([no, m]) => `<a href="#/t/c/${C}/k/${no}">${esc(nm(K, no))}</a><i>${esc(m)}</i>`).join(' ') || '<span class="muted">없음</span>'}</span></div>
         ${today && g.help.length ? `<div class="st-row help"><span class="st-k">선생님과 같이 <b>${g.help.length}</b></span><span class="st-v">${names(g.help)} <span class="muted small">— 막힌 칸이 많아 앱이 일찍 멈췄어요. 먼저 들러 주세요.</span></span></div>` : ''}
-        ${today ? `<div class="st-row"><span class="st-k">준비 끝 · 고칠 판자 있음 <b>${g.fix.length}</b></span><span class="st-v">${names(g.fix) || '<span class="muted">없음</span>'}</span></div><div class="st-row"><span class="st-k">준비 끝 · 튼튼 <b>${g.done.length}</b></span><span class="st-v">${names(g.done) || '<span class="muted">없음</span>'}</span></div>` : ''}
+        ${today ? `<div class="st-row"><span class="st-k">준비 끝 · 고칠 판자 있음 <b>${g.fix.length}</b></span><span class="st-v">${names(g.fix) || '<span class="muted">없음</span>'}</span></div><div class="st-row"><span class="st-k">준비 끝 · 다음 시간에 이어서 <b>${g.more.length}</b></span><span class="st-v">${names(g.more) || '<span class="muted">없음</span>'}</span></div><div class="st-row"><span class="st-k">준비 끝 · 튼튼 <b>${g.done.length}</b></span><span class="st-v">${names(g.done) || '<span class="muted">없음</span>'}</span></div>` : ''}
         <div class="st-row"><span class="st-k">${today ? '아직 준비 전' : '들어온 적 있음'} <b>${g.in.length}</b></span><span class="st-v">${names(g.in) || '<span class="muted">없음</span>'}</span></div>
         <div class="st-row"><span class="st-k">안 들어옴 <b>${g.out.length}</b></span><span class="st-v">${names(g.out) || '<span class="muted">없음</span>'}</span></div></div>`; })()}
     ${first.length ? `<div class="card"><h2>먼저 봐 줄 아이</h2>${intro('앱이 혼자 고치기 어려워 보이는 아이예요. 수업 중에 먼저 들러 주세요. 이름을 누르면 자세히 봐요.')}<ul class="who">${first.map((x) => `<li><a href="#/t/c/${C}/k/${x.no}">${esc(nm(K, x.no))}</a><span class="whys">${x.why.map((w) => `<span class="pill">${esc(w)}</span>`).join('')}</span></li>`).join('')}</ul></div>` : ''}
@@ -275,19 +276,21 @@ export function classView(root, C) {
     if (data) window.scrollTo(0, keep.y);
     const tv = root.querySelector('#tv'); if (tv) tv.addEventListener('click', () => { document.body.classList.toggle('tv'); render(); });
     root.querySelector('#u').addEventListener('change', (e) => { unit = e.target.value; render(); });
+    root.querySelector('#len').addEventListener('change', (e) => { len = Number(e.target.value) || 24; });
     root.querySelector('#re').addEventListener('click', refresh);
     root.querySelector('#csv').addEventListener('click', () => exportCSV(C, K, S, unit));
     root.querySelector('#open').addEventListener('click', openToday);
   }
   async function openToday() {
     const msg = root.querySelector('#msg'); msg.textContent = '여는 중…';
-    const t = Date.now(), id = `prep${new Date(t).toISOString().slice(0, 10).replace(/-/g, '')}`, up = {}, len = Number((root.querySelector('#len') || {}).value) || 24;
+    const t = Date.now(), id = `prep${new Date(t).toISOString().slice(0, 10).replace(/-/g, '')}`, up = {};
     for (let no = 1; no <= K.n; no++) up[`k/${C}/${no}/${K.pins[no]}/in/${id}`] = db.enc({ kind: 'prep', unit, t, len });
-    up[`tc/${C}/${K.T}/live`] = db.enc({ unit, t });
-    try { await db.patch('', up); const X = tget(); X.classes[C].today = { unit, t, len }; X.classes[C].len = len; tset(X); Object.assign(K, X.classes[C]); render(); root.querySelector('#msg').textContent = '열었어요! 아이들이 새로고침하면 맨 위에 떠요.'; }
+    up[`tc/${C}/${K.T}/live`] = db.enc({ unit, t, len });
+    try { await db.patch('', up); const X = tget(); X.classes[C].today = { unit, t, len }; X.classes[C].len = len; tset(X); Object.assign(K, X.classes[C]); render(); root.querySelector('#msg').textContent = '열었어요! 아이들 화면 맨 위에 30초 안에 떠요.'; }
     catch (e) { msg.textContent = `열지 못했어요: ${e.message}`; }
   }
-  async function refresh() { if (!alive) return; data = await pullAll(C, K); if (!alive) return; const a = document.activeElement; if (a && root.contains(a) && /SELECT|INPUT|TEXTAREA/.test(a.tagName)) return; render(); }   /* 고르는 중엔 다시 그리지 않음 */
+  async function refresh() { if (!alive) return; data = await pullAll(C, K); if (!alive) return;
+    try { const lv = db.dec(await db.get(`tc/${C}/${K.T}/live`)); if (lv && typeof lv.unit === 'string' && Number(lv.t) > ((K.today && K.today.t) || 0)) { const X = tget(); X.classes[C].today = { unit: lv.unit, t: Number(lv.t), len: Number(lv.len) || 24 }; tset(X); Object.assign(K, X.classes[C]); if (!K.today || unit !== lv.unit) unit = lv.unit; } } catch (e) { /* */ }   /* 다른 기기에서 연 단원도(회귀 10-31) */ const a = document.activeElement; if (a && root.contains(a) && /SELECT|INPUT|TEXTAREA/.test(a.tagName)) return; render(); }   /* 고르는 중엔 다시 그리지 않음 */
   render(); refresh();
   timer = setInterval(() => { if (document.visibilityState === 'visible') refresh(); }, 15000);
   return () => { alive = false; clearInterval(timer); document.body.classList.remove('tv'); };
@@ -518,7 +521,7 @@ export function paperImportView(root, C) {
       const say1 = [pick.length ? `${pick.map((p) => `${esc(p.x.k.label || '?')} → ${esc(nm(K, p.no))}`).join(', ')}에 넣어요` : '', move.length ? `${move.map((p) => `${esc(nm(K, sent[p.x.k.id].no))}에 넣었던 ${esc(p.x.k.label || '?')} 기록을 빼요`).join(', ')}` : ''].filter(Boolean).join('.\n');
       if (!say1 || !confirm(`${say1.replace(/<[^>]+>/g, '')}.\n\n이대로 할까요?`)) return;
       let n = 0, out = 0;
-      for (const p of move) { const o = sent[p.x.k.id]; for (const rid of o.rids || []) { db.queuePut(`k/${C}/${o.no}/${K.pins[o.no]}/r/${rid}`, 'null'); out++; } delete sent[p.x.k.id]; }
+      for (const p of move) { const o = sent[p.x.k.id]; for (const rid of o.rids || []) { db.queuePut(`k/${C}/${o.no}/${K.pins[o.no]}/r/${rid}`, null);   /* 진짜 null(지움) — 글자 'null'은 서버에 "null"로 남았음(회귀 10-31) */ out++; } delete sent[p.x.k.id]; }
       for (const { x, no } of pick) {
         const ids = [], rids = [];
         for (const { sid, recs } of x.recs) { for (const rec of recs) { db.queuePut(`k/${C}/${no}/${K.pins[no]}/r/${rec.s.id}`, db.enc(rec)); rids.push(rec.s.id); } ids.push(sid); n++; }

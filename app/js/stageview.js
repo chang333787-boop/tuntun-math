@@ -78,7 +78,7 @@ export function drillView(root, c) {
       const btn = document.createElement('button'); btn.className = 'pri'; btn.textContent = '다음'; btn.style.marginLeft = '10px'; box.appendChild(btn);
       root.querySelector('.qcard').appendChild(box);
       root.querySelectorAll('.qcard > .math input, .qcard .qact button, .qcard .choices button').forEach((x) => (x.disabled = true));
-      btn.addEventListener('click', one);
+      btn.addEventListener('click', one); btn.focus();   /* 자판 Enter로 넘어가게(회귀 10-31) */
     } });
     if (showClock) { const t0 = performance.now(), base = elapsed(D), el = root.querySelector('#ck'); tick = setInterval(() => { if (el.isConnected) el.textContent = clock(base + performance.now() - t0); else clearInterval(tick); }, 250); }
   };

@@ -69,7 +69,7 @@ function route() {
   if (kid && me && !/^#\/join/.test(h)) {
     if (idle > 20 * 60000) WHO.ok = false;
     idle = 0;
-    if (!whoOk(me)) { window.scrollTo(0, 0); return whoView(root, me, route); }
+    if (!whoOk(me)) { window.scrollTo(0, 0); return whoView(root, me, () => { idle = 0; route(); }); }   /* '네'를 누른 그 입력의 쉰 시간으로 다시 묻지 않게(회귀 10-31) */
   }
   for (const [re, f] of ROUTES) { const m = h.match(re); if (m) { cleanup = f(m); window.scrollTo(0, 0); return; } }
   startView(root);
