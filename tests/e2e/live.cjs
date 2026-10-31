@@ -64,6 +64,12 @@ const UNIT = '2-2-2', GAP = '2-1-6:3';
     await w(120);
   }
   const back = (await pg.textContent('#view')).trim().slice(0, 90);
+  // 이야기 다리 — 첫 갈래 → 시작 → 유형 카드 하나 누르기 → 다음 화면이 뜨나(흐름만)
+  await pg.goto(BASE + '#/story'); await w(1200);
+  await pg.click('#view a[href^="#/story/"]'); await w(1200);
+  const st0 = await pg.$$eval('#view button', (bs) => { const b = bs.find((x) => x.textContent.trim() === '시작'); if (b) b.click(); return !!b; }); await w(1200);
+  const tyN = (await pg.$$('.sb-ty')).length; if (tyN) { await pg.click('.sb-ty'); await w(800); }
+  const story = { start: st0, types: tyN, after: (await pg.textContent('#view')).trim().slice(0, 40) };
   // 이번 주 점검(모두 넘김 — 흐름만) → 내 선
   await pg.goto(BASE + '#/me'); await w(2500);
   const weekTodo = (await pg.textContent('#view')).includes('이번 주 점검 — 섞은');
@@ -103,6 +109,6 @@ const UNIT = '2-2-2', GAP = '2-1-6:3';
   const scard = { title: (await pg.textContent('h2')).trim().slice(0, 30), frames: (await pg.$$('.sbf svg')).length };
   await pg.goto(BASE + '#/t/letter'); await w(800);
   const letter = (await pg.textContent('h2')).trim();
-  console.log(JSON.stringify({ C, opened, scard, letter, todo: todo.slice(0, 60), items: n, end: end.trim(), drill, back, weekTodo, week, head, row1, wkPanel, paper: { psel, pmsg, kid2, moved2, moved1 }, ai, errs }, null, 1));
+  console.log(JSON.stringify({ C, opened, story, scard, letter, todo: todo.slice(0, 60), items: n, end: end.trim(), drill, back, weekTodo, week, head, row1, wkPanel, paper: { psel, pmsg, kid2, moved2, moved1 }, ai, errs }, null, 1));
   await b.close();
 })().catch((e) => { console.error('ERR', e.message); process.exit(1); });
