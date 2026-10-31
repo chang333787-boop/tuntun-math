@@ -61,7 +61,7 @@ export function weekView(root) {
       : say('hi', '내 선에 점 하나가 더 생겼어요. 선은 주마다 조금씩 오르내려요. 몇 주를 이어서 봐요.');
     const miss = sh.items.filter((it) => !R.it[it.k] || R.it[it.k].s !== 'ok');
     const li = (it) => { const r = R.it[it.k] || {}, mine = r.s === 'q' ? '넘어감' : it.snap.choices ? '' : `내 답 ${esc((r.a || []).join(', '))}`;
-      return `<li class="miss"><span class="why">${esc(lessonName(it.c))}${mine ? ` · ${mine}` : ''}</span>${it.snap.choices ? `${staticHTML(it.snap.prompt)} <span class="small">${ansSay(it.snap)}</span>` : staticHTML(it.snap.prompt, it.snap.sol)}</li>`; };
+      return `<li class="${r.s === 'q' ? 'skipq' : 'miss'}"><span class="why">${esc(lessonName(it.c))}${mine ? ` · ${mine}` : ''}</span>${it.snap.choices ? `${staticHTML(it.snap.prompt)} <span class="small">${ansSay(it.snap)}</span>` : staticHTML(it.snap.prompt, it.snap.sol)}</li>`; };
     const cs = [...new Set(miss.map((it) => it.c))];
     const drill = cs.length ? `<p class="small">틀린 문제의 판자는 <b>다듬기</b>로 바로 연습할 수 있어요.</p><div class="acts">${cs.slice(0, 4).map((c) => `<a class="btn teal" href="#/drill/${encodeURIComponent(c)}">${esc(lessonName(c))} 다듬기</a>`).join('')}</div>` : '';
     const list = miss.length ? `<h3>다시 볼 문제 ${miss.length}개 <small class="muted">(바른 답을 넣어 보여 줘요)</small></h3><ul class="steps">${miss.slice(0, 4).map(li).join('')}</ul>${miss.length > 4 ? `<details><summary>${miss.length - 4}개 더 보기</summary><ul class="steps">${miss.slice(4).map(li).join('')}</ul></details>` : ''}${drill}` : `<p>${n}문제 모두 맞혔어요.</p>`;

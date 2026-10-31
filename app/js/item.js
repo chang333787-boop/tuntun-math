@@ -10,13 +10,19 @@ import { mascot } from '../../paper/js/mascot.js';
 import { esc } from './local.js';
 
 export const CONF = [[2, '자신 있어요'], [1, '조금 헷갈려요'], [0, '잘 모르겠어요']];
+// 진행 — 카드 오른쪽 위 같은 자리 · dots = [지금까지 푼 수, 모두] · 12개 넘으면 막대(준비 다리는 판 전체 · 많아야 18 · 24 · 36)
+export function progHTML([i, n]) {
+  const k = Math.min(i + 1, n), lab = `${n}문제 가운데 ${k}번째`;
+  const show = n > 12 ? `<span class="pbar"><i style="width:${Math.round((Math.min(i, n) / n) * 100)}%"></i></span>` : `<span class="dots">${Array.from({ length: n }, (_, j) => `<i class="${j < i ? 'on' : ''}"></i>`).join('')}</span>`;
+  return `<span class="qprog" role="img" aria-label="${lab}">${show}<span class="cnt"><b>${k}</b> / ${n}</span></span>`;
+}
 
 export function draw(root, { prompt, choices = null, tag = '', dots = null, conf = true, idk = true, extra = '', given = null, hide = null, say = null, onAnswer }) {
   const t0 = performance.now();
   let cf = null;
   const gone = new Set((hide || []).map(Number));
   root.innerHTML = `<div class="qcard${conf ? ' locked' : ''}">
-    <div class="qtop">${tag ? `<span class="tag">${esc(tag)}</span>` : ''}${dots ? `<span class="dots" aria-hidden="true">${Array.from({ length: dots[1] }, (_, i) => `<i class="${i < dots[0] ? 'on' : ''}"></i>`).join('')}</span>` : ''}</div>
+    <div class="qtop">${tag ? `<span class="tag">${esc(tag)}</span>` : ''}${dots ? progHTML(dots) : ''}</div>
     ${extra}
     ${say && say.length ? `<div class="tsay">${say.map((x) => `<p>${esc(x)}</p>`).join('')}</div>` : ''}
     <div class="math" id="q">${toHTML(prompt)}</div>

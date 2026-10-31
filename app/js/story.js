@@ -194,7 +194,7 @@ export function storyView(root, arg) {
   // 화면 틀 — 걸음 칩 · 이야기 · 말풍선 · 몸
   const shell = (step, pose, bub, body = '', mode = 'plain') => {
     const chips = STEPS.map((t, i) => `<li class="${st.skip && i < 2 ? 'skip' : i < step ? 'done' : i === step ? 'now' : ''}"><i>${i + 1}</i>${t}</li>`).join('');
-    root.innerHTML = `<div class="card sb"><div class="sb-head"><span class="tag">이야기 다리</span><ol class="sb-steps" aria-label="걸음">${chips}</ol><span class="dots" aria-label="${S.items.length}개 중 ${S.i + 1}번째">${S.items.map((_, i) => `<i class="${i <= S.i ? 'on' : ''}"></i>`).join('')}</span></div>
+    root.innerHTML = `<div class="card sb"><div class="sb-head"><span class="tag">이야기 다리</span><ol class="sb-steps" aria-label="걸음">${chips}</ol><span class="dots" aria-label="${S.items.length}개 중 ${S.i + 1}번째">${S.items.map((_, i) => `<i class="${i <= S.i ? 'on' : ''}"></i>`).join('')}</span><span class="cnt" aria-hidden="true"><b>${S.i + 1}</b> / ${S.items.length}</span></div>
       <div class="sb-story">${storyHTML(pr.s.story, mode)}</div>${say(pose, bub)}<div id="b">${body}</div></div>`;
     stopSpeak(); speakButton(root.querySelector('.sb-story'), () => { const m = root.querySelector('.sb-say'); if (m) m.textContent = '이 기기엔 한국어 목소리가 없어요'; });
     return root.querySelector('#b');

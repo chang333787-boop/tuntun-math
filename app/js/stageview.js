@@ -72,7 +72,7 @@ export function drillView(root, c) {
       if (rush(ms, a, r.ok) && drillItem(D)) { K.rush = (K.rush || 0) + 1; KS.save(me, K); return rushPause(root, one); }
       if (r.ok) return one();
       // 틀리면 다음에 할 한 가지(시계는 멈춤) → 다음으로
-      const box = document.createElement('div'); box.className = 'fb no';
+      const box = document.createElement('div'); box.className = a.idk ? 'fb' : 'fb no';   /* 넘어간 문제는 ✕ 없이(docs/ui.md) */
       const prev = D.sheet.items[D.i - 1];
       try { nextStep(box, { it: itemOf(prev.c, prev.p), vals: a.vals || [], c, idk: !!a.idk, onSelfFix: (t) => KS.selfFix(me, K, t) }); } catch (e) { box.innerHTML = ansSay({ sol: r.sol, choices: it.snap.choices }); }
       const btn = document.createElement('button'); btn.className = 'pri'; btn.textContent = '다음'; btn.style.marginLeft = '10px'; box.appendChild(btn);

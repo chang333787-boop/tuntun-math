@@ -110,10 +110,10 @@ for (const c of ['1-2-2:2', '1-2-2:4']) { const x = share(gens(c, 3000), (p) => 
 { const ps = gens('6-1-3:7', 300), x = share(ps, (p) => !!storyOf('6-1-3:7', p, 11)); ok(x >= 0.9, `⑱ 6-1-3:7 이야기로 바뀐 비율 ${pct(x)}`); }
 // ⑲ 수직선 글은 그림의 ▼와 같게
 { const ts = ['3-1-6:5', '3-2-4:5'].flatMap((c) => gens(c, 300).map((p) => T(makeItem(c, p)))); ok(!ts.some((t) => t.includes('↓')) && ts.some((t) => t.includes('▼가 가리키는')), `⑲ '↓가 가리키는' ${ts.filter((t) => t.includes('↓')).length}개`); }
-// ⑳ 비교하기 — 틀린 풀이에 자연수 부분 0 · 분수 부분 0 · 1 이상인 대분수 없음
+// ⑳ 비교하기 — 보이는 틀린 풀이에 자연수 부분 0 · 분수 부분 0 · 1 이상인 대분수 없음(자연수 0이면 그냥 분수 칸으로 보임 — fix.js plainFrac)
 {
   const odd = [];
-  for (const L of NODES) for (let s = 1; s <= 3; s++) { const X = compareOf(L.id, { seed: s }); if (!X) continue; const v = X.wrong; for (const t of X.it.prompt) if (t && typeof t === 'object' && 'm' in t && t.m.some((x) => x && typeof x === 'object')) { const [w, n, d] = t.m.map((x) => (x && typeof x === 'object' ? Number(v[x.b]) : Number(x))); if (!(w >= 1) || !(n >= 1) || n >= d) odd.push(`${L.id} ${toText(X.it.prompt, v.map(String))}`); } }
+  for (const L of NODES) for (let s = 1; s <= 3; s++) { const X = compareOf(L.id, { seed: s }); if (!X) continue; const v = X.wrong; for (const t of (X.wrongPrompt || X.it.prompt)) if (t && typeof t === 'object' && 'm' in t && t.m.some((x) => x && typeof x === 'object')) { const [w, n, d] = t.m.map((x) => (x && typeof x === 'object' ? Number(v[x.b]) : Number(x))); if (!(w >= 1) || !(n >= 1) || n >= d) odd.push(`${L.id} ${toText(X.it.prompt, v.map(String))}`); } }
   ok(!odd.length, `⑳ 비교하기 이상한 대분수 ${odd.length}${odd.length ? ` — ${odd[0]}` : ''}`);
 }
 // ㉑ 이상 · 이하 · 초과 · 미만 보기 — 정답 자리가 고루(자리마다 15~35%)

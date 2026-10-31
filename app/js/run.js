@@ -71,7 +71,7 @@ export function runView(root) {
       else { try { ok = !!itemOf(it.c, it.p).check(a.vals, a.raws).ok; } catch (e) { ok = false; } R.it[it.k] = ok ? { s: 'ok' } : { s: 'x', a: a.raws }; }
       ms[it.k] = t; i++;
       if (ok) return one();
-      const box = document.createElement('div'); box.className = 'fb no';
+      const box = document.createElement('div'); box.className = a.idk ? 'fb' : 'fb no';   /* 넘어간 문제는 ✕ 없이(솔직한 모름 · docs/ui.md) */
       try { nextStep(box, { it: itemOf(it.c, it.p), vals: a.vals || [], c: it.c, idk: !!a.idk, after: '이 판자는 내일 한 번 더 뛰어요.', onSelfFix: (t) => KS.selfFix(me, K, t) }); } catch (e) { box.innerHTML = `${ansSay(it.snap)} 이 판자는 내일 한 번 더 뛰어요.`; }
       const b = document.createElement('button'); b.className = 'pri'; b.textContent = '다음'; b.style.marginLeft = '10px'; box.appendChild(b);
       root.querySelector('.qcard').appendChild(box);

@@ -56,7 +56,7 @@ export function teacherHome(root) {
   root.innerHTML = `<div class="card"><h2>선생님 처음 화면</h2>
     ${say('hi', '반을 만들면 아이마다 <b>번호 카드</b>(반 코드 · 번호 · 핀)가 나와요.<br>아이 이름은 이 기기에만 두고 서버에 보내지 않아요.')}
     ${list.length ? `<table class="list"><tr><th>반 코드</th><th>학기</th><th>아이</th><th></th></tr>${list.map(([C, x]) => `<tr><td><b class="code">${esc(C)}</b></td><td>${esc(gl(x.g))}</td><td>${x.n}명</td><td style="text-align:right"><a class="btn teal" href="#/t/c/${C}">반 열기</a></td></tr>`).join('')}</table>` : '<p class="muted">이 기기에서 연 반이 아직 없어요. 처음이면 <b>새 반 만들기</b>부터 하세요.</p>'}
-    <div class="acts"><a class="btn pri" href="#/t/new">새 반 만들기</a><a class="btn" href="#/t/open">다른 기기에서 만든 반 열기</a><a class="btn" href="#/t/guide">한 장 안내(인쇄용)</a><a class="btn" href="#/t/letter">가정 안내문(인쇄용)</a><a class="btn" href="../paper/" target="_blank" rel="noopener" title="인쇄해서 푸는 진단 · 점검 — 채점 결과는 반 화면의 '종이 결과 가져오기'로">종이 점검(인쇄용)</a></div></div>
+    <div class="acts"><a class="btn pri" href="#/t/new">새 반 만들기</a><a class="btn" href="#/t/open">다른 기기에서 만든 반 열기</a></div><div class="acts sub"><a class="btn" href="#/t/guide">한 장 안내(인쇄용)</a><a class="btn" href="#/t/letter">가정 안내문(인쇄용)</a><a class="btn" href="../paper/" target="_blank" rel="noopener" title="인쇄해서 푸는 진단 · 점검 — 채점 결과는 반 화면의 '종이 결과 가져오기'로">종이 점검(인쇄용)</a></div></div>
     <div class="card"><h2>반 정보 백업</h2>
     ${intro(`반 코드 · 선생님 열쇠 · 핀 · 아이 이름은 <b>이 기기에만</b> 있어요. 브라우저 기록을 지우거나 기기를 바꾸기 전에 내려받아 두세요. 이름이 들어 있으니 학교 기기에만 두세요.`)}
     <div class="acts">${list.length ? '<button id="bk">백업 내려받기</button>' : ''}<label class="btn">백업 불러오기<input type="file" id="rs" accept="application/json" hidden></label></div><p class="qmsg tight" id="bmsg"></p></div>
@@ -220,14 +220,15 @@ export function classView(root, C) {
     const uName = unitLabel(unit);
     /* 다시 그려도 선생님이 보던 것은 그대로 — 열어 둔 접힘 · 표 가로 스크롤 · 화면 높이(15초마다 새로 볼 때 닫히고 처음으로 돌아가던 것 · 혹평 10-31) */
     const keep = { open: [...root.querySelectorAll('details')].map((d) => d.open), sx: (root.querySelector('.ctab') || {}).scrollLeft || 0, y: window.scrollY };
-    root.innerHTML = `<div class="card no-print"><h2>${esc(C)} <small>${esc(gl(K.g))} · ${K.n}명 · 기록 있는 아이 ${seen}명</small></h2>
+    root.innerHTML = `<div class="card ctl no-print"><h2>${esc(C)} <small>${esc(gl(K.g))} · ${K.n}명 · 기록 있는 아이 ${seen}명</small></h2>
       ${intro('반 전체를 한눈에 보는 화면이에요. 오늘 배울 단원을 고르고 <b>오늘 단원으로 열기</b>를 누르면, 아이들 화면 맨 위에 그 단원 준비 문제가 떠요. 아이들 기록은 15초마다 저절로 새로 들어와요.')}
       <div class="acts"><select id="u" class="sel">${units.map((u) => `<option value="${u.id}" ${u.id === unit ? 'selected' : ''}>${esc(gl(u.g))} · ${esc(u.nm)}</option>`).join('')}</select>
       <select id="len" class="sel" title="아이 한 명이 한 판에 푸는 준비 문제 수 — 못 찾으면 다음 시간에 이어서">${[[18, '짧게 · 18문제(약 8분)'], [24, '보통 · 24문제(약 10분)'], [36, '길게 · 36문제(약 15분)']].map(([v, t]) => `<option value="${v}" ${v === len ? 'selected' : ''}>준비 다리 ${t}</option>`).join('')}</select>
-      <button class="pri" id="open">오늘 단원으로 열기</button><button id="re">새로 보기</button><button id="csv" title="효과를 재거나 기록해 둘 때 — 번호만 들어가요(이름 X)">기록 내려받기(CSV)</button><a class="btn" href="#/t/c/${C}/paper" title="종이로 푼 진단 · 점검 결과를 아이 기록에 넣어요">종이 결과 가져오기</a></div>
-      <div class="acts sub"><a class="btn" href="#/t/c/${C}/cards">아이 카드 인쇄</a><a class="btn" href="#/t/c/${C}/names">이름 적기</a><a class="btn" href="#/t/guide">한 장 안내</a></div>
+      <button class="pri" id="open">오늘 단원으로 열기</button></div>
+      <div class="acts sub"><button id="re" class="btn">새로 보기</button><button id="csv" class="btn" title="효과를 재거나 기록해 둘 때 — 번호만 들어가요(이름 X)">기록 내려받기(CSV)</button><a class="btn" href="#/t/c/${C}/paper" title="종이로 푼 진단 · 점검 결과를 아이 기록에 넣어요">종이 결과 가져오기</a><a class="btn" href="#/t/c/${C}/cards">아이 카드 인쇄</a><a class="btn" href="#/t/c/${C}/names">이름 적기</a><a class="btn" href="#/t/guide">한 장 안내</a></div>
       ${K.today ? `<p class="small">지금 열린 단원: <b>${esc(unitLabel(K.today.unit))}</b> <span class="muted">(${new Date(K.today.t).toLocaleString('ko-KR')}에 열었어요)</span></p>` : `<p class="small muted">아이 주소: ${esc(appURL())}</p>`}
       <p class="qmsg tight" id="msg"></p></div>
+    ${first.length ? `<div class="card first"><h2>먼저 봐 줄 아이 <small>${first.length}명</small></h2>${intro('앱이 혼자 고치기 어려워 보이는 아이예요. 수업 중에 먼저 들러 주세요. 이름을 누르면 자세히 봐요.')}<ul class="who">${first.map((x) => `<li><a href="#/t/c/${C}/k/${x.no}">${esc(nm(K, x.no))}</a><span class="whys">${x.why.map((w) => `<span class="pill">${esc(w)}</span>`).join('')}</span></li>`).join('')}</ul></div>` : ''}
     ${(() => { const today = K.today && K.today.unit === unit ? K.today : null, fresh = (n) => n && n.t && Date.now() - n.t < 3 * 60000;
       const MODE = { prep: '준비 다리', fix: '고치는 중', drill: '다듬기', run: '구보', back: '거꾸로 찾기', story: '이야기 다리', week: '이번 주 점검', review: '다시 보기' };
       const g = { out: [], in: [], doing: [], done: [], fix: [], help: [], more: [] };
@@ -242,12 +243,11 @@ export function classView(root, C) {
         g.in.push(no); });
       const names = (xs) => xs.map((no) => `<a href="#/t/c/${C}/k/${no}">${esc(nm(K, no))}</a>`).join(' ');
       return `<div class="card strip"><h2>지금 반 <small>${today ? `${esc(uName)} — ${new Date(today.t).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}에 열었어요` : '오늘 단원을 열면 준비를 끝낸 아이가 보여요'}</small></h2>
-        <div class="st-row"><span class="st-k">하는 중 <b>${g.doing.length}</b></span><span class="st-v">${g.doing.map(([no, m]) => `<a href="#/t/c/${C}/k/${no}">${esc(nm(K, no))}</a><i>${esc(m)}</i>`).join(' ') || '<span class="muted">없음</span>'}</span></div>
+        <div class="st-row${g.doing.length ? '' : ' zero'}"><span class="st-k">하는 중 <b>${g.doing.length}</b></span><span class="st-v">${g.doing.map(([no, m]) => `<a href="#/t/c/${C}/k/${no}">${esc(nm(K, no))}</a><i>${esc(m)}</i>`).join(' ') || '<span class="muted">없음</span>'}</span></div>
         ${today && g.help.length ? `<div class="st-row help"><span class="st-k">선생님과 같이 <b>${g.help.length}</b></span><span class="st-v">${names(g.help)} <span class="muted small">— 막힌 칸이 많아 앱이 일찍 멈췄어요. 먼저 들러 주세요.</span></span></div>` : ''}
-        ${today ? `<div class="st-row"><span class="st-k">준비 끝 · 고칠 판자 있음 <b>${g.fix.length}</b></span><span class="st-v">${names(g.fix) || '<span class="muted">없음</span>'}</span></div><div class="st-row"><span class="st-k">준비 끝 · 다음 시간에 이어서 <b>${g.more.length}</b></span><span class="st-v">${names(g.more) || '<span class="muted">없음</span>'}</span></div><div class="st-row"><span class="st-k">준비 끝 · 튼튼 <b>${g.done.length}</b></span><span class="st-v">${names(g.done) || '<span class="muted">없음</span>'}</span></div>` : ''}
-        <div class="st-row"><span class="st-k">${today ? '아직 준비 전' : '들어온 적 있음'} <b>${g.in.length}</b></span><span class="st-v">${names(g.in) || '<span class="muted">없음</span>'}</span></div>
-        <div class="st-row"><span class="st-k">안 들어옴 <b>${g.out.length}</b></span><span class="st-v">${names(g.out) || '<span class="muted">없음</span>'}</span></div></div>`; })()}
-    ${first.length ? `<div class="card"><h2>먼저 봐 줄 아이</h2>${intro('앱이 혼자 고치기 어려워 보이는 아이예요. 수업 중에 먼저 들러 주세요. 이름을 누르면 자세히 봐요.')}<ul class="who">${first.map((x) => `<li><a href="#/t/c/${C}/k/${x.no}">${esc(nm(K, x.no))}</a><span class="whys">${x.why.map((w) => `<span class="pill">${esc(w)}</span>`).join('')}</span></li>`).join('')}</ul></div>` : ''}
+        ${today ? `<div class="st-row${g.fix.length ? '' : ' zero'}"><span class="st-k">준비 끝 · 고칠 판자 있음 <b>${g.fix.length}</b></span><span class="st-v">${names(g.fix) || '<span class="muted">없음</span>'}</span></div><div class="st-row${g.more.length ? '' : ' zero'}"><span class="st-k">준비 끝 · 다음 시간에 이어서 <b>${g.more.length}</b></span><span class="st-v">${names(g.more) || '<span class="muted">없음</span>'}</span></div><div class="st-row${g.done.length ? '' : ' zero'}"><span class="st-k">준비 끝 · 튼튼 <b>${g.done.length}</b></span><span class="st-v">${names(g.done) || '<span class="muted">없음</span>'}</span></div>` : ''}
+        <div class="st-row${g.in.length ? '' : ' zero'}"><span class="st-k">${today ? '아직 준비 전' : '들어온 적 있음'} <b>${g.in.length}</b></span><span class="st-v">${names(g.in) || '<span class="muted">없음</span>'}</span></div>
+        <div class="st-row${g.out.length ? '' : ' zero'}"><span class="st-k">안 들어옴 <b>${g.out.length}</b></span><span class="st-v">${names(g.out) || '<span class="muted">없음</span>'}</span></div></div>`; })()}
     <div class="card tablecard"><h2>${esc(uName)}${ro(uName)} 가는 칸 × 아이 <button class="mini" id="tv" type="button">${document.body.classList.contains('tv') ? '작게 보기' : '크게 보기(TV)'}</button></h2>
       ${intro('세로줄은 오늘 단원에 꼭 필요한 앞 칸이에요. 이름을 누르면 그 아이를 자세히 봐요. 회색 이름 칸은 준비 칸보다 더 아래 칸(아이가 막혔거나 고친 곳)이에요.')}
       <div class="legend2">${LEGEND.map(([c, s, t]) => `<span><i class="${c}">${s}</i>${t}</span>`).join('')}</div>
@@ -329,7 +329,7 @@ export async function kidDetailView(root, C, no) {
   const line = (c, extra = '') => `<li class="lrow"><div class="lr-h"><b>${esc(lessonName(c))}</b> <span class="muted small">${esc(gl(LES(c).g))}</span>${rep.L[c] ? ` <span class="pill">맞힘 ${rep.L[c].ok}/${rep.L[c].tot}</span>` : ''}${tm(c)} ${why(c)}</div>${extra ? `<p class="lr-x">${extra}</p>` : ''}${cards(c)}</li>`;
   const recs = Object.values(KK.recs).sort((a, b) => b.s.made - a.s.made);
   const swList = Object.entries(cal.sureWrong);
-  root.innerHTML = `<div class="card"><h2>${esc(nm(K, no))} <small>푼 묶음 ${recs.length}개 · ${recs.reduce((n, x) => n + x.s.it.length, 0)}문제</small></h2>
+  root.innerHTML = `<div class="card kd"><h2>${esc(nm(K, no))} <small>푼 묶음 ${recs.length}개 · ${recs.reduce((n, x) => n + x.s.it.length, 0)}문제</small></h2>
     ${intro('이 아이가 푼 문제를 칸(판자)마다 모아 본 화면이에요. <b>고칠 판자</b>부터 봐 주세요. 칸 아래 카드를 누르면 어떤 생각으로 틀렸을지와 도와주는 법이 나와요.', 'no-print')}
     <div class="acts no-print"><a class="btn" href="#/t/c/${C}">반 보기로</a><button onclick="print()">인쇄</button></div>
     <h3>고칠 판자 <small>여기서부터 고치면 돼요</small></h3>${rep.start.length ? `<ul class="lines">${rep.start.map((s) => line(s.c)).join('')}</ul>` : '<p class="muted">없어요.</p>'}

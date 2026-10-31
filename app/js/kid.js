@@ -5,7 +5,7 @@ import { byId, unitById, gradeIdx } from '../../engine/lessons/index.js';
 import { LES, itemOf } from '../../paper/js/gen.js';
 import { mascot } from '../../paper/js/mascot.js';
 import { blankCount } from '../../engine/tokens.js';
-import { prepPlan, newPrep, current, answer, summary, asked, LEN } from './prep.js';
+import { prepPlan, newPrep, current, answer, summary, asked, LEN, PREP } from './prep.js';
 import { newFix, showNext, showLen, showTalk, blankTalk, factTalk, togetherStep, answerItem, afterReStep, checkItem, answerCheck, compareOf, stepsOf, exampleOf, mergeTip } from './fix.js';
 import * as KS from './kidstore.js';
 import { draw, stepHTML, staticHTML, ansSay, rushGuard, rushPause } from './item.js';
@@ -108,9 +108,9 @@ export function todoOf(K, rep) {
 }
 // 할 일 한 줄 — '선생님과 같이 봐요'는 누르면 펼쳐져 선생님께 보여 줄 문제가 나옴(가는 곳 없음)
 function todoRow(t) {
-  if (t.kind === 'help') return `<details class="item help"><summary><span><b>${esc(t.title)}</b><br><span class="muted small">${esc(t.sub)}</span></span><span class="go btn ${t.pri ? 'pri' : ''}">보기</span></summary>
+  if (t.kind === 'help') return `<details class="item help${t.pri ? ' now' : ''}"><summary><span><b>${esc(t.title)}</b><br><span class="muted small">${esc(t.sub)}</span></span><span class="go btn ${t.pri ? 'pri' : ''}">보기</span></summary>
     <div class="helpbox"><p>선생님이 오시면 같이 풀어 볼 문제예요.</p>${t.cs.length ? `<ul>${t.cs.map((c) => `<li><b>${esc(plank(c))}</b></li>`).join('')}</ul>` : ''}<p class="small muted">어려운 판자가 있는 건 괜찮아요. 같이 하면 하나씩 놓을 수 있어요. ${t.wait ? "선생님을 기다리는 동안 아래 '판자 고치기'를 먼저 해도 돼요." : '선생님이 오실 때까지 이 화면을 켜 두어요.'}</p></div></details>`;
-  return `<a class="item" href="${t.href}"><span><b>${esc(t.title)}</b><br><span class="muted small">${esc(t.sub)}</span></span><span class="go btn ${t.pri ? 'pri' : ''}">시작</span></a>`;
+  return `<a class="item${t.pri ? ' now' : ''}" href="${t.href}"><span><b>${esc(t.title)}</b><br><span class="muted small">${esc(t.sub)}</span></span><span class="go btn ${t.pri ? 'pri' : ''}">시작</span></a>`;
 }
 
 // ── 내 수 다리(홈) ──
@@ -209,7 +209,7 @@ export function prepView(root, unit) {
     if (!it) return finished();
     const sh = S.sheets.find((x) => x.id === S.at.sheet);
     if (Date.now() - lastNow > 5000) { lastNow = Date.now(); KS.setNow(me, { mode: 'prep', unit, n: asked(S) }); }
-    draw(root, { prompt: it.snap.prompt, choices: it.snap.choices, tag: '준비 다리', dots: [S.at.i, sh.items.length], onAnswer: (a, cf, ms) => {
+    draw(root, { prompt: it.snap.prompt, choices: it.snap.choices, tag: '준비 다리', dots: [asked(S), S.budget || PREP.budget], onAnswer: (a, cf, ms) => {
       const r = answer(S, a, { conf: cf, ms }); store();
       if (rush(ms, a, r && r.ok) && current(S)) { K.rush = (K.rush || 0) + 1; KS.save(me, K); return rushPause(root, step); }
       step();
@@ -268,7 +268,9 @@ export function fixView(root, c) {
   const ct0 = classTask(K), inClass = !!(ct0 && Date.now() - ct0.t < 3 * 3600e3);   /* 수업 중(연 뒤 3시간)만 — 저녁 집에서는 보통 끝 화면(회귀 10-31) */
   KS.setNow(me, { mode: 'fix', c });
   const head = (pose, t) => say(pose, t, 64);
-  const shell = (top, body) => { root.innerHTML = `<div class="card">${top}<div id="b">${body || ''}</div></div>`; return root.querySelector('#b'); };
+  const PH = [['show', '튼튼이 시범'], ['together', '같이 풀기'], ['solo', '혼자 풀기'], ['check', '확인 3문제']];
+  const bar = () => { const k = PH.findIndex(([p]) => p === F.phase); return k < 0 ? '' : `<ol class="sb-steps fx-steps" aria-label="고치기 걸음">${PH.map(([, t], i) => `<li class="${i === k ? 'now' : i < k ? 'done' : ''}"${i === k ? ' aria-current="step"' : ''}><i>${i < k ? '✓' : i + 1}</i>${t}</li>`).join('')}</ol>`; };
+  const shell = (top, body) => { root.innerHTML = `<div class="card">${bar()}${top}<div id="b">${body || ''}</div></div>`; return root.querySelector('#b'); };
   const tsay = (xs) => (xs.length ? `<div class="tsay">${xs.map((x) => `<p>${esc(x)}</p>`).join('')}</div>` : '');
   // 시범 — 단계가 있으면 단계마다 · 없으면 그 문제 숫자로 말하며 빈칸을 하나씩(보기는 답 보기에 표시)
   function show() {
