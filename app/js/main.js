@@ -7,7 +7,7 @@ import { runView } from './run.js';
 import { weekView } from './week.js';
 import { storyView } from './story.js';
 import { stopSpeak } from './speak.js';
-import { teacherHome, newClassView, openClassView, cardsView, namesView, classView, kidDetailView, groupCardView, guideView, mindCardView, paperImportView } from './teacher.js';
+import { teacherHome, newClassView, openClassView, cardsView, namesView, classView, kidDetailView, groupCardView, guideView, mindCardView, paperImportView, storyCardView } from './teacher.js';
 import { lsGet, esc } from './local.js';
 import { flush, pending } from './db.js';
 
@@ -44,6 +44,7 @@ const ROUTES = [
   [/^#\/t\/c\/(\w+)\/cards$/, (m) => cardsView(root, m[1])],
   [/^#\/t\/c\/(\w+)\/names$/, (m) => namesView(root, m[1])],
   [/^#\/t\/c\/(\w+)\/paper$/, (m) => paperImportView(root, m[1])],
+  [/^#\/t\/c\/(\w+)\/s\/(\w+)$/, (m) => storyCardView(root, m[1], m[2])],
   [/^#\/t\/c\/(\w+)\/k\/(\d+)$/, (m) => kidDetailView(root, m[1], m[2])],
   [/^#\/t\/c\/(\w+)\/g\/(.+)$/, (m) => groupCardView(root, m[1], decodeURIComponent(m[2]))],
   [/^#\/t\/c\/(\w+)\/m\/([\w.]+)$/, (m) => mindCardView(root, m[1], m[2])],

@@ -17,7 +17,7 @@ export const SLOTS = {
   md: [['groups×', 'rows×', 'rate×'], ['share÷', 'shareR÷'], ['pack÷', 'packR÷'], ['times×', 'of×'], ['timesB÷', 'timesM÷'], ['need÷', 'packR÷', 'shareR÷']],
 };
 // 확인된 차시가 없을 때 — 계산이 가벼운 차시(학년 이름은 아이에게 보이지 않음)
-const EASY = { as: [['2-1-3:2', '2-1-3:5'], ['1-2-2:2', '1-2-2:4']], md: [['2-2-2:3', '3-1-3:6'], ['2-2-2:2', '3-1-3:6']] };
+export const EASY = { as: [['2-1-3:2', '2-1-3:5'], ['1-2-2:2', '1-2-2:4']], md: [['2-2-2:3', '3-1-3:6'], ['2-2-2:2', '3-1-3:6']] };
 const KUKU = new Set(['2-2-2:2', '2-2-2:3', '2-2-2:4', '2-2-2:5', '2-2-2:6', '2-2-2:7']);
 const hash = (s) => [...String(s)].reduce((h, ch) => (Math.imul(h, 31) + ch.charCodeAt(0)) >>> 0, 7);
 const ord = (c) => NODES.indexOf(byId[c]);

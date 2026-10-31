@@ -165,3 +165,4 @@ b.q{font-weight:800;border:1.5px dashed var(--ink);border-radius:4px;padding:0 4
 /* hover는 마우스 기기에서만 — 터치 화면(크롬북 · 태블릿)은 누른 자리에 hover가 남아 다음 화면의 같은 자리 카드가 골라진 것처럼 보임 */
 @media (hover:hover){button:hover,.btn:hover{border-color:var(--ink)}.big-pick:hover,.cmpc:hover,.todo a.item:hover,.sb-ty:hover,.sb-fr:hover{border-color:var(--teal)}.sb-tap .wd:hover{background:var(--teal2)}}
 .sb-say{float:right;margin:0 0 6px 10px;padding:4px 12px;min-height:36px;font-size:15px;border-radius:999px;background:#fff;border:1.5px solid var(--line);color:var(--teal);font-weight:700}
+.tcard .sbf{margin:6px 0}.tcard .sbf svg{display:block;width:100%;max-width:330px;height:auto}

@@ -159,5 +159,16 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   const md = PL.report([f(S2, '2026-11-02'), f(S1, '2026-10-26')], '번호,사전,사후\n1,40,70\n2,80,85\n');
   ok(md.includes('2026-10-26 ~ 2026-11-02') && md.includes('고친 판자(평균) 0 → 0.5') && md.includes('짐작 맞은 정도 % 55 → 75') && /주당 기울기 평균 1\.5/.test(md) && md.includes('오른 폭 30') && md.includes('무작위로 나뉜 것이 아님') && !md.includes('하늘'), '시범 숫자: 날짜 차례 · 처음 → 마지막 · 주간 기울기 · 형성평가 오른 폭 · 이름 X');
 }
+// ⑭ 이야기 다리 10분 카드 — 유형 일곱 모두 예 셋 · 그 유형 · 같은 수 두 번 X · 셋째는 되도록 불일치 이야기
+{
+  const T = await import('../js/teacher.js'), SC = await import('../../engine/schema.js');
+  const bad = [];
+  for (const ty of Object.keys(SC.TYPES)) for (const seed of [3, 17]) {
+    const ex = T.storyExamples(ty, 3, seed);
+    if (ex.length !== 3 || ex.some((p) => p.sc.type !== ty)) bad.push(`${ty}/${seed}:${ex.length}`);
+    ex.forEach((p) => { const vs = Object.entries(p.sc.v || {}).filter(([k, v]) => k !== 'x' && v != null).map(([, v]) => JSON.stringify(v)); if (new Set(vs).size < vs.length) bad.push(`${ty} 같은 수`); });
+  }
+  ok(!bad.length, `유형 일곱 × 두 번: 예 셋씩 · 같은 수 없음${bad.length ? ` — ${bad.join(' ')}` : ''}`);
+}
 console.log(fail ? `FAIL ${fail}` : 'PASS');
 process.exitCode = fail ? 1 : 0;

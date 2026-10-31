@@ -20,6 +20,9 @@ import { TOOLS, CARD_TOOL } from './tools.js';
 import { KIDSAY } from './fix.js';
 import { weeksOf, weekChart, weekTrend, weekKey, lastLine } from './weekcore.js';
 import { packetOf, promptOf } from './copilot.js';
+import { TYPES } from '../../engine/schema.js';
+import { planOf, probOf, EASY as STORY_EASY } from './storylog.js';
+import { frameSVG } from './story.js';
 import { testable, __predict } from '../../engine/errors.js';
 import { go, unitLabel } from './kid.js';
 
@@ -226,7 +229,7 @@ export function classView(root, C) {
         ${t ? `<p class="g-tool">앱 도구 🔍 ${esc(t.name)}</p>` : ''}${e.s.length ? `<div class="acts"><a class="btn teal" href="#/t/c/${C}/m/${id}">이 생각 10분 카드</a></div>` : ''}${misCard(m, '', '이 생각 자세히')}</div>`; }).join('')}</div></div>` : ''; })()}
     ${(() => { const L2 = rows.map((no) => { const st = S[no] && S[no].st; const x = st ? storyStep(st.story) : null; return x ? { no, ...x } : null; }).filter(Boolean); if (!L2.length) return '';
       const g = {}; L2.forEach((x) => { if (x.weak) (g[x.weak] = g[x.weak] || []).push(x.no); });
-      return `<div class="card"><h2>이야기 다리 — 문장제가 어디서 끊기나</h2><p class="small muted">이야기 다리를 세 문제 넘게 푼 아이 ${L2.length}명을, 이해(무슨 이야기인지 · 막대 틀) → 바꾸기(식) → 계산(답) 가운데 처음 끊기는 곳으로 묶었어요. 이해에서 끊기는 아이는 계산 연습보다 '나눠 읽기'부터예요.</p>${Object.keys(g).length ? `<ul>${Object.entries(g).map(([w, nos]) => `<li><b>${esc(w)}</b> — ${nos.map((no) => esc(nm(K, no))).join(', ')}</li>`).join('')}</ul>` : '<p>세 걸음 모두 잘하고 있어요.</p>'}</div>`; })()}
+      return `<div class="card"><h2>이야기 다리 — 문장제가 어디서 끊기나</h2><p class="small muted">이야기 다리를 세 문제 넘게 푼 아이 ${L2.length}명을, 이해(무슨 이야기인지 · 막대 틀) → 바꾸기(식) → 계산(답) 가운데 처음 끊기는 곳으로 묶었어요. 이해에서 끊기는 아이는 계산 연습보다 '나눠 읽기'부터예요.</p>${Object.keys(g).length ? `<ul>${Object.entries(g).map(([w, nos]) => `<li><b>${esc(w)}</b> — ${nos.map((no) => esc(nm(K, no))).join(', ')}</li>`).join('')}</ul>` : '<p>세 걸음 모두 잘하고 있어요.</p>'}${(() => { const byT = {}; L2.forEach((x) => x.types.forEach((sh) => { const ty = Object.keys(TYPES).find((k) => TYPES[k].short === sh); if (ty) (byT[ty] = byT[ty] || []).push(x.no); })); const ks = Object.keys(byT); return ks.length ? `<p class="small"><b>유형별 10분 카드</b> — 이해가 끊기는 유형</p><div class="acts">${ks.map((ty) => `<a class="btn teal" href="#/t/c/${C}/s/${ty}" title="${byT[ty].map((no) => esc(nm(K, no))).join(', ')}">${esc(TYPES[ty].kid)} · ${byT[ty].length}명</a>`).join('')}</div>` : ''; })()}</div>`; })()}
     ${(() => { const W = rows.map((no) => { const st = S[no] && S[no].st; const all = st ? st.wk : [], ws = lastLine(all); return { no, ws, last: all[all.length - 1], tr: weekTrend(ws) }; }); const any = W.filter((x) => x.ws.length); if (!any.length) return '';
       const sc = (v) => Math.round((v.ok / v.n) * 10), wk = weekKey(), list = (xs) => xs.map((x) => `${esc(nm(K, x.no))}(${x.ws.slice(-4).map(sc).join('→')})`).join(', ');
       const down = any.filter((x) => x.tr === 'down'), low = any.filter((x) => x.tr !== 'down' && x.ws.length >= 3 && x.ws.slice(-3).reduce((a, v) => a + sc(v), 0) / 3 <= 5.5), up = any.filter((x) => x.tr === 'up'), not = W.filter((x) => !(x.last && x.last.wk === wk));
@@ -485,4 +488,52 @@ export function paperImportView(root, C) {
   };
   const D = paperData();
   show(D, '이 브라우저의 종이 앱 기록');
+}
+
+// ── 이야기 다리 10분 카드(유형 하나) ──
+//  근거: 스키마 지도 — 유형 이름 · 구조 그림 · 시범 → 함께 → 혼자 [C-9][C-10] · 핵심어 X · 불일치 이야기 섞기 [C-21][C-23] · 계산이 가벼운 수로 구조에 집중
+const STORY_ASK = {
+  change: ['처음에 얼마였나요?', '무슨 일이 일어났나요 — 생겼나요, 없어졌나요?', '그래서 나중엔 얼마가 됐을까요? 어느 칸이 ?일까요?'],
+  combine: ['어느 것이 부분이고 어느 것이 전체인가요?', '부분을 다 모으면 무엇이 되나요?', '모르는 것은 전체인가요, 한 부분인가요?'],
+  compare: ['어느 쪽이 더 많아요?', '얼마나 더 많은지 묻나요, 한쪽 수를 묻나요?', "'더'라는 말이 있으면 꼭 더하기일까요?"],
+  groups: ['한 묶음에 몇 개씩 들었나요?', '묶음이 몇 개인가요?', '모두 몇 개인지 묻나요, 한 묶음을 묻나요?'],
+  times: ['무엇이 기준인가요?', '어느 쪽이 기준의 몇 배인가요?', "'배'라는 말이 있으면 꼭 곱하기일까요?"],
+  share: ['전체가 얼마인가요?', '몇 몫으로 똑같이 나누나요?', '한 몫이 얼마인지 묻나요?'],
+  pack: ['전체가 얼마인가요?', '한 번에 몇씩 덜어 내나요?', '몇 번 덜어 낼 수 있는지 묻나요? 남는 것은 어떻게 할까요?'],
+};
+export function storyExamples(type, n = 3, seed0 = Date.now() % 1e6) {
+  const T = TYPES[type]; if (!T) return [];
+  const cs = [...new Set(STORY_EASY[T.fam].flat())], out = [], seen = new Set();
+  for (let seed = seed0; out.length < n * 3 && seed < seed0 + 60; seed++) {
+    for (const it of planOf(cs, { seed, n: 6 })) { const pr = probOf(it); if (!pr || pr.sc.type !== type) continue; const key = toText(pr.s.story); if (seen.has(key)) continue; seen.add(key); const vs = Object.entries(pr.sc.v || {}).filter(([k, v]) => k !== 'x' && v != null).map(([, v]) => String(typeof v === 'object' ? JSON.stringify(v) : v)); if (new Set(vs).size < vs.length) continue; out.push(pr); }   /* 같은 수가 두 번 나오면 어느 칸인지 가를 수 없어 뺌 */
+  }
+  // 모르는 자리가 다른 것 · 불일치 이야기 하나를 셋째로
+  const pick = [], slots = new Set();
+  for (const pr of out) if (pick.length < n - 1 && !pr.sc.inc && !slots.has(pr.sc.slot)) { pick.push(pr); slots.add(pr.sc.slot); }
+  const inc = out.find((pr) => pr.sc.inc && !pick.includes(pr)) || out.find((pr) => !pick.includes(pr));
+  if (inc) pick.push(inc);
+  const head = (pr) => toText(pr.s.story).slice(0, 8);
+  for (const pr of out) if (pick.length < n && !pick.includes(pr) && !pick.some((q) => q.sc.slot === pr.sc.slot || head(q) === head(pr))) pick.push(pr);
+  for (const pr of out) if (pick.length < n && !pick.includes(pr) && !pick.some((q) => head(q) === head(pr))) pick.push(pr);
+  for (const pr of out) if (pick.length < n && !pick.includes(pr)) pick.push(pr);
+  return pick.slice(0, n);
+}
+export function storyCardView(root, C, type) {
+  const K = cls(C), T = TYPES[type]; if (!K || !T) return go('#/t');
+  const ex = storyExamples(type);
+  const calc = (pr) => pr.s.steps[1].item, frame = (pr) => frameSVG(pr.sc, pr.fr.list[pr.fr.right]);
+  const story = (pr) => `<p class="qline">${toHTML(pr.s.story, { static: true })}</p>`;
+  const ask = STORY_ASK[type] || [];
+  const exBox = (pr, show) => (pr ? `${story(pr)}${show ? `<div class="sbf">${frame(pr)}</div><p class="small">식: ${staticHTML(calc(pr).prompt, calc(pr).sol)}</p>` : '<p class="note">아이들이 막대 틀을 그리고 ?를 넣은 뒤 식을 써요.</p>'}` : '');
+  root.innerHTML = `<div class="card tcard"><h2>이야기 다리 10분 카드 <small>${esc(T.kid)}</small></h2>
+    ${intro('이 유형에서 이해(무슨 이야기 · 막대 틀)가 끊기는 아이 2~3명을 모아 10분. 계산은 가볍게 두고 <b>이야기의 구조</b>만 봐요. 문제는 열 때마다 바뀌어요.', 'no-print')}
+    <div class="acts no-print"><button class="pri" onclick="print()">인쇄</button><a class="btn" href="#/t/c/${C}">반 보기로</a></div>
+    <dl class="lead"><dt>이 유형</dt><dd>${esc(T.say)}</dd><dt>오늘 목표</dt><dd>낱말 하나(모두 · 더 · 배 …)로 식을 고르지 않고, <b>막대 틀에 수와 ?를 놓아 보고</b> 식을 고르게 해요.</dd></dl>
+    <ol class="plan">
+    ${stepBox(1, '시범 — 선생님이 소리 내어 생각하기', 3, `${askP(ask[0] || '무슨 이야기일까?')}${exBox(ex[0], true)}<p class="note">수마다 '이 수는 틀의 어느 칸?'을 말하며 넣고, 모르는 수에 ?를 그려요.</p>`)}
+    ${stepBox(2, '함께 — 아이들이 칸을 말하기', 3, `${askP(ask[1] || '어느 칸에 들어갈까?')}${exBox(ex[1], true)}`)}
+    ${stepBox(3, '혼자 — 낱말에 속지 않기', 3, `${askP(ask[2] || '이 낱말이 있으면 꼭 그 셈일까?')}${exBox(ex[2], false)}${ex[2] ? `<p class="note">답: ${staticHTML(calc(ex[2]).prompt, calc(ex[2]).sol)}${ex[2].sc.inc ? ' — 낱말과 셈이 반대인 이야기예요.' : ''}</p>` : ''}`)}
+    ${stepBox(4, '마무리', 1, askP('이 이야기에서 무엇을 보고 틀을 골랐나요? 한 줄로 말해 볼까?'))}
+    </ol>
+    <p class="small muted foot">앱의 이야기 다리도 같은 걸음(무슨 이야기 → 막대 틀 → 식 → 답)이에요. 같은 유형을 두 번 이어 맞히면 앞 두 걸음을 건너뛰어요.</p></div>`;
 }
