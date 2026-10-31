@@ -1,6 +1,6 @@
 // 배포 주소에서 한 바퀴(머리 없는 크롬): node tests/e2e/live.cjs [주소]
 //  시험 반(ZZ) 만들기 → 오늘 단원 열기 → 1번 아이 들어가기 → 준비 다리(빈 곳 하나) → 고칠 판자 → 다듬기 → 거꾸로 찾기 → 이번 주 점검 → 선생님 표 · 선 · 종이 결과 가져오기(2번) → (지우기는 firebase CLI)
-const { chromium } = require('/Users/dobuk/Projects/school-metaverse/node_modules/playwright');
+const { chromium } = require(process.env.PW || 'playwright')   /* playwright가 다른 폴더에 있으면 PW=<그 폴더>/node_modules/playwright */;
 const BASE = process.argv[2] || 'https://chang333787-boop.github.io/tuntun-math/app/';
 const UNIT = '2-2-2', GAP = '2-1-6:3';
 (async () => {
@@ -75,7 +75,7 @@ const UNIT = '2-2-2', GAP = '2-1-6:3';
   const head = await pg.textContent('h2 small');
   const row1 = await pg.evaluate(() => { const tr = document.querySelectorAll('.ctab tr')[1]; return tr ? [...tr.children].slice(-3).map((x) => x.textContent).join(' | ') : ''; });
   const wkPanel = await pg.evaluate(() => [...document.querySelectorAll('.card h2')].some((h) => h.textContent.includes('선이 어디로 가나')));
-  await pg.screenshot({ path: '/private/tmp/claude-501/-Users-dobuk-Projects-school-metaverse/f26e2d45-7adb-4b24-ba6f-51b1bd61efd5/scratchpad/live_teacher.png' });
+  if (process.env.SHOT) await pg.screenshot({ path: process.env.SHOT });
   // 종이 결과 가져오기 — 같은 브라우저의 종이 앱 기록(가짜 한 장)을 2번에 넣기 → 2번 자세히에 묶음이 보임
   await pg.evaluate(async () => {
     const G = await import(new URL('../paper/js/gen.js', location.href).href);

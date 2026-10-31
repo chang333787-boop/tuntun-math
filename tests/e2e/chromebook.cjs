@@ -1,5 +1,5 @@
 // 느린 크롬북 흉내(배포 주소): node tests/e2e/chromebook.cjs — CPU 4배 느리게 · 네트워크 1.5Mbps/150ms · 1366×768 · 터치 · 끝나면 찍힌 시험 반 ZZ를 firebase CLI로 지울 것
-const { chromium } = require('/Users/dobuk/Projects/school-metaverse/node_modules/playwright');
+const { chromium } = require(process.env.PW || 'playwright')   /* playwright가 다른 폴더에 있으면 PW=<그 폴더>/node_modules/playwright */;
 const BASE = 'https://chang333787-boop.github.io/tuntun-math/app/';
 (async () => {
   const b = await chromium.launch();
@@ -39,7 +39,6 @@ const BASE = 'https://chang333787-boop.github.io/tuntun-math/app/';
   t0 = Date.now(); await pg.goto(BASE + '#/me'); await pg.waitForFunction(() => document.querySelector('.todo') || document.querySelector('#view h2'), null, { timeout: 60000 }); T.homeAgain = Date.now() - t0;
   t0 = Date.now(); await pg.goto(BASE + '#/stages'); await w(300); await pg.waitForFunction(() => document.getElementById('view').innerText.length > 50, null, { timeout: 60000 }); T.stages = Date.now() - t0;
   t0 = Date.now(); await pg.goto(BASE + '#/story'); await pg.waitForFunction(() => document.getElementById('view').innerText.length > 50, null, { timeout: 60000 }); T.story = Date.now() - t0;
-  await pg.screenshot({ path: '/private/tmp/claude-501/-Users-dobuk-Projects-school-metaverse/f26e2d45-7adb-4b24-ba6f-51b1bd61efd5/scratchpad/cb/story.png' });
   await pg.goto(BASE + `#/t/c/${C}`); t0 = Date.now(); await pg.waitForSelector('.ctab', { timeout: 60000 }).catch(() => {}); T.classView2 = Date.now() - t0;
   const fonts = await pg.evaluate(() => { const xs = [...document.querySelectorAll('#view *')].filter((e) => e.childElementCount === 0 && e.innerText && e.innerText.trim()).map((e) => parseFloat(getComputedStyle(e).fontSize)); return { min: Math.min(...xs), small: xs.filter((v) => v < 13).length, n: xs.length }; });
   console.log(JSON.stringify({ C, T, fonts, errs }, null, 1));
