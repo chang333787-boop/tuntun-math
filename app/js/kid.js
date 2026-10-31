@@ -103,7 +103,7 @@ export function todoOf(K, rep) {
     || Object.entries(mx).filter(([c, m]) => byId[c] && m.tier === 1)[0];
   if (pickD) { const [c, m] = pickD; out.push({ kind: 'drill', c, pri: !out.length, title: `다듬기 — ${plank(c)}`, sub: `다음 표: ${nextGoal(m, c)}`, href: `#/drill/${c}` }); }
   // 이어서 찾기 — 지난번에 18문제를 다 써서 멈췄거나, 지난 시간에 '선생님과 같이'로 멈춘 판(지난 기록 14일과 함께 이어 감)
-  if (lp && unitById[lp.unit] && (lp.why === 'budget' || (lp.why === 'teacher' && today(lp.t) !== td)) && !out.some((x) => x.kind === 'prep')) out.push({ kind: 'prep', unit: lp.unit, pri: !out.length, title: '이어서 찾기', sub: `${unitLabel(lp.unit)} — 지난번에 멈춘 곳부터(8분쯤)`, href: `#/prep/${lp.unit}` });
+  if (lp && unitById[lp.unit] && (lp.why === 'budget' || (lp.why === 'teacher' && today(lp.t) !== td)) && !out.some((x) => x.kind === 'prep')) out.push({ kind: 'prep', unit: lp.unit, pri: !out.length, title: '이어서 찾기', sub: `${unitLabel(lp.unit)} — 지난번에 멈춘 곳부터(${mins((tasks.find((x) => x.unit === lp.unit) || {}).len)}분쯤)`, href: `#/prep/${lp.unit}` });
   return out;
 }
 // 할 일 한 줄 — '선생님과 같이 봐요'는 누르면 펼쳐져 선생님께 보여 줄 문제가 나옴(가는 곳 없음)
