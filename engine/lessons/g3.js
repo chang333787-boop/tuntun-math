@@ -1,7 +1,7 @@
 // 3학년 차시 (3-1 · 3-2) — 정의 방법은 lessons/index.js 머리
 import { isKind, addKind, subKind, mulKind, divKind, danOf, ones, tens, addCarries, subBorrows, mulCarries, OPSBY } from './ops.js';
 import { nums, pick, frac, fx, fb, B, J, P, RO, F } from '../concepts/kit.js';
-import { dots, groups, bar, pie } from '../tokens.js';
+import { dots, groups, bar, pie, numLine } from '../tokens.js';
 import { rng, fmt, near } from '../math.js';
 import DIVC from '../concepts/div.js';
 import FRACC from '../concepts/frac.js';
@@ -34,6 +34,13 @@ const fracKeep = (prompt, f, bugs) => frac(prompt, f, { keep: true, bugs });
 const buildUnits = (p) => fracKeep([fx(1, p.d), `이 ${p.n}개이면 `, fb(0, 1)], F(p.n, p.d), [
   { test: (v) => (v[0] === p.n || v[0] === 1) && v[1] === p.d * p.n, name: '분모도 곱함', to: 'F1' },
   { test: (v) => v[0] === p.d && v[1] === p.n, name: '분모와 분자를 바꿈', to: 'F1' },
+]);
+
+// 수직선의 ↓가 가리키는 수를 분수로 — 칸 수 대신 눈금(점) 수를 분모로 세는 오류 · 0 눈금부터 세는 오류
+const lineFrac = (p, max) => fracKeep([{ svg: numLine(p.d, max, p.n) }, '↓가 가리키는 수를 분수로 쓰면 ', fb(0, 1)], F(p.n, p.d), [
+  { test: (v) => v[0] === p.n && v[1] === p.d * max + 1, name: '칸 수가 아니라 눈금 수를 분모로 셈', to: '3-1-6:2' },
+  { test: (v) => v[0] === p.n && v[1] === p.d - 1, name: '0과 1 사이 눈금 수를 분모로 셈', to: '3-1-6:2' },
+  { test: (v) => v[0] === p.n + 1 && v[1] === p.d, name: '0 눈금부터 세어 하나 더 셈', to: '3-1-6:5' },
 ]);
 
 // ── 그림: 똑같이 / 똑같지 않게 나눈 막대·원 (parts = 조각 크기 비율, 합 1)
@@ -439,9 +446,9 @@ export default {
     },
     {
       id: '3-1-6:5', fam: 'F3', def: true, name: '단위분수', kid: '1/몇이 몇 개', sec: 8,
-      gen: (r) => { const d = r.int(3, 10); return { v: r.pick(['count', 'build']), d, n: r.int(2, d - 1) }; },
-      make: (p) => (p.v === 'build' ? buildUnits(p) : F3.make(p)),
-      is: (p) => (p.v === 'count' || p.v === 'build') && p.n >= 1 && p.n < p.d, prev: '3-1-6:4', pre: [],
+      gen: (r) => { const d = r.int(3, 10); return { v: r.pick(['count', 'build', 'line']), d, n: r.int(2, d - 1) }; },
+      make: (p) => (p.v === 'build' ? buildUnits(p) : p.v === 'line' ? lineFrac(p, 1) : F3.make(p)),
+      is: (p) => (p.v === 'count' || p.v === 'build' || p.v === 'line') && p.n >= 1 && p.n < p.d, prev: '3-1-6:4', pre: [],
       hint: '1/5, 1/3처럼 분자가 1인 분수가 단위분수예요. 3/5은 1/5이 3개예요.',
     },
     {
@@ -714,8 +721,9 @@ export default {
     {
       id: '3-2-4:5', fam: 'F3', name: '진분수와 가분수', kid: '진분수, 가분수 알기', sec: 12,
       gen: (r) => {
-        const v = r.pick(['kind', 'kind', 'build', 'whole']);
+        const v = r.pick(['kind', 'kind', 'build', 'whole', 'line']);
         if (v === 'whole') return { v, w: r.int(1, 3), d: r.int(2, 9) };
+        if (v === 'line') { const d = r.int(2, 6); return { v, d, n: r.int(d + 1, 2 * d - 1) }; }   // 1과 2 사이 — 1보다 큰 분수도 수직선 위의 수
         if (v === 'build') { const d = r.int(2, 9); return { v, d, n: r.int(d + 1, 3 * d) }; }
         const want = r.pick(['imp', 'prop']), right = r.int(0, 2);
         const prop = () => { const d = r.int(2, 9); return [r.int(1, d - 1), d]; };
@@ -726,6 +734,7 @@ export default {
       },
       make: (p) => {
         if (p.v === 'build') return buildUnits(p);
+        if (p.v === 'line') return lineFrac(p, 2);
         if (p.v !== 'kind') return F3.make(p);
         const bugs = {};
         p.fs.forEach(([n, d], k) => {
@@ -735,7 +744,7 @@ export default {
         });
         return pick([p.want === 'imp' ? '가분수를 고르세요.' : '진분수를 고르세요.'], p.fs.map(([n, d]) => [fx(n, d)]), p.right, { bugs });
       },
-      is: (p) => p.v === 'kind' || p.v === 'whole' || ((p.v === 'count' || p.v === 'build') && p.n >= p.d),
+      is: (p) => p.v === 'kind' || p.v === 'whole' || ((p.v === 'count' || p.v === 'build' || p.v === 'line') && p.n >= p.d),
       prev: null, pre: ['3-1-6:5'],
       hint: '분자가 분모보다 작으면 진분수, 분자가 분모와 같거나 크면 가분수예요. 1/4이 5개이면 5/4로 가분수예요.',
       tip: '1/4 조각을 하나씩 이어 붙여 4개면 1(4/4), 5개면 1보다 큰 5/4가 되는 것을 수 막대로 보여 줘요. 분자와 분모가 같은 4/4도 가분수라는 것을 짚어요.',

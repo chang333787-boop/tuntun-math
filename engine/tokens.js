@@ -125,3 +125,17 @@ export function twoBars(d1, n1, d2, n2, { w = 300, h = 34 } = {}) {
   };
   return `<svg viewBox="0 0 ${w + 4} ${2 * h + 16}" width="${w + 4}" height="${2 * h + 16}" role="img" aria-label="두 막대">${row(d1, n1, 2)}${row(d2, n2, h + 12)}</svg>`;
 }
+
+// 수직선 — 0부터 max까지를 1/d씩 눈금 · 자연수 눈금은 길게 + 숫자 · at번째 눈금 위에 ↓ (분수를 수직선 위의 '수'로 [B-R22][B-R25])
+export function numLine(d, max, at, { w = 440 } = {}) {
+  const x0 = 18, x1 = w - 18, n = d * max, step = (x1 - x0) / n, y = 44;
+  let s = `<path d="M${x0} ${y} H${x1 + 8}" stroke="currentColor" stroke-width="2"/><path d="M${x1 + 8} ${y} l-7 -5 v10z" fill="currentColor"/>`;
+  for (let k = 0; k <= n; k++) {
+    const x = (x0 + k * step).toFixed(1), big = k % d === 0;
+    s += `<path d="M${x} ${y - (big ? 11 : 7)} V${y + (big ? 11 : 7)}" stroke="currentColor" stroke-width="${big ? 2 : 1.4}"/>`;
+    if (big) s += `<text x="${x}" y="${y + 30}" text-anchor="middle" font-size="17" fill="currentColor">${k / d}</text>`;
+  }
+  const ax = (x0 + at * step).toFixed(1);
+  s += `<path d="M${ax} ${y - 14} l-7 -12 h14z" fill="currentColor"/>`;
+  return `<svg viewBox="0 0 ${w} 82" width="${w}" height="82" role="img" aria-label="0부터 ${max}까지 수직선을 ${d}칸씩 똑같이 나누고 ${at}번째 눈금을 가리킨 그림">${s}</svg>`;
+}
