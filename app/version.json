@@ -1,5 +1,5 @@
 {
- "v": "7d93e9f4595a",
+ "v": "d376ea672276",
  "files": [
   "css/app.css",
   "js/back.js",
@@ -25,6 +25,7 @@
   "js/storylog.js",
   "js/teacher.js",
   "js/tools.js",
+  "js/try.js",
   "js/week.js",
   "js/weekcore.js",
   "../engine/bridges.js",

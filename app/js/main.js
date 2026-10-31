@@ -7,6 +7,7 @@ import { runView } from './run.js';
 import { weekView } from './week.js';
 import { storyView } from './story.js';
 import { stopSpeak } from './speak.js';
+import { tryView, tryInfo } from './try.js';
 import { teacherHome, newClassView, openClassView, cardsView, namesView, classView, kidDetailView, groupCardView, guideView, mindCardView, paperImportView, storyCardView, homeLetterView } from './teacher.js';
 import { lsGet, esc } from './local.js';
 import { flush, pending } from './db.js';
@@ -42,6 +43,7 @@ function startView(r) {
     <a class="big-pick" href="#/t">${tile('week', 28)}<b>선생님이에요</b><span>반 만들기 · 오늘 단원 열기 · 반 한눈 보기</span></a></div></div>`;
 }
 const ROUTES = [
+  [/^#\/try(?:\/(.+))?$/, (m) => tryView(root, m[1])],
   [/^#?\/?$/, () => startView(root)],
   [/^#\/join/, () => joinView(root)],
   [/^#\/me$/, () => homeView(root)],
@@ -80,6 +82,7 @@ function route() {
   const me = meOf();
   setTabs(kid && me && !/^#\/join/.test(h) ? h : null);
   document.getElementById('who').textContent = kid && me ? `${me.C} · ${me.no}번` : /^#\/t/.test(h) ? '선생님' : '';
+  { const tl = document.getElementById('trylink'); if (tl) tl.hidden = !tryInfo() || /^#\/try/.test(h); }   /* 시험 반이 있는 기기만 */
   if (kid && me && !/^#\/join/.test(h)) {
     if (idle > 20 * 60000) WHO.ok = false;
     idle = 0;
