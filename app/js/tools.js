@@ -61,6 +61,15 @@ function check(tool, it, vals) {
       return null;
     }
   }
+  /* 새 크기 문항(kit.js sizeAsk — 보기가 커요 · 작아요 · 같아요) — 곱하는 · 나누는 분수가 1보다 작은지 · 같은지 · 큰지로 */
+  if (tool === 'estimate' && it.choices && it.p && !it.p.dir && it.p.v !== 'dir' && it.p.N != null && it.p.n != null && it.p.d && toText(it.choices[0] || []) === '커요') {
+    const p = it.p, mul = /×/.test(toText(it.prompt)), mx = p.mx && p.n > p.d && p.n % p.d, fr = mx ? `${Math.floor(p.n / p.d)} ${p.n % p.d}/${p.d}` : `${p.n}/${p.d}`, jn = mx ? p.n % p.d : p.n;   /* 분수는 분자를 읽고 끝남 — 조사는 분자로 */
+    if (mul && p.sz === 'frac') return { html: `${p.N}${josa(p.N, '은', '는')} 1보다 커요 → ${fr}${josa(jn, '을', '를')} ${p.N}번 더한 것이니 <b>${fr}보다 커요</b>.` };
+    if (mul && p.sz === 'swap') return { html: `곱하는 두 수의 차례를 바꿔도 곱은 <b>같아요</b>(${p.N} × ${fr} = ${fr} × ${p.N}).` };
+    const cmp = p.n < p.d ? '1보다 작아요' : p.n === p.d ? '1과 같아요' : '1보다 커요';
+    const out = p.n === p.d ? `${p.N}${josa(p.N, '과', '와')} 같아요` : (p.n < p.d) === mul ? `${p.N}보다 작아요` : `${p.N}보다 커요`;
+    return { html: `${fr}${josa(jn, '은', '는')} ${cmp} → ${mul ? `${p.N}의 ${fr}만큼이니` : `${p.N} 안에 ${fr}${josa(jn, '이', '가')} 몇 번 들어가는지 세는 것이니`} <b>${out}</b>.` };
+  }
   if (tool === 'estimate' && it.choices && it.p && (it.p.dir || it.p.v === 'dir')) {
     const p = it.p, mul = !!p.dir;
     return { html: mul ? `${p.n}/${p.d}${josa(p.n, '은', '는')} 1보다 작아요 → ${p.N}의 ${p.n}/${p.d}만큼이니 <b>${p.N}보다 작아요</b>.` : `${p.N} 안에 ${p.n}/${p.d}${josa(p.n, '이', '가')} 몇 번 들어갈까요? 1 안에도 한 번보다 많이 들어가니 <b>${p.N}보다 커요</b>.` };
