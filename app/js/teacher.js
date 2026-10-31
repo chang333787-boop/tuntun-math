@@ -107,7 +107,7 @@ function normSt(st) {
   if (!st || typeof st !== 'object') return null;
   const L = {}; for (const [c, v] of Object.entries(obj(st.L))) if (LES(c) && typeof v === 'string' && ST[v]) L[c] = v;
   const num = (o) => Object.fromEntries(Object.entries(obj(o)).filter(([c, v]) => LES(c) && Number.isFinite(Number(v))).map(([c, v]) => [c, Number(v)]));
-  return { L, start: arr(st.start), below: arr(st.below), under: arr(st.under), sw: num(st.sw), fixed: num(st.fixed), help: num(st.help), due: arr(st.due), t: Number(st.t) || 0, last: Number(st.last) || 0, cal: obj(st.cal) };
+  return { L, start: arr(st.start), below: arr(st.below), under: arr(st.under), sw: num(st.sw), fixed: num(st.fixed), help: num(st.help), due: arr(st.due), t: Number(st.t) || 0, last: Number(st.last) || 0, cal: obj(st.cal), rush: Number(st.rush) || 0 };
 }
 const normNow = (n) => (n && typeof n === 'object' ? { mode: String(n.mode || ''), c: typeof n.c === 'string' ? n.c : '', n: Number(n.n) || 0, t: Number(n.t) || 0 } : null);
 // 아이 요약 모으기(8개씩 동시에) — 열린 연결 없이 짧은 요청만
@@ -141,7 +141,7 @@ export function classView(root, C) {
     rows.forEach((no) => { const st = S[no] && S[no].st; if (st) st.start.forEach((c) => (groups[c] = groups[c] || []).push(no)); });
     const glist = Object.entries(groups).filter(([, v]) => v.length >= 2).sort((a, b) => b[1].length - a[1].length);
     // 먼저 볼 아이 — 고치기를 해도 흔들림 · 막힌 칸이 많음(깊은 결손 — 자동 처방보다 선생님 먼저 [A-R27]) · 자신 있었는데 틀림 [D-1]
-    const first = rows.map((no) => { const st = S[no] && S[no].st; if (!st) return null; const why = []; const help = Object.keys(st.help || {}); if (help.length) why.push(`고치기 뒤에도 흔들림: ${help.map(lessonName).join(', ')}`); const deep = st.start.length + st.under.length; if (deep >= 4) why.push(`막힌 칸 ${deep}개`); const sw = Object.values(st.sw || {}).reduce((a, b) => a + b, 0); if (sw >= 3) why.push(`자신 있었는데 틀림 ${sw}문제`); return why.length ? { no, why } : null; }).filter(Boolean);
+    const first = rows.map((no) => { const st = S[no] && S[no].st; if (!st) return null; const why = []; const help = Object.keys(st.help || {}); if (help.length) why.push(`고치기 뒤에도 흔들림: ${help.map(lessonName).join(', ')}`); const deep = st.start.length + st.under.length; if (deep >= 4) why.push(`막힌 칸 ${deep}개`); const sw = Object.values(st.sw || {}).reduce((a, b) => a + b, 0); if (sw >= 3) why.push(`자신 있었는데 틀림 ${sw}문제`); if (st.rush >= 2) why.push(`빨리 넘김(2초 안 찍기) ${st.rush}번 — 결과를 그대로 믿기 어려워요`); return why.length ? { no, why } : null; }).filter(Boolean);
     const seen = rows.filter((no) => S[no] && S[no].st).length;
     root.innerHTML = `<div class="card no-print"><h2>${esc(C)} <small>${esc(gl(K.g))} · ${K.n}명 · 기록 있는 아이 ${seen}명</small></h2>
       <div class="acts"><select id="u" style="font:inherit;padding:8px;border-radius:10px">${units.map((u) => `<option value="${u.id}" ${u.id === unit ? 'selected' : ''}>${esc(gl(u.g))} · ${esc(u.nm)}</option>`).join('')}</select>

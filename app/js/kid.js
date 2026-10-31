@@ -110,13 +110,25 @@ export function prepView(root, unit) {
     }
     keep();
   };
-  let lastNow = 0;
+  let lastNow = 0, rush = 0;
+  // 2초 안에 틀린 답(찍기)이 세 번 이어지면 잠깐 멈춤 — 찍기는 학습 저하와 가장 세게 묶인다 [A-R29] · 선생님 화면에도 남김
+  const pause = () => {
+    K.rush = (K.rush || 0) + 1; KS.save(me, K);
+    root.innerHTML = `<div class="card">${say('think', '잠깐! 조금 빨라요. 문제를 <b>끝까지 읽고</b> 풀어요.<br>모르면 넘어가도 괜찮아요 — 찍지만 않으면 돼요.')}<button class="pri big" id="r" disabled>다시 해 볼게요</button></div>`;
+    const b = root.querySelector('#r'); setTimeout(() => { b.disabled = false; b.focus(); }, 3000);
+    b.addEventListener('click', step);
+  };
   const step = () => {
     const it = current(S);
     if (!it) return finished();
     const sh = S.sheets.find((x) => x.id === S.at.sheet);
     if (Date.now() - lastNow > 5000) { lastNow = Date.now(); KS.setNow(me, { mode: 'prep', unit, n: asked(S) }); }
-    draw(root, { prompt: it.snap.prompt, choices: it.snap.choices, tag: '준비 다리', dots: [S.at.i, sh.items.length], onAnswer: (a, cf, ms) => { answer(S, a, { conf: cf, ms }); store(); step(); } });
+    draw(root, { prompt: it.snap.prompt, choices: it.snap.choices, tag: '준비 다리', dots: [S.at.i, sh.items.length], onAnswer: (a, cf, ms) => {
+      const r = answer(S, a, { conf: cf, ms }); store();
+      rush = ms < 2000 && !a.idk && r && !r.ok ? rush + 1 : a.idk ? rush : 0;   // '넘어가기'는 솔직한 모름 — 세지 않음(찍은 오답만)
+      if (rush >= 3 && current(S)) { rush = 0; return pause(); }
+      step();
+    } });
   };
   const finished = () => {
     store();

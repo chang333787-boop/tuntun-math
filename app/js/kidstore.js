@@ -88,7 +88,7 @@ export function summaryOf(K) {
   const now = Date.now();
   const due = Object.entries(K.rv).filter(([, x]) => x.n < REVIEW_DAYS.length && x.due <= now).map(([c]) => c);
   const last = Object.values(K.recs).filter(okRec).reduce((m, x) => Math.max(m, x.s.made), 0);
-  return { t: now, last, L, start: rep.start.map((s) => s.c), below: rep.below.map((b) => b.c), under: rep.under.map((u) => u.c), sw: cal.sureWrong, cal: { n: cal.n, m: cal.match }, fixed: K.fixed, due, help: K.help || {} };
+  return { t: now, last, L, start: rep.start.map((s) => s.c), below: rep.below.map((b) => b.c), under: rep.under.map((u) => u.c), sw: cal.sureWrong, cal: { n: cal.n, m: cal.match }, fixed: K.fixed, due, help: K.help || {}, rush: K.rush || 0 };
 }
 export function pushSummary(me, K) { db.queuePut(`${base(me)}/st`, db.enc(summaryOf(K))); }
 
