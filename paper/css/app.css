@@ -1,5 +1,5 @@
 /* 끊긴 곳 찾기 — 화면(선생님용) · 종이 교과서 색 · 장식 없이 */
-:root{--ink:#2b2118;--mute:#6f6355;--line:#e6d9c6;--bg:#fff6e6;--card:#fffdf8;--acc:#d96c1e;--teal:#1f7a74;--sun:#f2c14e;--ok:#2f6b3a;--okb:#dcefd8;--pass:#eef6e6;--shaky:#f7e6b5;--stuck:#f1c4b8;--need:#fff}
+:root{--ink:#2b2118;--mute:#6f6355;--line:#e6d9c6;--bg:#fff6e6;--card:#fffdf8;--acc:#b85712;--teal:#1c726c;--sun:#f2c14e;--ok:#2f6b3a;--okb:#dcefd8;--pass:#eef6e6;--shaky:#f7e6b5;--stuck:#f1c4b8;--need:#fff}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;word-break:keep-all}
 a{color:var(--acc)}

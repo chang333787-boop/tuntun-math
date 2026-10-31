@@ -1,5 +1,5 @@
 /* 튼튼 수 다리 — 아이 · 선생님 화면 · 종이 교과서 색 · 장식 없이(그라데이션 · 반짝이 X) · 모형은 밋밋하게 [B-R28] */
-:root{--ink:#2b2118;--mute:#6f6355;--line:#e6d9c6;--bg:#fff6e6;--card:#fffdf8;--acc:#d96c1e;--teal:#1f7a74;--teal2:#e3f1ef;--sun:#f2c14e;--ok:#2f6b3a;--okb:#dcefd8;--shaky:#f7e6b5;--stuck:#f1c4b8;--wood:#c99a68;--wood2:#a8774a;--num:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif}
+:root{--ink:#2b2118;--mute:#6f6355;--line:#e6d9c6;--bg:#fff6e6;--card:#fffdf8;--acc:#b85712;--teal:#1c726c;--teal2:#e3f1ef;--sun:#f2c14e;--ok:#2f6b3a;--okb:#dcefd8;--shaky:#f7e6b5;--stuck:#f1c4b8;--wood:#c99a68;--wood2:#a8774a;--num:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 var(--num);word-break:keep-all;-webkit-font-smoothing:antialiased}
