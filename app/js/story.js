@@ -16,6 +16,7 @@ import { toolBox } from './tools.js';
 import { lsGet, lsSet, lsDel, esc, rand } from './local.js';
 import { planOf, probOf, pickLessons, sheetOf, resultOf, storyLog } from './storylog.js';
 import { go, meOf } from './kid.js';
+import { speakButton, stopSpeak } from './speak.js';
 
 const say = (pose, html, size = 60) => `<div class="say">${mascot(pose, size)}<div class="bub">${html}</div></div>`;
 const STEPS = ['무슨 이야기?', '막대 틀', '식', '계산 · 답'];
@@ -189,6 +190,7 @@ export function storyView(root, arg) {
     const chips = STEPS.map((t, i) => `<li class="${st.skip && i < 2 ? 'skip' : i < step ? 'done' : i === step ? 'now' : ''}"><i>${i + 1}</i>${t}</li>`).join('');
     root.innerHTML = `<div class="card sb"><div class="sb-head"><span class="tag">이야기 다리</span><ol class="sb-steps" aria-label="걸음">${chips}</ol><span class="dots" aria-label="${S.items.length}개 중 ${S.i + 1}번째">${S.items.map((_, i) => `<i class="${i <= S.i ? 'on' : ''}"></i>`).join('')}</span></div>
       <div class="sb-story">${storyHTML(pr.s.story, mode)}</div>${say(pose, bub)}<div id="b">${body}</div></div>`;
+    stopSpeak(); speakButton(root.querySelector('.sb-story'), () => { const m = root.querySelector('.sb-say'); if (m) m.textContent = '이 기기엔 한국어 목소리가 없어요'; });
     return root.querySelector('#b');
   };
   // 찍기 — 1.5초 안에 틀린 고르기가 세 번 이어지면 잠깐 멈춤(prep과 같은 까닭 [A-R29])

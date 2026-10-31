@@ -6,6 +6,7 @@ import { backView, retryView } from './back.js';
 import { runView } from './run.js';
 import { weekView } from './week.js';
 import { storyView } from './story.js';
+import { stopSpeak } from './speak.js';
 import { teacherHome, newClassView, openClassView, cardsView, namesView, classView, kidDetailView, groupCardView, guideView, mindCardView, paperImportView } from './teacher.js';
 import { lsGet, esc } from './local.js';
 import { flush, pending } from './db.js';
@@ -49,6 +50,7 @@ const ROUTES = [
 ];
 function route() {
   if (typeof cleanup === 'function') { try { cleanup(); } catch (e) { /* */ } }
+  stopSpeak();
   cleanup = null;
   const h = location.hash || '#/';
   const kid = /^#\/(me|prep|fix|review|join|stages|drill|back|retry|run|story|week)/.test(h);
