@@ -44,6 +44,7 @@
             },
             "now": { ".validate": "newData.isString() && newData.val().length <= 1000" },
             "rv": { ".validate": "newData.isString() && newData.val().length <= 20000" },
+            "mx": { ".validate": "newData.isString() && newData.val().length <= 60000" },
             "$other": { ".validate": false }
           }
         }

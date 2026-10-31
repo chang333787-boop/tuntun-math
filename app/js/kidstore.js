@@ -36,6 +36,7 @@ export async function pull(me) {
   try { srv = await db.get(base(me)); } catch (e) { return { K, ok: false, err: e }; }
   if (srv && srv.r) for (const [id, s] of Object.entries(srv.r)) { const o = db.dec(s); if (o && !K.recs[id]) K.recs[id] = o; }
   if (srv && srv.rv) { const rv = db.dec(srv.rv); if (rv) for (const [c, x] of Object.entries(rv)) if (!K.rv[c] || (x.t || 0) > (K.rv[c].t || 0)) K.rv[c] = x; }
+  if (srv && srv.mx) { const mx = db.dec(srv.mx); K.mx = K.mx || {}; if (mx && typeof mx === 'object') for (const [c, x] of Object.entries(mx)) { const a = K.mx[c]; if (x && (!a || (x.tier || 0) > (a.tier || 0) || ((x.tier || 0) === (a.tier || 0) && (x.runs || []).length > (a.runs || []).length))) K.mx[c] = x; } }
   K.inbox = srv && srv.in ? Object.fromEntries(Object.entries(srv.in).map(([id, s]) => [id, db.dec(s)])) : {};
   save(me, K);
   return { K, ok: true };
@@ -48,6 +49,7 @@ export function addSheet(me, K, sh, R, conf = {}, ms = {}) {
   db.queuePut(`${base(me)}/r/${sh.id}`, db.enc(K.recs[sh.id]));
   pushSummary(me, K);
 }
+export function pushMastery(me, K) { db.queuePut(`${base(me)}/mx`, db.enc(K.mx || {})); }   // 스테이지 표 · 내 기록
 export function setReview(me, K) { save(me, K); db.queuePut(`${base(me)}/rv`, db.enc(K.rv)); }   // 규칙에 rv 칸 있음
 export function setNow(me, now) { db.put(`${base(me)}/now`, db.enc({ ...now, t: Date.now() })).catch(() => {}); }
 
@@ -88,7 +90,7 @@ export function summaryOf(K) {
   const now = Date.now();
   const due = Object.entries(K.rv).filter(([, x]) => x.n < REVIEW_DAYS.length && x.due <= now).map(([c]) => c);
   const last = Object.values(K.recs).filter(okRec).reduce((m, x) => Math.max(m, x.s.made), 0);
-  return { t: now, last, L, start: rep.start.map((s) => s.c), below: rep.below.map((b) => b.c), under: rep.under.map((u) => u.c), sw: cal.sureWrong, cal: { n: cal.n, m: cal.match }, fixed: K.fixed, due, help: K.help || {}, rush: K.rush || 0 };
+  return { t: now, last, L, start: rep.start.map((s) => s.c), below: rep.below.map((b) => b.c), under: rep.under.map((u) => u.c), sw: cal.sureWrong, cal: { n: cal.n, m: cal.match }, fixed: K.fixed, due, help: K.help || {}, rush: K.rush || 0, mx: Object.fromEntries(Object.entries(K.mx || {}).map(([c, x]) => [c, x.tier || 0])) };
 }
 export function pushSummary(me, K) { db.queuePut(`${base(me)}/st`, db.enc(summaryOf(K))); }
 

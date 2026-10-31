@@ -1,5 +1,5 @@
 {
- "v": "596d85c1d508",
+ "v": "d57ea650f04e",
  "files": [
   "css/app.css",
   "js/bridge.js",
@@ -13,6 +13,8 @@
   "js/main.js",
   "js/model.js",
   "js/prep.js",
+  "js/stage.js",
+  "js/stageview.js",
   "js/teacher.js",
   "../engine/bridges.js",
   "../engine/concepts/dec.js",

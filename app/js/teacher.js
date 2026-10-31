@@ -137,7 +137,7 @@ function normSt(st) {
   if (!st || typeof st !== 'object') return null;
   const L = {}; for (const [c, v] of Object.entries(obj(st.L))) if (LES(c) && typeof v === 'string' && ST[v]) L[c] = v;
   const num = (o) => Object.fromEntries(Object.entries(obj(o)).filter(([c, v]) => LES(c) && Number.isFinite(Number(v))).map(([c, v]) => [c, Number(v)]));
-  return { L, start: arr(st.start), below: arr(st.below), under: arr(st.under), sw: num(st.sw), fixed: num(st.fixed), help: num(st.help), due: arr(st.due), t: Number(st.t) || 0, last: Number(st.last) || 0, cal: obj(st.cal), rush: Number(st.rush) || 0 };
+  return { L, start: arr(st.start), below: arr(st.below), under: arr(st.under), sw: num(st.sw), fixed: num(st.fixed), help: num(st.help), due: arr(st.due), t: Number(st.t) || 0, last: Number(st.last) || 0, cal: obj(st.cal), rush: Number(st.rush) || 0, mx: num(st.mx) };
 }
 const normNow = (n) => (n && typeof n === 'object' ? { mode: String(n.mode || ''), c: typeof n.c === 'string' ? n.c : '', n: Number(n.n) || 0, t: Number(n.t) || 0 } : null);
 // 아이 요약 모으기(8개씩 동시에) — 열린 연결 없이 짧은 요청만
@@ -183,10 +183,10 @@ export function classView(root, C) {
     <div class="card"><h2>묶어 가르치기 제안 <small>같은 판자를 고칠 아이 · 넣고 뺄지는 선생님이</small></h2>
       ${glist.length ? `<div class="groups">${glist.map(([c, nos]) => `<div class="grp"><b>${esc(lessonName(c))}</b><span class="muted small">${nos.map((no) => esc(nm(K, no))).join(', ')}</span><div class="acts"><a class="btn teal" href="#/t/c/${C}/g/${encodeURIComponent(c)}">10분 소집단 카드</a></div></div>`).join('')}</div>` : '<p class="muted">아직 같은 판자에 둘 이상 몰린 곳이 없어요.</p>'}</div>
     <div class="card"><h2>${esc(unitLabel(unit))}로 가는 칸 × 아이</h2>
-      <p class="small muted">✓ 확인 · 관문 통과 · ○ 거의 · △ 흔들림 · ✕ 막힘 · ★ 고칠 판자(여기서부터) · ? 자세히 볼 것 · · 안 봄 — 회색 이름 칸은 준비 칸보다 더 아래(아이가 막혔거나 고친 곳)</p>
+      <p class="small muted">✓ 확인 · 관문 통과 · ○ 거의 · △ 흔들림 · ✕ 막힘 · ★ 고칠 판자(여기서부터) · ? 자세히 볼 것 · · 안 봄 · 진한 초록 = 다듬기 '빠르게' · 돌 색 = '오래'까지 — 회색 이름 칸은 준비 칸보다 더 아래(아이가 막혔거나 고친 곳)</p>
       <div class="ctab"><table><tr><th class="l">아이</th>${cols.map((c) => `<th class="v${P.pre.includes(c) ? '' : ' lo'}" title="${esc(lessonName(c))}"><span>${esc((byId[c] && byId[c].name) || lessonName(c))}</span></th>`).join('')}<th>고칠 판자</th><th>자신 있었는데 틀림</th><th>지금</th></tr>
       ${rows.map((no) => { const x = S[no] || {}, st = x.st; const sw = st ? Object.values(st.sw || {}).reduce((a, b) => a + b, 0) : 0;
-        return `<tr><td class="l"><a href="#/t/c/${C}/k/${no}">${esc(nm(K, no))}</a></td>${cols.map((c) => { if (!st) return '<td class="c-none">·</td>'; const s = st.start.includes(c) ? ['c-start', '★'] : CELL[st.L[c] || 'none']; return `<td class="${s[0]}" title="${esc(lessonName(c))} — ${esc(ST[st.L[c] || 'none'])}">${s[1]}</td>`; }).join('')}
+        return `<tr><td class="l"><a href="#/t/c/${C}/k/${no}">${esc(nm(K, no))}</a></td>${cols.map((c) => { if (!st) return '<td class="c-none">·</td>'; const t = (st.mx || {})[c] || 0; const s = st.start.includes(c) ? ['c-start', '★'] : t >= 3 && st.L[c] === 'ok' ? ['c-t3', '✓'] : t >= 2 && st.L[c] === 'ok' ? ['c-t2', '✓'] : CELL[st.L[c] || 'none']; return `<td class="${s[0]}" title="${esc(lessonName(c))} — ${esc(ST[st.L[c] || 'none'])}${t ? ` · 다듬기 표 ${t}개(${['', '정확', '정확 · 빠르게', '정확 · 빠르게 · 오래'][t]})` : ''}">${s[1]}</td>`; }).join('')}
         <td style="text-align:left">${st ? st.start.slice(0, 3).map((c) => esc(lessonName(c))).join(', ') : ''}</td><td>${sw || ''}</td><td class="small">${nowText(x.now)}</td></tr>`; }).join('')}</table></div>
       <p class="small muted">${data ? '15초마다 새로 봐요(이 화면이 열려 있을 때만).' : '불러오는 중…'}</p></div>`;
     root.querySelector('#u').addEventListener('change', (e) => { unit = e.target.value; render(); });
@@ -210,7 +210,7 @@ function nowText(n) {
   if (!n || !n.t) return '';
   const m = Math.round((Date.now() - n.t) / 60000);
   if (m > 20) return '';
-  return n.mode === 'prep' ? `준비 다리 ${n.n || 0}문제` : n.mode === 'fix' ? `고치는 중: ${esc(lessonName(n.c))}` : '';
+  return n.mode === 'prep' ? `준비 다리 ${n.n || 0}문제` : n.mode === 'fix' ? `고치는 중: ${esc(lessonName(n.c))}` : n.mode === 'drill' ? `다듬는 중: ${esc(lessonName(n.c))}` : '';
 }
 
 // 아이 자세히 — 종이와 같은 판정 · 원인은 '한 번 보임'(가설) / '되풀이됨'(서로 다른 문항 둘 이상) [A-R11][A-R12]
@@ -224,7 +224,12 @@ export async function kidDetailView(root, C, no) {
   const rv = obj(raw && raw.rv ? db.dec(raw.rv) : null);
   const rep = KS.reportOf(KK), cal = KS.calOf(KK);
   const why = (c) => { const x = rep.L[c]; if (!x || !x.why) return ''; const a = x.why.sure.map((h) => `<span class="pill" style="border-color:#b4482b">되풀이됨: ${esc(bugName(h.id))} (${h.ev.length}문항)</span>`), b = x.why.maybe.map((h) => `<span class="pill">한 번 보임: ${esc(bugName(h.id))}</span>`); return [...a, ...b].join(' '); };
-  const line = (c, extra = '') => `<li><b>${esc(lessonName(c))}</b> <span class="muted small">${esc(gl(LES(c).g))}</span> ${rep.L[c] ? `<span class="small">${rep.L[c].ok}/${rep.L[c].tot}</span>` : ''} ${why(c)} ${extra}</li>`;
+  // 시간 — 맞힌 문제의 한 문제 가운데값(모든 기록 · 준비 다리 · 확인 · 다시 보기 · 다듬기)
+  const msOf = {}; for (const x of Object.values(KK.recs)) { if (!KS.okRec(x)) continue; for (const [k, c] of x.s.it) { const r = x.r.it[k], t = x.ms ? Number(x.ms[k]) : 0; if (r && r.s === 'ok' && t > 0) (msOf[c] = msOf[c] || []).push(t); } }
+  const medOf = (c) => { const a = (msOf[c] || []).slice().sort((p, q) => p - q); return a.length ? a[Math.floor(a.length / 2)] : null; };
+  const mxK = obj(raw && raw.mx ? db.dec(raw.mx) : null);
+  const tm = (c) => { const m = medOf(c), t = mxK[c] ? Number(mxK[c].tier) || 0 : 0; return `${m ? ` <span class="small">· 한 문제 ${(m / 1000).toFixed(1)}초${byId[c] ? `(기준 ${byId[c].sec}초)` : ''}</span>` : ''}${t ? ` <span class="pill">다듬기 ${['', '정확', '정확 · 빠르게', '정확 · 빠르게 · 오래'][Math.min(t, 3)]}</span>` : ''}`; };
+  const line = (c, extra = '') => `<li><b>${esc(lessonName(c))}</b> <span class="muted small">${esc(gl(LES(c).g))}</span> ${rep.L[c] ? `<span class="small">${rep.L[c].ok}/${rep.L[c].tot}</span>` : ''}${tm(c)} ${why(c)} ${extra}</li>`;
   const recs = Object.values(KK.recs).sort((a, b) => b.s.made - a.s.made);
   root.innerHTML = `<div class="card"><h2>${esc(nm(K, no))} <small>${recs.length}묶음 · ${recs.reduce((n, x) => n + x.s.it.length, 0)}문항</small></h2>
     <div class="acts no-print"><a class="btn" href="#/t/c/${C}">반 보기로</a><button onclick="print()">인쇄</button></div>
@@ -232,6 +237,7 @@ export async function kidDetailView(root, C, no) {
     ${rep.below.length ? `<h3>아래 먼저 확인</h3><ul>${rep.below.map((b) => line(b.c, `<span class="small muted">— 아직 안 본 아래 칸: ${b.check.map((x) => esc(lessonName(x))).join(', ')}</span>`)).join('')}</ul>` : ''}
     ${rep.under.length ? `<h3>아래 칸 때문일 수도</h3><ul>${rep.under.map((u) => line(u.c, `<span class="small muted">← ${u.because.map((x) => esc(lessonName(x))).join(', ')}</span>`)).join('')}</ul>` : ''}
     <h3>자신감 견주기</h3><p>${cal.n ? `짐작이 결과와 맞은 정도 <b>${Math.round(cal.match * 100)}%</b>(${cal.n}문항) · 자신 있었는데 틀림: ${Object.entries(cal.sureWrong).map(([c, n]) => `${esc(lessonName(c))} ${n}`).join(', ') || '없음'}` : '아직 없음'}</p>
+    ${Object.keys(mxK).length ? `<h3>다듬은 판자(스테이지)</h3><ul>${Object.keys(mxK).filter((c) => LES(c)).sort(byGrade).map((c) => line(c)).join('')}</ul>` : ''}
     <h3>고친 판자 · 다시 보기</h3><p>${Object.keys(st && st.fixed || {}).map((c) => `${esc(lessonName(c))}${rv[c] ? ` <span class="small muted">(다시 보기 ${rv[c].n}/3)</span>` : ''}`).join(', ') || '아직 없음'}</p>
     <p class="small muted">원인은 '가능한 원인'이에요. '한 번 보임'은 한 문항에서만 맞아떨어진 것, '되풀이됨'은 서로 다른 문항 둘 이상에서 같은 틀린 방법이 맞아떨어진 것이에요. 아이 화면엔 원인 이름을 보이지 않아요.</p></div>`;
 }

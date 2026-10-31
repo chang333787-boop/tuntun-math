@@ -4,6 +4,20 @@ import { mascot } from '../../paper/js/mascot.js';
 import { esc } from './local.js';
 const INK = '#3b2a1e', WOOD = '#c99a68', WOOD2 = '#a8774a', WATER = '#cfe6e3';
 export const KIND = (st) => (st === 'ok' || st === 'pass' ? 'ok' : st === 'shaky' || st === 'near' ? 'shaky' : st === 'stuck' ? 'gap' : 'none');
+const STONE = '#c9c4bb', WOODD = '#b07f50';
+// 표에 따라 판자가 바뀜: 정확 = 나무 · 빠르게 = 못 박은 진한 나무 · 오래 = 돌 판자(현실 다리 재료 — 판타지 X)
+function plankShape(x, y, w, h, tier) {
+  if (tier >= 3) return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="2" fill="${STONE}" stroke="${INK}" stroke-width="1.6"/><path d="M${x + w * 0.38} ${y} v${h} M${x + w * 0.7} ${y} v${h}" stroke="${INK}" stroke-width=".8" opacity=".6"/>`;
+  if (tier === 2) return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="2" fill="${WOODD}" stroke="${INK}" stroke-width="1.6"/><circle cx="${x + Math.min(5, w * 0.18)}" cy="${y + h / 2}" r="1.7" fill="${INK}"/><circle cx="${x + w - Math.min(5, w * 0.18)}" cy="${y + h / 2}" r="1.7" fill="${INK}"/>`;
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="2" fill="${WOOD}" stroke="${INK}" stroke-width="1.6"/>`;
+}
+// 스테이지 칸용 작은 판자 하나 — k: 'gap' | 0 아직 | 1 | 2 | 3
+export function plankSVG(k, w = 64) {
+  const h = Math.round(w * 0.3);
+  const body = k === 'gap' ? `<rect x="2" y="2" width="${w - 4}" height="${h - 4}" rx="2" fill="none" stroke="#b4482b" stroke-width="2" stroke-dasharray="5 4"/>`
+    : k ? plankShape(2, 2, w - 4, h - 4, k) : `<rect x="2" y="2" width="${w - 4}" height="${h - 4}" rx="2" fill="#fff" stroke="${WOOD2}" stroke-width="1.4"/>`;
+  return `<svg class="pk-svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true">${body}</svg>`;
+}
 
 export function bridgeSVG(planks, { goal = '오늘 단원' } = {}) {
   const n = Math.max(planks.length, 1), W = 760, H = 210, x0 = 90, x1 = W - 90, pw = (x1 - x0) / n, y = 110;
@@ -12,7 +26,7 @@ export function bridgeSVG(planks, { goal = '오늘 단원' } = {}) {
   const pk = planks.map((p, i) => {
     const x = x0 + i * pw + 2, w = pw - 4, k = KIND(p.st);
     const title = `<title>${esc(p.label)}</title>`;
-    if (k === 'ok') return `<rect x="${x}" y="${y}" width="${w}" height="16" rx="2" fill="${WOOD}" stroke="${INK}" stroke-width="1.6">${title}</rect>`;
+    if (k === 'ok') return `<g>${title}${plankShape(x, y, w, 16, Math.max(1, p.tier || 0))}</g>`;
     if (k === 'shaky') return `<rect x="${x}" y="${y}" width="${w}" height="16" rx="2" fill="#efd6a8" stroke="${INK}" stroke-width="1.6" transform="rotate(-7 ${x + w / 2} ${y + 8})">${title}</rect>`;
     if (k === 'gap') return `<rect x="${x}" y="${y}" width="${w}" height="16" rx="2" fill="none" stroke="#b4482b" stroke-width="2" stroke-dasharray="5 4">${title}</rect>`;
     return `<rect x="${x}" y="${y}" width="${w}" height="16" rx="2" fill="#fff" stroke="${WOOD2}" stroke-width="1.2" opacity=".7">${title}</rect>`;

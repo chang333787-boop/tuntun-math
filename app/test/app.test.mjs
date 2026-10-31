@@ -38,5 +38,22 @@ const cnt = {};
 while ((it = P.current(T))) { const k = (cnt[it.c] = (cnt[it.c] || 0) + 1); const wrong = it.c === T.plan.fringe[0] && k % 3 === 0; P.answer(T, wrong ? { vals: it.snap.sol.map((x) => Number(x) + 1), raws: it.snap.sol.map((x) => String(Number(x) + 1)) } : { vals: it.snap.sol.map(Number), raws: it.snap.sol.map(String) }); }
 const s3 = P.summary(T);
 ok(s3.shaky.includes(T.plan.fringe[0]) || s3.fix.includes(T.plan.fringe[0]) || s3.rep.L[T.plan.fringe[0]].st !== 'shaky', `두 번 흔들린 칸이 끝 화면에 나옴 — 흔들 ${s3.shaky.join(',') || '없음'} · 끝 ${T.why}`);
+// ④ 스테이지 표: 정확 → 빠르게 → (3일 뒤) 오래 · 느리면 빠르게 X · 정답률 낮으면 다음 판 시계 감춤
+const G2 = await import('../js/stage.js');
+{
+const c = '2-2-2:4', T = G2.target(c), n = G2.drillN(c), mx = {}, day = 864e5, t0 = Date.now();
+let g = G2.applyRun(mx, c, { n, ok: n, med: T * 2, total: 1 }, t0);
+ok(g.after === 1 && g.gained.join() === '정확', `다 맞히되 느림 → 정확만 (${g.gained})`);
+g = G2.applyRun(mx, c, { n, ok: n - 1, med: T * 0.8, total: 1 }, t0 + 1000);
+ok(g.after === 2, `정확한 뒤 기준 시간 안 → 빠르게 (${mx[c].tier})`);
+g = G2.applyRun(mx, c, { n, ok: n, med: T * 0.9, total: 1 }, t0 + day);
+ok(mx[c].tier === 2, '하루 뒤엔 아직 오래 아님');
+g = G2.applyRun(mx, c, { n, ok: n, med: T * 1.1, total: 1 }, t0 + 3 * day + 2000);
+ok(mx[c].tier === 3 && g.gained.join() === '오래', '3일 뒤 그대로면 오래');
+G2.applyRun(mx, '1-1-3:6', { n: 8, ok: 5, med: 3000, total: 1 }, t0);
+ok(mx['1-1-3:6'].slow === true && mx['1-1-3:6'].tier === 0, '정답률 낮으면 표 없음 · 다음 판 시계 감춤');
+const D = G2.newDrill({ c, id: 'DR', clock: true });
+ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringify(it.snap.prompt))).size === n, `다듬기 한 판 ${n}문제 · 겹침 없음`);
+}
 console.log(fail ? `FAIL ${fail}` : 'PASS');
 process.exitCode = fail ? 1 : 0;

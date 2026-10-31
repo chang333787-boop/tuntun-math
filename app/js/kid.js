@@ -9,6 +9,7 @@ import * as KS from './kidstore.js';
 import { draw, stepHTML, staticHTML } from './item.js';
 import { bridgeSVG, KIND } from './bridge.js';
 import { modelHTML } from './model.js';
+import { grantAccurate, nextGoal, target, TIER } from './stage.js';
 import { lsGet, lsSet, lsDel, esc, rand } from './local.js';
 import { flush } from './db.js';
 
@@ -53,6 +54,12 @@ function todoOf(K, rep) {
     .forEach((c) => out.push({ kind: 'fix', c, pri: false, title: `판자 다지기 — ${kidName(c)}`, sub: '거의 되는데 가끔 흔들려요. 한 바퀴 다지면 튼튼해져요', href: `#/fix/${c}` }));
   const due = Object.entries(K.rv || {}).filter(([, x]) => x.n < KS.REVIEW_DAYS.length && x.due <= Date.now()).map(([c]) => c);
   if (due.length) out.push({ kind: 'review', pri: !out.length, title: `다시 보기 ${due.length}칸`, sub: '고친 판자를 섞어서 꺼내 풀어요 — 지금은 조금 어렵고, 오래 남아요', href: '#/review' });
+  // 다듬기 하나 — '오래'를 딸 날이 된 판자 → '빠르게'에 가까운 판자 → 정확만 있는 판자 (주인공 할 일이 없을 때만 맨 위)
+  const mx = K.mx || {}, now = Date.now();
+  const pickD = Object.entries(mx).filter(([c, m]) => byId[c] && m.tier === 2 && now - m.t2 >= 3 * KS.DAY)[0]
+    || Object.entries(mx).filter(([c, m]) => byId[c] && m.tier === 1 && m.best && m.best.med != null).sort((a, b) => a[1].best.med / target(a[0]) - b[1].best.med / target(b[0]))[0]
+    || Object.entries(mx).filter(([c, m]) => byId[c] && m.tier === 1)[0];
+  if (pickD) { const [c, m] = pickD; out.push({ kind: 'drill', c, pri: !out.length, title: `다듬기 — ${kidName(c)}`, sub: `다음 표: ${nextGoal(m, c)}`, href: `#/drill/${c}` }); }
   if (K.lastPrep && K.lastPrep.why === 'budget' && !out.some((x) => x.kind === 'prep')) out.push({ kind: 'prep', unit: K.lastPrep.unit, pri: !out.length, title: '이어서 찾기', sub: `${unitLabel(K.lastPrep.unit)} — 지난번에 멈춘 곳부터`, href: `#/prep/${K.lastPrep.unit}` });
   return out;
 }
@@ -73,7 +80,7 @@ export async function homeView(root) {
     const P = prepPlan(unit);
     const show = new Set(P.pre);
     rep.start.forEach((s) => { if (P.below.includes(s.c)) show.add(s.c); });
-    planks = [...show].filter((c) => LES(c)).sort(byGrade).map((c) => ({ c, st: rep.L[c] ? rep.L[c].st : 'none', label: kidName(c) }));
+    planks = [...show].filter((c) => LES(c)).sort(byGrade).map((c) => ({ c, st: rep.L[c] ? rep.L[c].st : 'none', tier: K.mx && K.mx[c] ? K.mx[c].tier : 0, label: kidName(c) + (K.mx && K.mx[c] && K.mx[c].tier ? ` (${TIER.slice(1, K.mx[c].tier + 1).join(' · ')})` : '') }));
   }
   const fixedN = Object.keys(K.fixed || {}).length;
   root.innerHTML = `
@@ -82,8 +89,11 @@ export async function homeView(root) {
       ${ok ? '' : '<p class="warn small">서버에 닿지 않아 이 기기에 저장된 것만 보여요. 푼 것은 이 기기에 모았다가 나중에 보내요.</p>'}
     </div>
     ${unit ? `<div class="card"><h2>내 수 다리 <small>${esc(unitLabel(unit))}로 가는 다리</small></h2>${bridgeSVG(planks, { goal: unitLabel(unit) })}
-      <div class="legend"><span><i style="background:#c99a68"></i>튼튼</span><span><i style="background:#efd6a8"></i>흔들</span><span><i style="border:2px dashed #b4482b;background:none"></i>고칠 판자</span><span><i style="background:#fff;opacity:.7"></i>아직 안 봄</span></div>
+      <div class="legend"><span><i style="background:#c99a68"></i>튼튼(정확)</span><span><i style="background:#b07f50"></i>못 박은 판자(빠르게)</span><span><i style="background:#c9c4bb"></i>돌 판자(오래)</span><span><i style="background:#efd6a8"></i>흔들</span><span><i style="border:2px dashed #b4482b;background:none"></i>고칠 판자</span><span><i style="background:#fff;opacity:.7"></i>아직 안 봄</span></div>
+      <div class="acts"><a class="btn teal" href="#/stages">스테이지 — 판자 다듬기</a></div>
       <div class="plank-list" style="margin-top:10px">${planks.map((p) => `<span class="pk ${KIND(p.st) === 'ok' ? 'ok' : KIND(p.st) === 'gap' ? 'fix' : KIND(p.st)}">${esc(p.label)}</span>`).join('')}</div></div>` : ''}
+    <div class="card"><h2>내 스테이지 <small>판자 하나 = 스테이지 하나 · 정확 → 빠르게 → 오래</small></h2>${(() => { const xs = Object.values(K.mx || {}); const n = (t) => xs.filter((m) => m.tier >= t).length; return xs.length ? `<p>정확 <b>${n(1)}</b> · 빠르게 <b>${n(2)}</b> · 오래 <b>${n(3)}</b> <span class="muted small">— 표를 모으면 판자가 나무 → 못 박은 판자 → 돌 판자로 바뀌어요</span></p>` : '<p class="muted">판자를 고치거나 준비 다리에서 셋 다 맞히면 스테이지가 생겨요. 한 번 깨고 끝이 아니라 더 정확하고 빠르게 다듬어요.</p>'; })()}
+      <div class="acts"><a class="btn teal" href="#/stages">스테이지 보기</a></div></div>
     <div class="card"><h2>내 짐작 견주기</h2>${cal.n ? `<p>풀기 전에 고른 짐작이 결과와 맞은 정도: <b>${Math.round(cal.match * 100)}%</b> <span class="muted small">(${cal.n}문제)</span></p>
       ${sw ? `<p>'자신 있어요'라고 했는데 틀린 문제가 <b>${sw}개</b> 있어요. 이게 가장 중요한 신호예요 — 그 판자부터 다시 봐요.</p>` : '<p>\'자신 있어요\'라고 한 문제는 다 맞았어요. 내 짐작을 믿어도 돼요.</p>'}` : '<p class="muted">문제를 풀 때마다 먼저 짐작을 골라요. 짐작이 결과와 점점 맞아 가는 것도 실력이 느는 거예요.</p>'}
       ${fixedN ? `<p>내가 고친 판자: <b>${fixedN}개</b> — ${Object.keys(K.fixed).map((c) => esc(kidName(c))).join(', ')}</p>` : ''}</div>
@@ -137,6 +147,10 @@ export function prepView(root, unit) {
     const sum = summary(S);
     K.lastPrep = { unit, why: S.why, t: Date.now() };
     if (sum.shaky.length) { K.firm = K.firm || {}; sum.shaky.forEach((c) => (K.firm[c] = Date.now())); }
+    K.mx = K.mx || {};
+    const mine = {}; for (const sh of S.sheets) for (const it of sh.items) { const r = S.res[sh.id].me.it[it.k]; if (!r) continue; const x = (mine[it.c] = mine[it.c] || { n: 0, ok: 0 }); x.n++; if (r.s === 'ok') x.ok++; }
+    const won = Object.entries(mine).filter(([c, x]) => x.n >= 3 && x.ok === x.n && !(K.mx[c] && K.mx[c].tier >= 1)).map(([c]) => c);
+    won.forEach((c) => grantAccurate(K.mx, c)); if (won.length) KS.pushMastery(me, K);
     KS.save(me, K); KS.pushSummary(me, K);
     KS.setNow(me, { mode: 'home' });
     lsDel(SK);
@@ -229,12 +243,12 @@ export function fixView(root, c) {
     KS.addSheet(me, K, F.check, F.R, F.conf, F.ms);
     const now = Date.now();
     const okN = Object.values(F.R.it).filter((x) => x.s === 'ok').length;
-    if (F.passed) { K.fixed = K.fixed || {}; K.fixed[c] = now; K.rv[c] = { n: 0, due: now + KS.REVIEW_DAYS[0] * KS.DAY, t: now }; if (K.help) delete K.help[c]; if (K.firm) delete K.firm[c]; }
+    if (F.passed) { K.mx = K.mx || {}; grantAccurate(K.mx, c); KS.pushMastery(me, K); K.fixed = K.fixed || {}; K.fixed[c] = now; K.rv[c] = { n: 0, due: now + KS.REVIEW_DAYS[0] * KS.DAY, t: now }; if (K.help) delete K.help[c]; if (K.firm) delete K.firm[c]; }
     else { K.help = K.help || {}; K.help[c] = now; }
     KS.save(me, K); KS.setReview(me, K); KS.pushSummary(me, K); KS.setNow(me, { mode: 'home' });
     const was = before && before.tot ? `처음엔 ${before.ok}/${before.tot} → 지금 ${okN}/${F.check.items.length}` : `${okN}/${F.check.items.length}`;
     shell(F.passed ? say('cheer', `판자를 고쳤어요! <b>${esc(kidName(c))}</b> — ${was}.<br>1일 · 3일 · 7일 뒤에 다시 보면 오래 튼튼해요.`) : say('think', `아직 조금 흔들려요(${okN}/${F.check.items.length}). 괜찮아요 — 선생님과 함께 한 번 더 봐요.`),
-      `<div class="acts"><a class="btn pri big" href="#/me">내 수 다리로</a></div>`);
+      `<div class="acts"><a class="btn pri big" href="#/me">내 수 다리로</a>${F.passed ? `<a class="btn big" href="#/drill/${c}">이어서 다듬기 — '빠르게' 표</a>` : ''}</div>`);
   }
   function route() { ({ show, together, solo, check, done })[F.phase](); }
   route();

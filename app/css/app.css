@@ -49,6 +49,17 @@ button.link{border:0;background:none;color:var(--acc);padding:0;min-height:0;tex
 .steps{list-style:none;padding:0;margin:10px 0 0;display:flex;flex-direction:column;gap:8px}.steps li{border:1.5px solid var(--line);border-radius:14px;padding:8px 12px;background:#fff}.steps li .why{display:block;color:var(--mute);font-size:15px}.steps li .math{font-size:clamp(22px,3.6vw,30px)}.steps li.now{border-color:var(--teal);box-shadow:0 0 0 3px var(--teal2)}.steps li.miss{border-color:#d98b74;background:#fdf1ec}
 /* 자릿값 모형 */
 .model{border:1.5px solid var(--line);border-radius:14px;padding:8px 12px 4px;background:#fffdf6;margin:12px 0}.model p{margin:0 0 6px;font-size:16px}
+/* 스테이지 · 다듬기 */
+.stages{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.stage{display:flex;align-items:center;gap:12px;border:2px solid var(--line);border-radius:16px;padding:10px 12px;background:#fff}.stage.gap{border-color:#e3b19f;background:#fdf7f4}
+.stage .no{flex:none;width:30px;height:30px;border-radius:50%;background:var(--teal2);color:var(--teal);font-weight:800;display:flex;align-items:center;justify-content:center}
+.stage .st-b{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.stage .st-b b{font-size:17px}.stage .btn{flex:none}
+.marks{display:inline-flex;gap:4px;flex-wrap:wrap}.marks i{font-style:normal;font-size:12px;font-weight:700;border:1.5px solid #d9c7ad;border-radius:999px;padding:0 8px;color:#a59a8f;background:#fff}.marks i.on{background:var(--sun);border-color:#c99a30;color:var(--ink)}
+.clock{display:flex;justify-content:flex-end;font-variant-numeric:tabular-nums;font-size:18px;font-weight:700;margin:-6px 0 6px}.clock .muted{font-weight:400;font-size:15px}
+.drill-res{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:6px 0 4px}.drill-res p{margin:4px 0}
+.runs{width:100%;max-width:440px;height:auto;display:block;border:1px solid var(--line);border-radius:12px;background:#fff}
+.c-t2{background:#b9dcb0}.c-t3{background:#d7d3cb}
+@media (max-width:640px){.stage{flex-wrap:wrap}.stage .btn{width:100%}}
 /* 수 다리 */
 .bridge{width:100%;height:auto;display:block}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13.5px;color:var(--mute);margin-top:6px}.legend i{display:inline-block;width:18px;height:10px;border-radius:2px;margin-right:4px;vertical-align:middle;border:1.5px solid var(--wood2)}
