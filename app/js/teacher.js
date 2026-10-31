@@ -66,7 +66,8 @@ export function teacherHome(root) {
     <li><b>다시 보기</b> — 고친 판자는 1 · 3 · 7일 뒤 섞어서 다시 풀어요.</li></ol></div>`;
   const bk = root.querySelector('#bk');
   if (bk) bk.addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify({ kind: 'tuntun-teacher', v: 1, at: Date.now(), classes: tget().classes }, null, 1)], { type: 'application/json' });
+    const local = {}; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (/^tt\.(note|paper)\.[A-Z0-9]{6}(\.\d{1,3})?$/.test(k)) local[k] = lsGet(k, null); } } catch (e) { /* */ }   /* 이 기기에만 둔 것(지도 메모 글 · 종이 번호 맞춤)도 같이 */
+    const blob = new Blob([JSON.stringify({ kind: 'tuntun-teacher', v: 1, at: Date.now(), classes: tget().classes, local }, null, 1)], { type: 'application/json' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `튼튼수다리_반정보_${new Date().toISOString().slice(0, 10)}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   });
   root.querySelector('#rs').addEventListener('change', async (e) => {
@@ -76,6 +77,7 @@ export function teacherHome(root) {
       if (!o || o.kind !== 'tuntun-teacher' || typeof o.classes !== 'object') throw new Error('튼튼 수 다리 반 정보 파일이 아니에요');
       const X = tget(); let n = 0;
       for (const [C, x] of Object.entries(o.classes)) { if (!/^[A-HJ-NP-Z2-9]{6}$/.test(C) || !x || typeof x.T !== 'string') continue; X.classes[C] = { ...(X.classes[C] || {}), ...x, names: { ...((X.classes[C] || {}).names || {}), ...(x.names || {}) } }; n++; }
+      for (const [k, v] of Object.entries(o.local && typeof o.local === 'object' ? o.local : {})) if (/^tt\.(note|paper)\.[A-Z0-9]{6}(\.\d{1,3})?$/.test(k) && v && typeof v === 'object') lsSet(k, { ...(lsGet(k, {}) || {}), ...v });
       tset(X); msg.textContent = `반 ${n}개를 불러왔어요.`; setTimeout(() => teacherHome(root), 800);
     } catch (err) { msg.textContent = `불러오지 못했어요: ${err.message}`; }
   });
