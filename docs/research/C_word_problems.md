@@ -68,4 +68,8 @@
 28. White, A. L. (2009). A revaluation of Newman's error analysis. MAV 2009 연차 학술대회 발표집, 249–257. https://www.mav.vic.edu.au/Tenant/C0000019/00000001/downloads/Resources/annual-conferences/2009/08White.pdf (Clements 1980 수치 포함)
 29. Bell, A., Fischbein, E., & Greer, B. (1984). Choice of operation in verbal arithmetic problems: The effects of number size, problem structure and context. *Educational Studies in Mathematics*, 15, 129–147. (서지·2차 요약만)
 
+30. Buzick, H., & Stone, E. (2014). A meta-analysis of research on the read aloud accommodation. *Educational Measurement: Issues and Practice*, 33(3), 17–30. 읽기 시험 +0.56 SD · 수학 시험 +0.13 SD(평균) — https://apps.asha.org/EvidenceMaps/Articles/ArticleSummary/527e5ed2-1fd9-4abb-97fe-a9e7f93978d9 (요약으로 확인)
+31. Elbaum, B. (2007). Effects of an oral testing accommodation on the mathematics performance of secondary students with and without learning disabilities. *J Spec Educ*. 앞선 연구와 합치면 초등에선 학습 어려움 아이가 더 득을 봄 — https://scholarship.miami.edu/discovery/fulldisplay/alma991031559724202976/01UOML_INST:ResearchRepository (기관 목록 요약으로 확인)
+  → 쓰임(10-31): 이야기 다리 '읽어 주기'는 고르는 단추로만(모두에게 켜지 않음 · 효과 작음 · 필요한 아이에게)
+
 확인 못 해 뺀 것: Peltier & Vannest(2017) 메타분석(찾지 못함), Fuchs 2004·2008 개별 효과 크기 원문 수치, 막대 모델 무작위 대조 효과 크기.
