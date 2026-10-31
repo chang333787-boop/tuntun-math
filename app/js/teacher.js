@@ -20,6 +20,7 @@ import { TOOLS, CARD_TOOL } from './tools.js';
 import { KIDSAY } from './fix.js';
 import { weeksOf, weekChart, weekTrend, weekKey, lastLine } from './weekcore.js';
 import { packetOf, promptOf } from './copilot.js';
+import { qrSVG } from './qr.js';
 import { TYPES } from '../../engine/schema.js';
 import { planOf, probOf, EASY as STORY_EASY } from './storylog.js';
 import { frameSVG } from './story.js';
@@ -151,6 +152,7 @@ export function cardsView(root, C) {
       <p class="small muted">${esc(url)}#/t/open 에서 이 둘을 쓰면 다른 기기에서도 반을 열 수 있어요.</p></div>
     <div class="cards">${Array.from({ length: K.n }, (_, i) => i + 1).map((no) => `<div class="kcard"><div style="display:flex;gap:8px;align-items:center">${mascot('hi', 40)}<b>튼튼 수 다리</b></div>
       <p style="margin:6px 0 0">반 코드 <span class="code">${esc(C)}</span></p><p style="margin:0">번호 <span class="no">${no}</span> · 핀 <span class="code">${esc(K.pins[no] || '')}</span></p>
+      <div class="kq">${qrSVG(`${url}#/join?c=${C}&n=${no}`, { px: 96 })}<p class="small muted">크롬북 카메라로 비추면 반 코드 · 번호가 채워져요. 핀만 쳐요.</p></div>
       <p class="small muted" style="margin:4px 0 0;word-break:break-all">${esc(url)}</p><p class="small" style="margin:6px 0 0">이름: ____________</p></div>`).join('')}</div>`;
 }
 
@@ -169,7 +171,7 @@ function normSt(st) {
   if (!st || typeof st !== 'object') return null;
   const L = {}; for (const [c, v] of Object.entries(obj(st.L))) if (LES(c) && typeof v === 'string' && ST[v]) L[c] = v;
   const num = (o) => Object.fromEntries(Object.entries(obj(o)).filter(([c, v]) => LES(c) && Number.isFinite(Number(v))).map(([c, v]) => [c, Number(v)]));
-  return { L, start: arr(st.start), below: arr(st.below), under: arr(st.under), sw: num(st.sw), fixed: num(st.fixed), help: num(st.help), due: arr(st.due), t: Number(st.t) || 0, last: Number(st.last) || 0, cal: obj(st.cal), rush: Number(st.rush) || 0, mx: num(st.mx), mis: Object.fromEntries(Object.entries(obj(st.mis)).filter(([k, v]) => misById[k] && (v === 's' || v === 'm' || v === 'r'))), story: Object.fromEntries(Object.entries(obj(st.story)).filter(([k, v]) => /^[\w가-힣 ·]{1,24}$/.test(k) && v && typeof v === 'object').map(([k, v]) => [k, { n: Number(v.n) || 0, type: Number(v.type) || 0, frame: Number(v.frame) || 0, eq: Number(v.eq) || 0, ans: Number(v.ans) || 0 }])), tools: Object.fromEntries(Object.entries(obj(st.tools)).filter(([k, v]) => /^[a-z]+$/.test(k) && v && typeof v === 'object').map(([k, v]) => [k, { self: Number(v.self) || 0 }])), jog: Array.isArray(st.jog) ? st.jog.filter((d) => typeof d === 'string' && /^\d{4}-\d\d-\d\d$/.test(d)) : [], wk: Array.isArray(st.wk) ? st.wk.filter((a) => Array.isArray(a) && /^\d{4}-\d\d-\d\d$/.test(a[0]) && Number.isFinite(Number(a[1])) && Number(a[2]) > 0).map((a) => ({ wk: a[0], ok: Number(a[1]), n: Number(a[2]), term: typeof a[3] === 'string' ? a[3] : null })).slice(-12) : [] };
+  return { sw14: st.sw14 ? num(st.sw14) : null, rush14: Number.isFinite(Number(st.rush14)) && st.rush14 != null ? Number(st.rush14) : null, prep: st.prep && typeof st.prep === 'object' && typeof st.prep.u === 'string' ? { u: st.prep.u, why: String(st.prep.why || ''), t: Number(st.prep.t) || 0 } : null, L, start: arr(st.start), below: arr(st.below), under: arr(st.under), sw: num(st.sw), fixed: num(st.fixed), help: num(st.help), due: arr(st.due), t: Number(st.t) || 0, last: Number(st.last) || 0, cal: obj(st.cal), rush: Number(st.rush) || 0, mx: num(st.mx), mis: Object.fromEntries(Object.entries(obj(st.mis)).filter(([k, v]) => misById[k] && (v === 's' || v === 'm' || v === 'r'))), story: Object.fromEntries(Object.entries(obj(st.story)).filter(([k, v]) => /^[\w가-힣 ·]{1,24}$/.test(k) && v && typeof v === 'object').map(([k, v]) => [k, { n: Number(v.n) || 0, type: Number(v.type) || 0, frame: Number(v.frame) || 0, eq: Number(v.eq) || 0, ans: Number(v.ans) || 0 }])), tools: Object.fromEntries(Object.entries(obj(st.tools)).filter(([k, v]) => /^[a-z]+$/.test(k) && v && typeof v === 'object').map(([k, v]) => [k, { self: Number(v.self) || 0 }])), jog: Array.isArray(st.jog) ? st.jog.filter((d) => typeof d === 'string' && /^\d{4}-\d\d-\d\d$/.test(d)) : [], wk: Array.isArray(st.wk) ? st.wk.filter((a) => Array.isArray(a) && /^\d{4}-\d\d-\d\d$/.test(a[0]) && Number.isFinite(Number(a[1])) && Number(a[2]) > 0).map((a) => ({ wk: a[0], ok: Number(a[1]), n: Number(a[2]), term: typeof a[3] === 'string' ? a[3] : null })).slice(-12) : [] };
 }
 const normNow = (n) => (n && typeof n === 'object' ? { mode: String(n.mode || ''), c: typeof n.c === 'string' ? n.c : '', n: Number(n.n) || 0, t: Number(n.t) || 0 } : null);
 // 아이 요약 모으기(8개씩 동시에) — 열린 연결 없이 짧은 요청만
@@ -213,9 +215,11 @@ export function classView(root, C) {
     rows.forEach((no) => { const st = S[no] && S[no].st; if (st) st.start.forEach((c) => (groups[c] = groups[c] || []).push(no)); });
     const glist = Object.entries(groups).filter(([, v]) => v.length >= 2).sort((a, b) => b[1].length - a[1].length);
     // 먼저 볼 아이 — 고치기를 해도 흔들림 · 막힌 칸이 많음(깊은 결손 — 자동 처방보다 선생님 먼저 [A-R27]) · 자신 있었는데 틀림 [D-1]
-    const first = rows.map((no) => { const st = S[no] && S[no].st; if (!st) return null; const why = []; const help = Object.keys(st.help || {}); if (help.length) why.push(`고치고도 흔들림: ${help.map(lessonName).join(', ')}`); const deep = st.start.length + st.under.length; if (deep >= 4) why.push(`막힌 칸 ${deep}개`); const sw = Object.values(st.sw || {}).reduce((a, b) => a + b, 0); if (sw >= 3) why.push(`자신 있었는데 틀림 ${sw}문제`); if (st.rush >= 2) why.push(`2초 안에 찍기 ${st.rush}번(결과를 그대로 믿기 어려워요)`); const wl = lastLine(st.wk || []); if (weekTrend(wl) === 'down') why.push(`이번 주 점검 선이 내려감(${wl.slice(-3).map((v) => Math.round((v.ok / v.n) * 10)).join('→')}점)`); return why.length ? { no, why } : null; }).filter(Boolean);
+    const first = rows.map((no) => { const st = S[no] && S[no].st; if (!st) return null; const why = []; const help = Object.keys(st.help || {}); if (help.length) why.push(`고치고도 흔들림: ${help.map(lessonName).join(', ')}`); const deep = st.start.length + st.under.length; if (deep >= 4) why.push(`막힌 칸 ${deep}개`); const sw = Object.values((st.sw14 || st.sw) || {}).reduce((a, b) => a + b, 0), rush = st.rush14 != null ? st.rush14 : st.rush; if (sw >= 3) why.push(`자신 있었는데 틀림 ${sw}문제(최근 2주)`); if (rush >= 2) why.push(`2초 안에 찍기 ${rush}번(최근 2주 · 결과를 그대로 믿기 어려워요)`); const stuckN = Object.entries(st.L).filter(([c, v]) => v === 'stuck' && P.below.includes(c)).length; if (!st.start.some((c) => P.below.includes(c)) && stuckN >= 3) why.push(`막힌 칸 ${stuckN}개인데 고칠 판자를 아직 못 찾음 — 같이 봐 주세요`); const wl = lastLine(st.wk || []); if (weekTrend(wl) === 'down') why.push(`이번 주 점검 선이 내려감(${wl.slice(-3).map((v) => Math.round((v.ok / v.n) * 10)).join('→')}점)`); return why.length ? { no, why } : null; }).filter(Boolean);
     const seen = rows.filter((no) => S[no] && S[no].st).length;
     const uName = unitLabel(unit);
+    /* 다시 그려도 선생님이 보던 것은 그대로 — 열어 둔 접힘 · 표 가로 스크롤 · 화면 높이(15초마다 새로 볼 때 닫히고 처음으로 돌아가던 것 · 혹평 10-31) */
+    const keep = { open: [...root.querySelectorAll('details')].map((d) => d.open), sx: (root.querySelector('.ctab') || {}).scrollLeft || 0, y: window.scrollY };
     root.innerHTML = `<div class="card no-print"><h2>${esc(C)} <small>${esc(gl(K.g))} · ${K.n}명 · 기록 있는 아이 ${seen}명</small></h2>
       ${intro('반 전체를 한눈에 보는 화면이에요. 오늘 배울 단원을 고르고 <b>오늘 단원으로 열기</b>를 누르면, 아이들 화면 맨 위에 그 단원 준비 문제가 떠요. 아이들 기록은 15초마다 저절로 새로 들어와요.')}
       <div class="acts"><select id="u" class="sel">${units.map((u) => `<option value="${u.id}" ${u.id === unit ? 'selected' : ''}>${esc(gl(u.g))} · ${esc(u.nm)}</option>`).join('')}</select>
@@ -223,7 +227,31 @@ export function classView(root, C) {
       <div class="acts sub"><a class="btn" href="#/t/c/${C}/cards">아이 카드 인쇄</a><a class="btn" href="#/t/c/${C}/names">이름 적기</a><a class="btn" href="#/t/guide">한 장 안내</a></div>
       ${K.today ? `<p class="small">지금 열린 단원: <b>${esc(unitLabel(K.today.unit))}</b> <span class="muted">(${new Date(K.today.t).toLocaleString('ko-KR')}에 열었어요)</span></p>` : `<p class="small muted">아이 주소: ${esc(appURL())}</p>`}
       <p class="qmsg tight" id="msg"></p></div>
+    ${(() => { const today = K.today && K.today.unit === unit ? K.today : null, fresh = (n) => n && n.t && Date.now() - n.t < 3 * 60000;
+      const MODE = { prep: '준비 다리', fix: '고치는 중', drill: '다듬기', run: '구보', back: '거꾸로 찾기', story: '이야기 다리', week: '이번 주 점검', review: '다시 보기' };
+      const g = { out: [], in: [], doing: [], done: [], fix: [] };
+      rows.forEach((no) => { const x = S[no] || {}, st = x.st, n = x.now;
+        if (!st && !fresh(n)) return g.out.push(no);
+        if (fresh(n) && n.mode && n.mode !== 'home') return g.doing.push([no, MODE[n.mode] || n.mode]);
+        const done = st && st.prep && today && st.prep.u === unit && st.prep.t >= today.t;
+        if (done && st.start.some((c) => P.below.includes(c))) return g.fix.push(no);
+        if (done) return g.done.push(no);
+        g.in.push(no); });
+      const names = (xs) => xs.map((no) => `<a href="#/t/c/${C}/k/${no}">${esc(nm(K, no))}</a>`).join(' ');
+      return `<div class="card strip"><h2>지금 반 <small>${today ? `${esc(uName)} — ${new Date(today.t).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}에 열었어요` : '오늘 단원을 열면 준비를 끝낸 아이가 보여요'}</small></h2>
+        <div class="st-row"><span class="st-k">하는 중 <b>${g.doing.length}</b></span><span class="st-v">${g.doing.map(([no, m]) => `<a href="#/t/c/${C}/k/${no}">${esc(nm(K, no))}</a><i>${esc(m)}</i>`).join(' ') || '<span class="muted">없음</span>'}</span></div>
+        ${today ? `<div class="st-row"><span class="st-k">준비 끝 · 고칠 판자 있음 <b>${g.fix.length}</b></span><span class="st-v">${names(g.fix) || '<span class="muted">없음</span>'}</span></div><div class="st-row"><span class="st-k">준비 끝 · 튼튼 <b>${g.done.length}</b></span><span class="st-v">${names(g.done) || '<span class="muted">없음</span>'}</span></div>` : ''}
+        <div class="st-row"><span class="st-k">${today ? '아직 준비 전' : '들어온 적 있음'} <b>${g.in.length}</b></span><span class="st-v">${names(g.in) || '<span class="muted">없음</span>'}</span></div>
+        <div class="st-row"><span class="st-k">안 들어옴 <b>${g.out.length}</b></span><span class="st-v">${names(g.out) || '<span class="muted">없음</span>'}</span></div></div>`; })()}
     ${first.length ? `<div class="card"><h2>먼저 봐 줄 아이</h2>${intro('앱이 혼자 고치기 어려워 보이는 아이예요. 수업 중에 먼저 들러 주세요. 이름을 누르면 자세히 봐요.')}<ul class="who">${first.map((x) => `<li><a href="#/t/c/${C}/k/${x.no}">${esc(nm(K, x.no))}</a><span class="whys">${x.why.map((w) => `<span class="pill">${esc(w)}</span>`).join('')}</span></li>`).join('')}</ul></div>` : ''}
+    <div class="card tablecard"><h2>${esc(uName)}${ro(uName)} 가는 칸 × 아이 <button class="mini" id="tv" type="button">${document.body.classList.contains('tv') ? '작게 보기' : '크게 보기(TV)'}</button></h2>
+      ${intro('세로줄은 오늘 단원에 꼭 필요한 앞 칸이에요. 이름을 누르면 그 아이를 자세히 봐요. 회색 이름 칸은 준비 칸보다 더 아래 칸(아이가 막혔거나 고친 곳)이에요.')}
+      <div class="legend2">${LEGEND.map(([c, s, t]) => `<span><i class="${c}">${s}</i>${t}</span>`).join('')}</div>
+      <div class="ctab"><table><tr><th class="l">아이</th>${cols.map((c) => `<th class="v${P.pre.includes(c) ? '' : ' lo'}" title="${esc(lessonName(c))}"><span>${esc((byId[c] && byId[c].name) || lessonName(c))}</span></th>`).join('')}<th>고칠 판자</th><th>자신 있었는데<br>틀린 문제</th><th>구보<br>(최근 7일)</th><th>지금 하는 것</th></tr>
+      ${rows.map((no) => { const x = S[no] || {}, st = x.st; const sw = st ? Object.values(st.sw || {}).reduce((a, b) => a + b, 0) : 0;
+        return `<tr><td class="l"><a href="#/t/c/${C}/k/${no}">${esc(nm(K, no))}</a></td>${cols.map((c) => { if (!st) return '<td class="c-none">·</td>'; const t = (st.mx || {})[c] || 0; const s = st.start.includes(c) ? ['c-start', '★'] : t >= 3 && st.L[c] === 'ok' ? ['c-t3', '✓'] : t >= 2 && st.L[c] === 'ok' ? ['c-t2', '✓'] : CELL[st.L[c] || 'none']; return `<td class="${s[0]}" title="${esc(lessonName(c))} — ${esc(ST[st.L[c] || 'none'])}${t ? ` · 다듬기 표 ${t}개(${['', '정확', '정확 · 빠르게', '정확 · 빠르게 · 오래'][t]})` : ''}">${s[1]}</td>`; }).join('')}
+        <td style="text-align:left">${st ? st.start.slice(0, 3).map((c) => esc(lessonName(c))).join(', ') : ''}</td><td>${sw || ''}</td><td>${st ? st.jog.filter((d) => Date.now() - new Date(d).getTime() < 7 * 864e5).length || '' : ''}</td><td class="small">${nowText(x.now)}</td></tr>`; }).join('')}</table></div>
+      <p class="small muted">${data ? '15초마다 새로 봐요(이 화면이 열려 있을 때만).' : '불러오는 중…'}</p></div>
     ${(() => { const cnt = {}; rows.forEach((no) => { const st = S[no] && S[no].st; if (st) for (const [id, v] of Object.entries(st.mis || {})) { const e = (cnt[id] = cnt[id] || { s: [], m: [], r: [] }); e[v].push(no); } });
       const list = Object.entries(cnt).filter(([, e]) => e.s.length || e.r.length).sort((a, b) => b[1].s.length - a[1].s.length || b[1].m.length - a[1].m.length).slice(0, 8);
       return list.length ? `<div class="card"><h2>같은 생각끼리</h2>${intro('틀린 칸이 아니라 <b>틀린 까닭</b>이 같은 아이끼리 묶었어요. 2~3명을 모아 <b>이 생각 10분 카드</b>로 함께 짚어 주세요. 누구를 넣고 뺄지는 선생님이 정해요.')}<div class="groups">${list.map(([id, e]) => { const m = misById[id], t = TOOLS[CARD_TOOL[id]]; return `<div class="grp"><b class="g-t">${esc(m.title)}</b><p class="g-p">${esc(whyOf(m))}</p><p class="g-ex">예: ${esc(m.shows)}</p>
@@ -238,14 +266,11 @@ export function classView(root, C) {
       return `<div class="card"><h2>이번 주 점검 — 선이 어디로 가나</h2><p class="small muted">주 1회 섞은 열 문제 — 이번 학기 단원들의 앞 칸(지난 학기까지 배운 것) 전체에서 고르게 뽑아 학기 내내 같은 범위예요. 기초 체력이 느는지 봐요(이번 학기 진도는 형성평가로). 점 다섯부터, 두 주 이어서 같은 쪽일 때만 방향을 말해요(열 문제 한 번은 1~2점씩 흔들려서). 선이 내려가거나 낮게 그대로면, 그 아이에게 하던 방법을 바꿔 볼 때예요.</p><ul>${down.length ? `<li><b>내려가요</b> — ${list(down)}</li>` : ''}${low.length ? `<li><b>낮게 그대로</b> — ${list(low)}</li>` : ''}${up.length ? `<li>올라가요 — ${list(up)}</li>` : ''}<li class="muted">이번 주 아직 — ${not.length ? not.map((x) => esc(nm(K, x.no))).join(', ') : '없음'}</li></ul></div>`; })()}
     <div class="card"><h2>같은 판자끼리</h2>${intro('같은 칸(판자)을 고쳐야 하는 아이끼리예요. <b>10분 소집단 카드</b>로 시범 → 함께 → 혼자 차례로 가르칠 수 있어요.')}
       ${glist.length ? `<div class="groups">${glist.map(([c, nos]) => `<div class="grp"><b class="g-t">${esc(lessonName(c))}</b><p class="g-who">${nos.map((no) => esc(nm(K, no))).join(', ')} <span class="muted">(${nos.length}명)</span></p><div class="acts"><a class="btn teal" href="#/t/c/${C}/g/${encodeURIComponent(c)}">10분 소집단 카드</a></div></div>`).join('')}</div>` : '<p class="muted">아직 같은 판자에 둘 이상 몰린 곳이 없어요.</p>'}</div>
-    <div class="card"><h2>${esc(uName)}${ro(uName)} 가는 칸 × 아이</h2>
-      ${intro('세로줄은 오늘 단원에 꼭 필요한 앞 칸이에요. 이름을 누르면 그 아이를 자세히 봐요. 회색 이름 칸은 준비 칸보다 더 아래 칸(아이가 막혔거나 고친 곳)이에요.')}
-      <div class="legend2">${LEGEND.map(([c, s, t]) => `<span><i class="${c}">${s}</i>${t}</span>`).join('')}</div>
-      <div class="ctab"><table><tr><th class="l">아이</th>${cols.map((c) => `<th class="v${P.pre.includes(c) ? '' : ' lo'}" title="${esc(lessonName(c))}"><span>${esc((byId[c] && byId[c].name) || lessonName(c))}</span></th>`).join('')}<th>고칠 판자</th><th>자신 있었는데<br>틀린 문제</th><th>구보<br>(최근 7일)</th><th>지금 하는 것</th></tr>
-      ${rows.map((no) => { const x = S[no] || {}, st = x.st; const sw = st ? Object.values(st.sw || {}).reduce((a, b) => a + b, 0) : 0;
-        return `<tr><td class="l"><a href="#/t/c/${C}/k/${no}">${esc(nm(K, no))}</a></td>${cols.map((c) => { if (!st) return '<td class="c-none">·</td>'; const t = (st.mx || {})[c] || 0; const s = st.start.includes(c) ? ['c-start', '★'] : t >= 3 && st.L[c] === 'ok' ? ['c-t3', '✓'] : t >= 2 && st.L[c] === 'ok' ? ['c-t2', '✓'] : CELL[st.L[c] || 'none']; return `<td class="${s[0]}" title="${esc(lessonName(c))} — ${esc(ST[st.L[c] || 'none'])}${t ? ` · 다듬기 표 ${t}개(${['', '정확', '정확 · 빠르게', '정확 · 빠르게 · 오래'][t]})` : ''}">${s[1]}</td>`; }).join('')}
-        <td style="text-align:left">${st ? st.start.slice(0, 3).map((c) => esc(lessonName(c))).join(', ') : ''}</td><td>${sw || ''}</td><td>${st ? st.jog.filter((d) => Date.now() - new Date(d).getTime() < 7 * 864e5).length || '' : ''}</td><td class="small">${nowText(x.now)}</td></tr>`; }).join('')}</table></div>
-      <p class="small muted">${data ? '15초마다 새로 봐요(이 화면이 열려 있을 때만).' : '불러오는 중…'}</p></div>`;
+    `;
+    root.querySelectorAll('details').forEach((d, i) => { if (keep.open[i]) d.open = true; });
+    const tab = root.querySelector('.ctab'); if (tab && keep.sx) tab.scrollLeft = keep.sx;
+    if (data) window.scrollTo(0, keep.y);
+    const tv = root.querySelector('#tv'); if (tv) tv.addEventListener('click', () => { document.body.classList.toggle('tv'); render(); });
     root.querySelector('#u').addEventListener('change', (e) => { unit = e.target.value; render(); });
     root.querySelector('#re').addEventListener('click', refresh);
     root.querySelector('#csv').addEventListener('click', () => exportCSV(C, K, S, unit));
@@ -259,10 +284,10 @@ export function classView(root, C) {
     try { await db.patch('', up); const X = tget(); X.classes[C].today = { unit, t }; tset(X); Object.assign(K, X.classes[C]); render(); root.querySelector('#msg').textContent = '열었어요! 아이들이 새로고침하면 맨 위에 떠요.'; }
     catch (e) { msg.textContent = `열지 못했어요: ${e.message}`; }
   }
-  async function refresh() { if (!alive) return; data = await pullAll(C, K); if (alive) render(); }
+  async function refresh() { if (!alive) return; data = await pullAll(C, K); if (!alive) return; const a = document.activeElement; if (a && root.contains(a) && /SELECT|INPUT|TEXTAREA/.test(a.tagName)) return; render(); }   /* 고르는 중엔 다시 그리지 않음 */
   render(); refresh();
   timer = setInterval(() => { if (document.visibilityState === 'visible') refresh(); }, 15000);
-  return () => { alive = false; clearInterval(timer); };
+  return () => { alive = false; clearInterval(timer); document.body.classList.remove('tv'); };
 }
 function nowText(n) {
   if (!n || !n.t) return '';

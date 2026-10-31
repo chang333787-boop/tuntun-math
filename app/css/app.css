@@ -168,3 +168,9 @@ b.q{font-weight:800;border:1.5px dashed var(--ink);border-radius:4px;padding:0 4
 .tcard .sbf{margin:6px 0}.tcard .sbf svg{display:block;width:100%;max-width:330px;height:auto}
 .more{margin-top:8px}.more summary{cursor:pointer;color:var(--teal);font-weight:700;padding:6px 2px}.more .todo{margin-top:8px}
 button:focus-visible,.btn:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.strip .st-row{display:flex;gap:10px;align-items:baseline;padding:5px 0;border-top:1px dashed var(--line)}.strip .st-row:first-of-type{border-top:0}.strip .st-k{flex:0 0 190px;font-size:14px;color:var(--mute)}.strip .st-k b{color:var(--ink);font-size:17px;margin-left:4px}.strip .st-v{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:15px}.strip .st-v i{font-style:normal;font-size:12px;color:var(--teal);margin-left:3px}
+button.mini{min-height:0;padding:3px 10px;font-size:13px;margin-left:8px;vertical-align:middle;border-radius:999px}
+body.tv main{max-width:none}body.tv .ctab table{font-size:18px}body.tv .ctab td,body.tv .ctab th{padding:7px 9px}body.tv .strip .st-v{font-size:20px}body.tv .card h2{font-size:26px}
+.tablecard .ctab{max-width:100%}
+@media (max-width:640px){.strip .st-row{flex-direction:column;gap:2px}.strip .st-k{flex:none}}
+.kq{display:flex;gap:8px;align-items:center;margin:6px 0 0}.kq svg{flex:0 0 auto}.kq p{margin:0;font-size:12px;line-height:1.35}

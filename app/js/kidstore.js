@@ -110,7 +110,12 @@ export function summaryOf(K) {
   for (const [id, v] of Object.entries(mis)) if (v === 's') K.minds[id] = { s: (K.minds[id] && K.minds[id].s) || now, fixed: 0 };
   for (const [id, x] of Object.entries(K.minds)) if (!mis[id] && x.s && !x.fixed) { x.fixed = now; }
   for (const [id, x] of Object.entries(K.minds)) if (x.fixed && !mis[id]) mis[id] = 'r';
-  return { t: now, last, mis, L, start: rep.start.map((s) => s.c), below: rep.below.map((b) => b.c), under: rep.under.map((u) => u.c), sw: cal.sureWrong, cal: { n: cal.n, m: cal.match }, fixed: K.fixed, due, help: K.help || {}, rush: K.rush || 0, jog: (K.jog || []).slice(-14), tools: K.tools || {}, story: storySum(K), wk: weeksOf(K.recs).slice(-12).map((w) => [w.wk, w.ok, w.n, w.term]), mx: Object.fromEntries(Object.entries(K.mx || {}).filter(([c]) => c !== '_jog' && c !== '_tools').map(([c, x]) => [c, x.tier || 0])) };
+  // 최근 14일 — '먼저 봐 줄 아이'가 쌓이기만 하지 않게(혹평 10-31) · 찍기는 횟수만 있어 늘어난 때를 여기서 적어 둠
+  const sw14 = calOf(K, now - 14 * DAY).sureWrong;
+  if ((K.rush || 0) > (K.rushSeen || 0)) { K.rushLog = [...(K.rushLog || []), ...Array.from({ length: Math.min(20, K.rush - (K.rushSeen || 0)) }, () => now)].slice(-40); K.rushSeen = K.rush; }
+  const rush14 = (K.rushLog || []).filter((t) => now - t < 14 * DAY).length;
+  const prep = K.lastPrep && K.lastPrep.unit ? { u: K.lastPrep.unit, why: K.lastPrep.why || '', t: K.lastPrep.t || 0 } : null;
+  return { t: now, last, mis, L, sw14, rush14, prep, start: rep.start.map((s) => s.c), below: rep.below.map((b) => b.c), under: rep.under.map((u) => u.c), sw: cal.sureWrong, cal: { n: cal.n, m: cal.match }, fixed: K.fixed, due, help: K.help || {}, rush: K.rush || 0, jog: (K.jog || []).slice(-14), tools: K.tools || {}, story: storySum(K), wk: weeksOf(K.recs).slice(-12).map((w) => [w.wk, w.ok, w.n, w.term]), mx: Object.fromEntries(Object.entries(K.mx || {}).filter(([c]) => c !== '_jog' && c !== '_tools').map(([c, x]) => [c, x.tier || 0])) };
 }
 export function pushSummary(me, K) { db.queuePut(`${base(me)}/st`, db.enc(summaryOf(K))); }
 

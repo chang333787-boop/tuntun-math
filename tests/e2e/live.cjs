@@ -80,6 +80,7 @@ const UNIT = '2-2-2', GAP = '2-1-6:3';
   await pg.goto(BASE + `#/t/c/${C}`); await w(3500);
   const head = await pg.textContent('h2 small');
   const row1 = await pg.evaluate(() => { const tr = document.querySelectorAll('.ctab tr')[1]; return tr ? [...tr.children].slice(-3).map((x) => x.textContent).join(' | ') : ''; });
+  const strip = await pg.evaluate(() => { const c = document.querySelector('.strip'); return c ? [...c.querySelectorAll('.st-k')].map((x) => x.textContent.replace(/\s+/g, ' ').trim()).join(' | ') : null; });
   const wkPanel = await pg.evaluate(() => [...document.querySelectorAll('.card h2')].some((h) => h.textContent.includes('선이 어디로 가나')));
   if (process.env.SHOT) await pg.screenshot({ path: process.env.SHOT });
   // 종이 결과 가져오기 — 같은 브라우저의 종이 앱 기록(가짜 한 장)을 2번에 넣기 → 2번 자세히에 묶음이 보임
@@ -109,6 +110,6 @@ const UNIT = '2-2-2', GAP = '2-1-6:3';
   const scard = { title: (await pg.textContent('h2')).trim().slice(0, 30), frames: (await pg.$$('.sbf svg')).length };
   await pg.goto(BASE + '#/t/letter'); await w(800);
   const letter = (await pg.textContent('h2')).trim();
-  console.log(JSON.stringify({ C, opened, story, scard, letter, todo: todo.slice(0, 60), items: n, end: end.trim(), drill, back, weekTodo, week, head, row1, wkPanel, paper: { psel, pmsg, kid2, moved2, moved1 }, ai, errs }, null, 1));
+  console.log(JSON.stringify({ C, opened, story, scard, letter, todo: todo.slice(0, 60), items: n, end: end.trim(), drill, back, weekTodo, week, head, row1, strip, wkPanel, paper: { psel, pmsg, kid2, moved2, moved1 }, ai, errs }, null, 1));
   await b.close();
 })().catch((e) => { console.error('ERR', e.message); process.exit(1); });
