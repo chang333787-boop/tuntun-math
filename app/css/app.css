@@ -174,3 +174,4 @@ body.tv main{max-width:none}body.tv .ctab table{font-size:18px}body.tv .ctab td,
 .tablecard .ctab{max-width:100%}
 @media (max-width:640px){.strip .st-row{flex-direction:column;gap:2px}.strip .st-k{flex:none}}
 .kq{display:flex;gap:8px;align-items:center;margin:6px 0 0}.kq svg{flex:0 0 auto}.kq p{margin:0;font-size:12px;line-height:1.35}
+.ctab th.v span{max-height:150px;overflow:hidden;text-overflow:ellipsis}body.tv .ctab th.v span{font-size:15px;max-height:200px}   /* 칸 이름이 길면 줄임(마우스를 올리면 전체 · title) */
