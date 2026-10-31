@@ -29,10 +29,15 @@ export function queuePut(path, v) {
   lsSet(Q, q);
   return flush();
 }
+//  ⚠️ 줄이 비어 있으면 async 함수가 첫 await 없이 끝난다 — 그 안에서 flushing = null을 하면 바깥 대입보다 먼저 돌아
+//  flushing이 끝난 약속으로 영영 남아 그 뒤로 아무것도 안 보냈다(10-31 배포 주소 시험에서 찾음) → 대입 뒤 finally로 비움
 let flushing = null;
 export function flush() {
   if (flushing) return flushing;
-  flushing = (async () => {
+  flushing = sendAll().finally(() => { flushing = null; });
+  return flushing;
+}
+async function sendAll() {
     for (let guard = 0; guard < 500; guard++) {
       const x = lsGet(Q, [])[0];
       if (!x) break;
@@ -41,10 +46,7 @@ export function flush() {
       if (!drop) break;
       lsSet(Q, lsGet(Q, []).filter((y) => y.id !== x.id && !(y.path === x.path && y.v === x.v && !y.id)));
     }
-    flushing = null;
     return lsGet(Q, []).length;
-  })();
-  return flushing;
 }
 export const pending = () => lsGet(Q, []).length;
 if (typeof window !== 'undefined') { window.addEventListener('online', () => flush()); }

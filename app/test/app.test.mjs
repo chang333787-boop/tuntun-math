@@ -8,6 +8,8 @@ const ok = (c, m) => { if (!c) { fail++; console.log('✗', m); } else console.l
 const sent = [];
 globalThis.fetch = async (url, o) => { await new Promise((r) => setTimeout(r, 20)); sent.push([url.replace(/^.*app\//, ''), o.body]); return { ok: true, status: 200, json: async () => null }; };
 const db = await import('../js/db.js');
+await db.flush();   // 앱 시작처럼 빈 줄로 먼저 — 이것 뒤에도 보내야 함(10-31 배포에서 찾은 멈춤)
+await new Promise((r) => setTimeout(r, 5));
 db.queuePut('k/A/1/0000/r/s1', '"one"');
 db.queuePut('k/A/1/0000/st', '"st1"');
 await new Promise((r) => setTimeout(r, 5));   // s1 보내는 중
