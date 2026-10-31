@@ -8,6 +8,8 @@ import { draw } from './item.js';
 import { plankSVG } from './bridge.js';
 import { TIER, TIER_KID, target, drillN, need, newDrill, drillItem, answerDrill, resultOf, applyRun, nextGoal, elapsed } from './stage.js';
 import { esc, rand } from './local.js';
+import { toolBox } from './tools.js';
+import { itemOf } from '../../paper/js/gen.js';
 import { go, meOf, unitLabel } from './kid.js';
 
 const say = (pose, html, size = 64) => `<div class="say">${mascot(pose, size)}<div class="bub">${html}</div></div>`;
@@ -64,6 +66,7 @@ export function drillView(root, c) {
       // 틀리면 답을 보여 주고(시계는 멈춤) 다음으로
       const box = document.createElement('div'); box.className = 'fb no';
       box.innerHTML = `${a.idk ? '' : '아까워요! '}답은 <b>${esc(r.sol.join(', '))}</b>예요.`;
+      if (!a.idk) { const prev = D.sheet.items[D.i - 1]; try { toolBox(box, { it: itemOf(prev.c, prev.p), vals: a.vals, c, onSelfFix: (t) => KS.selfFix(me, K, t) }); } catch (e) { /* */ } }
       const btn = document.createElement('button'); btn.className = 'pri'; btn.textContent = '다음'; btn.style.marginLeft = '10px'; box.appendChild(btn);
       root.querySelector('.qcard').appendChild(box);
       root.querySelectorAll('.qcard input, .qcard .qact button, .qcard .choices button').forEach((x) => (x.disabled = true));

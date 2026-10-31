@@ -13,6 +13,8 @@ import { grantAccurate, nextGoal, target, TIER } from './stage.js';
 import { lsGet, lsSet, lsDel, esc, rand } from './local.js';
 import { flush } from './db.js';
 import { runPlan, weekHTML, today } from './run.js';
+import { toolFor, toolBox, TOOLS } from './tools.js';
+import { makeItem as mkItem } from '../../engine/lessons/index.js';
 
 export const go = (h) => { location.hash = h; };
 const say = (pose, html, size = 72) => `<div class="say">${mascot(pose, size)}<div class="bub">${html}</div></div>`;
@@ -99,6 +101,7 @@ export async function homeView(root) {
     <div class="card"><h2>내 스테이지 <small>판자 하나 = 스테이지 하나 · 정확 → 빠르게 → 오래</small></h2>${(() => { const xs = Object.values(K.mx || {}); const n = (t) => xs.filter((m) => m.tier >= t).length; return xs.length ? `<p>정확 <b>${n(1)}</b> · 빠르게 <b>${n(2)}</b> · 오래 <b>${n(3)}</b> <span class="muted small">— 표를 모으면 판자가 나무 → 못 박은 판자 → 돌 판자로 바뀌어요</span></p>` : '<p class="muted">판자를 고치거나 준비 다리에서 셋 다 맞히면 스테이지가 생겨요. 한 번 깨고 끝이 아니라 더 정확하고 빠르게 다듬어요.</p>'; })()}
       <p class="small">이번 주 구보 ${weekHTML(K)}</p>
       <div class="acts"><a class="btn teal" href="#/stages">스테이지 보기</a>${runPlan(K).length ? '<a class="btn" href="#/run">오늘의 구보</a>' : ''}</div></div>
+    ${Object.keys(K.tools || {}).length ? `<div class="card"><h2>내 도구함 <small>내 답을 스스로 확인하는 도구</small></h2><div class="plank-list">${Object.entries(K.tools).filter(([t]) => TOOLS[t]).map(([t, x]) => `<span class="pk ok">🔍 ${esc(TOOLS[t].name)}${x.self ? ` · 스스로 고친 ${x.self}번` : ''}</span>`).join('')}</div><p class="small muted">틀렸을 때 '도구로 확인'을 눌러 다시 써 보면, 스스로 고친 횟수가 늘어요.</p></div>` : ''}
     <div class="card"><h2>내 짐작 견주기</h2>${cal.n ? `<p>풀기 전에 고른 짐작이 결과와 맞은 정도: <b>${Math.round(cal.match * 100)}%</b> <span class="muted small">(${cal.n}문제)</span></p>
       ${sw ? `<p>'자신 있어요'라고 했는데 틀린 문제가 <b>${sw}개</b> 있어요. 이게 가장 중요한 신호예요 — 그 판자부터 다시 봐요.</p>` : '<p>\'자신 있어요\'라고 한 문제는 다 맞았어요. 내 짐작을 믿어도 돼요.</p>'}` : '<p class="muted">문제를 풀 때마다 먼저 짐작을 골라요. 짐작이 결과와 점점 맞아 가는 것도 실력이 느는 거예요.</p>'}
       ${fixedN ? `<p>내가 고친 판자: <b>${fixedN}개</b> — ${Object.keys(K.fixed).map((c) => esc(kidName(c))).join(', ')}</p>` : ''}</div>
@@ -230,6 +233,7 @@ export function fixView(root, c) {
     box.className = `fb ${r.ok ? 'ok' : 'no'}`;
     box.innerHTML = r.ok ? '맞았어요! 단계를 차례로 따라 해서 맞혔어요.' : r.msg || `답은 <b>${esc((r.sol || []).join(', '))}</b>예요. ${F.phase === 'solo' && F.reStep ? '어디서 어긋났는지 나눠서 볼까요?' : ''}`;
     const btn = document.createElement('button'); btn.className = 'pri'; btn.textContent = '다음'; btn.style.marginTop = '8px';
+    if (!r.ok && F.phase === 'solo' && F.solo.log.length) { const last = F.solo.log[F.solo.log.length - 1]; try { toolBox(box, { it: mkItem(c, last.p), vals: (last.a || []).map(Number), c, onSelfFix: (t) => KS.selfFix(me, K, t) }); } catch (e) { /* 도구가 없는 문항 */ } }
     box.appendChild(document.createElement('br')); box.appendChild(btn);
     b.appendChild(box);
     b.querySelectorAll('.qcard button, .qcard input').forEach((x) => { if (x !== btn) x.disabled = true; });
@@ -261,12 +265,21 @@ export function fixView(root, c) {
       <button type="button" class="cmpc" data-w="${X.rightFirst ? 1 : 0}"><span class="who2">가 친구</span>${staticHTML(X.it.prompt, A)}</button>
       <button type="button" class="cmpc" data-w="${X.rightFirst ? 0 : 1}"><span class="who2">나 친구</span>${staticHTML(X.it.prompt, B)}</button></div></div>`);
     b.querySelectorAll('.cmpc').forEach((btn) => btn.addEventListener('click', () => why(btn.dataset.w === '1')));
+    // 도구로 확인 — 친구의 틀린 답에 검산 도구를 써 봄(처음 배우는 자리) → 그다음 어디서 어긋났나
+    let T = null; try { T = toolFor({ it: mkItem(X.it.c, X.it.p), vals: X.wrong, c, bug: X.bug }); } catch (e) { T = null; }
     function why(gotIt) {
+      if (T && !why.shown) {
+        why.shown = true;
+        const bt = shell(head(gotIt ? 'cheer' : 'think', `${gotIt ? '맞아요! ' : '다시 봐요 — '}${X.rightFirst ? '나' : '가'} 친구가 쓴 ${esc(X.wrong.join(', '))}이(가) 맞는지 <b>${esc(T.ro)}</b> 확인해 볼까요?<br><span class="small">${esc(T.how)}</span>`), `<div class="qcard"><p class="tcheck">${T.html}</p></div><div class="qact"><button class="pri big" id="n3">그럼 어디서 어긋났을까?</button></div>`);
+        bt.querySelector('#n3').addEventListener('click', () => why(gotIt));
+        return;
+      }
       const b2 = shell(head(gotIt ? 'cheer' : 'think', `${gotIt ? '맞아요! ' : '다시 봐요 — '}맞게 푼 건 ${staticHTML(X.it.prompt, X.it.sol)} 이에요.<br>그럼 <b>${esc(X.wrong.join(', '))}</b>라고 쓴 친구는 <b>어디서 어긋났을까요?</b>`), `<div class="todo">${X.reasons.map((t, i) => `<button type="button" class="item rs" data-i="${i}" style="text-align:left">${esc(t)}</button>`).join('')}</div>`);
       b2.querySelectorAll('.rs').forEach((btn) => btn.addEventListener('click', () => {
         const ok = X.reasons[Number(btn.dataset.i)] === X.right;
         const st = stepsOf({ c: X.it.c, p: X.it.p });
-        shell(head(ok ? 'cheer' : 'point', `${ok ? '맞아요! ' : '아쉬워요 — '}틀린 친구는 <b>${esc(X.right)}</b>. 그래서 ${esc(X.wrong.join(', '))}이(가) 나왔어요.`), `${st.length ? `<p class="small muted">바르게 풀면 이렇게 이어져요</p><ol class="steps">${st.map((x) => stepHTML(x)).join('')}</ol>` : ''}<div class="qact"><button class="pri big" id="n2">이제 혼자 풀어요</button></div>`);
+        if (T) KS.learnTool(me, K, T.tool);
+        shell(head(ok ? 'cheer' : 'point', `${ok ? '맞아요! ' : '아쉬워요 — '}틀린 친구는 <b>${esc(X.right)}</b>. 그래서 ${esc(X.wrong.join(', '))}이(가) 나왔어요.${T ? `<br>🔍 <b>${esc(T.name)}</b> 도구를 내 도구함에 넣었어요 — 내 답도 이렇게 확인해요.` : ''}`), `${st.length ? `<p class="small muted">바르게 풀면 이렇게 이어져요</p><ol class="steps">${st.map((x) => stepHTML(x)).join('')}</ol>` : ''}<div class="qact"><button class="pri big" id="n2">이제 혼자 풀어요</button></div>`);
         root.querySelector('#n2').addEventListener('click', route);
       }));
     }

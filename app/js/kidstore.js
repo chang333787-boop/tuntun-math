@@ -37,7 +37,7 @@ export async function pull(me) {
   try { srv = await db.get(base(me)); } catch (e) { return { K, ok: false, err: e }; }
   if (srv && srv.r) for (const [id, s] of Object.entries(srv.r)) { const o = db.dec(s); if (o && !K.recs[id]) K.recs[id] = o; }
   if (srv && srv.rv) { const rv = db.dec(srv.rv); if (rv) for (const [c, x] of Object.entries(rv)) if (!K.rv[c] || (x.t || 0) > (K.rv[c].t || 0)) K.rv[c] = x; }
-  if (srv && srv.mx) { const mx = db.dec(srv.mx); K.mx = K.mx || {}; if (mx && Array.isArray(mx._jog)) K.jog = [...new Set([...(K.jog || []), ...mx._jog.filter((d) => typeof d === 'string')])].sort().slice(-60); if (mx && typeof mx === 'object') for (const [c, x] of Object.entries(mx)) { if (c === '_jog') continue; const a = K.mx[c]; if (x && (!a || (x.tier || 0) > (a.tier || 0) || ((x.tier || 0) === (a.tier || 0) && (x.runs || []).length > (a.runs || []).length))) K.mx[c] = x; } }
+  if (srv && srv.mx) { const mx = db.dec(srv.mx); K.mx = K.mx || {}; if (mx && Array.isArray(mx._jog)) K.jog = [...new Set([...(K.jog || []), ...mx._jog.filter((d) => typeof d === 'string')])].sort().slice(-60); if (mx && mx._tools && typeof mx._tools === 'object') { K.tools = K.tools || {}; for (const [t, v] of Object.entries(mx._tools)) if (v && (!K.tools[t] || (v.self || 0) > (K.tools[t].self || 0))) K.tools[t] = v; } if (mx && typeof mx === 'object') for (const [c, x] of Object.entries(mx)) { if (c === '_jog' || c === '_tools') continue; const a = K.mx[c]; if (x && (!a || (x.tier || 0) > (a.tier || 0) || ((x.tier || 0) === (a.tier || 0) && (x.runs || []).length > (a.runs || []).length))) K.mx[c] = x; } }
   K.inbox = srv && srv.in ? Object.fromEntries(Object.entries(srv.in).map(([id, s]) => [id, db.dec(s)])) : {};
   save(me, K);
   return { K, ok: true };
@@ -50,7 +50,7 @@ export function addSheet(me, K, sh, R, conf = {}, ms = {}) {
   db.queuePut(`${base(me)}/r/${sh.id}`, db.enc(K.recs[sh.id]));
   pushSummary(me, K);
 }
-export function pushMastery(me, K) { db.queuePut(`${base(me)}/mx`, db.enc({ ...(K.mx || {}), _jog: K.jog || [] })); }   // 스테이지 표 · 내 기록 · 구보한 날(_jog)
+export function pushMastery(me, K) { db.queuePut(`${base(me)}/mx`, db.enc({ ...(K.mx || {}), _jog: K.jog || [], _tools: K.tools || {} })); }   // 스테이지 표 · 내 기록 · 구보한 날(_jog)
 export function setReview(me, K) { save(me, K); db.queuePut(`${base(me)}/rv`, db.enc(K.rv)); }   // 규칙에 rv 칸 있음
 export function setNow(me, now) { db.put(`${base(me)}/now`, db.enc({ ...now, t: Date.now() })).catch(() => {}); }
 
@@ -98,7 +98,7 @@ export function summaryOf(K) {
     for (const h of x.why.sure) for (const m of misFor({ bug: h.id, lesson: x.c })) mis[m.id] = 's';
     for (const h of x.why.maybe) for (const m of misFor({ bug: h.id, lesson: x.c })) if (!mis[m.id]) mis[m.id] = 'm';
   }
-  return { t: now, last, mis, L, start: rep.start.map((s) => s.c), below: rep.below.map((b) => b.c), under: rep.under.map((u) => u.c), sw: cal.sureWrong, cal: { n: cal.n, m: cal.match }, fixed: K.fixed, due, help: K.help || {}, rush: K.rush || 0, jog: (K.jog || []).slice(-14), mx: Object.fromEntries(Object.entries(K.mx || {}).filter(([c]) => c !== '_jog').map(([c, x]) => [c, x.tier || 0])) };
+  return { t: now, last, mis, L, start: rep.start.map((s) => s.c), below: rep.below.map((b) => b.c), under: rep.under.map((u) => u.c), sw: cal.sureWrong, cal: { n: cal.n, m: cal.match }, fixed: K.fixed, due, help: K.help || {}, rush: K.rush || 0, jog: (K.jog || []).slice(-14), tools: K.tools || {}, mx: Object.fromEntries(Object.entries(K.mx || {}).filter(([c]) => c !== '_jog' && c !== '_tools').map(([c, x]) => [c, x.tier || 0])) };
 }
 export function pushSummary(me, K) { db.queuePut(`${base(me)}/st`, db.enc(summaryOf(K))); }
 
@@ -109,3 +109,7 @@ export async function join(C, no, pin) {
   await db.get(`${base(me)}/st`);
   return me;
 }
+
+// 내 도구함 — 배운 도구(t) · 스스로 고친 횟수(self)
+export function learnTool(me, K, tool) { K.tools = K.tools || {}; if (!K.tools[tool]) K.tools[tool] = { t: Date.now(), self: 0 }; save(me, K); pushMastery(me, K); }
+export function selfFix(me, K, tool) { K.tools = K.tools || {}; const x = (K.tools[tool] = K.tools[tool] || { t: Date.now(), self: 0 }); x.self = (x.self || 0) + 1; save(me, K); pushMastery(me, K); }

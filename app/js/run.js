@@ -11,6 +11,7 @@ import { draw } from './item.js';
 import { plankSVG } from './bridge.js';
 import { target, TIER, TIER_KID } from './stage.js';
 import { esc, rand } from './local.js';
+import { toolBox } from './tools.js';
 import { go, meOf } from './kid.js';
 
 const say = (pose, html, size = 64) => `<div class="say">${mascot(pose, size)}<div class="bub">${html}</div></div>`;
@@ -59,6 +60,7 @@ export function runView(root) {
       if (ok) return one();
       const box = document.createElement('div'); box.className = 'fb no';
       box.innerHTML = `답은 <b>${esc(it.snap.sol.join(', '))}</b>예요. 이 판자는 내일 한 번 더 뛰어요.`;
+      if (!a.idk) { try { toolBox(box, { it: itemOf(it.c, it.p), vals: a.vals, c: it.c, onSelfFix: (t) => KS.selfFix(me, K, t) }); } catch (e) { /* */ } }
       const b = document.createElement('button'); b.className = 'pri'; b.textContent = '다음'; b.style.marginLeft = '10px'; box.appendChild(b);
       root.querySelector('.qcard').appendChild(box);
       root.querySelectorAll('.qcard input, .qcard .qact button, .qcard .choices button').forEach((x) => (x.disabled = true));

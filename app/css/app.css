@@ -49,6 +49,8 @@ button.link{border:0;background:none;color:var(--acc);padding:0;min-height:0;tex
 .steps{list-style:none;padding:0;margin:10px 0 0;display:flex;flex-direction:column;gap:8px}.steps li{border:1.5px solid var(--line);border-radius:14px;padding:8px 12px;background:#fff}.steps li .why{display:block;color:var(--mute);font-size:15px}.steps li .math{font-size:clamp(22px,3.6vw,30px)}.steps li.now{border-color:var(--teal);box-shadow:0 0 0 3px var(--teal2)}.steps li.miss{border-color:#d98b74;background:#fdf1ec}
 /* 자릿값 모형 */
 .model{border:1.5px solid var(--line);border-radius:14px;padding:8px 12px 4px;background:#fffdf6;margin:12px 0}.model p{margin:0 0 6px;font-size:16px}
+/* 검산 도구 */
+.toolbox{margin-top:10px;border-top:1.5px dashed var(--line);padding-top:8px}.tbtn{border-color:var(--teal);color:var(--teal);background:#fff}.tcheck{font-size:18px;line-height:1.7}.tcheck svg{color:var(--ink)}.retry{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px}.retry .math{font-size:26px}
 /* 비교하기(아이) */
 .cmp{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}.cmpc{display:flex;flex-direction:column;align-items:flex-start;gap:6px;border:2.5px solid var(--line);border-radius:18px;padding:14px 16px;background:#fff;min-height:110px}.cmpc:hover{border-color:var(--teal)}.cmpc .math{font-size:clamp(24px,4vw,34px)}.who2{font-size:14px;color:var(--mute);font-weight:700}
 .todo button.item{font:inherit;font-weight:600;cursor:pointer;width:100%}
