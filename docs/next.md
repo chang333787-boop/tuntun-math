@@ -56,6 +56,9 @@
 - 아이용 챗봇 X · 교사 확인 뒤에만 아이 · 가정에
 - 서버가 필요함(키를 아이 기기에 두지 않음): Firebase Blaze(쓴 만큼) 또는 Cloudflare Worker(무료 범위) — **선생님 결정**. 그 전엔 노드에서 가짜 반 자료로 프롬프트만 시험
 
+## 진단(현장에서 '기록이 안 보여요' 할 때)
+- 아이 기기 콘솔: `localStorage['tt.queue']`(아직 못 보낸 것) · `localStorage['tt.drop']`(서버 규칙이 거절해 버린 것 20개 · 핀은 가림 · 경로 · 상태 · 길이) — 6만 자(mx) · 3만 자(st) · 8천 자(r) 한도 초과면 400
+
 ## 정리할 것
 - math-gaps/sheets는 tuntun-math/paper로 넘어감(10-31 판정 고침 둘은 tuntun에만) · 앞으로 종이 점검도 tuntun에서
 - RPG 오늘의 수학의 errors.js 고침 반영은 선생님 승인 뒤(배포가 걸린 일)

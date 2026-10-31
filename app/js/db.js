@@ -42,7 +42,7 @@ async function sendAll() {
       const x = lsGet(Q, [])[0];
       if (!x) break;
       let drop = true;
-      try { await put(x.path, x.v); } catch (e) { if (!(e.status === 401 || e.status === 400)) drop = false; }   // 401 · 400 = 규칙이 막은 것(다시 보내도 안 됨) · 그 밖은 끊김 → 다음에
+      try { await put(x.path, x.v); } catch (e) { if (!(e.status === 401 || e.status === 400)) drop = false; else lsSet('tt.drop', [...lsGet('tt.drop', []), { p: String(x.path).replace(/\/\d{4}\//, '/****/'), s: e.status, n: String(x.v || '').length, t: Date.now() }].slice(-20)); }   // 401 · 400 = 규칙이 막은 것(다시 보내도 안 됨 · 버린 것은 tt.drop에 20개까지 — 핀은 가림) · 그 밖은 끊김 → 다음에
       if (!drop) break;
       lsSet(Q, lsGet(Q, []).filter((y) => y.id !== x.id && !(y.path === x.path && y.v === x.v && !y.id)));
     }
