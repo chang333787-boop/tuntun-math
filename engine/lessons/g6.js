@@ -887,14 +887,17 @@ export default {
     },
     {
       id: '6-2-4:6', fam: 'g6_PROPUSE', name: '비례식 활용', kid: '비례식으로 문제 풀기', sec: 40,
-      gen: (r) => until(r, (r) => {
+      gen: (r) => (r.chance(0.15) ? { ctx: 4, k: r.int(0, 2), a: r.int(2, 5), t: r.pick([2, 3, 4, 10, 12, 15]) } : until(r, (r) => {
         const ctx = r.int(0, 3);
         if (ctx === 0) { const a = r.int(2, 5), u = r.pick([100, 150, 200, 250, 300, 400, 500]), x = r.int(2, 12); return { ctx, a, b: a * u, c: x, d: x * u, i: r.int(0, BUY.length - 1) }; }
         if (ctx === 1) { const a = r.int(2, 4), u = 10 * r.int(4, 9), x = r.int(2, 8); return { ctx, a, b: a * u, c: x, d: x * u }; }
         if (ctx === 2) { let p0, q0; do { p0 = r.int(1, 5); q0 = r.int(1, 5); } while (p0 === q0 || gcd(p0, q0) !== 1); const w = r.pick([10, 20, 30, 40, 50, 100]); return { ctx, a: p0, b: q0, c: p0 * w, d: q0 * w }; }
         const a = r.int(1, 4), u = r.pick([50, 100, 200, 250, 500]), x = r.int(2, 12); return { ctx, a, b: a * u, c: x, d: x * u };
-      }, (p) => p.c !== p.a),
-      is: (p) => [0, 1, 2, 3].includes(p.ctx) && p.a * p.d === p.b * p.c, prev: '6-2-4:5', pre: ['6-1-4:3'],
+      }, (p) => p.c !== p.a)),
+      steps: (p) => { const F0 = FAMS.find((f) => f.id === 'g6_PROPUSE'); return p.ctx === 4 || !F0.steps ? [] : F0.steps(p); },
+      make: (p) => (p.ctx === 4 ? nums([[`빨래 한 벌을 널어 두면 마르는 데 ${p.t}시간이 걸려요. 빨래 ${p.a}벌을 한꺼번에 널어 두면 다 마르는 데 몇 시간이 걸릴까요? 답 `, B(0), '시간'], [`달걀 한 개를 삶는 데 ${p.t}분이 걸려요. 달걀 ${p.a}개를 한 냄비에 한꺼번에 삶으면 몇 분이 걸릴까요? 답 `, B(0), '분'], [`노래 한 곡을 혼자 부르는 데 ${p.t}분이 걸려요. ${p.a}명이 함께 같은 노래를 부르면 몇 분이 걸릴까요? 답 `, B(0), '분']][p.k], p.t, { bugs: [{ test: (v) => v[0] === p.t * p.a, name: '비례가 아닌데 비례로 셈 (무엇이든 비례)', to: '6-2-4:4' }, { test: (v) => p.t % p.a === 0 && v[0] === p.t / p.a, name: '비례가 아닌데 거꾸로 비례로 셈', to: '6-2-4:4' }] }) : FAMS.find((f) => f.id === 'g6_PROPUSE').make(p)),
+      is: (p) => p.ctx === 4 || ([0, 1, 2, 3].includes(p.ctx) && p.a * p.d === p.b * p.c), prev: '6-2-4:5', pre: ['6-1-4:3'],
+      // ctx 4: 비례가 아닌 상황(무엇이든 비례로 푸는 과잉 일반화 — 빨래 · 달걀 · 노래) [E4-34][E4-35] — '두 배가 되면 두 배가 되나?'를 먼저 묻게
       hint: '아는 두 양과 구하려는 두 양을 같은 순서로 써서 비례식을 세워요. 3개에 600원이면 5개는 얼마일까요? 3 : 600 = 5 : □라서 □ = 1000!',
     },
     {

@@ -292,12 +292,18 @@ const FAMS = [
           bugs: [{ test: (v) => v[0] === p.n, name: '뛴 횟수를 하나 더 셈 (순서와 뛴 횟수를 헷갈림)', to: '4-1-6:2' }],
         });
       }
+      if (p.v === 'dbl') {
+        const tm = p.s + p.d * (p.m - 1), ans = p.s + p.d * (p.n - 1);
+        return nums([`수의 배열: ${list}, …`, { br: 1 }, `${ORD[p.m]} 수는 ${tm}${P(tm, '이에요', '예요')}. 같은 규칙으로 ${ORD[p.n]} 수는 `, B(0)], ans, {
+          bugs: [{ test: (v) => v[0] === 2 * tm, name: '통째 배로 셈 (비례가 아닌데 두 배)', to: '4-1-6:2' }, { test: (v) => v[0] === p.d * p.n, name: '뛰는 수 × 순서만 (처음 수를 빼먹음)', to: '4-1-6:2' }],
+        });
+      }
       return nums([`수의 배열: ${list}, …`, { br: 1 }, `이 규칙으로 ${ORD[p.n]} 수는 `, B(0)], p.s + p.d * (p.n - 1), {
         bugs: [{ test: (v) => v[0] === p.s + p.d * p.n, name: '뛴 횟수를 하나 더 셈 (순서와 뛴 횟수를 헷갈림)', to: '4-1-6:2' }],
       });
     },
     steps: (p) => {
-      if (p.v === 'nth' || p.v === 'far') return [
+      if (p.v === 'nth' || p.v === 'far' || p.v === 'dbl') return [
         { c: 'MUL', p: { a: p.d, b: p.n - 1 }, why: `첫째 수에서 ${ORD[p.n]} 수까지 ${p.d}씩 몇 번 뛰는지 세어 곱해요.` },
         { c: 'ADD', p: { a: p.s, b: p.d * (p.n - 1) }, why: '첫째 수에 그만큼 더해요.' },
       ];
@@ -815,7 +821,9 @@ const LESSONS = [
   {
     id: '4-1-6:3', fam: 'g4_RULEX', name: '규칙을 식으로', kid: '규칙을 식으로 나타내기', sec: 30,
     gen: (r) => {
-      const v = r.pick(['next', 'nth', 'nth', 'far']);
+      const v = r.pick(['next', 'nth', 'nth', 'far', 'dbl']);
+      // dbl: m째 수를 알려 주고 2m째를 물음 — 비례가 아닌 규칙(처음 수 ≠ 뛰는 수)에서 '통째 배'로 풀면 틀림 [E4-30][E4-34]
+      if (v === 'dbl') { const d = r.int(2, 9); let s0; do { s0 = r.int(1, 12); } while (s0 === d); const m = r.int(4, 6); return { v, op: '+', s: s0, d, n: 2 * m, m }; }
       if (v === 'next') {
         const op = r.pick(['+', '−', '×']);
         if (op === '×') return { v, op, s: r.int(1, 5), d: r.pick([2, 3, 4, 5]) };
@@ -990,6 +998,8 @@ const LESSONS = [
       }
       // 자릿수가 서로 다른(한·두·세 자리) 세 소수 — 자릿수에 끌리면 틀리게
       const ask = r.pick(['max', 'min']), w = r.int(0, 9), t = r.int(1, 8);
+      // 끝 숫자 무시 함정(8.41 · 8.413 · '같아요') — 둘째 자리까지만 보는 아이는 '같아요' [E3-4]
+      if (r.chance(0.15)) { const ab = r.int(11, 98), c3 = r.int(1, 9); return { ask: 'max', trunc: 1, o: r.int(0, 1), xs: [[w * 100 + (ab % 10 ? ab : ab + 1), 2], [w * 1000 + (ab % 10 ? ab : ab + 1) * 10 + c3, 3]] }; }
       // 짧으면 크다 함정(0.4 · 0.45 · 0.3□□) — 가장 큰 것이 두 자리 · 한 자리는 그보다 작고 세 자리는 가장 작음 → 짧은 쪽을 고르면 '짧으면 크다', 세 자리를 고르면 '길면 크다' [E3-2][E3-5]
       if (r.chance(0.3)) { const t2 = Math.max(t, 2); return { ask: 'max', short: 1, xs: r.shuffle([[w * 10 + t2, 1], [w * 100 + t2 * 10 + r.int(1, 9), 2], [w * 1000 + (t2 - 1) * 100 + r.int(11, 99), 3]].map(([m, k]) => [m % 10 ? m : m + 1, k])) }; }
       if (r.chance(0.2)) return { ask, xs: r.shuffle([[w * 100 + 90 + r.int(1, 9), 2], [(w + 1) * 10 + r.int(1, 3), 1], [w * 1000 + 800 + r.int(1, 99), 3]].map(([m, k]) => [m % 10 ? m : m + 1, k])) };
@@ -998,6 +1008,10 @@ const LESSONS = [
     },
     make: (p) => {
       if (p.xs == null) return C.DEC3.make(p);
+      if (p.trunc) {
+        const xs = p.o ? [p.xs[1], p.xs[0]] : p.xs, right = xs.findIndex(([, k]) => k === 3);
+        return pick(['더 큰 수를 고르세요.'], [...xs.map(([m, k]) => [fmtD(m, k)]), ['두 수의 크기가 같아요']], right, { bugs: { [1 - right]: { name: '자릿수가 적으면 크다고 봄 (짧을수록 크다는 생각)', to: '4-2-3:2' }, 2: { name: '둘째 자리까지만 보고 같다고 봄 (끝 숫자 무시)', to: '4-2-3:4' } } });
+      }
       const vs = p.xs.map(([m, k]) => m / 10 ** k), best = p.ask === 'min' ? Math.min(...vs) : Math.max(...vs), right = vs.indexOf(best), kr = p.xs[right][1];
       const bugs = {};
       p.xs.forEach(([, k], j) => {

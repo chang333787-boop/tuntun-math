@@ -220,6 +220,11 @@ function divide(e, r, g) {
       return { story: S(`끈 ${A} m를 ${Bv}명이 똑같이 나누어 가지면 한 명이 몇 m씩 가질까요?`), x, kind: 'share', right, wrongs, unit: ' m', st: e.asDecimal ? 'D' : 'F' };
     }
     const R = rem ? { rem: [qn, rn] } : {};
+    // 몇 배 거꾸로 — 모르는 것이 기준량('A는 동생의 B배 · 동생은?') · '배'만 보고 곱하면 A × B [E2-14][E2-26]
+    if (!rem && rn === 0 && Bv >= 2 && Bv <= 9 && qn >= 2 && A <= 100 && r.chance(0.25)) {
+      const T = r.pick([[`형의 구슬 ${A}개는 동생 구슬의 ${Bv}배예요. 동생의 구슬은 몇 개일까요?`, '개'], [`언니가 한 줄넘기 ${A}번은 동생이 한 것의 ${Bv}배예요. 동생은 줄넘기를 몇 번 했을까요?`, '번']]);
+      return { story: S(T[0]), x, kind: 'times', right, wrongs, unit: T[1], extra: [{ x: F(A * Bv, 1), name: "'몇 배'만 보고 곱함 (기준량을 거꾸로)" }] };
+    }
     // 나머지 해석 — '모두 ~하려면 몇 개 필요?'(몫 + 1) · 몫만 답하거나 나머지를 답하면 그 이름 [E2-11][E2-12][E2-13][E2-22]
     if (rem && rn > 0 && qn >= 1 && r.chance(0.35)) {
       const NEED = [
@@ -293,7 +298,7 @@ export function storyOf(c, p, seed = 1, { plain = false } = {}) {
   if (s.rem) item = nums(['답 ', B(0), s.unit2, B(1), s.unit], s.rem, { bugs: [] });
   else {
     const bugs = (s.wrongs || []).map((w) => { try { const t = toText([].concat(w.t)), m = t.match(new RegExp(`^(${NUM}) ([+−×÷]) (${NUM})$`)); if (!m) return null; const y = ar(m[2], num(m[1]).x, num(m[3]).x, st); return y.n > 0 ? { x: y, name: w.name } : null; } catch (er) { return null; } }).filter(Boolean);
-    item = answerItem('답 ', s.x, st === 'W' && !whole(s.x) ? 'F' : st, s.unit, [...bugs, ...(s.extra || [])]);
+    item = answerItem('답 ', s.x, st === 'W' && !whole(s.x) ? 'F' : st, s.unit, [...(s.extra || []), ...bugs]);   // 이야기에 맞춘 이름(나머지 해석 · 몇 배 거꾸로)을 먼저
   }
   item.story = s.story;
   const calc = { kind: 'calc', why: '그 식을 계산해요.', item: makeItem(c, p), c };
