@@ -22,11 +22,10 @@ export const enc = (v) => JSON.stringify(v);
 export const dec = (s) => { try { return typeof s === 'string' ? JSON.parse(s) : s; } catch (e) { return null; } };
 
 // 끊겨도 잃지 않게 — 쓰기를 줄에 넣고 차례로 보냄(같은 경로는 마지막 것만)
+//  보내는 동안 같은 경로가 다시 들어와도 다른 쓰기를 지우지 않게 — 보낸 그 항목(id)만 뺀다(코덱스 10-31)
 export function queuePut(path, v) {
-  const q = lsGet(Q, []);
-  const i = q.findIndex((x) => x.path === path);
-  if (i >= 0) q.splice(i, 1);
-  q.push({ path, v });
+  const q = lsGet(Q, []).filter((x) => x.path !== path);
+  q.push({ id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`, path, v });
   lsSet(Q, q);
   return flush();
 }
@@ -34,11 +33,13 @@ let flushing = null;
 export function flush() {
   if (flushing) return flushing;
   flushing = (async () => {
-    let q = lsGet(Q, []);
-    while (q.length) {
-      const x = q[0];
-      try { await put(x.path, x.v); } catch (e) { if (e.status === 401 || e.status === 400) { /* 규칙이 막은 것 — 다시 보내도 안 됨 */ } else break; }
-      q = lsGet(Q, []); q.shift(); lsSet(Q, q);
+    for (let guard = 0; guard < 500; guard++) {
+      const x = lsGet(Q, [])[0];
+      if (!x) break;
+      let drop = true;
+      try { await put(x.path, x.v); } catch (e) { if (!(e.status === 401 || e.status === 400)) drop = false; }   // 401 · 400 = 규칙이 막은 것(다시 보내도 안 됨) · 그 밖은 끊김 → 다음에
+      if (!drop) break;
+      lsSet(Q, lsGet(Q, []).filter((y) => y.id !== x.id && !(y.path === x.path && y.v === x.v && !y.id)));
     }
     flushing = null;
     return lsGet(Q, []).length;

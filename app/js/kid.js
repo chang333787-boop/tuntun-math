@@ -49,6 +49,8 @@ function todoOf(K, rep) {
   const fixes = rep.start.map((s) => s.c).sort(byGrade);
   const shakyFixed = Object.keys(K.fixed || {}).filter((c) => rep.L[c] && (rep.L[c].st === 'shaky' || rep.L[c].st === 'stuck') && !fixes.includes(c));
   [...fixes, ...shakyFixed].slice(0, 3).forEach((c, i) => out.push({ kind: 'fix', c, pri: !out.length && i === 0, title: `판자 고치기 — ${kidName(c)}`, sub: K.help && K.help[c] ? '지난번엔 조금 흔들렸어요. 선생님과 함께 봐도 좋아요.' : '튼튼이가 먼저 풀어 보이고, 같이 풀고, 혼자 풀어요', href: `#/fix/${c}` }));
+  Object.keys(K.firm || {}).filter((c) => byId[c] && rep.L[c] && rep.L[c].st === 'shaky' && !fixes.includes(c) && !shakyFixed.includes(c)).slice(0, 2)
+    .forEach((c) => out.push({ kind: 'fix', c, pri: false, title: `판자 다지기 — ${kidName(c)}`, sub: '거의 되는데 가끔 흔들려요. 한 바퀴 다지면 튼튼해져요', href: `#/fix/${c}` }));
   const due = Object.entries(K.rv || {}).filter(([, x]) => x.n < KS.REVIEW_DAYS.length && x.due <= Date.now()).map(([c]) => c);
   if (due.length) out.push({ kind: 'review', pri: !out.length, title: `다시 보기 ${due.length}칸`, sub: '고친 판자를 섞어서 꺼내 풀어요 — 지금은 조금 어렵고, 오래 남아요', href: '#/review' });
   if (K.lastPrep && K.lastPrep.why === 'budget' && !out.some((x) => x.kind === 'prep')) out.push({ kind: 'prep', unit: K.lastPrep.unit, pri: !out.length, title: '이어서 찾기', sub: `${unitLabel(K.lastPrep.unit)} — 지난번에 멈춘 곳부터`, href: `#/prep/${K.lastPrep.unit}` });
@@ -133,16 +135,19 @@ export function prepView(root, unit) {
   const finished = () => {
     store();
     const sum = summary(S);
-    K.lastPrep = { unit, why: S.why, t: Date.now() }; KS.save(me, K); KS.pushSummary(me, K);
+    K.lastPrep = { unit, why: S.why, t: Date.now() };
+    if (sum.shaky.length) { K.firm = K.firm || {}; sum.shaky.forEach((c) => (K.firm[c] = Date.now())); }
+    KS.save(me, K); KS.pushSummary(me, K);
     KS.setNow(me, { mode: 'home' });
     lsDel(SK);
     const cal = sum.cal, sw = cal.sureWrong.length;
     const calLine = cal.sure ? `<p>'자신 있어요'라고 한 문제 ${cal.sure}개 가운데 ${sw ? `<b>${sw}개</b>는 틀렸어요 — 그 판자를 고칠 때 꼭 다시 봐요.` : '모두 맞았어요. 내 짐작을 믿어도 돼요.'}</p>` : '';
     const head = sum.fix.length ? say('fix', `고칠 판자를 찾았어요: <b>${sum.fix.map((c) => esc(kidName(c))).join(', ')}</b>.<br>지금 튼튼이랑 고쳐 볼까요? 고치고 나면 바로 오늘 단원으로 가요.`)
+      : sum.shaky.length ? say('think', `다리는 거의 튼튼해요! <b>${sum.shaky.map((c) => esc(kidName(c))).join(', ')}</b>은(는) 조금 흔들려요 — 시간 될 때 다져요. 지금은 오늘 수업으로 가요!`)
       : S.why === 'budget' ? say('think', '오늘은 여기까지 찾았어요. 다음에 이어서 찾아요. 지금은 오늘 수업으로 가요!')
       : say('cheer', `<b>${esc(unitLabel(unit))}</b>로 가는 다리가 튼튼해요! 오늘 단원으로 건너가요.`);
     root.innerHTML = `<div class="card">${head}${calLine}
-      <div class="acts">${sum.fix.length ? `<a class="btn pri big" href="#/fix/${sum.fix.sort(byGrade)[0]}">고치러 가기</a>` : ''}<a class="btn big" href="#/me">내 수 다리 보기</a></div></div>`;
+      <div class="acts">${sum.fix.length ? `<a class="btn pri big" href="#/fix/${sum.fix.sort(byGrade)[0]}">고치러 가기</a>` : sum.shaky.length ? `<a class="btn big" href="#/fix/${sum.shaky.sort(byGrade)[0]}">다지러 가기</a>` : ''}<a class="btn big" href="#/me">내 수 다리 보기</a></div></div>`;
   };
   if (!asked(S) && !S.done) {
     root.innerHTML = `<div class="card">${say('point', `<b>${esc(unitLabel(unit))}</b>을(를) 배우기 전에, 꼭 필요한 판자가 튼튼한지 볼게요.<br>문제마다 <b>먼저 짐작</b>을 하나 고르고 풀어요. 모르면 넘어가도 괜찮아요.`)}<button class="pri big" id="s">시작</button></div>`;
@@ -224,7 +229,7 @@ export function fixView(root, c) {
     KS.addSheet(me, K, F.check, F.R, F.conf, F.ms);
     const now = Date.now();
     const okN = Object.values(F.R.it).filter((x) => x.s === 'ok').length;
-    if (F.passed) { K.fixed = K.fixed || {}; K.fixed[c] = now; K.rv[c] = { n: 0, due: now + KS.REVIEW_DAYS[0] * KS.DAY, t: now }; if (K.help) delete K.help[c]; }
+    if (F.passed) { K.fixed = K.fixed || {}; K.fixed[c] = now; K.rv[c] = { n: 0, due: now + KS.REVIEW_DAYS[0] * KS.DAY, t: now }; if (K.help) delete K.help[c]; if (K.firm) delete K.firm[c]; }
     else { K.help = K.help || {}; K.help[c] = now; }
     KS.save(me, K); KS.setReview(me, K); KS.pushSummary(me, K); KS.setNow(me, { mode: 'home' });
     const was = before && before.tot ? `처음엔 ${before.ok}/${before.tot} → 지금 ${okN}/${F.check.items.length}` : `${okN}/${F.check.items.length}`;

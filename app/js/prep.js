@@ -87,13 +87,13 @@ function halfProbe(rep, x) {
   return best;
 }
 // 다음에 물을 칸 — ① 다시 볼 것(흔들림 · 두 원인이 같은 답 · 고립 · 도움 받은 관문) ② 막혔는데 아래를 다 모르는 칸마다 반 가르기 한 칸
-export function nextLessons(rep) {
+export function nextLessons(rep, plan = null) {
   const L = rep.L;
   const again = rep.checkList.filter((c) => byId[c] && L[c] && (L[c].st === 'shaky' || (L[c].amb && L[c].st !== 'ok') || (L[c].gate && L[c].st === 'near' && L[c].help)));
   rep.iso.forEach((x) => { if (!again.includes(x.c)) again.push(x.c); });
   const probes = [];
-  for (const b of rep.below) { const m = halfProbe(rep, b.c); if (m && !again.includes(m) && !probes.includes(m)) probes.push(m); }
-  return { again: again.sort((a, b) => gi(b) - gi(a)), probes };
+  for (const b of rep.below) { if (plan && !plan.includes(b.c)) continue; const m = halfProbe(rep, b.c); if (m && !again.includes(m) && !probes.includes(m)) probes.push(m); }
+  return { again: (plan ? again.filter((c) => plan.includes(c)) : again).sort((a, b) => gi(b) - gi(a)), probes };
 }
 // 이 판에서 그 칸을 몇 묶음에서 물었나 — 다시 묻기는 한 번까지(같은 꼴로 늘 틀리면 판정에 맡김)
 const timesAsked = (S, c) => S.sheets.filter((sh) => sh.items.some((it) => it.c === c)).length;
@@ -103,9 +103,11 @@ function advance(S) {
     if (left < PREP.n) return finish(S, 'budget');
     if (S.sheets.length >= PREP.rounds) return finish(S, 'budget');
     const rep = report(S);
-    const nx = nextLessons(rep), probes = nx.probes, again = nx.again.filter((c) => timesAsked(S, c) < 2);
+    const nx = nextLessons(rep, S.plan.below), probes = nx.probes, again = nx.again.filter((c) => timesAsked(S, c) < 2);
     // 오늘 고칠 판자를 찾았으면 그만 묻고 고치러 간다 — 아래를 다 메울 때까지 붙잡지 않음 [A-R16] · 남은 갈래는 다음 시간에 지난 기록과 함께 이어서
-    if (rep.start.length && !again.some((c) => rep.start.some((x) => x.c === c))) return finish(S, 'found');
+    //  이 단원 준비 칸 안에서 찾은 것만(다른 단원 기록의 고칠 판자가 오늘 점검을 막지 않게 — 코덱스 10-31)
+    const inPlan = rep.start.filter((x) => S.plan.below.includes(x.c));
+    if (inPlan.length && !again.some((c) => inPlan.some((x) => x.c === c))) return finish(S, 'found');
     if (!again.length && !probes.length) return finish(S, 'clear');
     const room = Math.min(PREP.cap, Math.floor(left / PREP.n));
     const take = [...probes.map(probe), ...again.map((c) => ({ c, n: PREP.n, hyps: rep.L[c] && rep.L[c].amb }))].slice(0, room);
@@ -117,9 +119,12 @@ function advance(S) {
 // 끝난 뒤 아이에게 보일 것: 고칠 판자(여기서부터) · 튼튼한 판자 · 자신감 견주기
 export function summary(S) {
   const rep = report(S);
-  const fix = rep.start.map((s) => s.c), firstCheck = rep.below.map((b) => b.c), because = rep.under.map((u) => u.c);
+  const inP = (c) => S.plan.below.includes(c);
+  const fix = rep.start.map((s) => s.c).filter(inP), firstCheck = rep.below.map((b) => b.c).filter(inP), because = rep.under.map((u) => u.c).filter(inP);
+  // 두 번 물어도 흔들림(예: 2/3 · 2/3) — '고칠 판자'로 단정하지 않고 '다지면 좋은 판자'로(코덱스 10-31)
+  const shaky = Object.values(rep.L).filter((x) => x.st === 'shaky' && inP(x.c) && S.sheets.filter((sh) => sh.items.some((it) => it.c === x.c)).length >= 2).map((x) => x.c);
   const strong = Object.values(rep.L).filter((x) => x.st === 'ok' || x.st === 'pass').map((x) => x.c);
-  return { rep, fix, firstCheck, because, strong, cal: calibration(S), n: asked(S), why: S.why };
+  return { rep, fix, firstCheck, because, shaky, strong, cal: calibration(S), n: asked(S), why: S.why };
 }
 // 자신감 견주기 — 확실했는데 틀림(가장 센 신호 [D-1]) · 모름이었는데 맞음 · 짐작이 맞은 비율(조금 = 반)
 export function calibration(S) {

@@ -7,7 +7,8 @@
     "test": "node tests/items.test.mjs && STRICT=1 node tests/lessons.test.mjs && node tests/rules.test.mjs && node tests/parse.test.mjs && node tests/read.test.mjs && node tests/engine.test.mjs && node tests/practice.test.mjs && node tests/types.test.mjs && node tests/bridges.test.mjs && node tests/words.test.mjs && node tests/errors.test.mjs && node tests/text.test.mjs && node tests/src.test.mjs && CHECK=1 node tests/sim.test.mjs && CHECK=1 node tests/lsim.mjs",
     "sim": "node paper/test/sim.mjs 300 0.05",
     "serve": "python3 -m http.server 8030",
-    "sim:prep": "node app/test/prep.sim.mjs 8 0.05 && DAYS=2 node app/test/prep.sim.mjs 8 0.05"
+    "sim:prep": "node app/test/prep.sim.mjs 8 0.05 && DAYS=2 node app/test/prep.sim.mjs 8 0.05",
+    "test:app": "node app/test/app.test.mjs"
   },
   "license": "MIT"
 }
