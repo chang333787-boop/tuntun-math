@@ -4,6 +4,7 @@
 import { readExpr } from '../../engine/errors.js';
 import { misFor } from '../../engine/mis.js';
 import { toText, toHTML } from '../../engine/tokens.js';
+import { icon } from './icons.js';
 import { esc } from './local.js';
 import { ansSay, stepHTML } from './item.js';
 import { stepsOf, ruleFor } from './fix.js';
@@ -105,7 +106,7 @@ export function toolBox(box, { it, vals, c, bug = null, onSelfFix, onDone, seen 
   T = T || toolFor({ it, vals, c, bug });
   if (!T) return false;
   const b = document.createElement('div'); b.className = 'toolbox';
-  b.innerHTML = `<button type="button" class="tbtn">🔍 ${esc(T.ro)} 확인해 볼까요?</button>`;
+  b.innerHTML = `<button type="button" class="tbtn">${icon('search', 20)} ${esc(T.ro)} 확인해 볼까요?</button>`;
   box.appendChild(b);
   b.querySelector('.tbtn').addEventListener('click', () => {
     b.innerHTML = `<p class="small muted">${esc(T.how)}</p><p class="tcheck">${T.html}</p>${it.choices ? '' : `<div class="retry"><span class="math">${toHTML(it.prompt)}</span><button type="button" class="pri" id="rt">다시 써 보기</button></div>`}`;
