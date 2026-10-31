@@ -100,13 +100,23 @@ export function namesView(root, C) {
   root.querySelector('#sv').addEventListener('click', () => { const X = tget(); root.querySelectorAll('[data-no]').forEach((i) => { const v = i.value.trim(); if (v) X.classes[C].names[i.dataset.no] = v; else delete X.classes[C].names[i.dataset.no]; }); tset(X); go(`#/t/c/${C}`); });
 }
 
+// 아이가 쓴 요약은 믿지 않고 모양을 맞춰 읽는다(한 아이의 이상한 값이 반 화면 전체를 멈추지 않게)
+const arr = (x) => (Array.isArray(x) ? x.filter((c) => typeof c === 'string' && LES(c)) : []);
+const obj = (x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : {});
+function normSt(st) {
+  if (!st || typeof st !== 'object') return null;
+  const L = {}; for (const [c, v] of Object.entries(obj(st.L))) if (LES(c) && typeof v === 'string' && ST[v]) L[c] = v;
+  const num = (o) => Object.fromEntries(Object.entries(obj(o)).filter(([c, v]) => LES(c) && Number.isFinite(Number(v))).map(([c, v]) => [c, Number(v)]));
+  return { L, start: arr(st.start), below: arr(st.below), under: arr(st.under), sw: num(st.sw), fixed: num(st.fixed), help: num(st.help), due: arr(st.due), t: Number(st.t) || 0, last: Number(st.last) || 0, cal: obj(st.cal) };
+}
+const normNow = (n) => (n && typeof n === 'object' ? { mode: String(n.mode || ''), c: typeof n.c === 'string' ? n.c : '', n: Number(n.n) || 0, t: Number(n.t) || 0 } : null);
 // 아이 요약 모으기(8개씩 동시에) — 열린 연결 없이 짧은 요청만
 async function pullAll(C, K) {
   const nos = Array.from({ length: K.n }, (_, i) => String(i + 1)), out = {};
   for (let i = 0; i < nos.length; i += 8) {
     await Promise.all(nos.slice(i, i + 8).map(async (no) => {
       const base = `k/${C}/${no}/${K.pins[no]}`;
-      try { const [st, now] = await Promise.all([db.get(`${base}/st`), db.get(`${base}/now`)]); out[no] = { st: db.dec(st), now: db.dec(now) }; } catch (e) { out[no] = { err: true }; }
+      try { const [st, now] = await Promise.all([db.get(`${base}/st`), db.get(`${base}/now`)]); out[no] = { st: normSt(db.dec(st)), now: normNow(db.dec(now)) }; } catch (e) { out[no] = { err: true }; }
     }));
   }
   return out;
@@ -180,8 +190,8 @@ export async function kidDetailView(root, C, no) {
   let raw = null; try { raw = await db.get(`k/${C}/${no}/${K.pins[no]}`); } catch (e) { root.innerHTML = `<div class="card warn">불러오지 못했어요: ${esc(e.message)}</div>`; return; }
   const KK = { recs: {}, rv: {}, fixed: {} };
   if (raw && raw.r) for (const [id, s] of Object.entries(raw.r)) { const o = db.dec(s); if (o) KK.recs[id] = o; }
-  const st = raw && raw.st ? db.dec(raw.st) : null;
-  const rv = raw && raw.rv ? db.dec(raw.rv) || {} : {};
+  const st = raw && raw.st ? normSt(db.dec(raw.st)) : null;
+  const rv = obj(raw && raw.rv ? db.dec(raw.rv) : null);
   const rep = KS.reportOf(KK), cal = KS.calOf(KK);
   const why = (c) => { const x = rep.L[c]; if (!x || !x.why) return ''; const a = x.why.sure.map((h) => `<span class="pill" style="border-color:#b4482b">되풀이됨: ${esc(bugName(h.id))} (${h.ev.length}문항)</span>`), b = x.why.maybe.map((h) => `<span class="pill">한 번 보임: ${esc(bugName(h.id))}</span>`); return [...a, ...b].join(' '); };
   const line = (c, extra = '') => `<li><b>${esc(lessonName(c))}</b> <span class="muted small">${esc(gl(LES(c).g))}</span> ${rep.L[c] ? `<span class="small">${rep.L[c].ok}/${rep.L[c].tot}</span>` : ''} ${why(c)} ${extra}</li>`;

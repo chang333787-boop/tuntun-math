@@ -54,17 +54,22 @@ export function setNow(me, now) { db.put(`${base(me)}/now`, db.enc({ ...now, t: 
 // 모든 기록 → 종이와 같은 판정
 export function history(K) {
   const sheets = [], res = {};
-  for (const [id, x] of Object.entries(K.recs)) { const sh = unpack(x.s); if (!sh.items.length) continue; sheets.push(sh); res[id] = { [KID]: x.r }; }
+  for (const [id, x] of Object.entries(K.recs)) {
+    if (!okRec(x)) continue;   // 모양이 이상한 기록은 건너뜀(판정 · 선생님 화면이 멈추지 않게)
+    let sh; try { sh = unpack(x.s); } catch (e) { continue; }
+    if (!sh.items.length) continue; sheets.push(sh); res[id] = { [KID]: x.r };
+  }
   sheets.sort((a, b) => a.made - b.made);
   return { sheets, res };
 }
+export const okRec = (x) => !!(x && x.s && Array.isArray(x.s.it) && Number.isFinite(x.s.made) && x.r && typeof x.r === 'object' && x.r.it && typeof x.r.it === 'object' && x.r.done && typeof x.r.done === 'object' && x.s.it.every((i) => Array.isArray(i) && i.length >= 5));
 export const reportOf = (K) => { const H = history(K); return kidReport(H.sheets, H.res, KID, { from: '1-1', to: '6-2' }); };
 
 // 자신감 견주기(모든 기록) — 확실했는데 틀림 · 짐작이 맞은 비율
 export function calOf(K, since = 0) {
   let n = 0, hit = 0; const sureWrong = {};
   for (const x of Object.values(K.recs)) {
-    if (x.s.made < since) continue;
+    if (!okRec(x) || x.s.made < since) continue;
     for (const [k, c] of x.s.it) {
       const r = x.r.it[k], cf = x.cf ? x.cf[k] : null; if (!r || cf == null) continue;
       const ok = r.s === 'ok'; n++;
@@ -82,7 +87,7 @@ export function summaryOf(K) {
   const cal = calOf(K);
   const now = Date.now();
   const due = Object.entries(K.rv).filter(([, x]) => x.n < REVIEW_DAYS.length && x.due <= now).map(([c]) => c);
-  const last = Object.values(K.recs).reduce((m, x) => Math.max(m, x.s.made), 0);
+  const last = Object.values(K.recs).filter(okRec).reduce((m, x) => Math.max(m, x.s.made), 0);
   return { t: now, last, L, start: rep.start.map((s) => s.c), below: rep.below.map((b) => b.c), under: rep.under.map((u) => u.c), sw: cal.sureWrong, cal: { n: cal.n, m: cal.match }, fixed: K.fixed, due, help: K.help || {} };
 }
 export function pushSummary(me, K) { db.queuePut(`${base(me)}/st`, db.enc(summaryOf(K))); }
