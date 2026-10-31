@@ -2,7 +2,7 @@
 //   분수의 나눗셈은 개념 가족 F16~F21, 비와 비율·비례식은 R2~R10을 차시마다 나눠 쓴다(gen으로 유형을 좁히고 is로 가른다).
 //   소수의 나눗셈과 '쓰이는 경우' 문제는 새 가족(g6_)이다.
 import { divKind } from './ops.js';
-import { nums, frac, pick, fx, fb, B, F, gcd } from '../concepts/kit.js';
+import { nums, frac, pick, fx, fb, B, F, P, gcd, sizeAsk } from '../concepts/kit.js';
 import { near, fmt, lcm, eqv, simp, div as fdiv } from '../math.js';
 import { toText } from '../tokens.js';
 import FRACS from '../concepts/frac.js';
@@ -213,10 +213,13 @@ const FAMS = [
     steps: (p) => {
       const { x, y } = p, base = p.c === 'sale' ? x - y : y, g = gcd(base, x);
       const den = p.c === 'sale' ? '원래 가격' : p.c === 'vote' ? '전체 표' : '소금물';
-      const pct = { c: 'R5', p: { v: 'frac', n: base / g, d: x / g }, why: `${p.c === 'sale' ? '할인된 금액' : p.c === 'vote' ? '얻은 표' : '소금'} ÷ ${jw(den, '을', '를')} 백분율로 나타내요.` };
-      if (p.c === 'sale') return [{ c: 'SUB', p: { a: x, b: y }, why: '할인된 금액을 구해요.' }, pct];
-      if (p.c === 'salt2') return [{ c: 'ADD', p: { a: x - y, b: y }, why: '소금물의 무게 = 물 + 소금' }, pct];
-      return [pct];
+      const what = p.c === 'sale' ? '할인된 금액' : p.c === 'vote' ? '얻은 표' : '소금';
+      // 비율을 분수로 쓰고 약분하는 단계(8/200 → 1/25)를 먼저 — 예전엔 약분한 1/25이 설명 없이 나왔음(혹평 11-01)
+      const red = g > 1 ? { c: 'F8', p: { d: x / g, n: base / g, k: g }, why: `${what} ÷ ${jw(den, '을', '를')} 분수로 쓰면 ${base}/${x}${P(base, '이에요', '예요')}. 약분해서 간단하게 나타내요.` } : null;
+      const pct = { c: 'R5', p: { v: 'frac', n: base / g, d: x / g }, why: red ? `${base / g}/${x / g}${P(base / g, '을', '를')} 백분율로 나타내요.` : `${what} ÷ ${jw(den, '을', '를')} 백분율로 나타내요.` };
+      if (p.c === 'sale') return [{ c: 'SUB', p: { a: x, b: y }, why: '할인된 금액을 구해요.' }, red, pct].filter(Boolean);
+      if (p.c === 'salt2') return [{ c: 'ADD', p: { a: x - y, b: y }, why: '소금물의 무게 = 물 + 소금' }, red, pct].filter(Boolean);
+      return [red, pct].filter(Boolean);
     },
   },
   {
@@ -601,12 +604,22 @@ export default {
     },
     {
       id: '6-2-1:5', fam: 'F21', name: '(자연수)÷(분수)', kid: '자연수 ÷ 분수', sec: 25,
-      // dir: 계산하지 말고 크기 방향만 — '나누면 늘 작아진다' [E2-1][E3-11][E3-12]
-      gen: (r) => { let n, d; do { d = r.int(2, 7); n = r.int(1, d - 1); } while (gcd(n, d) !== 1); if (r.chance(0.2)) { let k = r.int(2, 5); while (k > 2 && n * k * d > 81) k--; return { v: 'dir', n, d, N: n * k }; /* 옛 개념 다리(N × 분모 ÷ 분자)가 생기는 범위로 */ } return r.chance(0.3) ? { v: 'one', n, d } : { v: 'n', n, d, N: n * r.int(2, 5) }; },
-      is: (p) => p.v === 'one' || p.v === 'n' || p.v === 'dir', prev: '6-2-1:2', pre: ['3-1-3:6'],
-      make: (p) => (p.v === 'dir' ? pick(['계산하지 말고 생각해요. ', `${p.N} ÷ `, fx(p.n, p.d), `의 값은 ${p.N}보다 어떨까요?`], [['커요'], ['작아요'], ['같아요']], 0, { bugs: { 1: { name: '나누면 늘 작아진다고 봄 (1보다 작은 수로 나눠도)', to: '6-2-1:2' }, 2: { name: '1보다 작은 수로 나눠도 그대로라고 봄', to: '6-2-1:2' } } }) : C.F21.make(p)),
+      // dir: 계산하지 말고 크기 방향만 — '나누면 늘 작아진다' [E2-1][E3-11][E3-12] · 진분수로 나눔(커요 · 함정 꼴 mis.js WANT)
+      //   size = 1보다 큰 분수(가분수 · 대분수 mx)로 나눔(작아요) 또는 1과 같은 분수(같아요) — 정답이 늘 '커요'로 외워지지 않게(app/js/tools.js 어림 도구는 dir만 읽음)
+      gen: (r) => {
+        let n, d; do { d = r.int(2, 7); n = r.int(1, d - 1); } while (gcd(n, d) !== 1);
+        if (r.chance(0.3)) {
+          const t = r.next();
+          if (t < 0.5) { let k = r.int(2, 5); while (k > 2 && n * k * d > 81) k--; return { v: 'dir', n, d, N: n * k }; /* 옛 개념 다리(N × 분모 ÷ 분자)가 생기는 범위로 */ }
+          if (t < 0.8) { const mx = r.chance(0.5) ? 1 : 0; return { v: 'size', n: (mx ? r.int(1, 2) : 1) * d + n, d, N: 2 * r.int(3, 15), mx }; }   /* N은 짝수 — 옛 개념 다리 N ÷ 2 */
+          return { v: 'size', n: d, d, N: r.int(6, 30) };
+        }
+        return r.chance(0.3) ? { v: 'one', n, d } : { v: 'n', n, d, N: n * r.int(2, 5) };
+      },
+      is: (p) => p.v === 'one' || p.v === 'n' || p.v === 'dir' || p.v === 'size', prev: '6-2-1:2', pre: ['3-1-3:6'],
+      make: (p) => (p.v === 'dir' || p.v === 'size' ? sizeAsk(p, '÷') : C.F21.make(p)),
       steps: (p) => {
-        if (p.v === 'dir') return [];
+        if (p.v === 'dir' || p.v === 'size') return [];
         if (p.v === 'one') return [ext('F3', { v: 'whole', w: 1, d: p.d }, `1은 1/${p.d}이 몇 개인가요?`)];
         const k = p.N / p.n;
         if (p.n === 1) return [{ c: 'MUL', p: { a: p.N, b: p.d }, why: `1은 1/${p.d}이 ${p.d}개예요. ${jn(p.N, '은', '는')} 1/${p.d}이 몇 개인가요? ${p.N} × ${p.d}` }];

@@ -63,10 +63,12 @@ export function exampleOf(c) {
 const KEEPN = new Set(['0', '1', '2', '10', '100', '1000', '10000', '0.1', '0.01', '0.001']);
 const NUM = /\d+(?:\.\d+)?(?:만|억|조)?(?:씩|배|단)?/g;
 const KNUM = /[일이삼사오육칠팔구십백천]{2,}|스물|서른|마흔|쉰|예순|일흔|여든|아흔/g;   /* 수를 읽는 말(삼십 · 서른 · 사백육) — 이 문제에 없는 수를 읽어 주면 따로 놂 */
+//    그림 · 기호를 말하는 문장('그림의 한 줄은 …' · '0에서 ▼까지 …')은 이 문제에 그림 · 그 기호가 있을 때만
 export function ruleFor(c, it, { noAns = false } = {}) {
   const h = hintOf(c); if (!h || !it) return '';
-  const txt = toText(it.prompt), ans = new Set((it.sol || []).map(String).filter((v) => !KEEPN.has(v)));
-  const keep = (x) => (x.match(NUM) || []).every((t) => (/[씩배단]$/.test(t) ? txt.includes(t) : KEEPN.has(t)) && !(noAns && ans.has(t))) && (x.match(KNUM) || []).every((w) => txt.includes(w));
+  const txt = toText(it.prompt), pic = txt.includes('[그림]'), ans = new Set((it.sol || []).map(String).filter((v) => !KEEPN.has(v)));
+  const keep = (x) => (x.match(NUM) || []).every((t) => (/[씩배단]$/.test(t) ? txt.includes(t) : KEEPN.has(t)) && !(noAns && ans.has(t))) && (x.match(KNUM) || []).every((w) => txt.includes(w))
+    && (pic || !x.includes('그림')) && [...(x.match(/[▼●○]/g) || [])].every((ch) => txt.includes(ch));
   return h.split(/(?<=[.!?])\s+/).map((x) => x.trim()).filter((x) => x && keep(x)).join(' ');
 }
 // 수 늘어놓기(5, 10, □, □ · □, 617, 627 … · 7451만, 6451만, □만)에서 빈칸 i — 같은 수씩 커지거나 작아지면 '○씩 커져요. 10 다음은 15'
@@ -93,6 +95,9 @@ export function blankTalk(it, i, full = true) {
 }
 // 한 자리 셈 사실 — 이어 세기 · 뛰어 세기 · 곱셈으로 몫 찾기(full = 시범 · 답까지 / 아니면 첫 생각만)
 const upto = (a, n, d = 1) => Array.from({ length: n }, (_, k) => a + d * (k + 1));
+//  이어 세기 · 거꾸로 세기 말은 그 칸이 다른 방법을 가르칠 때 끔 — 1-2-6(10을 만들어 더하기 · 10에서 빼기)과 쪼갤 단계가 있는 칸(32 + 5 = 낱개끼리 더하기)
+//    단계의 방법과 부딪히는 말을 시범 · 틀린 뒤에 하지 않게(혹평 11-01 · 8 + 5에 '9, 10, 11, 12, 13' X)
+const noCount = (it) => { if (!it || !it.c) return false; if (/^1-2-6:/.test(it.c)) return true; try { return !!(it.p && workedSteps(it.c, it.p).length); } catch (e) { return false; } };
 export function factTalk(it, full = true) {
   let X = null; try { X = readExpr(it); } catch (e) { X = null; }
   if (!X || X.st !== 'W') return '';
@@ -102,12 +107,14 @@ export function factTalk(it, full = true) {
     const big = Math.max(A, B), sm = Math.min(A, B);
     if (!sm) return '0을 더하면 그대로예요.';
     if (sm === 1) return full ? `${big}보다 1만큼 더 큰 수는 ${big + 1}.` : `${big}보다 1만큼 더 큰 수를 생각해요.`;
+    if (noCount(it)) return '';
     return full ? `큰 수 ${big}에서 시작해 ${sm}만큼 이어 세어요: ${upto(big, sm).join(', ')} → ${A + B}.` : `큰 수 ${big}에서 시작해 ${sm}만큼 이어 세어 봐요: ${upto(big, Math.min(2, sm - 1)).join(', ')}, …`;
   }
   if (X.op === '−' && A <= 20 && A - B >= 0 && A - B <= 9) {
     if (!B) return '0을 빼면 그대로예요.';
     if (A === B) return '같은 수를 빼면 0이에요.';
     if (B === 1) return full ? `${A}보다 1만큼 더 작은 수는 ${A - 1}.` : `${A}보다 1만큼 더 작은 수를 생각해요.`;
+    if (noCount(it)) return '';
     if (B <= 5) return full ? `${A}에서 ${B}만큼 거꾸로 세어요: ${upto(A, B, -1).join(', ')} → ${A - B}.` : `${A}에서 ${B}만큼 거꾸로 세어 봐요: ${upto(A, Math.min(2, B - 1), -1).join(', ')}, …`;
     if (A - B === 1) return full ? `${B}에서 한 번만 더 세면 ${A}${P(A, '이에요', '예요')} → 1.` : `${B}에서 ${A}까지 몇 번 더 세면 되는지 봐요.`;
     return full ? `${B}에서 ${A}까지 몇 번 더 세면 되는지 봐요: ${upto(B, A - B).join(', ')} → ${A - B}번.` : `${B}에서 ${A}까지 이어 세어 봐요: ${upto(B, Math.min(2, A - B - 1)).join(', ')}, …`;
@@ -122,14 +129,35 @@ export function factTalk(it, full = true) {
   }
   return '';
 }
+// 세기 칸(1부터 9까지 세기 · 읽기) — 점 그림은 하나씩 짚으며 세기 · 수 이름('일곱' · '칠')은 하나, 둘, … 차례로 세기
+const NAT = ['', '하나', '둘', '셋', '넷', '다섯', '여섯', '일곱', '여덟', '아홉'], SIN = ['', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구'];
+export function countTalk(it, full = true) {
+  const L = it && it.c && byId[it.c], p = it && it.p;
+  if (!L || L.fam !== 'N1' || !p || !Number.isInteger(p.n) || p.n < 1 || p.n > 9) return '';
+  const n = p.n, seq = (W, k) => W.slice(1, k + 1).join(', ');
+  if (p.v === 'nat' || p.v === 'sin') { const W = p.v === 'nat' ? NAT : SIN; return full ? `${seq(W, n)} — 차례로 세면 ${n}번째 말이라 ${n}${P(n, '이에요', '예요')}.` : `${seq(W, Math.min(3, n))} …처럼 차례로 세어 봐요.`; }
+  if (p.v !== 'dots' && !toText(it.prompt).includes('[그림]')) return '';
+  return full ? `하나씩 짚으며 세어요: ${Array.from({ length: n }, (_, k) => k + 1).join(', ')} → ${n}개.` : `하나씩 짚으며 세어 봐요: ${Array.from({ length: Math.min(2, n) }, (_, k) => k + 1).join(', ')}, …`;
+}
 // 시범에서 튼튼이가 하는 말 — 단계가 없는 칸: 셈 사실 말 → 방법 한 줄(이 문제 숫자만)
 //  이 문제 숫자로 할 말이 없으면 차시 힌트를 '다른 숫자로 든 예'라고 밝혀 그대로(이 문제의 답 수가 들어 있으면 X)
 export function otherEx(c, it) {
   const h = hintOf(c), ans = (it.sol || []).map(String).filter((v) => !KEEPN.has(v));
   return h && !(h.match(NUM) || []).some((t) => ans.includes(t)) ? `다른 숫자로 든 예: ${h}` : '';
 }
-export const showTalk = (F) => { const t = [factTalk(F.ex, true), ruleFor(F.c, F.ex)].filter(Boolean); return t.length ? t : [otherEx(F.c, F.ex)].filter(Boolean); };
-export function talkOf(it, c) { const t = [factTalk(it, false) || (it.choices ? '' : blankTalk(it, blankCount(it.prompt) - 1, false)), ruleFor(c, it, { noAns: true })].filter(Boolean); return t.length ? t : [otherEx(c, it)].filter(Boolean); }
+//  빈칸이 하나인 수 늘어놓기(4, 5, 6, 7, □)는 그 빈칸 말도 — 빈칸이 둘 이상이면 화면(kid.js)이 빈칸마다 붙임 · 수 이름 문항은 세기 말만(점 세기 방법 X)
+export const showTalk = (F) => {
+  const ex = { ...F.ex, c: F.ex.c || F.c }, nb = ex.choices ? 0 : blankCount(ex.prompt), ct = countTalk(ex, true);
+  if (ct && ex.p && (ex.p.v === 'nat' || ex.p.v === 'sin')) return [ct];
+  const t = [factTalk(ex, true) || ct || (nb === 1 ? blankTalk(ex, 0, true) : ''), ruleFor(F.c, ex)].filter(Boolean);
+  return t.length ? t : [otherEx(F.c, ex)].filter(Boolean);
+};
+export function talkOf(it, c) {
+  const x = it && !it.c ? { ...it, c } : it, ct = countTalk(x, false);
+  if (ct && x.p && (x.p.v === 'nat' || x.p.v === 'sin')) return [ct];
+  const t = [factTalk(x, false) || ct || (x.choices ? '' : blankTalk(x, blankCount(x.prompt) - 1, false)), ruleFor(c, x, { noAns: true })].filter(Boolean);
+  return t.length ? t : [otherEx(c, x)].filter(Boolean);
+}
 // 단계 답은 다 맞았는데 합친 답이 틀렸을 때 — 그 셈에 맞는 말(뺄셈에 '받아올림'이라 하지 않게)
 export function mergeTip(it) {
   let X = null; try { X = readExpr(it); } catch (e) { X = null; }
@@ -235,6 +263,17 @@ export const KIDSAY = {
   'dec.alignRight': '소수점이 아니라 끝자리를 맞췄어요', 'dec.alignRightS': '소수점이 아니라 끝자리를 맞췄어요',
 };
 const GENERIC = ['계산은 맞는데 답을 옮겨 쓸 때 틀렸어요', '문제의 수를 잘못 읽었어요'];
+// 틀린 풀이를 아이가 쓸 법한 꼴로 보일 수 있나 — 대분수 칸에 자연수 부분 0(0 5/8) · 분수 부분 0(4 0/5) · 분수 부분이 1과 같거나 큼(4 4/4) · 분모 0은 X(혹평 11-01)
+//  보일 수 없는 틀린 방법은 고르지 않음 — 이 칸에 보일 만한 틀린 풀이가 하나도 없으면(5-1-5:3) 비교하기를 건너뜀
+function showable(prompt, v) {
+  const val = (x) => (x && typeof x === 'object' && 'b' in x ? Number(v[x.b]) : Number(x)), blank = (x) => x && typeof x === 'object' && 'b' in x;
+  for (const t of prompt || []) {
+    if (!t || typeof t !== 'object') continue;
+    if ('m' in t && t.m.some(blank)) { const [w, n, d] = t.m.map(val); if (!(w >= 1) || !(n >= 1) || !(d > n)) return false; }
+    if ('f' in t && t.f.some(blank)) { const [, d] = t.f.map(val); if (!(d > 0)) return false; }
+  }
+  return v.every((x) => x == null || Number.isFinite(Number(x)));
+}
 // prefer = 이 아이에게 보인 원인 id들(먼저 씀) · 없으면 이 칸에서 가려낼 수 있는 틀린 방법 아무거나
 export function compareOf(c, { prefer = [], seed = Date.now() } = {}) {
   const r = rng(hash(`${seed}:cmp:${c}`)), used = new Set();
@@ -243,7 +282,7 @@ export function compareOf(c, { prefer = [], seed = Date.now() } = {}) {
     const [it] = pickItems(c, 1, r, used); if (!it || it.choices) continue;
     let ids = []; try { ids = testable(it).filter((id) => KIDSAY[id]); } catch (e) { ids = []; }
     if (!ids.length) continue;
-    const preds = {}; for (const id of ids) { let v = null; try { v = __predict(it, id); } catch (e) { v = null; } if (v && JSON.stringify(v) !== JSON.stringify(it.sol)) preds[id] = v; }
+    const preds = {}; for (const id of ids) { let v = null; try { v = __predict(it, id); } catch (e) { v = null; } if (v && JSON.stringify(v) !== JSON.stringify(it.sol) && showable(it.prompt, v)) preds[id] = v; }
     const ok = Object.keys(preds); if (!ok.length) continue;
     const mine = ok.find((id) => prefer.includes(id));
     const bug = mine || ok[0];

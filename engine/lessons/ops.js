@@ -228,19 +228,24 @@ function divParts(a, b) {
   const q = Math.floor(a / b), r = a % b;
   if (b <= 9 && q <= 9) return r ? [{ c: 'MUL', p: { a: b, b: q }, why: `${b}단에서 ${a}보다 크지 않은 가장 큰 곱을 찾아요.` }, { c: 'SUB', p: { a, b: b * q }, why: '남는 수를 구해요.' }] : [{ c: 'MUL', p: { a: b, b: q }, why: `${b}의 단에서 곱이 ${a}인 것을 찾아요.` }];
   if (b <= 9) {
-    // 높은 자리부터 나눈다
-    const out = [];
-    let rem = 0;
-    const s = String(a);
+    // 높은 자리부터 나눈다 — 자리마다 한 단계(몫의 숫자 하나) · 맨 앞자리가 나누는 수보다 작으면 다음 자리와 합쳐서
+    //   중간 · 끝 자리가 나누는 수보다 작으면 '이 자리 몫은 0' 단계(422 ÷ 6 → 42 ÷ 6 · 2 ÷ 6 = 0 … 2 / 215 ÷ 2 → 2 ÷ 2 · 1 ÷ 2 = 0 … 1 · 15 ÷ 2)
+    //   예전에는 이 자리를 건너뛰어 단계만 따라 하면 몫의 0이 빠졌음(215 ÷ 2 → 17 … 1 · 혹평 11-01) · 자리 수만큼만 나오므로 자르지 않음
+    const out = [], s = String(a), PL = ['일', '십', '백', '천', '만', '십만'];
+    let rem = 0, started = false;
     for (let i = 0; i < s.length; i++) {
-      const cur = rem * 10 + Number(s[i]);
-      if (cur < b && i === 0) { rem = cur; continue; }
-      const qq = Math.floor(cur / b);
-      const place = 10 ** (s.length - 1 - i);
-      if (cur >= b) out.push({ c: 'DIV', p: { a: cur, b }, why: `${place > 1 ? `${['', '십', '백', '천'][s.length - 1 - i]}의 자리: ` : '일의 자리: '}${cur} ÷ ${b}${P(b, '을', '를')} 해요.` });
-      rem = cur - qq * b;
+      const k = s.length - 1 - i, d = Number(s[i]), cur = rem * 10 + d, last = k === 0, at = `${PL[k]}의 자리: `;
+      if (!started && cur < b && !last) { rem = cur; continue; }
+      let why;
+      if (!started && i > 0) why = `${at}${PL[k + 1]}의 자리 ${J(rem, '은', '는')} ${b}보다 작아서 다음 자리와 합쳐 ${cur} ÷ ${J(b, '을', '를')} 해요.`;
+      else if (cur < b) why = cur === 0 ? `${at}0이라서 이 자리 몫은 0이에요.${last ? '' : ' 다음 자리로 넘어가요.'}` : `${at}${J(cur, '은', '는')} ${b}보다 작아서 이 자리 몫은 0이에요. ${last ? `${J(cur, '이', '가')} 나머지예요.` : `${J(cur, '을', '를')} 다음 자리로 내려요.`}`;
+      else if (rem) why = `${at}남은 ${J(rem, '과', '와')} ${J(d, '을', '를')} 이어 쓰면 ${cur}${P(cur, '이에요', '예요')}. ${cur} ÷ ${J(b, '을', '를')} 해요.`;
+      else why = `${at}${cur} ÷ ${J(b, '을', '를')} 해요.`;
+      out.push({ c: 'DIV', p: { a: cur, b }, why });
+      started = true;
+      rem = cur % b;
     }
-    return out.slice(0, 3);
+    return out;
   }
   // 두 자리 수로 나누기: 몇십으로 어림하고 곱해서 확인
   const t = Math.round(b / 10) * 10 || 10;

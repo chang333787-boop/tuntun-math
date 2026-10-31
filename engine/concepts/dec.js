@@ -3,6 +3,18 @@ import { nums, pick, fx, B, P, J, tbl } from './kit.js';
 import { near, fmt, divisors, gcd, lcm } from '../math.js';
 
 const d2 = (k) => fmt(k / 100), d1 = (k) => fmt(k / 10);
+// 배수 고르기의 오답 셋 — 정답보다 작은 수 below개 · 큰 수 나머지(정답 자리가 below번째) · 정답 옆 수만 몰리지 않게 두 배수 사이에 고루
+//   그럴듯한 수 먼저: 이웃 배수 ± 1 · 2, n의 약수의 배수(6의 배수에 27 · 9의 배수에 24) · 고르는 차례는 s로(같은 p → 같은 보기)
+function g2Wrong(n, right, below, s) {
+  const lo = Math.max(n + 1, right - 2 * n), hi = right + 2 * n, fac = [2, 3].filter((f) => n % f === 0 && f < n);
+  const score = (x) => (fac.some((f) => x % f === 0) ? 0 : [1, 2, n - 1, n - 2].includes(x % n) ? 1 : 2);
+  const side = (a, b) => { const xs = []; for (let x = a; x <= b; x++) if (x % n !== 0) xs.push(x); return xs.sort((x, y) => score(x) - score(y) || ((x * 37 + s) % 11) - ((y * 37 + s) % 11)); };
+  const dn = side(lo, right - 1), up = side(right + 1, hi), out = [];
+  const take = (xs, k) => { const got = []; for (const x of xs) { if (got.length >= k) break; if (!got.some((y) => Math.abs(y - x) < 2)) got.push(x); } for (const x of xs) { if (got.length >= k) break; if (!got.includes(x)) got.push(x); } return got; };
+  const b = Math.min(below, dn.length);
+  out.push(...take(dn, b), ...take(up, 3 - b));
+  return out;
+}
 
 export default [
   {
@@ -62,6 +74,14 @@ export default [
     make: (p) => {
       const ds = divisors(p.n);
       if (p.v === 'count') return nums([`${p.n}의 약수는 모두 `, B(0), '개예요.'], ds.length, { bugs: [{ test: (v) => v[0] === ds.length - 1 || v[0] === ds.length - 2, name: '1이나 자기 자신을 빠뜨림', to: 'D4' }] });
+      if (p.v === 'list') {
+        // 약수 늘어놓기(공약수 · 최대공약수 단계) — 곱해서 n이 되는 짝의 작은 쪽은 보이고 큰 쪽이 빈칸(1 × 36 · 2 × 18 … → 36, 18 …)
+        //  큰 짝이 없으면(9 → 1, 3, 9) 가운데 수 · 그것도 없으면(7 → 1, 7) 자기 자신이 빈칸
+        const mid = ds.filter((x) => x > 1 && x < p.n), bigs = mid.filter((x) => x * x > p.n), hole = new Set(bigs.length ? bigs : mid.length ? mid : [p.n]);
+        const toks = [`${p.n}의 약수를 작은 수부터 모두 쓰면 `], sol = [];
+        ds.forEach((x, i) => { if (i) toks.push(', '); if (hole.has(x)) { toks.push(B(sol.length)); sol.push(x); } else toks.push(String(x)); });
+        return nums(toks, sol, { bugs: [{ test: (v) => v.some((x, i) => sol[i] != null && x !== sol[i] && p.n % x !== 0), name: '나누어떨어지지 않는 수를 약수로 씀', to: 'D4' }] });
+      }
       const cand = []; for (let i = 2; i < p.n; i++) if (p.n % i) cand.push(i);
       const not = cand[p.s % cand.length];
       const yes = ds.filter((x) => x > 1 && x < p.n);
@@ -75,12 +95,14 @@ export default [
   {
     id: 'G2', name: '배수', kid: '배수 찾기', g: '5-1', s: 'G', pre: (p) => [tbl(p ? p.n : 2)],
     tip: '배수는 곱셈구구의 한 단이에요. 수 배열표에 4의 배수를 색칠해요.',
-    gen: (r) => ({ v: r.chance(0.6) ? 'seq' : 'is', n: r.int(3, 9), s: r.int(0, 999) }),
+    //  is 문항: k = 정답이 놓일 자리(작은 수부터 0~3 · 시드로 정해짐) — k가 없는 옛 문항(10-31까지 저장된 p)은 예전 보기 그대로
+    gen: (r) => { const v = r.chance(0.6) ? 'seq' : 'is', n = r.int(3, 9), s = r.int(0, 999); return v === 'is' ? { v, n, s, k: r.int(0, 3) } : { v, n, s }; },
     make: (p) => {
       if (p.v === 'seq') return nums([`${p.n}의 배수를 작은 수부터: ${p.n}, ${p.n * 2}, `, B(0), ', ', B(1)], [p.n * 3, p.n * 4], { bugs: [{ test: (v) => v[0] === p.n * 2 + 1 || v[0] === p.n + 2, name: '배수를 1씩·2씩 늘림', to: 'M2' }] });
       const right = p.n * (3 + (p.s % 6));
-      const wrong = [right + 1, right - 2, right + p.n - 1].filter((x) => x % p.n !== 0);
-      const ch = [right, ...wrong.slice(0, 3)].sort((a, b) => a - b);
+      let ch;
+      if (p.k == null) { const wrong = [right + 1, right - 2, right + p.n - 1].filter((x) => x % p.n !== 0); ch = [right, ...wrong.slice(0, 3)].sort((a, b) => a - b); }
+      else ch = [right, ...g2Wrong(p.n, right, ((p.k % 4) + 4) % 4, p.s)].sort((a, b) => a - b);
       return pick([`${p.n}의 배수를 고르세요.`], ch.map((x) => [String(x)]), ch.indexOf(right), {});
     },
   },
@@ -97,9 +119,10 @@ export default [
         ],
       });
     },
+    // 약수를 늘어놓고(빈칸은 짝의 큰 쪽) → 두 줄에 모두 있는 수가 공약수 → 그중 가장 큰 수 · 몇 개인지는 원래 문제에서
     steps: (p) => [
-      { c: 'G1', p: { v: 'count', n: p.a }, why: `${p.a}의 약수를 모두 찾아요.` },
-      { c: 'G1', p: { v: 'count', n: p.b }, why: `${p.b}의 약수를 모두 찾아요.` },
+      { c: 'G1', p: { v: 'list', n: p.a }, why: `${p.a}의 약수를 모두 늘어놓아요. 곱해서 ${p.a}${P(p.a, '이', '가')} 되는 두 수를 짝 지어 찾아요.` },
+      { c: 'G1', p: { v: 'list', n: p.b }, why: `${p.b}의 약수도 늘어놓아요. 두 줄에 모두 있는 수가 ${p.a}${P(p.a, '과', '와')} ${p.b}의 공약수예요.` },
     ],
   },
   {

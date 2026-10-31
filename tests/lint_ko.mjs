@@ -36,7 +36,10 @@ function particleOk(sound, p) {
   return true;
 }
 // 수(+ 단위) 뒤에 바로 붙은 조사 — '3/4은' · '24이에요' · '2 m를' · '5 kg을'
-const NUMRE = /(\d+ \d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?)( ?(?:mL|km|cm|mm|kg|m|L|g|%))?(이었|였|이에요|예요|으로|로|과|와|은|는|을|를|이|가)(?![가-힣])/g;
+//   '이었 · 였'은 늘 뒤에 글자가 이어지므로(이었을까요 · 였어요) 뒤 글자 검사 없이 — 예전엔 이 둘을 못 잡았음
+const NUMRE = /(\d+ \d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?)( ?(?:mL|km|cm|mm|kg|m|L|g|%))?(이었|였|(?:이에요|예요|으로|로|과|와|은|는|을|를|이|가)(?![가-힣]))/g;
+// 수 없이 한글 낱말 뒤에 띄어 쓴 단위 + 조사 — '몇 m이었을까요'(→ 몇 m였을까요) · '몇 kg였을까요'(→ 몇 kg이었을까요) [혹평 11-01]
+const UNITRE = /(?<=[가-힣] )(mL|km|cm|mm|kg|m|L|g)(이었|였|(?:이에요|예요|으로|로|과|와|은|는|을|를|이|가)(?![가-힣A-Za-z]))/g;
 export function lintKo(text, { nouns = [] } = {}) {
   const out = [], t = String(text);
   if (/undefined|NaN|null|\[object/.test(t)) out.push(`빈 값: ${t}`);
@@ -44,6 +47,10 @@ export function lintKo(text, { nouns = [] } = {}) {
   for (const m of t.matchAll(NUMRE)) {
     const sound = m[2] ? UNIT_SOUND[m[2].trim()] : numSound(m[1]);
     if (sound && !particleOk(sound, m[3])) out.push(`조사: '${m[0]}'`);
+  }
+  for (const m of t.matchAll(UNITRE)) {
+    const sound = UNIT_SOUND[m[1]];
+    if (sound && !particleOk(sound, m[2])) out.push(`조사: '${m[0]}'`);
   }
   // ② 아는 낱말 뒤 조사
   for (const w of nouns) {

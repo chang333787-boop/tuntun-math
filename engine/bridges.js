@@ -103,6 +103,15 @@ const B = {
   },
   // (자연수) ÷ (분수) — 포함제로 보면 '나누면 커지는' 까닭이 보인다
   '6-2-1:5': (p) => {
+    // 1과 같은 분수 · 1보다 큰 분수로 나누는 크기 문항 — '나누면 커진다' 다리 대신 ÷ 1 · ÷ 자연수(2)와 견줌
+    if (p.v === 'size' && p.n === p.d) {
+      const old = mk('F3', { v: 'whole', w: 1, d: p.d });
+      return old && { old, idea: '1을 1/몇이 몇 개로 세기', same: `${j(frac(p.n, p.d), '은', '는')} 1/${p.d}이 ${p.d}개라서 1이에요.`, change: `${p.N} ÷ 1처럼 1로 나누면 몫은 ${ye(p.N)} — 값이 그대로예요.`, leap: null };
+    }
+    if (p.v === 'size') {
+      const old = p.N % 2 ? null : mk('DIV', { a: p.N, b: 2 }), f = p.mx && p.n % p.d ? mixedT(p.n, p.d) : frac(p.n, p.d);
+      return old && { old, idea: '자연수로 나누면 몫이 작아짐', same: `${p.N} ÷ 2 = ${p.N / 2}처럼 1보다 큰 수로 나누면 몫이 ${p.N}보다 작아요.`, change: `나누는 수가 자연수 2에서 1보다 큰 분수 ${f}${RO_(String(f).split('/')[0].split(' ').pop())} 바뀌었어요.`, leap: '1보다 작은 수로 나눌 때만 몫이 나누어지는 수보다 커져요 — 나누는 수가 1보다 큰지 작은지 먼저 봐요.' };
+    }
     const one = p.v === 'one', NN = one ? 1 : p.N, N = NN * p.d, unitOld = one || p.n === 1;
     const old = unitOld ? mk('F3', { v: 'whole', w: NN, d: p.d }) : N <= 81 ? mk('DIV', { a: N, b: p.n }) : null;
     p = { ...p, N: NN };

@@ -77,7 +77,7 @@ export const WANT = {
   'dec.long': { '4-2-3:6': (p) => !!p.short }, 'dec.short': { '4-2-3:6': (p) => !!p.short },
   'fr.cmpGap': { '5-1-4:6': (p) => p.v === 'gap' || p.v === 'bignum' },
   'eq.answer': { '2-1-3:10': (p) => !!p.eq }, 'box.visible': { '2-1-3:10': (p) => !!p.eq },
-  'mul.bigger': { '5-2-2:4': (p) => !!p.dir, '6-2-1:5': (p) => p.v === 'dir' },
+  'mul.bigger': { '5-2-2:4': (p) => !!p.dir, '6-2-1:5': (p) => p.v === 'dir' || (p.v === 'size' && p.n === p.d) },   /* 크기 문항 중 '늘 커진다 · 늘 작아진다'로 풀면 틀리는 꼴만 — 5-2-2:4 sz(분수와 · 바꾼 식과 견줌) · 6-2-1:5 1보다 큰 분수로 나눔은 함정 X · 1과 같은 분수로 나눔은 함정 */
   'sub.zero': { '2-1-3:6': () => true, '3-1-1:7': (p) => p.a != null && /0/.test(String(p.a).slice(0, -1)) },
   'sub.borrow': { '2-1-3:7': (p) => p.a != null && p.b != null && Math.abs((p.a % 10) - (p.b % 10)) !== 5, '3-1-1:6': (p) => p.a != null && p.b != null && Math.abs((p.a % 10) - (p.b % 10)) !== 5 },
   'mul.dist': { '3-1-4:5': (p) => p.a != null && p.a % 10 !== 0, '3-1-4:6': (p) => p.a != null && p.a % 10 !== 0 },

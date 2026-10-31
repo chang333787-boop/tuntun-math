@@ -36,8 +36,8 @@ const buildUnits = (p) => fracKeep([fx(1, p.d), `이 ${p.n}개이면 `, fb(0, 1)
   { test: (v) => v[0] === p.d && v[1] === p.n, name: '분모와 분자를 바꿈', to: 'F1' },
 ]);
 
-// 수직선의 ↓가 가리키는 수를 분수로 — 칸 수 대신 눈금(점) 수를 분모로 세는 오류 · 0 눈금부터 세는 오류
-const lineFrac = (p, max) => fracKeep([{ svg: numLine(p.d, max, p.n) }, '↓가 가리키는 수를 분수로 쓰면 ', fb(0, 1)], F(p.n, p.d), [
+// 수직선의 ▼가 가리키는 수를 분수로 — 칸 수 대신 눈금(점) 수를 분모로 세는 오류 · 0 눈금부터 세는 오류
+const lineFrac = (p, max) => fracKeep([{ svg: numLine(p.d, max, p.n) }, '▼가 가리키는 수를 분수로 쓰면 ', fb(0, 1)], F(p.n, p.d), [
   { test: (v) => v[0] === p.n && v[1] === p.d * max + 1, name: '칸 수가 아니라 눈금 수를 분모로 셈', to: '3-1-6:2' },
   { test: (v) => v[0] === p.n && v[1] === p.d - 1, name: '0과 1 사이 눈금 수를 분모로 셈', to: '3-1-6:2' },
   { test: (v) => v[0] === p.n + 1 && v[1] === p.d, name: '0 눈금부터 세어 하나 더 셈', to: '3-1-6:5' },
@@ -318,18 +318,19 @@ export default {
     // ── 3-1-3 나눗셈 (등분제 → 포함제 → 곱셈과의 관계 → 곱셈식 → 곱셈구구)
     {
       id: '3-1-3:2', fam: 'D1', name: '똑같이 나누기 (몇 묶음으로)', kid: '똑같이 나누면 하나에 몇 개', sec: 12,
-      gen: (r) => ({ d: r.int(2, 6), q: r.int(2, 6) }),
+      gen: (r) => until(r, (r) => ({ d: r.int(2, 6), q: r.int(2, 6) }), (p) => p.q !== p.d),   /* 몫 = 사람 수(16 ÷ 4 = 4)는 '사람 수를 씀'을 못 가려 거름 */
       is: (p) => p.d >= 2 && p.q >= 1, prev: null, pre: ['2-1-6:3'],
-      hint: '사탕 12개를 3명이 똑같이 나누려면 한 명에게 하나씩 돌아가며 나눠 줘요. 한 명이 4개씩 가져요.',
+      hint: '하나씩 돌아가며 나눠 주고, 각자 받은 수를 세어요. 그림의 한 줄은 모두에게 하나씩 한 바퀴 나눠 준 것이라 줄의 수가 한 사람 몫이에요. 사탕 12개를 3명이 똑같이 나누려면 한 명에게 하나씩 돌아가며 나눠 줘요. 한 명이 4개씩 가져요.',
       bridge: '"모두 몇 개를 몇 명에게 똑같이" — 나누는 수가 묶음(사람) 수인 나눗셈이에요.',
     },
     {
       id: '3-1-3:3', fam: 'D2', name: '똑같이 나누기 (몇씩 덜어 내기)', kid: '몇 개씩 덜어 내면 몇 번', sec: 15,
-      gen: (r) => ({ v: r.chance(0.5) ? 'sub' : 'pic', d: r.int(2, 5), q: r.int(2, 6) }),
+      // 몫 = 묶는 수(16 ÷ 4 = 4)는 거름 — '한 묶음의 수와 묶음 수를 헷갈림'을 가려낼 수 없음(약 20%였음)
+      gen: (r) => until(r, (r) => ({ v: r.chance(0.5) ? 'sub' : 'pic', d: r.int(2, 5), q: r.int(2, 6) }), (p) => p.q !== p.d),
       make: (p) => {
         if (p.v !== 'pic') return D2.make(p);
         const n = p.d * p.q;
-        return nums([{ svg: dots(n, { cols: Math.min(n, 6) }) }, `${n}개를 ${p.d}개씩 묶으면 `, B(0), '묶음이에요.', { br: 1 }, `${n} ÷ ${p.d} = `, B(1)], [p.q, p.q], {
+        return nums([{ svg: dots(n, { cols: p.d }) }, `${n}개를 ${p.d}개씩 묶으면 `, B(0), '묶음이에요.', { br: 1 }, `${n} ÷ ${p.d} = `, B(1)], [p.q, p.q], {
           bugs: [
             { test: (v) => v[0] === p.d || v[1] === p.d, name: '한 묶음의 수와 묶음 수를 헷갈림', to: '3-1-3:2' },
             { test: (v) => v[0] === n - p.d || v[1] === n - p.d, name: '나누기를 한 번 빼기로 봄', to: '1-1-3:10' },
@@ -337,7 +338,7 @@ export default {
         });
       },
       is: (p) => (p.v == null || p.v === 'sub' || p.v === 'pic') && p.d >= 2 && p.q >= 1, prev: '3-1-3:2', pre: ['2-1-6:3'],
-      hint: '12에서 3씩 덜어 내면 12 − 3 − 3 − 3 − 3 = 0, 네 번이에요. 그래서 12 ÷ 3 = 4예요.',
+      hint: '덜어 낸 횟수(묶음의 수)가 몫이에요. 그림의 한 줄이 한 묶음이라 줄을 세면 묶음의 수예요. 12에서 3씩 덜어 내면 12 − 3 − 3 − 3 − 3 = 0, 네 번이에요. 그래서 12 ÷ 3 = 4예요.',
       bridge: '"몇 개씩 덜어 내면 몇 번" — 나누는 수가 한 묶음의 크기인 나눗셈이에요. 6학년 분수 ÷ 분수의 뿌리예요.',
     },
     {
@@ -370,7 +371,7 @@ export default {
         });
       },
       is: (p) => p.v === 'box', prev: '3-1-3:4', pre: (p) => [p ? danOf(p.a) : '2-2-2:4'],
-      hint: '12 ÷ 3의 몫은 3 × □ = 12의 □예요. 3 × 4 = 12니까 몫은 4예요.',
+      hint: '나누는 수에 어떤 수를 곱해야 나누어지는 수가 되는지 찾아요. 그 수가 몫이에요. 12 ÷ 3의 몫은 3 × □ = 12의 □예요. 3 × 4 = 12니까 몫은 4예요.',
       tip: '12 ÷ 3 = □를 3 × □ = 12로 바꿔 읽게 해요. 나눗셈의 몫은 곱셈식의 빈칸이라는 것을 말로 하게 해요.',
     },
     {
@@ -449,7 +450,7 @@ export default {
       gen: (r) => { const d = r.int(3, 10); return { v: r.pick(['count', 'build', 'line']), d, n: r.int(2, d - 1) }; },
       make: (p) => (p.v === 'build' ? buildUnits(p) : p.v === 'line' ? lineFrac(p, 1) : F3.make(p)),
       is: (p) => (p.v === 'count' || p.v === 'build' || p.v === 'line') && p.n >= 1 && p.n < p.d, prev: '3-1-6:4', pre: [],
-      hint: '1/5, 1/3처럼 분자가 1인 분수가 단위분수예요. 3/5은 1/5이 3개예요.',
+      hint: '분모는 전체를 똑같이 나눈 칸의 수, 분자는 그 단위분수가 몇 개인지예요. 수직선에서는 0과 1 칸을 몇 칸으로 똑같이 나누었는지 세면 분모, 0에서 ▼까지 몇 칸인지 세면 분자예요. 1/5, 1/3처럼 분자가 1인 분수가 단위분수예요. 3/5은 1/5이 3개예요.',
     },
     {
       id: '3-1-6:6', fam: 'F3', name: '분모가 같은 분수 크기 비교', kid: '분모가 같은 분수 비교', sec: 8,
@@ -522,7 +523,7 @@ export default {
       },
       is: (p) => (['units', 'cm', 'join'].includes(p.v) && p.n >= 11) || ((p.v === 'count' || p.v === 'frac') && p.n >= 10),
       prev: '3-1-6:8', pre: ['1-2-1:3'],
-      hint: '2와 0.3만큼은 2.3이고, 0.1이 23개예요. 3 cm 5 mm는 3.5 cm예요.',
+      hint: '자연수 부분은 소수점 왼쪽에, 0.1이 몇 개인지는 소수점 오른쪽에 써요. 2와 0.3만큼은 2.3이고, 0.1이 23개예요. 3 cm 5 mm는 3.5 cm예요.',
       tip: '수직선에서 2와 3 사이를 10칸으로 나눠 2.3을 짚게 해요. 자 위에서 3 cm 5 mm = 3.5 cm를 읽으며 "자연수 부분 + 0.1이 몇 개"로 말하게 해요.',
     },
     {
@@ -765,7 +766,8 @@ export default {
       id: '3-2-4:7', fam: 'g3_FCMP', name: '가분수·대분수 크기 비교', kid: '가분수·대분수 크기 비교', sec: 15,
       gen: (r) => {
         // 언제나 세 수 중에서 고른다 (둘 중 고르기는 찍어서 맞히기 쉬움) · 가장 큰 수 60% · 가장 작은 수 40%
-        const d = r.int(3, 9), v = r.pick(['mm', 'im', 'ii', 'three', 'three']), ask = r.chance(0.6) ? 'max' : 'min';
+        //   가분수끼리('ii')는 새로 내지 않음 — 분모가 같은 가분수 비교는 3-1-6:6과 같은 문제(27%였음) · 'three'도 대분수와 가분수가 함께
+        const d = r.int(3, 9), v = r.pick(['mm', 'im', 'im', 'three', 'three']), ask = r.chance(0.6) ? 'max' : 'min';
         const mix = (w) => w * d + r.int(1, d - 1);
         let xs, ms;
         do {
@@ -776,7 +778,7 @@ export default {
             xs = pairs.map((q) => q[0]); ms = pairs.map((q) => q[1]);
           } else if (v === 'ii') { xs = [0, 1, 2].map(() => r.int(d, 4 * d)); ms = [0, 0, 0]; }
           else { const w = r.int(1, 3); xs = [0, 1, 2].map(() => r.int(w * d + 1, (w + 2) * d - 1)); ms = xs.map((x) => (x % d && r.chance(0.5) ? 1 : 0)); }
-        } while (new Set(xs).size !== xs.length || Math.min(...xs) <= d - (v === 'ii' ? 1 : 0) || xs.some((x, k) => ms[k] && x % d === 0));
+        } while (new Set(xs).size !== xs.length || Math.min(...xs) <= d - (v === 'ii' ? 1 : 0) || xs.some((x, k) => ms[k] && x % d === 0) || (v === 'three' && !(ms.includes(1) && ms.includes(0))));
         return { v, d, xs, ms, ask };
       },
       is: (p) => ['mm', 'im', 'ii', 'three'].includes(p.v) && Array.isArray(p.xs), prev: '3-2-4:6', pre: ['3-1-6:6'],

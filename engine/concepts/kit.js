@@ -135,6 +135,32 @@ export const J = (n, withB, noB) => `${n}${lastSound(n).bat ? withB : noB}`;
 export const P = (n, withB, noB) => (lastSound(n).bat ? withB : noB);
 export const RO = (n) => { const s = lastSound(n); return `${n}${s.bat && !s.rieul ? '으로' : '로'}`; };
 
+// 계산하지 말고 크기만(5-2-2:4 × · 6-2-1:5 ÷) — 보기 차례는 늘 커요 · 작아요 · 같아요(정답 자리는 수와 견주는 것으로 바뀜)
+//   p = { N, n, d, mx?, sz? }: 분수 n/d(mx면 대분수로 보임)
+//   견주는 것: N(기본 — 곱하는 · 나누는 분수가 1보다 작은지 · 같은지 · 큰지) · sz 'frac' = 곱한 분수 n/d(N ≥ 2 → 커요) · sz 'swap' = n/d × N(같아요)
+//   5-2-2:4는 '(자연수)×(진분수)'(tests/rules.test.mjs)라 분수는 늘 진분수 — 견주는 것을 바꿔 정답이 늘 '작아요'가 되지 않게 · 6-2-1:5는 1보다 큰 분수 · 1과 같은 분수로 나눔
+export function sizeAsk(p, op) {
+  const mul = op === '×', F0 = p.mx && p.n > p.d && p.n % p.d ? { m: [Math.floor(p.n / p.d), p.n % p.d, p.d] } : fx(p.n, p.d), bugs = {}, head = ['계산하지 말고 생각해요. ', `${p.N} ${op} `, F0];
+  const CH = [['커요'], ['작아요'], ['같아요']];
+  if (mul && p.sz === 'frac') {
+    bugs[1] = { name: '자연수를 곱한 값이 곱한 분수보다 작다고 봄 (분수의 몇 배인데)', to: '5-2-2:2' };
+    bugs[2] = { name: '자연수를 곱해도 분수와 같다고 봄', to: '5-2-2:2' };
+    return pick([...head, '의 값은 ', fx(p.n, p.d), '보다 어떨까요?'], CH, 0, { bugs });
+  }
+  if (mul && p.sz === 'swap') {
+    bugs[0] = bugs[1] = { name: '곱하는 두 수의 순서를 바꾸면 곱이 달라진다고 봄', to: '5-2-2:2' };
+    return pick([...head, '의 값은 ', fx(p.n, p.d), ` × ${p.N}보다 어떨까요?`], CH, 2, { bugs });
+  }
+  const lt = p.n < p.d, eq = p.n === p.d, right = eq ? 2 : (lt === mul ? 1 : 0);
+  const to = mul ? (lt ? '5-2-2:2' : '3-2-4:5') : (lt ? '6-2-1:2' : '3-2-4:5');
+  const say = { 0: mul ? '곱하면 늘 커진다고 봄' : '나누면 늘 커진다고 봄', 1: mul ? '분수를 곱하면 늘 작아진다고 봄' : '나누면 늘 작아진다고 봄', 2: mul ? '분수를 곱해도 값이 같다고 봄' : '분수로 나눠도 값이 같다고 봄' };
+  const why = lt ? ' (1보다 작은 수' : eq ? ' (1과 같은 수' : ' (1보다 큰 수';
+  [0, 1, 2].forEach((k) => { if (k !== right) bugs[k] = { name: `${say[k]}${why}${mul ? '를 곱해도)' : '로 나눠도)'}`, to }; });
+  if (lt && mul) bugs[2] = { name: '1보다 작은 수를 곱해도 그대로라고 봄', to };   /* 예전 이름 그대로(mis.js 카드 이름 '그대로라고 봄') */
+  if (lt && !mul) bugs[2] = { name: '1보다 작은 수로 나눠도 그대로라고 봄', to };
+  return pick([...head, `의 값은 ${p.N}보다 어떨까요?`], CH, right, { bugs });
+}
+
 export const fx = (n, d) => ({ f: [n, d] });
 export const B = (i) => ({ b: i });
 export const fb = (i, j) => ({ f: [{ b: i }, { b: j }] });

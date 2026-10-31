@@ -3,7 +3,7 @@
 //            g5_MIXADD · g5_MIXSUB 분모가 다른 대분수의 덧셈·뺄셈 · g5_RANGE 이상·이하·초과·미만 · g5_ROUND 올림·버림·반올림
 //            g5_DMUL 소수의 곱셈 · g5_DPOINT 곱의 소수점 위치
 //   다시 쓴 개념 가족: G1~G4 · R1 · F7~F15a (차시마다 gen으로 유형을 좁히고 is로 가른다)
-import { nums, frac, mixed, pick, fx, fb, B, P, F, gcd } from '../concepts/kit.js';
+import { nums, frac, mixed, pick, fx, fb, B, P, F, gcd, sizeAsk } from '../concepts/kit.js';
 import { lcm, eqv, near, fmt, divisors, simp } from '../math.js';
 import { twoBars, toText } from '../tokens.js';
 import { KIND, danOf } from './ops.js';
@@ -293,7 +293,8 @@ const RANGEFAM = {
         bugs: [{ test: (v) => v[0] === wrong, name: open(p.m) ? '기준 수를 넣음 (이상·이하와 헷갈림)' : '기준 수를 빼고 봄', to: toLe }],
       });
     }
-    const ms = ['ge', 'le', 'gt', 'lt'], right = ms.indexOf(p.m);
+    // 보기 차례 — o(새 문항 · 시드로 섞은 차례)가 있으면 그대로 · 없는 옛 문항은 예전 차례(이상 · 이하 · 초과 · 미만) — 예전엔 정답이 늘 앞 둘(5-2-1:2) · 뒤 둘(5-2-1:3)
+    const M0 = ['ge', 'le', 'gt', 'lt'], ms = Array.isArray(p.o) && p.o.length === 4 && new Set(p.o).size === 4 && p.o.every((i) => M0[i]) ? p.o.map((i) => M0[i]) : M0, right = ms.indexOf(p.m);
     const twin = { ge: 'gt', gt: 'ge', le: 'lt', lt: 'le' }[p.m], mirror = { ge: 'le', le: 'ge', gt: 'lt', lt: 'gt' }[p.m];
     return pick([{ svg: numLine(p.b, p.m) }, '수직선에 나타낸 수의 범위를 고르세요.'], ms.map((m) => [`${p.b} ${RN[m]}`]), right, {
       bugs: { [ms.indexOf(twin)]: { name: '●(점)과 ○(빈 점)을 헷갈림', to: toLe }, [ms.indexOf(mirror)]: { name: '수직선의 방향을 헷갈림', to: null } },
@@ -313,7 +314,7 @@ function genRange(r, opened) {
     const [m, m2] = opened ? r.pick([['gt', 'lt'], ['gt', 'lt'], ['gt', 'lt'], ['ge', 'lt'], ['gt', 'le']]) : ['ge', 'le'];
     return { v, m, m2, b, b2 };
   }
-  return { v, m: one, b };
+  return v === 'line' ? { v, m: one, b, o: r.shuffle([0, 1, 2, 3]) } : { v, m: one, b };
 }
 const isOpenRange = (p) => open(p.m) || (!!p.m2 && open(p.m2));
 
@@ -591,7 +592,7 @@ export default {
     // ── 5-1-2 약수와 배수 (G1~G4)
     {
       id: '5-1-2:2', fam: 'G1', name: '약수', kid: '약수 찾기', sec: 25,
-      gen: (r) => CF.G1.gen(r), is: (p) => p.v === 'count' || p.v === 'isnt', prev: null, pre: ['3-1-3:6', '3-2-2:6'],
+      gen: (r) => CF.G1.gen(r), is: (p) => p.v === 'count' || p.v === 'isnt' || p.v === 'list', prev: null, pre: ['3-1-3:6', '3-2-2:6'],   /* list = 약수 늘어놓기(공약수 단계에서만 씀) */
       // '약수가 아닌 것' 보기는 그럴듯한 수(그 수의 절반 이하)로 — 45의 31처럼 한눈에 보이는 답을 내지 않는다
       make: (p) => {
         if (p.v !== 'isnt') return CF.G1.make(p);
@@ -604,6 +605,7 @@ export default {
       steps: (p) => {
         const ds = divisors(p.n).filter((x) => x > 1 && x < p.n);
         if (p.v === 'count') return ds.slice(0, 2).map((d) => ({ c: 'DIV', p: { a: p.n, b: d }, why: `${p.n} ÷ ${d}${P(d, '이', '가')} 나누어떨어지면 ${d}${P(d, '과', '와')} 그 몫이 모두 약수예요.` }));
+        if (p.v === 'list') return ds.filter((d) => d > 1 && d * d < p.n).slice(0, 2).map((d) => ({ c: 'DIV', p: { a: p.n, b: d }, why: `${d}${P(d, '과', '와')} 짝이 되는 약수는 ${p.n} ÷ ${d}의 몫이에요.` }));
         const not = g1Not(p);
         return [{ c: 'DIV', p: { a: p.n, b: not }, why: `보기의 수로 ${p.n}${P(p.n, '을', '를')} 하나씩 나눠 봐요. 나머지가 있는 수가 약수가 아니에요.` }];
       },
@@ -892,15 +894,22 @@ export default {
     {
       id: '5-2-2:4', fam: 'F14', name: '(자연수)×(진분수)', kid: '자연수 × 진분수', sec: 20,
       // dir: 계산하지 말고 크기 방향만 — '곱하면 늘 커진다'는 계산을 맞혀도 남아 있어 따로 물어야 드러남 [E2-1][E2-3][E3-11]
-      gen: (r) => { const d = r.int(2, 9), n = cop(r, d); if (r.chance(0.2)) return { dir: 1, d, n, N: r.int(6, 30) }; if (r.chance(0.7)) return { d, n, N: d * r.int(2, 6) }; let N; do { N = r.int(2, 12); } while (N % d === 0); return { d, n, N }; },
+      //   dir = N과 견줌(작아요 · 함정 꼴 mis.js WANT) · sz 'frac' = 곱한 분수와 견줌(커요) · sz 'swap' = n/d × N과 견줌(같아요) — 정답이 늘 '작아요'로 외워지지 않게
+      //   분수는 늘 진분수(차시 이름 '(자연수)×(진분수)' · tests/rules.test.mjs) · sz는 dir과 다른 이름(app/js/tools.js 어림 도구가 dir을 'N보다 작아요'로 읽음)
+      gen: (r) => {
+        const d = r.int(2, 9), n = cop(r, d);
+        if (r.chance(0.3)) { const N = r.int(6, 30), t = r.next(); return t < 0.5 ? { dir: 1, d, n, N } : { sz: t < 0.8 ? 'frac' : 'swap', d, n, N }; }
+        if (r.chance(0.7)) return { d, n, N: d * r.int(2, 6) }; let N; do { N = r.int(2, 12); } while (N % d === 0); return { d, n, N };
+      },
       is: (p) => !p.mix && p.n < p.d, prev: null, pre: ['3-2-4:3', '3-2-4:4'],
-      make: (p) => (p.dir ? pick(['계산하지 말고 생각해요. ', `${p.N} × `, fx(p.n, p.d), `의 값은 ${p.N}보다 어떨까요?`], [['커요'], ['작아요'], ['같아요']], 1, { bugs: { 0: { name: '곱하면 늘 커진다고 봄 (1보다 작은 수를 곱해도)', to: '5-2-2:2' }, 2: { name: '1보다 작은 수를 곱해도 그대로라고 봄', to: '5-2-2:2' } } })
+      make: (p) => (p.dir || p.sz ? sizeAsk(p, '×')
         : p.N % p.d === 0 ? CF.F14.make(p)
         : fracAns([`${p.N} × `, fx(p.n, p.d), ' = '], F(p.N * p.n, p.d), [{ test: (v) => v[0] === p.N * p.n && v[1] === p.d * p.N, name: '분모에도 곱함', to: '3-2-4:3' }])),
-      steps: (p) => (p.dir ? [] : p.N % p.d === 0 ? [{ c: 'F4', p: { N: p.N, n: p.n, d: p.d }, why: `${p.N} × ${p.n}/${p.d}${P(p.n, '은', '는')} ${p.N}의 ${p.n}/${p.d}${P(p.n, '이라는', '라는')} 뜻이에요.` }] : [
-        p.n > 1 ? { c: 'F3', p: { v: 'count', n: p.n, d: p.d }, why: `${p.n}/${p.d}${P(p.n, '은', '는')} 1/${p.d}이 몇 개인가요?` } : null,
-        p.n > 1 ? { c: 'MUL', p: { a: p.n, b: p.N }, why: `그것이 ${p.N}묶음이에요.` } : null,
-        { c: 'F3', p: { v: 'build', n: p.N * p.n, d: p.d }, why: `1/${p.d}이 ${p.N * p.n}개를 분수로 써요.` },
+      // 나누어떨어지지 않으면(3 × 3/7) '3의 3/7'로 — 3의 1/7은 1/7이 3개, 3의 3/7은 그것이 3개(예전: '3/7의 3묶음' = 진분수 × 자연수 뜻 · 혹평 11-01)
+      steps: (p) => (p.dir || p.sz ? [] : p.N % p.d === 0 ? [{ c: 'F4', p: { N: p.N, n: p.n, d: p.d }, why: `${p.N} × ${p.n}/${p.d}${P(p.n, '은', '는')} ${p.N}의 ${p.n}/${p.d}${P(p.n, '이라는', '라는')} 뜻이에요.` }] : [
+        { c: 'F3', p: { v: 'build', n: p.N, d: p.d }, why: `${p.N} × ${p.n}/${p.d}${P(p.n, '은', '는')} ${p.N}의 ${p.n}/${p.d}${P(p.n, '이에요', '예요')}. ${p.n > 1 ? '먼저 ' : ''}${p.N}의 1/${p.d}${P(1, '은', '는')} 1의 1/${p.d}이 ${p.N}개 모인 수예요.` },
+        p.n > 1 ? { c: 'MUL', p: { a: p.N, b: p.n }, why: `${p.N}의 ${p.n}/${p.d}${P(p.n, '은', '는')} ${p.N}의 1/${p.d}이 ${p.n}개예요. 1/${p.d}이 모두 몇 개인지 곱해요.` } : null,
+        p.n > 1 ? { c: 'F3', p: { v: 'build', n: p.N * p.n, d: p.d }, why: `1/${p.d}이 ${p.N * p.n}개인 수를 분수로 써요.` } : null,
       ].filter(Boolean)),
       hint: '12 × 2/3는 "12의 2/3"라는 뜻이에요. 12를 3묶음으로 나눈 것 중 2묶음 → 12 ÷ 3 × 2 = 8.',
       tip: '12 × 2/3는 "12의 2/3"라는 뜻이에요. 3학년의 "분수만큼은 얼마"와 같은 계산이에요(12 ÷ 3 × 2). 곱이 자연수가 아니면(8 × 1/6) 1/6이 8개인 수로 생각하게 해요.',
@@ -917,8 +926,8 @@ export default {
       },
       steps: (p) => [
         { c: 'MUL', p: { a: p.N, b: Math.floor(p.n / p.d) }, why: '대분수의 자연수 부분을 곱해요.' },
-        { c: 'F14', p: { N: p.N, n: p.n % p.d, d: p.d }, why: '분수 부분도 곱해요. 두 결과를 더하면 돼요.' },
-      ].filter((x) => !(x.c === 'MUL' && x.p.b === 1)),
+        { c: 'F14', p: { N: p.N, n: p.n % p.d, d: p.d }, why: Math.floor(p.n / p.d) === 1 ? `자연수 부분 1에 ${p.N}${P(p.N, '을', '를')} 곱하면 ${p.N}${P(p.N, '이에요', '예요')}. 분수 부분에도 ${p.N}${P(p.N, '을', '를')} 곱해요. 두 결과를 더하면 돼요.` : '분수 부분도 곱해요. 두 결과를 더하면 돼요.' },
+      ].filter((x) => !(x.c === 'MUL' && x.p.b === 1)),   /* 자연수 부분이 1이면 곱하는 단계를 빼고 분수 단계 말에 담음(5-2-2:3과 같게) */
       hint: '대분수를 가분수로 바꿔 곱하면 편해요. 3 × 1 2/5 = 3 × 7/5 = 21/5 = 4 1/5.',
       tip: '자연수 × 대분수는 대분수를 가분수로 바꿔 곱하거나(3 × 7/5), 자연수 부분과 분수 부분에 각각 곱해 더해요(3 × 1 + 3 × 2/5). 자연수 부분에만 곱하고 분수 부분을 그대로 두는 실수가 많아요.',
     },

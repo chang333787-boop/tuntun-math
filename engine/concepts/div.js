@@ -7,7 +7,8 @@ export default [
     id: 'D1', name: '똑같이 나누기 (몇 묶음으로)', kid: '똑같이 나누기', g: '3-1', s: 'D', pre: ['M1', 'N3'],
     tip: '바둑돌을 접시 몇 개에 하나씩 번갈아 놓아 똑같이 나눠요(등분).',
     gen: (r) => ({ d: r.int(2, 5), q: r.int(2, 6) }),
-    make: (p) => nums([{ svg: dots(p.d * p.q, { cols: Math.min(p.d * p.q, 6) }) }, `사탕 ${p.d * p.q}개를 ${p.d}명이 똑같이 나누면 한 명에게 `, B(0), '개씩이에요.'], p.q, {
+    // 그림은 한 줄 = 사람 수(한 사람에게 하나씩 한 바퀴) — 줄 수가 한 명이 받는 수
+    make: (p) => nums([{ svg: dots(p.d * p.q, { cols: p.d }) }, `사탕 ${p.d * p.q}개를 ${p.d}명이 똑같이 나누면 한 명에게 `, B(0), '개씩이에요.'], p.q, {
       bugs: [{ test: (v) => v[0] === p.d * p.q - p.d, name: '나누기를 빼기로 함', to: 'M1' }, { test: (v) => v[0] === p.d, name: '사람 수를 씀', to: 'M1' }],
     }),
   },

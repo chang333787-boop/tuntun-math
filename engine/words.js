@@ -12,7 +12,9 @@ import { F, simp, ar, txt, tok, q, S, uj, answerItem, choose, val, whole, rng, e
 
 // 문장으로 바꾸는 계산 가족 — 식이 '수 연산 수 ='로 시작하는 차시만
 const FAMS = new Set(['ADD', 'SUB', 'ADD3', 'MUL', 'DIV', 'F6', 'g4_FMIX', 'g4_DECAS', 'F12', 'g5_MIXADD', 'g5_MIXSUB', 'F13', 'F14', 'F15', 'g5_DMUL', 'F16', 'F17', 'g6_FDIVMUL', 'g6_DDIV', 'F18', 'F19', 'F21', 'F20', 'g6_DDIV2']);
-export const hasWords = (c) => !!(byId[c] && FAMS.has(byId[c].fam));
+// 1단과 0의 곱(2-2-2:8)은 이야기로 바꾸지 않음 — 1 × ○ · ○ × 1 이야기는 곱셈 구조가 드러나지 않고(꽃병에 1송이씩), 이야기 다리가 이 칸을 곱셈 칸으로 골라 곱셈 이야기가 빠지던 것(app/js/storylog.js KUKU)
+const NOWORDS = new Set(['2-2-2:8']);
+export const hasWords = (c) => !!(byId[c] && FAMS.has(byId[c].fam) && !NOWORDS.has(c));
 
 // ── 식 읽기(화면 글 그대로) ──
 const NUM = String.raw`\d+ \d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?`;
@@ -25,9 +27,10 @@ function num(s) {
   return { x: F(Number(s), 1), k: 'W' };
 }
 // 차시 문제 → { a, op, b, c?, st, rem } · 빈칸이 둘 이상인 나눗셈 = 몫과 나머지
+const QUOT = new RegExp(`^\\s*(${NUM})\\s*(÷)\\s*(${NUM})의 몫을 소수로 나타내면`);   /* 6-1-3:7 '14 ÷ 5의 몫을 소수로 나타내면 □'(= 없이) */
 function readItem(it) {
   if (it.choices) return null;
-  const t = toText(it.prompt), m = t.match(EXPR);
+  const t = toText(it.prompt), m = t.match(EXPR) || t.match(QUOT);
   if (!m) return null;
   const a = num(m[1]), b = num(m[3]), c = m[5] ? num(m[5]) : null;
   const kinds = [a.k, b.k, c && c.k].filter(Boolean);
@@ -43,14 +46,15 @@ function readItem(it) {
 // 개수 — max = 이 맥락에 어울리는 가장 큰 수(이야기 속 모든 수와 답) · lo = 비교 · 모으기에서 작은 쪽도 이만큼은(도서관 2층에 책 7권 X)
 //   own = 처음에 가진 곳: 'me'(나는 ○을 가지고 있었어요) 또는 자리 이름(우리 반에 · 책꽂이에 …) · give = 더 받는 곳(친구에게 …)
 //   at = 비교 · 모으기의 두 자리 · sh = 두 번째부터 부르는 짧은 이름 · use(n) = 덜어 낸 수 n에 맞는 말 [했어요, 했더니, 한]
+//   atS · shS = 가장 큰 수가 30까지이거나 가장 작은 수가 10 아래일 때의 두 자리(1반에 색종이 7장 · 2반에 1장 X → 빨간 봉투 · 파란 봉투) · 도서관 책은 모든 수가 100권부터(도서관 1층에 책 56권 X)
 //   col = 세 번 모으는 말 [했어요, 한] · share = 똑같이 나누는 상대(people 30명까지 · 그보다 많으면 bag) · bag = 나누어 넣는 그릇
 const COUNT = [
   { T: '구슬', u: '개', max: 100, own: 'me', give: '친구에게 ', add: '더 받았어요', at: ['빨간 상자', '파란 상자'], use: () => ['동생에게 주었어요', '동생에게 주었더니', '동생에게 준'], col: ['모았어요', '모은'], share: 'people', bag: '주머니' },
   { T: '사탕', u: '개', max: 50, own: 'me', give: '친구에게 ', add: '더 받았어요', at: ['왼쪽 바구니', '오른쪽 바구니'], use: (n) => (n <= 5 ? ['먹었어요', '먹었더니', '먹은'] : ['친구들에게 나누어 주었어요', '친구들에게 나누어 주었더니', '친구들에게 나누어 준']), col: ['받았어요', '받은'], share: 'people', bag: '봉지' },
-  { T: '색종이', u: '장', max: 2000, own: (m) => (m <= 30 ? 'me' : '우리 반'), add: '더 샀어요', at: ['1반', '2반'], use: () => ['썼어요', '썼더니', '쓴'], col: ['접었어요', '접은'], share: 'people', bag: '봉투' },
-  { T: '동화책', u: '권', max: 100, own: '책꽂이', inV: '꽂혀 있', inA: '꽂힌', add: '더 꽂았어요', at: ['우리 반', '옆 반'], use: () => ['친구들에게 빌려주었어요', '친구들에게 빌려주었더니', '친구들에게 빌려준'], col: ['읽었어요', '읽은'], share: 'people', bag: '상자' },
+  { T: '색종이', u: '장', max: 2000, own: (m) => (m <= 30 ? 'me' : '우리 반'), add: '더 샀어요', at: ['1반', '2반'], atS: ['빨간 봉투', '파란 봉투'], use: () => ['썼어요', '썼더니', '쓴'], col: ['접었어요', '접은'], share: 'people', bag: '봉투' },
+  { T: '동화책', u: '권', max: 100, own: '책꽂이', inV: '꽂혀 있', inA: '꽂힌', add: '더 꽂았어요', at: ['우리 반', '옆 반'], atS: ['책꽂이 위 칸', '책꽂이 아래 칸'], shS: ['위 칸', '아래 칸'], use: () => ['친구들에게 빌려주었어요', '친구들에게 빌려주었더니', '친구들에게 빌려준'], col: ['읽었어요', '읽은'], share: 'people', bag: '상자' },
   { T: '연필', u: '자루', max: 60, own: '우리 모둠', add: '더 샀어요', at: ['1모둠', '2모둠'], use: () => ['친구들에게 나누어 주었어요', '친구들에게 나누어 주었더니', '친구들에게 나누어 준'], col: ['샀어요', '산'], share: 'people', bag: '필통' },
-  { T: '책', u: '권', min: 100, lo: 20, max: 3000, own: '도서관', add: '새로 들여왔어요', at: ['도서관 1층', '도서관 2층'], sh: ['1층', '2층'], use: () => ['학생들이 빌려 갔어요', '학생들이 빌려 갔더니', '학생들이 빌려 간'], share: 'box', bag: '상자' },
+  { T: '책', u: '권', min: 100, lo: 100, max: 3000, own: '도서관', add: '새로 들여왔어요', at: ['도서관 1층', '도서관 2층'], sh: ['1층', '2층'], use: () => ['학생들이 빌려 갔어요', '학생들이 빌려 갔더니', '학생들이 빌려 간'], share: 'box', bag: '상자' },
   { T: '사과', u: '개', min: 50, lo: 20, max: 3000, own: '창고', add: '더 따 왔어요', at: ['우리 과수원', '이웃 과수원'], use: () => ['팔았어요', '팔았더니', '판'], share: 'box', bag: '상자' },
 ];
 // 양 — hold = 그릇에 든 것(물 · 밀가루 · 그릇은 양에 맞게 고름) · len = 길이(리본 · 철사 — 내가 가진 것)
@@ -101,10 +105,10 @@ function addSub(e, r, g) {
   const Q = (y) => q(y, st, u);
   const nu = (y, w1, w2) => (W ? j(txt(y, st) + u, w1, w2) : uj(u, w1, w2));   // '수 + 단위' 뒤 조사
   const cop = (y) => nu(y, '이에요', '예요');
-  const many = `몇 ${u}`, was = j(u, '이었을까요', '였을까요');
+  const many = `몇 ${u}`, was = W ? j(u, '이었을까요', '였을까요') : uj(u, '이었을까요', '였을까요');   /* 양 단위는 읽는 소리로(몇 m였을까요 · 몇 kg이었을까요) */
   const len = M.how === 'len', hold = M.how === 'hold';
   const box = hold ? holder(M, m) : null;
-  const [A, B0] = hold ? [`첫째 ${box}`, `둘째 ${box}`] : M.at, [As, Bs] = M.sh || [A, B0];   // 처음은 온이름, 그다음은 짧은 이름
+  const small = (m <= 30 || lo < 10) && M.atS, [A, B0] = hold ? [`첫째 ${box}`, `둘째 ${box}`] : small ? M.atS : M.at, [As, Bs] = (small ? M.shS : M.sh) || [A, B0];   /* 처음은 온이름, 그다음은 짧은 이름 · 작은 수는 작은 자리 */
   const atV = hold ? '들어 있' : '있';
   const tj = j(T, '이', '가'), tn = j(T, '은', '는'), tl = j(T, '을', '를'), Ae = j(As, '은', '는'), Be = j(Bs, '은', '는');
   // 처음에 가진 것 — 나는 ○을 가지고 있었어요 / ○○에 ○이 있었어요(들어 · 꽂혀)
@@ -173,15 +177,16 @@ function mul(e, r, g) {
   const wrongs = [{ t: E(a, '+', b, st), name: '곱셈 대신 덧셈을 고름' }];
   if (whole(a) && whole(b)) {
     const A = a.n / a.d, Bv = b.n / b.d, opts = [];
+    if (Bv === 1) return null;   /* ○씩 1묶음 · 1일 동안 — 곱하는 수가 1이면 이야기가 어색함(문장제 없음) */
     for (const G of GROUPS) if (A <= G.aMax && A >= (G.aMin || 2) - (G.one ? 1 : 0) && Bv <= G.bMax && Bv >= 2) opts.push(['groups', G], ['groups', G]);
     if (A >= 2 && A <= 12 && Bv >= 2 && Bv <= 12) opts.push(['rows']);
     if (A >= 2 && Bv >= 2 && Bv <= 9) { const C = COUNT.filter((C) => fits(C, A * Bv) && (!C.lo || A >= C.lo)); if (C.length) opts.push(['times', r.pick(C)]); }
     for (const K of BIGMUL) if (A >= K.aMin && A <= K.aMax && Bv >= K.bMin && Bv <= K.bMax && (!K.ten || A % 10 === 0)) opts.push(['big', K]);
-    if (!opts.length) opts.push(['big', BIGMUL[3]]);
+    if (!opts.length) return null;   /* 맞는 틀이 없으면 이야기로 바꾸지 않음(예전: 걸음 틀을 범위 밖에서도 씀) */
     const [kind, Z] = r.pick(opts);
     if (kind === 'rows') return { story: S(`의자를 한 줄에 ${A}개씩 ${Bv}줄로 놓았어요. 의자는 모두 몇 개일까요?`), x, kind, right, wrongs, unit: '개' };
     if (kind === 'times') {
-      const [P1] = Z.at, [S1, P2] = Z.sh || Z.at;
+      const sm = (A * Bv <= 30 || A < 10) && Z.atS, at = sm ? Z.atS : Z.at, [P1] = at, [S1, P2] = (sm ? Z.shS : Z.sh) || at;   /* 작은 수는 작은 자리(봉투 · 책꽂이 칸) */
       return { story: S(`${P1}에는 ${Z.T}${j(Z.T, '이', '가')} `, q(a, 'W', Z.u), ` 있어요. ${P2}의 ${Z.T}${j(Z.T, '은', '는')} ${S1}의 ${Bv}배예요. ${P2}에는 ${Z.T}${j(Z.T, '이', '가')} 몇 ${Z.u} 있을까요?`), x, kind, right, wrongs, unit: Z.u };
     }
     if (kind === 'big') { const [t, unit] = Z.make(A, Bv, r); return { story: S(t), x, kind: 'groups', right, wrongs, unit }; }
@@ -196,7 +201,10 @@ function mul(e, r, g) {
   }
   if (whole(a)) {   // 자연수 × 분수(몇의 몇 분의 몇 · 몇 배) · 자연수 × 소수(무게)
     const A = a.n / a.d;
-    if (st === 'D') return { story: S('한 개의 무게가 ', q(b, st, 'kg'), `인 상자 ${A}개의 무게는 모두 몇 kg일까요?`), x, kind: 'groups', right, wrongs, unit: ' kg' };
+    if (st === 'D') {   // 자연수 × 소수 = 자연수의 ○배 · 1 m에 ○ kg인 막대 ○ m(소수 × 자연수의 '○개 모음'과 다른 뜻 — 5-2-4:4 · 5)
+      if (A <= 9 && val(b) < 1 && r.chance(0.5)) return { story: S(`1 m의 무게가 ${A} kg인 쇠막대 `, q(b, st, 'm'), '의 무게는 몇 kg일까요?'), x, kind: 'rate', right, wrongs, unit: ' kg' };
+      return { story: S(`빨간 끈은 ${A} m이고, 파란 끈은 빨간 끈의 `, tok(b, st), '배예요. 파란 끈은 몇 m일까요?'), x, kind: 'times', right, wrongs, unit: ' m' };
+    }
     if (val(b) > 1) return { story: S(`빨간 끈은 ${A} m이고, 파란 끈은 빨간 끈의 `, tok(b, st), '배예요. 파란 끈은 몇 m일까요?'), x, kind: 'times', right, wrongs, unit: ' m' };
     const C = COUNT.filter((C) => fits(C, A));
     if (whole(x) && C.length) { const M = r.pick(C); return { story: S(`${M.T} `, q(a, 'W', M.u), '의 ', tok(b, st), `${j(txt(b, st), '은', '는')} 몇 ${M.u}일까요?`), x, kind: 'of', right, wrongs, unit: M.u }; }
@@ -307,7 +315,7 @@ export function storyOf(c, p, seed = 1, { plain = false } = {}) {
 export { readItem };
 // 글 검사(tests/text.test.mjs)에 쓰는 낱말 — 조사가 붙는 이름들
 export const VOCAB = [...new Set([
-  ...COUNT.flatMap((C) => [C.T, C.u, ...C.at, ...(C.sh || []), typeof C.own === 'string' && C.own !== 'me' && C.own, C.bag].filter(Boolean)), '우리 반',
+  ...COUNT.flatMap((C) => [C.T, C.u, ...C.at, ...(C.sh || []), ...(C.atS || []), ...(C.shS || []), typeof C.own === 'string' && C.own !== 'me' && C.own, C.bag].filter(Boolean)), '우리 반',
   ...MEASURE.flatMap((M) => [M.T, ...(M.at || [])]), '물병', '수조', '통', '쇠막대',
   ...GROUPS.flatMap((G) => [G.T, G.u, G.g]), ...ITEMS.map((x) => x.T), '끈', '리본', '철사', '물통', '컵', '병', '도막', '의자', '선물', '상자', '봉지',
 ])];

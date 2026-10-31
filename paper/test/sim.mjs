@@ -8,7 +8,7 @@ import { readExpr, testable, __predict } from '../../engine/errors.js';
 import { rng } from '../../engine/math.js';
 const N = Number(process.argv[2] || 120), SLIP = Number(process.argv[3] || 0.05);
 const all = lessonsIn('1-1', '4-1').filter((c) => !c.startsWith('est:'));
-const r = rng(31);
+const r = rng(Number(process.env.SEED || 31));   /* 씨앗 바꿔 흔들림 보기: SEED=7 */
 function answer(it, knows) {
   const view = { prompt: it.snap.prompt, sol: it.snap.sol };
   if (knows) { if (r.next() >= SLIP) return null; }
