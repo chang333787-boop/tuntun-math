@@ -12,6 +12,7 @@ import { prepPlan } from './prep.js';
 import { stepsOf, hintOf } from './fix.js';
 import { lsGet, lsSet, esc, rand, KEY_AL } from './local.js';
 import { stepHTML, staticHTML } from './item.js';
+import { modelHTML } from './model.js';
 import { go, unitLabel } from './kid.js';
 
 const TK = 'tt.t';
@@ -205,7 +206,7 @@ export function groupCardView(root, C, c) {
   root.innerHTML = `<div class="card tcard"><h2>10분 소집단 카드 <small>${esc(lessonName(c))}</small></h2>
     <div class="acts no-print"><button class="pri" onclick="print()">인쇄</button><a class="btn" href="#/t/c/${C}">반 보기로</a></div>
     <p><b>목표</b> — ${esc(LES(c).kid)} · <span class="muted">${esc(hintOf(c))}</span></p>
-    <h3>① 시범(2분) — 생각을 소리 내어</h3>${ex ? `<div>${staticHTML(ex.prompt, null)}</div><ol class="steps">${steps.map((s) => stepHTML(s)).join('')}</ol><p>답: <b>${ans(ex)}</b></p>` : ''}
+    <h3>① 시범(2분) — 생각을 소리 내어</h3>${ex ? `<div>${staticHTML(ex.prompt, null)}</div>${modelHTML(ex)}<ol class="steps">${steps.map((s) => stepHTML(s)).join('')}</ol><p>답: <b>${ans(ex)}</b></p>` : ''}
     <p class="small muted">모형이 있으면 먼저 모형으로(낱개 10개 → 십 막대 1개로 바꾸기), 그다음 그림, 그다음 식으로.</p>
     <h3>② 함께(3분) — 아이가 단계를 말하고 선생님이 받아 적기</h3><ol>${together.map((it) => `<li>${staticHTML(it.prompt, null)} <span class="small muted">답 ${ans(it)}</span></li>`).join('')}</ol>
     <h3>③ 혼자(3분) — 틀리면 바로 그 단계에서 고치기</h3><ol>${solo.map((it) => `<li>${staticHTML(it.prompt, null)} <span class="small muted">답 ${ans(it)}</span></li>`).join('')}</ol>

@@ -8,6 +8,7 @@ import { newFix, showNext, togetherStep, answerItem, afterReStep, checkItem, ans
 import * as KS from './kidstore.js';
 import { draw, stepHTML, staticHTML } from './item.js';
 import { bridgeSVG, KIND } from './bridge.js';
+import { modelHTML } from './model.js';
 import { lsGet, lsSet, lsDel, esc, rand } from './local.js';
 import { flush } from './db.js';
 
@@ -150,7 +151,7 @@ export function fixView(root, c) {
   function show() {
     const done = F.si >= F.steps.length;
     const b = shell(head('point', F.steps.length ? '튼튼이가 먼저 풀어 볼게요. 한 단계씩 생각을 말할게요.' : `튼튼이가 먼저 풀어 볼게요. ${esc(hintOf(c))}`),
-      `<div class="qcard">${staticHTML(F.ex.prompt, done || !F.steps.length ? F.ex.sol : null)}
+      `<div class="qcard">${staticHTML(F.ex.prompt, done || !F.steps.length ? F.ex.sol : null)}${modelHTML(F.ex)}
         <ol class="steps">${F.steps.slice(0, F.si).map((st, i) => stepHTML(st, { cls: i === F.si - 1 ? 'now' : '' })).join('')}</ol>
         ${done && F.steps.length ? `<p class="fb ok">그래서 답은 <b>${esc(F.ex.sol.join(', '))}</b>예요.</p>` : ''}
         <div class="qact"><button class="pri big" id="n">${!F.steps.length ? '이제 내가 풀어요' : done ? '이제 같이 풀어요' : '다음 단계'}</button></div></div>`);
