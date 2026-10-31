@@ -95,13 +95,14 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   const ws = W.weeksOf(recs, 'T3-1');
   ok(ws.length === 3 && ws[0].ok === 4 && ws[0].med === 3002, `같은 주 두 번이면 먼저 푼 것 · 맞힌 문제 시간 가운데값 — ${ws.map((w) => w.ok).join(',')}`);
   const pts = (xs) => xs.map((ok) => ({ ok, n: 10 }));
-  ok(W.weekTrend(pts([4, 6, 7, 8])) === 'up' && W.weekTrend(pts([8, 8, 6, 5])) === 'down' && W.weekTrend(pts([8, 7, 8, 7, 8, 7])) === 'flat' && W.weekTrend(pts([8, 8, 6])) === null, '선 방향(점 넷부터 · 기울기)');
-  { let fa = 0; for (let t = 0; t < 4000; t++) { const ys = Array.from({ length: 5 }, () => { let k = 0; for (let i = 0; i < 10; i++) if (Math.random() < 0.8) k++; return { ok: k, n: 10 }; }); if (W.weekTrend(ys) === 'down') fa++; } ok(fa / 4000 < 0.09, `변화 없는 아이를 '내려가요'로 잘못 짚는 비율 ${(100 * fa / 4000).toFixed(1)}% < 9%`); }
+  ok(W.weekTrend(pts([4, 5, 6, 7, 8])) === 'up' && W.weekTrend(pts([9, 9, 8, 6, 5])) === 'down' && W.weekTrend(pts([8, 8, 8, 8, 5])) === 'flat' && W.weekTrend(pts([8, 7, 8, 7, 8, 7])) === 'flat' && W.weekTrend(pts([8, 8, 6, 5])) === null, '선 방향(점 다섯부터 · 두 주 이어서 같은 쪽일 때만 · 마지막 한 점만 떨어지면 그대로)');
+  { let fa = 0; for (let t = 0; t < 4000; t++) { const ys = Array.from({ length: 6 }, () => { let k = 0; for (let i = 0; i < 10; i++) if (Math.random() < 0.8) k++; return { ok: k, n: 10 }; }); if (W.weekTrend(ys) === 'down') fa++; } ok(fa / 4000 < 0.05, `변화 없는 아이를 '내려가요'로 잘못 짚는 비율(한 번 볼 때) ${(100 * fa / 4000).toFixed(1)}% < 5%`); }
   ok(W.lastLine(W.weeksOf(recs)).length === 1 && W.lastLine(W.weeksOf(recs))[0].term === 'T4-1', '학기가 바뀌면 새 선');
   ok(W.weekTerm({ recs, lastPrep: { unit: '4-2-1' } }) === 'T4-2' && W.weekTerm({ recs }) === 'T4-1', '점검 학기 = 마지막 준비 단원의 학기 → 없으면 지난 점검 학기');
   ok(!LX.UNITS.some((u) => u.id === 'T4-2'), "학기 표시('T4-2')는 단원 id와 겹치지 않음(홈의 '오늘 단원 준비했나'를 건드리지 않음)");
   const pool = W.termPool('T4-1'), units = LX.UNITS.filter((u) => u.g === '4-1');
-  ok(pool.length >= 10 && units.every((u) => PP.prepPlan(u.id).pre.filter((c) => LX.byId[c] && LX.gradeIdx(LX.byId[c].g) < LX.gradeIdx('4-1')).every((c) => pool.includes(c))) && pool.every((c) => LX.gradeIdx(LX.byId[c].g) < LX.gradeIdx('4-1')), `4학년 1학기 범위 = 단원 ${units.length}개 준비 칸 가운데 지난 학기까지 ${pool.length}칸(이번 학기 칸 X)`);
+  ok(pool.length >= 10 && pool.every((c) => units.some((u) => PP.prepPlan(u.id).pre.includes(c)) && LX.gradeIdx(LX.byId[c].g) < LX.gradeIdx('4-1') && LX.gradeIdx(LX.byId[c].g) >= LX.gradeIdx('4-1') - 3), `4학년 1학기 범위 = 단원 ${units.length}개 준비 칸 가운데 지난 세 학기 ${pool.length}칸(이번 학기 · 먼 학기 X)`);
+  ok(W.termPool('T5-2').length >= 10 || W.termPool('T5-2').length === PP.prepPlan('5-2-1').pre.length, `칸이 모자라면 한 학기씩 넓힘(T5-2 ${W.termPool('T5-2').length}칸)`);
   const K = { recs: {}, lastPrep: { unit: '4-1-3' }, fixed: {} }, rep = { L: {} };
   const p1 = W.weekPlan(K, rep);
   ok(p1.length === 10 && new Set(p1).size === 10 && p1.every((c) => pool.includes(c)), '학기 범위에서 서로 다른 10칸');
@@ -169,6 +170,14 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
     ex.forEach((p) => { const vs = Object.entries(p.sc.v || {}).filter(([k, v]) => k !== 'x' && v != null).map(([, v]) => JSON.stringify(v)); if (new Set(vs).size < vs.length) bad.push(`${ty} 같은 수`); });
   }
   ok(!bad.length, `유형 일곱 × 두 번: 예 셋씩 · 같은 수 없음${bad.length ? ` — ${bad.join(' ')}` : ''}`);
+}
+// ⑮ 이번 주 점검 묶음은 판정에 들어가지 않음 — 준비 다리에서 3/3 '확인'된 칸이 점검 한 문제 틀림으로 흔들리지 않게
+{
+  const KS4 = await import('../js/kidstore.js'), G4 = await import('../../paper/js/gen.js');
+  const mk = (kind, id, ok, made) => { const sh = G4.makeSheet({ kind, words: false, id, lessons: [{ c: '2-1-3:5', n: kind === 'week' ? 1 : 3 }], mixed: true }); sh.items = sh.items.filter((it) => it.ch !== 'END'); sh.chapters = sh.chapters.filter((c) => c.key !== 'END'); sh.made = made; if (kind === 'week') sh.unit = 'T3-1'; return { s: KS4.pack(sh), r: { done: Object.fromEntries(sh.chapters.map((c) => [c.key, true])), it: Object.fromEntries(sh.items.map((it) => [it.k, ok ? { s: 'ok' } : { s: 'x', a: ['1'] }])) }, cf: {}, ms: {} }; };
+  const K = { recs: { P1: mk('prep', 'P1', true, Date.now() - 864e5), W1: mk('week', 'W1', false, Date.now()) } };
+  const st = KS4.reportOf(K).L['2-1-3:5'];
+  ok(st && st.st === 'ok' && st.tot === 3, `점검에서 틀려도 판정은 그대로 '${st && st.st}'(${st && st.tot}문제)`);
 }
 console.log(fail ? `FAIL ${fail}` : 'PASS');
 process.exitCode = fail ? 1 : 0;

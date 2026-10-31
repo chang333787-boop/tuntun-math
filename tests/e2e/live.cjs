@@ -5,6 +5,7 @@ const BASE = process.argv[2] || 'https://chang333787-boop.github.io/tuntun-math/
 const UNIT = '2-2-2', GAP = '2-1-6:3';
 (async () => {
   const b = await chromium.launch(); const pg = await (await b.newContext({ viewport: { width: 1280, height: 860 } })).newPage();
+  pg.on('dialog', (d) => d.accept());
   const errs = []; pg.on('pageerror', (e) => errs.push(e.message)); pg.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); });
   const w = (ms) => pg.waitForTimeout(ms);
   await pg.goto(BASE + '#/t/new?zz=1'); await w(1500);
@@ -16,7 +17,7 @@ const UNIT = '2-2-2', GAP = '2-1-6:3';
   const pin = await pg.evaluate((c) => JSON.parse(localStorage.getItem('tt.t')).classes[c].pins[1], C);
   await pg.goto(BASE + `#/join?c=${C}`); await w(800);
   await pg.fill('#n', '1'); await pg.fill('#p', pin); await pg.click('#f button'); await pg.waitForURL(/#\/me/, { timeout: 15000 }); await w(2500);
-  const todo = await pg.textContent('.todo');
+  const todo = await pg.textContent('#view .todo');
   await pg.goto(BASE + `#/prep/${UNIT}`); await w(800); await pg.click('#s'); await w(300);
   let n = 0;
   for (; n < 60; n++) {
@@ -65,7 +66,7 @@ const UNIT = '2-2-2', GAP = '2-1-6:3';
   const back = (await pg.textContent('#view')).trim().slice(0, 90);
   // 이번 주 점검(모두 넘김 — 흐름만) → 내 선
   await pg.goto(BASE + '#/me'); await w(2500);
-  const weekTodo = (await pg.textContent('.todo')).includes('이번 주 점검');
+  const weekTodo = (await pg.textContent('#view')).includes('이번 주 점검 — 섞은');
   await pg.goto(BASE + '#/week'); await w(900); await pg.click('#s'); await w(200);
   let wn = 0; for (; wn < 15; wn++) { if (!(await pg.$('.qcard'))) break; await pg.click('#idk'); await w(100); }
   const week = { n: wn, head: (await pg.textContent('#view')).trim().slice(0, 40), chart: !!(await pg.$('#view svg.runs')) };
@@ -89,11 +90,19 @@ const UNIT = '2-2-2', GAP = '2-1-6:3';
   const pmsg = (await pg.textContent('#msg')).trim().slice(0, 30);
   await pg.goto(BASE + `#/t/c/${C}/k/2`); await w(2500);
   const kid2 = (await pg.textContent('h2 small')).trim();
+  // 번호를 잘못 골랐다 → 1번으로 옮기기(2번에서 빠지고 1번에 들어감)
+  await pg.goto(BASE + `#/t/c/${C}/paper`); await w(900);
+  await pg.selectOption('select[data-i="0"]', '1'); await pg.click('#go'); await w(4000);
+  await pg.goto(BASE + `#/t/c/${C}/k/2`); await w(2500);
+  const moved2 = (await pg.textContent('h2 small')).trim();
+  await pg.goto(BASE + `#/t/c/${C}/k/1`); await w(2500);
+  const moved1 = (await pg.textContent('h2 small')).trim();
+  await pg.goto(BASE + `#/t/c/${C}/k/2`); await w(2500);
   const ai = await pg.$eval('#aiq', (el) => ({ n: el.value.length, fix: el.value.includes('고칠_판자'), name: /이름[":]\s*"/.test(el.value) })).catch(() => null);
   await pg.goto(BASE + `#/t/c/${C}/s/compare`); await w(1500);
   const scard = { title: (await pg.textContent('h2')).trim().slice(0, 30), frames: (await pg.$$('.sbf svg')).length };
   await pg.goto(BASE + '#/t/letter'); await w(800);
   const letter = (await pg.textContent('h2')).trim();
-  console.log(JSON.stringify({ C, opened, scard, letter, todo: todo.slice(0, 60), items: n, end: end.trim(), drill, back, weekTodo, week, head, row1, wkPanel, paper: { psel, pmsg, kid2 }, ai, errs }, null, 1));
+  console.log(JSON.stringify({ C, opened, scard, letter, todo: todo.slice(0, 60), items: n, end: end.trim(), drill, back, weekTodo, week, head, row1, wkPanel, paper: { psel, pmsg, kid2, moved2, moved1 }, ai, errs }, null, 1));
   await b.close();
 })().catch((e) => { console.error('ERR', e.message); process.exit(1); });

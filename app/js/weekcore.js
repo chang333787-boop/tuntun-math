@@ -11,7 +11,7 @@ export const WEEK = { n: 10 };
 export const weekKey = (t = Date.now()) => { const d = new Date(t); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.toLocaleDateString('sv-SE'); };
 const median = (xs) => { const s = xs.slice().sort((a, b) => a - b); return s.length ? s[Math.floor(s.length / 2)] : null; };
 
-// 범위 = 학기 하나(T4-2) — 그 학기 단원들의 준비 칸 가운데 지난 학기까지 배운 칸(이번 학기에 새로 배울 칸은 뺌 — 못 배운 것을 '빈 곳'으로 읽지 않게)
+// 범위 = 학기 하나(T4-2) — 그 학기 단원들의 준비 칸 가운데 지난 학기까지 배운 칸 · 가까운 학기부터 10칸 넘게(이번 학기에 새로 배울 칸은 뺌 — 아직 안 배운 것으로 선이 낮아지지 않게)
 //  한 학기 내내 같은 범위라 선이 이어짐(CBM은 같은 범위에서 고르게 뽑은 같은 꼴의 점검) · 재는 것 = 기초 체력(앞 판자가 튼튼해지나) · 이번 학기 진도는 선생님 형성평가로
 //  묶음의 unit 칸엔 'T' + 학기를 적음 — 진짜 단원 id('4-2-1')와 겹치지 않게(홈의 '오늘 단원 준비했나'가 단원 id로 봄)
 export const termOf = (u) => (u && unitById[u] ? `T${unitById[u].g}` : null);
@@ -19,13 +19,16 @@ const termG = (t) => (typeof t === 'string' && /^T\d-\d$/.test(t) ? t.slice(1) :
 export function termPool(term) {
   const g = termG(term); if (!g) return [];
   const pool = new Set(); UNITS.filter((u) => u.g === g).forEach((u) => prepPlan(u.id).pre.forEach((c) => { if (byId[c] && gradeIdx(LES(c).g) < gradeIdx(g)) pool.add(c); }));
-  return [...pool].sort((a, b) => gradeIdx(LES(a).g) - gradeIdx(LES(b).g) || (a < b ? -1 : 1));
+  const all = [...pool].sort((a, b) => gradeIdx(LES(a).g) - gradeIdx(LES(b).g) || (a < b ? -1 : 1));
+  // 가까운 학기부터 — 지난 세 학기 안에서 10칸이 되면 거기까지(1~2학년 덧뺄셈이 반을 넘어 4학년이 늘 9~10점에 붙던 것 · 혹평 10-31) · 모자라면 한 학기씩 넓힘
+  for (let k = 3; k < 12; k++) { const near = all.filter((c) => gradeIdx(LES(c).g) >= gradeIdx(g) - k); if (near.length >= 10 || near.length === all.length) return near; }
+  return all;
 }
 
 // 푼 묶음들 → 주마다 점 { t, wk, term, ok, n, med } · 같은 주에 둘이면 먼저 푼 것
 export function weeksOf(recs, term = null) {
   const out = new Map();
-  Object.values(recs || {}).filter((x) => okRec(x) && x.s.kind === 'week' && (!term || x.s.unit === term)).sort((a, b) => a.s.made - b.s.made).forEach((x) => {
+  Object.values(recs || {}).filter((x) => okRec(x) && x.s.kind === 'week' && !x.r.rush && (!term || x.s.unit === term)).sort((a, b) => a.s.made - b.s.made).forEach((x) => {
     const wk = weekKey(x.s.made); if (out.has(wk)) return;
     const ks = x.s.it.map((i) => i[0]), okK = ks.filter((k) => x.r.it[k] && x.r.it[k].s === 'ok');
     out.set(wk, { t: x.s.made, wk, term: x.s.unit || null, ok: okK.length, n: ks.length, med: median(okK.map((k) => Number((x.ms || {})[k]) || 0).filter((v) => v > 0)) });
@@ -61,11 +64,12 @@ export function weekChart(weeks, { w = 420, h = 130, marks = [] } = {}) {
     ${ms.map((m, i) => { const mx = at(m.t).toFixed(1); return `<path d="M${mx} ${y(10) - 6} V${h - P + 4}" stroke="#2d6f6a" stroke-width="1.5" stroke-dasharray="4 3"/><text x="${mx}" y="${y(10) - 8}" text-anchor="middle" font-size="11" fill="#2d6f6a">${i + 1}</text>`; }).join('')}
     ${ws.length > 1 ? `<polyline points="${pts}" fill="none" stroke="#3b2a1e" stroke-width="2"/>` : ''}${ws.map((v, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(sc(v)).toFixed(1)}" r="4.5" fill="#c99a68" stroke="#3b2a1e" stroke-width="1.5"/><text x="${x(i).toFixed(1)}" y="${h - 6}" text-anchor="middle" font-size="11" fill="#6f6355">${esc(v.wk.slice(5).replace('-', '/'))}</text>`).join('')}</svg>`;
 }
-// 선이 어디로 가나(선생님용) — 마지막 4~6점의 기울기(최소제곱) × 기간 ≥ 2.5점이면 오름/내림 · 점 넷 전엔 말하지 않음
-//  열 문제 한 번의 흔들림은 ±1.3점 안팎 — 처음 둘 · 끝 둘 평균을 견주면 변화 없는 아이의 27%를 '내려가요'로 잘못 짚음(시뮬레이션) · 이 규칙은 약 5% · 3점 내림은 약 60% 잡음
+// 선이 어디로 가나(선생님용) — 마지막 4~6점의 기울기(최소제곱) × 기간 ≥ 2.5점이 **두 주 이어서** 같은 쪽일 때만 오름/내림 · 점 다섯 전엔 말하지 않음
+//  열 문제 한 번은 ±1~2점 흔들림 · 칸마다 난이도가 다르고 주마다 뽑는 칸이 달라 더 흔들림 — 14주 모의(칸 난이도 다름): 한 번 규칙은 변화 없는 아이의 27%를 한 번 이상 '내려가요'로 짚음 → 두 주 이어서는 7% · 3점 내림은 6주 안에 75% 잡음(평균 3주 뒤) [혹평 10-31]
 const slope = (ys) => { const n = ys.length, mx = (n - 1) / 2, my = ys.reduce((a, b) => a + b, 0) / n; let sxy = 0, sxx = 0; ys.forEach((v, i) => { sxy += (i - mx) * (v - my); sxx += (i - mx) ** 2; }); return sxx ? sxy / sxx : 0; };
+const once = (ws) => { const w = ws.slice(-6); if (w.length < 4) return null; const d = slope(w.map((v) => (v.ok / v.n) * 10)) * (w.length - 1); return d >= 2.5 ? 'up' : d <= -2.5 ? 'down' : 'flat'; };
 export function weekTrend(weeks) {
-  const ws = (weeks || []).slice(-6); if (ws.length < 4) return null;
-  const d = slope(ws.map((v) => (v.ok / v.n) * 10)) * (ws.length - 1);
-  return d >= 2.5 ? 'up' : d <= -2.5 ? 'down' : 'flat';
+  const ws = weeks || []; if (ws.length < 5) return null;
+  const a = once(ws), b = once(ws.slice(0, -1));
+  return a === b && (a === 'up' || a === 'down') ? a : 'flat';
 }

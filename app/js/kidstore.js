@@ -39,6 +39,7 @@ export async function pull(me) {
   let srv = null;
   try { srv = await db.get(base(me)); } catch (e) { return { K, ok: false, err: e }; }
   if (srv && srv.r) for (const [id, s] of Object.entries(srv.r)) { const o = db.dec(s); if (o && !K.recs[id]) K.recs[id] = o; }
+  if (srv) for (const [id, x] of Object.entries(K.recs)) if (x && x.s && x.s.src === 'paper' && !(srv.r && srv.r[id])) delete K.recs[id];   /* 선생님이 뺀 종이 기록(번호를 잘못 골랐을 때) — 종이 기록은 서버가 정본 */
   if (srv && srv.rv) { const rv = db.dec(srv.rv); if (rv) for (const [c, x] of Object.entries(rv)) if (!K.rv[c] || (x.t || 0) > (K.rv[c].t || 0)) K.rv[c] = x; }
   if (srv && srv.mx) { const mx = db.dec(srv.mx); K.mx = K.mx || {}; if (mx && Array.isArray(mx._jog)) K.jog = [...new Set([...(K.jog || []), ...mx._jog.filter((d) => typeof d === 'string')])].sort().slice(-60); if (mx && mx._tools && typeof mx._tools === 'object') { K.tools = K.tools || {}; for (const [t, v] of Object.entries(mx._tools)) if (v && (!K.tools[t] || (v.self || 0) > (K.tools[t].self || 0))) K.tools[t] = v; } if (mx && typeof mx === 'object') for (const [c, x] of Object.entries(mx)) { if (c === '_jog' || c === '_tools') continue; const a = K.mx[c]; if (x && (!a || (x.tier || 0) > (a.tier || 0) || ((x.tier || 0) === (a.tier || 0) && (x.runs || []).length > (a.runs || []).length))) K.mx[c] = x; } }
   K.inbox = srv && srv.in ? Object.fromEntries(Object.entries(srv.in).map(([id, s]) => [id, db.dec(s)])) : {};
@@ -68,6 +69,7 @@ export function history(K) {
   const sheets = [], res = {};
   for (const [id, x] of Object.entries(K.recs)) {
     if (!okRec(x)) continue;   // 모양이 이상한 기록은 건너뜀(판정 · 선생님 화면이 멈추지 않게)
+    if (x.s.kind === 'week') continue;   /* 이번 주 점검은 선(weekcore)에만 — 재는 도구가 판자 상태를 바꾸지 않게(한 문제 틀림으로 '확인' 칸이 흔들림이 되던 것 · 혹평 10-31) */
     let sh; try { sh = unpack(x.s); } catch (e) { continue; }
     if (!sh.items.length) continue; sheets.push(sh); res[id] = { [KID]: x.r };
   }

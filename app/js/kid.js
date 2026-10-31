@@ -84,7 +84,8 @@ export async function homeView(root) {
   flush();
   const rep = KS.reportOf(K);
   const todo = todoOf(K, rep);
-  if (!doneThisWeek(K.recs) && weekPlan(K, rep).length >= 4) todo.push({ kind: 'week', pri: !todo.length, title: '이번 주 점검 — 섞은 문제 10개', sub: '주마다 한 번 · 3~5분 · 내 선이 어디로 가나', href: '#/week' });
+  const wp = doneThisWeek(K.recs) ? [] : weekPlan(K, rep);
+  if (wp.length >= 4) todo.push({ kind: 'week', pri: !todo.length, title: `이번 주 점검 — 섞은 문제 ${wp.length}개`, sub: '주마다 한 번 · 3~5분 · 내 선이 어디로 가나', href: '#/week' });
   const unit = (todo.find((x) => x.unit) || {}).unit || (K.lastPrep && K.lastPrep.unit) || null;
   const cal = KS.calOf(K);
   const sw = Object.values(cal.sureWrong).reduce((a, b) => a + b, 0);
@@ -98,7 +99,7 @@ export async function homeView(root) {
   const fixedN = Object.keys(K.fixed || {}).length;
   root.innerHTML = `
     <div class="card">${say(todo.length ? 'point' : 'cheer', todo.length ? '오늘 할 일이에요. 위에서부터 하면 돼요.' : '오늘 할 일을 다 했어요! 아래에서 단원을 골라 더 볼 수도 있어요.')}
-      <div class="todo">${todo.map((t) => `<a class="item" href="${t.href}"><span><b>${esc(t.title)}</b><br><span class="muted small">${esc(t.sub)}</span></span><span class="go btn ${t.pri ? 'pri' : ''}">시작</span></a>`).join('') || ''}</div>
+      ${(() => { const row = (t) => `<a class="item" href="${t.href}"><span><b>${esc(t.title)}</b><br><span class="muted small">${esc(t.sub)}</span></span><span class="go btn ${t.pri ? 'pri' : ''}">시작</span></a>`; return `<div class="todo">${todo.slice(0, 3).map(row).join('')}</div>${todo.length > 3 ? `<details class="more"><summary>할 일 ${todo.length - 3}개 더</summary><div class="todo">${todo.slice(3).map(row).join('')}</div></details>` : ''}`; })()}
       ${ok ? '' : '<p class="warn small">서버에 닿지 않아 이 기기에 저장된 것만 보여요. 푼 것은 이 기기에 모았다가 나중에 보내요.</p>'}
     </div>
     ${unit ? `<div class="card"><h2>내 수 다리 <small>${esc(unitLabel(unit))}${ro(unitLabel(unit))} 가는 다리</small></h2>${bridgeSVG(planks, { goal: unitLabel(unit) })}

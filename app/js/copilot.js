@@ -35,7 +35,7 @@ export function packetOf(rep, st = null, extra = {}) {
     보인_생각: minds,
     자신감: st && st.cal && st.cal.n ? { 짐작이_맞은_정도: `${Math.round((st.cal.m || 0) * 100)}%`, 문항: st.cal.n, 자신_있었는데_틀림: Object.values(st.sw || {}).reduce((a, b) => a + b, 0) } : null,
     빨리_넘김: st ? st.rush || 0 : 0,
-    이번_주_점검: extra.weeks && extra.weeks.length ? { 점수_10점: extra.weeks.map((w) => Math.round((w.ok / w.n) * 10)), 방향: extra.trend || '점 넷 전' } : null,
+    이번_주_점검: extra.weeks && extra.weeks.length ? { 점수_10점: extra.weeks.map((w) => Math.round((w.ok / w.n) * 10)), 방향: extra.trend || '아직 모름(점 다섯 전 · 두 주 이어서 같은 쪽일 때만)' } : null,
     문장제: extra.story || null,
     고친_판자: Object.keys(extra.fixed || {}).map(nameOf),
   };
