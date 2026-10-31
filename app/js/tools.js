@@ -5,6 +5,7 @@ import { readExpr } from '../../engine/errors.js';
 import { misFor } from '../../engine/mis.js';
 import { toText, toHTML } from '../../engine/tokens.js';
 import { esc } from './local.js';
+import { ansSay } from './item.js';
 
 export const TOOLS = {
   inverse: { name: '거꾸로 셈', ro: '거꾸로 셈으로', how: '뺄셈은 더해 보고, 나눗셈은 곱해 봐요 — 처음 수가 나오나요?' },
@@ -97,7 +98,7 @@ export function toolBox(box, { it, vals, c, bug = null, onSelfFix, onDone }) {
     if (rt) rt.addEventListener('click', () => {
       const raws = [...b.querySelectorAll('.blank')].sort((x, y) => x.dataset.i - y.dataset.i).map((x) => x.value.trim());
       let ok = false; try { ok = !!it.check(raws.map(Number), raws).ok; } catch (e) { ok = false; }
-      b.querySelector('.retry').innerHTML = ok ? `<b>스스로 고쳤어요!</b> ${esc(T.name)} 도구가 도왔어요.` : `아직 아니에요. 답은 <b>${esc(it.sol.join(', '))}</b>예요.`;
+      b.querySelector('.retry').innerHTML = ok ? `<b>스스로 고쳤어요!</b> ${esc(T.name)} 도구가 도왔어요.` : `아직 아니에요. ${ansSay(it)}`;
       if (ok && onSelfFix) onSelfFix(T.tool);
       if (onDone) onDone(ok);
     });

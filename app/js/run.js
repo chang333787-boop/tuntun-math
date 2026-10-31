@@ -7,7 +7,8 @@ import { byId, gradeIdx } from '../../engine/lessons/index.js';
 import { makeSheet, itemOf, LES } from '../../paper/js/gen.js';
 import { mascot } from '../../paper/js/mascot.js';
 import * as KS from './kidstore.js';
-import { draw } from './item.js';
+import { draw, ansSay } from './item.js';
+import { P } from '../../engine/concepts/kit.js';
 import { plankSVG } from './bridge.js';
 import { target, TIER, TIER_KID, wantOf } from './stage.js';
 import { esc, rand } from './local.js';
@@ -40,7 +41,7 @@ export function runView(root) {
   const K = KS.load(me);
   const plan = runPlan(K);
   if (!plan.length) {
-    root.innerHTML = `<div class="card">${say('think', '아직 구보할 판자가 없어요. 먼저 <b>준비 다리</b>나 <b>거꾸로 찾기</b>로 판자를 고치면, 그 판자들로 매일 구보를 해요.')}<div class="acts"><a class="btn pri" href="#/back">거꾸로 찾기</a><a class="btn" href="#/me">내 수 다리로</a></div></div>`;
+    root.innerHTML = `<div class="card">${say('think', '아직 구보할 판자가 없어요.<br><b>준비 다리</b>나 <b>거꾸로 찾기</b>로 판자를 고치면 그 판자로 매일 구보를 해요.')}<div class="acts"><a class="btn pri" href="#/back">거꾸로 찾기</a><a class="btn" href="#/me">내 수 다리로</a></div></div>`;
     return;
   }
   const rep0 = KS.reportOf(K);
@@ -60,7 +61,7 @@ export function runView(root) {
       ms[it.k] = t; i++;
       if (ok) return one();
       const box = document.createElement('div'); box.className = 'fb no';
-      box.innerHTML = `답은 <b>${esc(it.snap.sol.join(', '))}</b>예요. 이 판자는 내일 한 번 더 뛰어요.`;
+      box.innerHTML = `${ansSay(it.snap)} 이 판자는 내일 한 번 더 뛰어요.`;
       if (!a.idk) { try { toolBox(box, { it: itemOf(it.c, it.p), vals: a.vals, c: it.c, onSelfFix: (t) => KS.selfFix(me, K, t) }); } catch (e) { /* */ } }
       const b = document.createElement('button'); b.className = 'pri'; b.textContent = '다음'; b.style.marginLeft = '10px'; box.appendChild(b);
       root.querySelector('.qcard').appendChild(box);
@@ -89,7 +90,7 @@ export function runView(root) {
     const d = today(now); K.jog = [...new Set([...(K.jog || []), d])].slice(-60);
     KS.save(me, K); KS.setReview(me, K); KS.pushMastery(me, K); KS.pushSummary(me, K); KS.setNow(me, { mode: 'home' });
     const okN = Object.values(R.it).filter((x) => x.s === 'ok').length;
-    root.innerHTML = `<div class="card">${up.length ? say('cheer', `<b>${up.map((c) => esc(kid(c))).join(', ')}</b> — 며칠 지나도 빠르고 정확해요! <b>'오래'</b> 표를 따서 <b>돌 판자</b>가 됐어요.`, 80) : say(again.length ? 'think' : 'cheer', `오늘 구보 끝! ${okN}/${sh.items.length} 맞혔어요.${again.length ? ` <b>${again.map((c) => esc(kid(c))).join(', ')}</b>은(는) 내일 한 번 더 뛰어요.` : ' 판자가 그대로 튼튼해요.'}`, 72)}
+    root.innerHTML = `<div class="card">${up.length ? say('cheer', `<b>${up.map((c) => esc(kid(c))).join(', ')}</b> — 며칠 지나도 빠르고 정확해요! <b>'오래'</b> 표를 따서 <b>돌 판자</b>가 됐어요.`, 80) : say(again.length ? 'think' : 'cheer', `오늘 구보 끝! ${okN}/${sh.items.length} 맞혔어요.${again.length ? `<br><b>${again.map((c) => esc(kid(c))).join(', ')}</b>${P(kid(again[again.length - 1]), '은', '는')} 내일 한 번 더 뛰어요.` : ' 판자가 그대로 튼튼해요.'}`, 72)}
       <p>이번 주 구보 ${weekHTML(K, now)}</p>
       <div class="plank-list">${plan.map((c) => `<span class="pk ${again.includes(c) ? 'shaky' : 'ok'}">${plankSVG((K.mx[c] && K.mx[c].tier) || 1, 40)} ${esc(kid(c))}</span>`).join('')}</div>
       <div class="acts"><a class="btn pri big" href="#/me">내 수 다리로</a><a class="btn big" href="#/stages">스테이지</a></div></div>`;

@@ -1,8 +1,9 @@
 // 문제 카드 하나 — 자신감 세 칸(풀기 전 짐작 [D-1][D-3]) · 빈칸 · 보기 · '몰라서 넘어갈래요'
 //  draw(root, { prompt, choices, tag, dots, conf, onAnswer }) — onAnswer({ vals, raws } | { idk:true }, conf, ms)
 //  틀렸는지는 이 카드가 말하지 않는다(점검은 담담하게) — 되먹임은 부르는 쪽이 정함
-import { toHTML } from '../../engine/tokens.js';
+import { toHTML, toText } from '../../engine/tokens.js';
 import { parseNum } from '../../engine/math.js';
+import { P } from '../../engine/concepts/kit.js';
 import { esc } from './local.js';
 
 export const CONF = [[2, '자신 있어요'], [1, '조금 헷갈려요'], [0, '잘 모르겠어요']];
@@ -56,3 +57,12 @@ export function draw(root, { prompt, choices = null, tag = '', dots = null, conf
 // 단계 하나(이미 푼 모습) — 쪼갠 풀이 보기용
 export const stepHTML = (st, { vals = null, marks = null, cls = '' } = {}) => `<li class="${cls}"><span class="why">${esc(st.why)}</span><span class="math">${toHTML(st.prompt, { static: true, vals: vals || st.sol, marks })}</span></li>`;
 export const staticHTML = (prompt, vals, marks) => `<span class="math">${toHTML(prompt, { static: true, vals, marks })}</span>`;
+
+// 답 보여 주기 — 고르기 문항의 sol은 보기 번호라서 보기 글로 바꿔 보인다('답 0'이 아니라 '답 8.21')
+//  it = { sol, choices? } (문항 · snap 둘 다) · ansHTML = 굵게 쓸 답 · ansSay = '답은 ○○이에요/예요'(받침 맞춤)
+const ansPlain = (it) => (it.choices ? toText(it.choices[Number(it.sol[0])] || []) : (it.sol || []).join(', '));
+export const ansHTML = (it) => (it.choices ? toHTML(it.choices[Number(it.sol[0])] || [], { static: true }) : esc((it.sol || []).join(', ')));
+export function ansSay(it, lead = '답은') {
+  const t = ansPlain(it).trim(), word = /[가-힣]$/.test(t);
+  return `${lead} <b>${word ? `‘${ansHTML(it)}’` : ansHTML(it)}</b>${P(word ? '요' : t, '이에요', '예요')}.`;
+}

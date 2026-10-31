@@ -4,7 +4,7 @@ import { LES } from '../../paper/js/gen.js';
 import { mascot } from '../../paper/js/mascot.js';
 import * as KS from './kidstore.js';
 import { prepPlan } from './prep.js';
-import { draw } from './item.js';
+import { draw, ansSay } from './item.js';
 import { plankSVG } from './bridge.js';
 import { TIER, TIER_KID, target, drillN, need, newDrill, drillItem, answerDrill, resultOf, applyRun, nextGoal, elapsed, wantOf } from './stage.js';
 import { esc, rand } from './local.js';
@@ -38,8 +38,8 @@ export function stagesView(root) {
       <div class="st-b"><b>${esc(kidName(c))}</b>${marks(tier)}<span class="small muted">${gap ? '빈 판자예요 — 먼저 고쳐요' : esc(nextGoal(m, c))}${m && m.best ? ` · 내 최고 ${m.best.ok}/${m.best.n} · 한 문제 ${sec(m.best.med)}` : ''}</span></div>${btn}</div>`;
   };
   const counts = [1, 2, 3].map((t) => list.filter((c) => K.mx[c] && K.mx[c].tier >= t).length);
-  root.innerHTML = `<div class="card">${say('point', `판자 하나가 <b>스테이지</b> 하나예요. 한 번 깨고 끝이 아니라 <b>정확 → 빠르게 → 오래</b> 세 표를 모아요.<br>표를 딸 때마다 판자가 <b>나무 → 못 박은 판자 → 돌 판자</b>로 바뀌어요.`)}
-    <p class="small">정확 <b>${counts[0]}</b> · 빠르게 <b>${counts[1]}</b> · 오래 <b>${counts[2]}</b> <span class="muted">(판자 ${list.length}개)</span> · 시계는 다듬기에서만 보이고, 내 기록하고만 견줘요.</p>
+  root.innerHTML = `<div class="card">${say('point', `판자 하나가 <b>스테이지</b> 하나예요.<br><b>정확 → 빠르게 → 오래</b> 표를 모으면 판자가 단단해져요.`)}
+    <p class="small">모은 표: 정확 <b>${counts[0]}</b> · 빠르게 <b>${counts[1]}</b> · 오래 <b>${counts[2]}</b> <span class="muted">(판자 ${list.length}개) · 판자는 나무 → 못 박은 판자 → 돌 판자로 바뀌어요. 시계는 내 기록하고만 견줘요.</span></p>
     <div class="stages">${list.map(card).join('') || '<p class="muted">아직 판자가 없어요. 먼저 준비 다리를 해요.</p>'}</div>
     <div class="acts"><a class="btn" href="#/me">내 수 다리로</a></div></div>`;
 }
@@ -65,7 +65,7 @@ export function drillView(root, c) {
       if (r.ok) return one();
       // 틀리면 답을 보여 주고(시계는 멈춤) 다음으로
       const box = document.createElement('div'); box.className = 'fb no';
-      box.innerHTML = `${a.idk ? '' : '아까워요! '}답은 <b>${esc(r.sol.join(', '))}</b>예요.`;
+      box.innerHTML = `${a.idk ? '' : '아까워요! '}${ansSay({ sol: r.sol, choices: it.snap.choices })}`;
       if (!a.idk) { const prev = D.sheet.items[D.i - 1]; try { toolBox(box, { it: itemOf(prev.c, prev.p), vals: a.vals, c, onSelfFix: (t) => KS.selfFix(me, K, t) }); } catch (e) { /* */ } }
       const btn = document.createElement('button'); btn.className = 'pri'; btn.textContent = '다음'; btn.style.marginLeft = '10px'; box.appendChild(btn);
       root.querySelector('.qcard').appendChild(box);
@@ -88,9 +88,9 @@ export function drillView(root, c) {
     const runs = m.runs.filter((r) => r.med != null);
     root.innerHTML = `<div class="card">${head}
       <div class="drill-res">${g.gained.length ? `${plankSVG(g.before, 96)}<span style="font-size:26px">→</span>` : ''}${plankSVG(m.tier || (g.good ? 1 : 0), 120)}<div><b>${esc(kidName(c))}</b> ${marks(m.tier)}
-        <p>맞힌 문제 <b>${res.ok}/${res.n}</b> · 한 문제 가운데값 <b>${sec(res.med)}</b> <span class="muted small">('빠르게' 기준 ${sec(g.T)})</span>${showClock ? ` · 걸린 시간 ${clock(res.total)}` : ''}</p>
+        <p>맞힌 문제 <b>${res.ok}/${res.n}</b> · 한 문제에 보통 <b>${sec(res.med)}</b> <span class="muted small">('빠르게'는 ${sec(g.T)} 안)</span>${showClock ? ` · 모두 ${clock(res.total)}` : ''}</p>
         <p class="small muted">${esc(nextGoal(m, c))}</p></div></div>
-      ${runs.length >= 2 ? `<h3>내 기록 <small class="muted">(한 문제 가운데값 · 낮을수록 빠름 · 점선 = 빠르게 기준)</small></h3>${runChart(runs, g.T)}` : ''}
+      ${runs.length >= 2 ? `<h3>내 기록 <small>한 문제에 보통 걸린 시간 · 아래로 갈수록 빨라요 · 점선은 '빠르게'</small></h3>${runChart(runs, g.T)}` : ''}
       <div class="acts"><a class="btn pri big" href="#/drill/${c}?${Date.now()}">한 판 더</a><a class="btn big" href="#/stages">스테이지로</a></div></div>`;
   };
   const top = tier0 >= 3 ? '세 표를 다 땄어요. 기록을 더 줄여 볼까요?' : showClock ? `이번 판은 <b>시계</b>가 보여요 — 친구가 아니라 <b>내 기록</b>과 겨뤄요. 정확한 게 먼저예요!` : tier0 >= 1 ? '이번 판은 시계 없이 <b>정확하게</b> 해 봐요.' : `먼저 <b>정확</b> 표부터 — ${D.sheet.items.length}문제 중 ${need(D.sheet.items.length)}문제를 맞혀요. 시계는 없어요.`;

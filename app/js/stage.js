@@ -63,7 +63,7 @@ export function grantAccurate(mx, c) { const m = mx[c] || { tier: 0, best: null,
 export function nextGoal(m, c, now = Date.now()) {
   const T = target(c) / 1000;
   if (!m || m.tier < 1) return `${drillN(c)}문제 중 ${need(drillN(c))}문제 맞히면 '정확'`;
-  if (m.tier === 1) return `한 문제 ${T}초 안에(가운데값) — '빠르게'`;
+  if (m.tier === 1) return `한 문제를 보통 ${T}초 안에 풀면 '빠르게'`;
   if (m.tier === 2) { const d = Math.ceil((m.t2 + 3 * DAY - now) / DAY); return d > 0 ? `${d}일 뒤에 다시 와서 그대로면 '오래'` : `오늘 다시 해서 그대로면 '오래'`; }
   return '다 땄어요! 기록을 더 줄여 볼 수도 있어요';
 }

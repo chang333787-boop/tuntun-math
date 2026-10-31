@@ -6,7 +6,8 @@ import { mascot } from '../../paper/js/mascot.js';
 import { prepPlan, newPrep, current, answer, summary, asked } from './prep.js';
 import { newFix, showNext, togetherStep, answerItem, afterReStep, checkItem, answerCheck, hintOf, compareOf, stepsOf } from './fix.js';
 import * as KS from './kidstore.js';
-import { draw, stepHTML, staticHTML } from './item.js';
+import { draw, stepHTML, staticHTML, ansSay } from './item.js';
+import { P, RO } from '../../engine/concepts/kit.js';
 import { bridgeSVG, KIND } from './bridge.js';
 import { modelHTML } from './model.js';
 import { grantAccurate, nextGoal, target, TIER } from './stage.js';
@@ -22,6 +23,9 @@ export const meOf = () => lsGet('tt.me');
 const kidName = (c) => (LES(c) ? LES(c).kid : c);
 export const unitLabel = (u) => (unitById[u] ? unitById[u].nm : u);
 const byGrade = (a, b) => gradeIdx(LES(a).g) - gradeIdx(LES(b).g) || (LES(a).n || 0) - (LES(b).n || 0);
+const ro = (s) => RO(s).slice(String(s).length);   // 받침 따라 '으로' · '로'
+const names = (cs) => cs.map((c) => esc(kidName(c))).join(', ');
+const eun = (cs) => P(kidName(cs[cs.length - 1]), '은', '는');   // 마지막 이름 받침으로 은 · 는
 
 // ── 들어가기 ──
 export function joinView(root) {
@@ -50,7 +54,7 @@ function todoOf(K, rep) {
   const t = tasks[0];
   const preppedAfter = (u, since) => Object.values(K.recs).some((x) => x.s.unit === u && x.s.made >= since);
   if (t && !preppedAfter(t.unit, t.t)) out.push({ kind: 'prep', unit: t.unit, pri: true, title: `오늘 단원 준비하기`, sub: `선생님이 연 단원: ${unitLabel(t.unit)} — 필요한 판자가 튼튼한지 봐요`, href: `#/prep/${t.unit}` });
-  if (K.back && K.back.root && byId[K.back.root] && !(K.fixed && K.fixed[K.back.root] > K.back.t)) out.push({ kind: 'fix', c: K.back.root, pri: !out.length, title: `끊긴 곳 고치기 — ${kidName(K.back.root)}`, sub: `'${K.back.text}'을(를) 거꾸로 따라가서 찾은 곳이에요`, href: `#/fix/${K.back.root}` });
+  if (K.back && K.back.root && byId[K.back.root] && !(K.fixed && K.fixed[K.back.root] > K.back.t)) out.push({ kind: 'fix', c: K.back.root, pri: !out.length, title: `끊긴 곳 고치기 — ${kidName(K.back.root)}`, sub: `'${K.back.text}'에서 거꾸로 따라가 찾은 곳이에요`, href: `#/fix/${K.back.root}` });
   else if (K.back && K.back.root && !K.back.solved && K.fixed && K.fixed[K.back.root]) out.push({ kind: 'retry', pri: !out.length, title: `처음 문제 다시 풀기 — ${K.back.text}`, sub: '끊긴 곳을 고쳤어요. 이제 풀릴 거예요', href: '#/retry' });
   const fixes = rep.start.map((s) => s.c).sort(byGrade).filter((c) => !(K.back && K.back.root === c && !(K.fixed && K.fixed[c] > K.back.t)));
   const shakyFixed = Object.keys(K.fixed || {}).filter((c) => rep.L[c] && (rep.L[c].st === 'shaky' || rep.L[c].st === 'stuck') && !fixes.includes(c));
@@ -95,7 +99,7 @@ export async function homeView(root) {
       <div class="todo">${todo.map((t) => `<a class="item" href="${t.href}"><span><b>${esc(t.title)}</b><br><span class="muted small">${esc(t.sub)}</span></span><span class="go btn ${t.pri ? 'pri' : ''}">시작</span></a>`).join('') || ''}</div>
       ${ok ? '' : '<p class="warn small">서버에 닿지 않아 이 기기에 저장된 것만 보여요. 푼 것은 이 기기에 모았다가 나중에 보내요.</p>'}
     </div>
-    ${unit ? `<div class="card"><h2>내 수 다리 <small>${esc(unitLabel(unit))}로 가는 다리</small></h2>${bridgeSVG(planks, { goal: unitLabel(unit) })}
+    ${unit ? `<div class="card"><h2>내 수 다리 <small>${esc(unitLabel(unit))}${ro(unitLabel(unit))} 가는 다리</small></h2>${bridgeSVG(planks, { goal: unitLabel(unit) })}
       <div class="legend"><span><i style="background:#c99a68"></i>튼튼(정확)</span><span><i style="background:#b07f50"></i>못 박은 판자(빠르게)</span><span><i style="background:#c9c4bb"></i>돌 판자(오래)</span><span><i style="background:#efd6a8"></i>흔들</span><span><i style="border:2px dashed #b4482b;background:none"></i>고칠 판자</span><span><i style="background:#fff;opacity:.7"></i>아직 안 봄</span></div>
       <div class="acts"><a class="btn teal" href="#/stages">스테이지 — 판자 다듬기</a></div>
       <div class="plank-list" style="margin-top:10px">${planks.map((p) => `<span class="pk ${KIND(p.st) === 'ok' ? 'ok' : KIND(p.st) === 'gap' ? 'fix' : KIND(p.st)}">${esc(p.label)}</span>`).join('')}</div></div>` : ''}
@@ -103,8 +107,8 @@ export async function homeView(root) {
       <p class="small">이번 주 구보 ${weekHTML(K)}</p>
       <div class="acts"><a class="btn teal" href="#/stages">스테이지 보기</a>${runPlan(K).length ? '<a class="btn" href="#/run">오늘의 구보</a>' : ''}</div></div>
     ${Object.keys(K.tools || {}).length ? `<div class="card"><h2>내 도구함 <small>내 답을 스스로 확인하는 도구</small></h2><div class="plank-list">${Object.entries(K.tools).filter(([t]) => TOOLS[t]).map(([t, x]) => `<span class="pk ok">🔍 ${esc(TOOLS[t].name)}${x.self ? ` · 스스로 고친 ${x.self}번` : ''}</span>`).join('')}</div><p class="small muted">틀렸을 때 '도구로 확인'을 눌러 다시 써 보면, 스스로 고친 횟수가 늘어요.</p></div>` : ''}
-    <div class="card"><h2>내 짐작 견주기</h2>${cal.n ? `<p>풀기 전에 고른 짐작이 결과와 맞은 정도: <b>${Math.round(cal.match * 100)}%</b> <span class="muted small">(${cal.n}문제)</span></p>
-      ${sw ? `<p>'자신 있어요'라고 했는데 틀린 문제가 <b>${sw}개</b> 있어요. 이게 가장 중요한 신호예요 — 그 판자부터 다시 봐요.</p>` : '<p>\'자신 있어요\'라고 한 문제는 다 맞았어요. 내 짐작을 믿어도 돼요.</p>'}` : '<p class="muted">문제를 풀 때마다 먼저 짐작을 골라요. 짐작이 결과와 점점 맞아 가는 것도 실력이 느는 거예요.</p>'}
+    <div class="card"><h2>내 짐작 견주기</h2>${cal.n ? `<p>풀기 전에 고른 짐작이 맞은 정도: <b>${Math.round(cal.match * 100)}%</b> <span class="muted small">(${cal.n}문제)</span></p>
+      ${sw ? `<p>'자신 있어요'라고 했는데 틀린 문제가 <b>${sw}개</b> 있어요. 그 판자부터 다시 보면 좋아요.</p>` : '<p>\'자신 있어요\'라고 한 문제는 다 맞았어요. 내 짐작을 믿어도 돼요.</p>'}` : '<p class="muted">문제를 풀 때마다 먼저 짐작을 골라요. 짐작이 결과와 점점 맞아 가는 것도 실력이 느는 거예요.</p>'}
       ${fixedN ? `<p>내가 고친 판자: <b>${fixedN}개</b> — ${Object.keys(K.fixed).map((c) => esc(kidName(c))).join(', ')}</p>` : ''}</div>
     <div class="card"><h2>막힌 문제 거꾸로 찾기</h2>${say('think', '풀기 어려운 문제를 그대로 쓰면, 튼튼이가 <b>거꾸로</b> 따라가며 어디서 끊겼는지 찾아 줘요.', 56)}
       <div class="acts"><a class="btn pri" href="#/back">거꾸로 찾기</a>${K.back && K.back.root && !K.back.solved && K.fixed && K.fixed[K.back.root] ? `<a class="btn" href="#/retry">처음 문제 다시 풀기 — ${esc(K.back.text)}</a>` : ''}</div>
@@ -165,14 +169,14 @@ export function prepView(root, unit) {
     const cal = sum.cal, sw = cal.sureWrong.length;
     const calLine = cal.sure ? `<p>'자신 있어요'라고 한 문제 ${cal.sure}개 가운데 ${sw ? `<b>${sw}개</b>는 틀렸어요 — 그 판자를 고칠 때 꼭 다시 봐요.` : '모두 맞았어요. 내 짐작을 믿어도 돼요.'}</p>` : '';
     const head = sum.fix.length ? say('fix', `고칠 판자를 찾았어요: <b>${sum.fix.map((c) => esc(kidName(c))).join(', ')}</b>.<br>지금 튼튼이랑 고쳐 볼까요? 고치고 나면 바로 오늘 단원으로 가요.`)
-      : sum.shaky.length ? say('think', `다리는 거의 튼튼해요! <b>${sum.shaky.map((c) => esc(kidName(c))).join(', ')}</b>은(는) 조금 흔들려요 — 시간 될 때 다져요. 지금은 오늘 수업으로 가요!`)
+      : sum.shaky.length ? say('think', `다리는 거의 튼튼해요! <b>${names(sum.shaky)}</b>${eun(sum.shaky)} 조금 흔들려요.<br>시간 될 때 다지고, 지금은 오늘 수업으로 가요!`)
       : S.why === 'budget' ? say('think', '오늘은 여기까지 찾았어요. 다음에 이어서 찾아요. 지금은 오늘 수업으로 가요!')
-      : say('cheer', `<b>${esc(unitLabel(unit))}</b>로 가는 다리가 튼튼해요! 오늘 단원으로 건너가요.`);
+      : say('cheer', `<b>${esc(unitLabel(unit))}</b>${ro(unitLabel(unit))} 가는 다리가 튼튼해요! 오늘 단원으로 건너가요.`);
     root.innerHTML = `<div class="card">${head}${calLine}
       <div class="acts">${sum.fix.length ? `<a class="btn pri big" href="#/fix/${sum.fix.sort(byGrade)[0]}">고치러 가기</a>` : sum.shaky.length ? `<a class="btn big" href="#/fix/${sum.shaky.sort(byGrade)[0]}">다지러 가기</a>` : ''}<a class="btn big" href="#/me">내 수 다리 보기</a></div></div>`;
   };
   if (!asked(S) && !S.done) {
-    root.innerHTML = `<div class="card">${say('point', `<b>${esc(unitLabel(unit))}</b>을(를) 배우기 전에, 꼭 필요한 판자가 튼튼한지 볼게요.<br>문제마다 <b>먼저 짐작</b>을 하나 고르고 풀어요. 모르면 넘어가도 괜찮아요.`)}<button class="pri big" id="s">시작</button></div>`;
+    root.innerHTML = `<div class="card">${say('point', `<b>${esc(unitLabel(unit))}</b> 배우기 전에, 필요한 판자가 튼튼한지 볼게요.<br>문제마다 <b>먼저 짐작</b>을 고르고 풀어요. 모르면 넘어가도 돼요.`)}<button class="pri big" id="s">시작</button></div>`;
     root.querySelector('#s').addEventListener('click', step);
   } else step();
 }
@@ -192,7 +196,7 @@ export function fixView(root, c) {
     const b = shell(head('point', F.steps.length ? '튼튼이가 먼저 풀어 볼게요. 한 단계씩 생각을 말할게요.' : `튼튼이가 먼저 풀어 볼게요. ${esc(hintOf(c))}`),
       `<div class="qcard">${staticHTML(F.ex.prompt, done || !F.steps.length ? F.ex.sol : null)}${modelHTML(F.ex)}
         <ol class="steps">${F.steps.slice(0, F.si).map((st, i) => stepHTML(st, { cls: i === F.si - 1 ? 'now' : '' })).join('')}</ol>
-        ${done && F.steps.length ? `<p class="fb ok">그래서 답은 <b>${esc(F.ex.sol.join(', '))}</b>예요.</p>` : ''}
+        ${done && F.steps.length ? `<p class="fb ok">${ansSay(F.ex, '그래서 답은')}</p>` : ''}
         <div class="qact"><button class="pri big" id="n">${!F.steps.length ? '이제 내가 풀어요' : done ? '이제 같이 풀어요' : '다음 단계'}</button></div></div>`);
     b.querySelector('#n').addEventListener('click', () => { if (!F.steps.length || done) { F.si = F.steps.length; showNext(F); route(); } else { showNext(F); show(); } });
   }
@@ -200,16 +204,16 @@ export function fixView(root, c) {
     const st = F.curSteps[F.si];
     if (!st) {   // 단계 다 함 → 원래 문제
       const b = shell(head('think', '단계를 다 했어요. 이제 처음 문제의 답을 써요.'), '<div id="slot"></div>');
-      draw(b.querySelector('#slot'), { prompt: F.cur.prompt, choices: F.cur.choices, conf: false, idk: false, extra: `<ol class="steps">${F.curSteps.map((s) => stepHTML(s)).join('')}</ol>`, onAnswer: (a) => { const r = answerItem(F, a.vals, a.raws); feedback(r, route); } });
+      draw(b.querySelector('#slot'), { prompt: F.cur.prompt, choices: F.cur.choices, conf: false, idk: false, extra: `<ol class="steps">${F.curSteps.map((s) => stepHTML(s)).join('')}</ol>`, onAnswer: (a) => { const ch = F.cur.choices; const r = answerItem(F, a.vals, a.raws); feedback({ ...r, choices: ch }, route); } });
       return;
     }
     const b = shell(head('point', '이번엔 같이 풀어요. 단계마다 빈칸을 채워요.'), `<div class="qcard" style="margin-bottom:10px">${staticHTML(F.cur.prompt, null)}<ol class="steps">${F.curSteps.slice(0, F.si).map((s) => stepHTML(s)).join('')}</ol></div><p><b>${esc(st.why)}</b></p><div id="slot"></div>`);
-    draw(b.querySelector('#slot'), { prompt: st.prompt, conf: false, idk: false, onAnswer: (a) => { const r = togetherStep(F, a.vals); if (r.ok) together(); else feedback({ ok: false, sol: r.sol, msg: `이 단계의 답은 <b>${esc(r.sol.join(', '))}</b>예요. ${esc(r.why)}` }, together); } });
+    draw(b.querySelector('#slot'), { prompt: st.prompt, conf: false, idk: false, onAnswer: (a) => { const r = togetherStep(F, a.vals); if (r.ok) together(); else feedback({ ok: false, sol: r.sol, msg: `${ansSay({ sol: r.sol }, '이 단계의 답은')} ${esc(r.why)}` }, together); } });
   }
   function solo() {
     if (F.reStep) return reStep();
     const b = shell(head('hi', `이제 혼자 풀어 봐요. <span class="muted small">(맞힌 것 ${F.solo.ok} / 3)</span>`), '<div id="slot"></div>');
-    draw(b.querySelector('#slot'), { prompt: F.cur.prompt, choices: F.cur.choices, conf: false, idk: false, onAnswer: (a) => { const r = answerItem(F, a.vals, a.raws); feedback(r, route); } });
+    draw(b.querySelector('#slot'), { prompt: F.cur.prompt, choices: F.cur.choices, conf: false, idk: false, onAnswer: (a) => { const ch = F.cur.choices; const r = answerItem(F, a.vals, a.raws); feedback({ ...r, choices: ch }, route); } });
   }
   // 혼자에서 틀린 문제 → 같은 숫자로 단계를 나눠 아이가 채움 · 처음 어긋난 단계를 표시 [D-15]
   function reStep() {
@@ -232,7 +236,7 @@ export function fixView(root, c) {
     const b = root.querySelector('#b') || root;
     const box = document.createElement('div');
     box.className = `fb ${r.ok ? 'ok' : 'no'}`;
-    box.innerHTML = r.ok ? '맞았어요! 단계를 차례로 따라 해서 맞혔어요.' : r.msg || `답은 <b>${esc((r.sol || []).join(', '))}</b>예요. ${F.phase === 'solo' && F.reStep ? '어디서 어긋났는지 나눠서 볼까요?' : ''}`;
+    box.innerHTML = r.ok ? '맞았어요! 단계를 차례로 따라 해서 맞혔어요.' : r.msg || `${ansSay({ sol: r.sol || [], choices: r.choices })} ${F.phase === 'solo' && F.reStep ? '어디서 어긋났는지 나눠서 볼까요?' : ''}`;
     const btn = document.createElement('button'); btn.className = 'pri'; btn.textContent = '다음'; btn.style.marginTop = '8px';
     if (!r.ok && F.phase === 'solo' && F.solo.log.length) { const last = F.solo.log[F.solo.log.length - 1]; try { toolBox(box, { it: mkItem(c, last.p), vals: (last.a || []).map(Number), c, onSelfFix: (t) => KS.selfFix(me, K, t) }); } catch (e) { /* 도구가 없는 문항 */ } }
     box.appendChild(document.createElement('br')); box.appendChild(btn);
@@ -271,16 +275,16 @@ export function fixView(root, c) {
     function why(gotIt) {
       if (T && !why.shown) {
         why.shown = true;
-        const bt = shell(head(gotIt ? 'cheer' : 'think', `${gotIt ? '맞아요! ' : '다시 봐요 — '}${X.rightFirst ? '나' : '가'} 친구가 쓴 ${esc(X.wrong.join(', '))}이(가) 맞는지 <b>${esc(T.ro)}</b> 확인해 볼까요?<br><span class="small">${esc(T.how)}</span>`), `<div class="qcard"><p class="tcheck">${T.html}</p></div><div class="qact"><button class="pri big" id="n3">그럼 어디서 어긋났을까?</button></div>`);
+        const w = X.wrong.join(', '), bt = shell(head(gotIt ? 'cheer' : 'think', `${gotIt ? '맞아요! ' : '다시 봐요. '}${X.rightFirst ? '나' : '가'} 친구가 쓴 ${esc(w)}${P(w, '이', '가')} 맞는지 <b>${esc(T.ro)}</b> 확인해 볼까요?<br><span class="small">${esc(T.how)}</span>`), `<div class="qcard"><p class="tcheck">${T.html}</p></div><div class="qact"><button class="pri big" id="n3">그럼 어디서 어긋났을까?</button></div>`);
         bt.querySelector('#n3').addEventListener('click', () => why(gotIt));
         return;
       }
-      const b2 = shell(head(gotIt ? 'cheer' : 'think', `${gotIt ? '맞아요! ' : '다시 봐요 — '}맞게 푼 건 ${staticHTML(X.it.prompt, X.it.sol)} 이에요.<br>그럼 <b>${esc(X.wrong.join(', '))}</b>라고 쓴 친구는 <b>어디서 어긋났을까요?</b>`), `<div class="todo">${X.reasons.map((t, i) => `<button type="button" class="item rs" data-i="${i}" style="text-align:left">${esc(t)}</button>`).join('')}</div>`);
+      const w2 = X.wrong.join(', '), b2 = shell(head(gotIt ? 'cheer' : 'think', `${gotIt ? '맞아요! ' : '다시 봐요. '}맞게 푼 건 ${staticHTML(X.it.prompt, X.it.sol)} 이에요.<br>그럼 <b>${esc(w2)}</b>${P(w2, '이라고', '라고')} 쓴 친구는 <b>어디서 어긋났을까요?</b>`), `<div class="todo">${X.reasons.map((t, i) => `<button type="button" class="item rs" data-i="${i}" style="text-align:left">${esc(t)}</button>`).join('')}</div>`);
       b2.querySelectorAll('.rs').forEach((btn) => btn.addEventListener('click', () => {
         const ok = X.reasons[Number(btn.dataset.i)] === X.right;
         const st = stepsOf({ c: X.it.c, p: X.it.p });
         if (T) KS.learnTool(me, K, T.tool);
-        shell(head(ok ? 'cheer' : 'point', `${ok ? '맞아요! ' : '아쉬워요 — '}틀린 친구는 <b>${esc(X.right)}</b>. 그래서 ${esc(X.wrong.join(', '))}이(가) 나왔어요.${T ? `<br>🔍 <b>${esc(T.name)}</b> 도구를 내 도구함에 넣었어요 — 내 답도 이렇게 확인해요.` : ''}`), `${st.length ? `<p class="small muted">바르게 풀면 이렇게 이어져요</p><ol class="steps">${st.map((x) => stepHTML(x)).join('')}</ol>` : ''}<div class="qact"><button class="pri big" id="n2">이제 혼자 풀어요</button></div>`);
+        shell(head(ok ? 'cheer' : 'point', `${ok ? '맞아요! ' : '아쉬워요. '}틀린 친구는 <b>${esc(X.right)}</b>. 그래서 ${esc(w2)}${P(w2, '이', '가')} 나왔어요.${T ? `<br>🔍 <b>${esc(T.name)}</b> 도구를 내 도구함에 넣었어요. 내 답도 이렇게 확인해요.` : ''}`), `${st.length ? `<p class="small muted">바르게 풀면 이렇게 이어져요</p><ol class="steps">${st.map((x) => stepHTML(x)).join('')}</ol>` : ''}<div class="qact"><button class="pri big" id="n2">이제 혼자 풀어요</button></div>`);
         root.querySelector('#n2').addEventListener('click', route);
       }));
     }
@@ -313,7 +317,7 @@ export function reviewView(root) {
       else { ok = checkAns(it, a); R.it[it.k] = ok ? { s: 'ok' } : { s: 'x', a: a.raws }; }
       conf[it.k] = cf; ms[it.k] = t; i++;
       const box = document.createElement('div'); box.className = `fb ${ok ? 'ok' : 'no'}`;
-      box.innerHTML = ok ? '맞았어요!' : `답은 <b>${esc(it.snap.sol.join(', '))}</b>예요. 이 판자는 다시 한 번 고쳐요.`;
+      box.innerHTML = ok ? '맞았어요!' : `${ansSay(it.snap)} 이 판자는 다시 한 번 고쳐요.`;
       const btn = document.createElement('button'); btn.className = 'pri'; btn.textContent = '다음'; btn.style.marginLeft = '10px'; box.appendChild(btn);
       root.querySelector('.qcard').appendChild(box); root.querySelectorAll('.qcard input, .qcard .qact button, .qcard .choices button, .qcard .conf button').forEach((x) => (x.disabled = true));
       btn.focus(); btn.addEventListener('click', one);
@@ -330,7 +334,7 @@ export function reviewView(root) {
       else { K.rv[c] = { n: 0, due: now + KS.DAY, t: now }; back.push(c); }
     }
     KS.save(me, K); KS.setReview(me, K); KS.pushSummary(me, K);
-    root.innerHTML = `<div class="card">${back.length ? say('think', `다시 보기 끝! <b>${back.map((c) => esc(kidName(c))).join(', ')}</b>은(는) 조금 흔들려서 한 번 더 고쳐요.`) : say('cheer', '다시 보기 끝! 고친 판자가 그대로 튼튼해요.')}<div class="acts"><a class="btn pri big" href="#/me">내 수 다리로</a></div></div>`;
+    root.innerHTML = `<div class="card">${back.length ? say('think', `다시 보기 끝! <b>${names(back)}</b>${eun(back)} 조금 흔들려서 한 번 더 고쳐요.`) : say('cheer', '다시 보기 끝! 고친 판자가 그대로 튼튼해요.')}<div class="acts"><a class="btn pri big" href="#/me">내 수 다리로</a></div></div>`;
   };
   root.innerHTML = `<div class="card">${say('point', '고친 판자를 <b>섞어서</b> 다시 꺼내 풀어요. 섞으면 지금은 조금 어렵지만 오래 남아요.')}<button class="pri big" id="s">시작</button></div>`;
   root.querySelector('#s').addEventListener('click', one);
