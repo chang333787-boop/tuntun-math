@@ -71,6 +71,18 @@ export const MIS = [
   { id: 'fac.mult', area: 'R', lessons: ['5-1-2:2', '5-1-2:3', '5-1-2:4', '5-1-2:6'], title: '약수 ↔ 배수 · 1과 자기 자신', think: '약수와 배수를 뒤바꿈 · 1과 자기 자신을 빠뜨림 · 최소공배수 = 두 수의 곱', shows: '12의 약수 → 24, 36 · 4와 6의 최소공배수 → 24(정답 12)', why: ['lang', '낱말 뜻 혼동 · 곱셈 약함 · 절차만'], probe: '서로소가 아닌 쌍(3과 5는 곱 = 최소공배수라 못 가림)', fix: '직사각형 배열(약수) · 수직선 뛰어 세기(배수)', names: ['1', '두 수의 곱', '최대'], has: 'part', str: '중', refs: 'E4-38,E4-39' },
 ];
 
+// 가려내는 꼴(함정 문항) — 차시 → params 조건 · 다른 꼴로 한 번 더(찾을 때) · 함정 짝(다질 때)에 씀 [E2 ②][E3 ②][E4 ③5]
+export const WANT = {
+  'dec.long': { '4-2-3:6': (p) => !!p.short }, 'dec.short': { '4-2-3:6': (p) => !!p.short },
+  'fr.cmpGap': { '5-1-4:6': (p) => p.v === 'gap' || p.v === 'bignum' },
+  'eq.answer': { '2-1-3:10': (p) => !!p.eq }, 'box.visible': { '2-1-3:10': (p) => !!p.eq },
+  'mul.bigger': { '5-2-2:4': (p) => !!p.dir, '6-2-1:5': (p) => p.v === 'dir' },
+  'sub.zero': { '2-1-3:6': () => true, '3-1-1:7': (p) => p.a != null && /0/.test(String(p.a).slice(0, -1)) },
+  'sub.borrow': { '2-1-3:7': (p) => p.a != null && p.b != null && Math.abs((p.a % 10) - (p.b % 10)) !== 5, '3-1-1:6': (p) => p.a != null && p.b != null && Math.abs((p.a % 10) - (p.b % 10)) !== 5 },
+  'mul.dist': { '3-1-4:5': (p) => p.a != null && p.a % 10 !== 0, '3-1-4:6': (p) => p.a != null && p.a % 10 !== 0 },
+};
+export const wantFor = (misId, lesson) => (WANT[misId] && WANT[misId][lesson]) || null;
+
 // 찾기 — 엔진 원인(버그 id 또는 'lesson:이름')과 차시로 카드
 const byBug = {};
 for (const m of MIS) for (const b of m.bugs || []) (byBug[b] = byBug[b] || []).push(m);
@@ -86,3 +98,22 @@ export function misFor({ bug = null, lesson = null } = {}) {
   return [...out];
 }
 export const misById = Object.fromEntries(MIS.map((m) => [m.id, m]));
+
+// 판정(kidReport의 rep) → 이 아이에게 보인 생각들 { 카드 id: { s 되풀이 수, m 한 번 수, c: Set(차시) } }
+//  계산 문항은 원인 가설(why.sure · maybe) · 고르기 문항은 고른 보기의 오답 이름(r.note) — 같은 이름 둘 이상이고 그 차시에서 맞힌 수보다 많을 때만 되풀이(찍기로 '확실'이 되지 않게 [E3 ②6])
+export function mindsOf(rep) {
+  const out = {};
+  const add = (m, c, k) => { const e = (out[m.id] = out[m.id] || { s: 0, m: 0, c: new Set() }); e[k]++; e.c.add(c); };
+  for (const x of Object.values(rep.L || {})) {
+    if (x.why) {
+      x.why.sure.forEach((h) => misFor({ bug: h.id, lesson: x.c }).forEach((m) => add(m, x.c, 's')));
+      x.why.maybe.forEach((h) => misFor({ bug: h.id, lesson: x.c }).forEach((m) => add(m, x.c, 'm')));
+    }
+    const notes = {}; (x.recs || []).forEach((r) => { if (r.note) notes[r.note] = (notes[r.note] || 0) + 1; });
+    for (const [nm, n] of Object.entries(notes)) misFor({ bug: 'lesson:' + nm, lesson: x.c }).forEach((m) => {
+      const w = wantFor(m.id, x.c), okN = (x.recs || []).filter((r) => r.ok && (!w || (r.p && (() => { try { return w(r.p); } catch (e) { return false; } })()))).length;   // 함정 꼴로 맞힌 것만 반대 증거
+      add(m, x.c, n >= 2 && n >= okN ? 's' : 'm');
+    });
+  }
+  return out;
+}

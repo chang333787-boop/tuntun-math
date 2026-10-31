@@ -13,7 +13,7 @@ export const TOOLS = {
   balance: { name: '저울', ro: '저울로', how: '=의 양쪽을 따로 계산해 같은지 봐요' },
   reread: { name: '다시 읽기', ro: '다시 읽기로', how: '묻는 말을 다시 읽어요 — 내 답이 그 물음에 맞나요?' },
 };
-const CARD_TOOL = {
+export const CARD_TOOL = {
   'add.carry': 'inverse', 'sub.borrow': 'inverse', 'sub.zero': 'inverse', 'mul.algo': 'inverse', 'mul.dist': 'inverse', 'div.rem': 'inverse', 'div.zero': 'inverse', 'inv.addsub': 'inverse', 'three': 'inverse',
   'mul.add': 'estimate', 'mul.bigger': 'estimate', 'mul.tens': 'estimate', 'dec.mulPoint': 'estimate', 'dec.divPoint': 'estimate', 'fr.addBoth': 'estimate', 'fr.mul': 'estimate', 'fr.div': 'estimate', 'dec.align': 'estimate', 'pct': 'estimate', 'ratio.add': 'estimate',
   'dec.long': 'line', 'dec.short': 'line', 'dec.trunc': 'line', 'fr.unitBig': 'line', 'fr.cmpGap': 'line', 'fr.line': 'line', 'cmp.ones': 'line', 'fd.recip': 'line', 'fr.lessOne': 'line',

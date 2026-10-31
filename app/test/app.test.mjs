@@ -55,5 +55,35 @@ ok(mx['1-1-3:6'].slow === true && mx['1-1-3:6'].tier === 0, '정답률 낮으면
 const D = G2.newDrill({ c, id: 'DR', clock: true });
 ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringify(it.snap.prompt))).size === n, `다듬기 한 판 ${n}문제 · 겹침 없음`);
 }
+// ⑤ 다른 꼴로 한 번 더 — 소수 비교에서 '짧을수록 크다' 보기를 한 번 고른 아이 → 다음 묶음에 그 함정 꼴 문항이 나옴
+{
+  const { itemOf: io } = await import('../../paper/js/gen.js');
+  let picked = false, sawTrap = false;
+  for (let k = 0; k < 40 && !picked; k++) {
+    const S = P.newPrep({ unit: k % 2 ? '6-1-3' : '5-1-4', id: 'TRAP' + k });
+    let it, mine = false;
+    while ((it = P.current(S))) {
+      if (it.c === '4-2-3:6' && it.snap.choices) {
+        if (mine && it.trap) sawTrap = true;
+        const sh = it.snap.choices.findIndex((_, i) => { const r = io(it.c, it.p).check([i], [String(i)]); return r.bug && /짧을수록/.test(r.bug.name); });
+        if (!mine && sh >= 0) { mine = true; picked = true; P.answer(S, { vals: [sh], raws: [String(sh)] }); continue; }
+      }
+      P.answer(S, { vals: it.snap.sol.map(Number), raws: it.snap.sol.map(String) });
+    }
+  }
+  ok(picked && sawTrap, `'짧을수록 크다' 보기를 한 번 고르면 다음 묶음에 함정 꼴로 다시 물음(고름 ${picked} · 함정 ${sawTrap})`);
+}
+// ⑥ 함정 짝 — 생각이 보였던 칸의 다듬기는 절반이 함정 꼴 · 오래는 함정까지 맞아야
+{
+  const G3 = await import('../js/stage.js'), M3 = await import('../../engine/mis.js');
+  const D = G3.newDrill({ c: '2-1-3:10', id: 'TRP', clock: true, want: M3.wantFor('eq.answer', '2-1-3:10') });
+  const tn = D.sheet.items.filter((x) => x.trap).length;
+  ok(tn === Math.ceil(D.sheet.items.length / 2), `등호 생각이 보였던 칸 다듬기: 함정 꼴 ${tn}/${D.sheet.items.length}`);
+  const mx = { '2-1-3:10': { tier: 2, t2: Date.now() - 4 * 864e5, runs: [], best: null } };
+  G3.applyRun(mx, '2-1-3:10', { n: 6, ok: 5, med: 1000, total: 1, trapN: 3, trapOk: 2 });
+  ok(mx['2-1-3:10'].tier === 2, '함정 하나를 틀리면 오래 X');
+  G3.applyRun(mx, '2-1-3:10', { n: 6, ok: 6, med: 1000, total: 1, trapN: 3, trapOk: 3 });
+  ok(mx['2-1-3:10'].tier === 3, '함정까지 맞으면 오래');
+}
 console.log(fail ? `FAIL ${fail}` : 'PASS');
 process.exitCode = fail ? 1 : 0;

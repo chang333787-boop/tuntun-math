@@ -9,7 +9,7 @@ import { mascot } from '../../paper/js/mascot.js';
 import * as KS from './kidstore.js';
 import { draw } from './item.js';
 import { plankSVG } from './bridge.js';
-import { target, TIER, TIER_KID } from './stage.js';
+import { target, TIER, TIER_KID, wantOf } from './stage.js';
 import { esc, rand } from './local.js';
 import { toolBox } from './tools.js';
 import { go, meOf } from './kid.js';
@@ -43,7 +43,8 @@ export function runView(root) {
     root.innerHTML = `<div class="card">${say('think', '아직 구보할 판자가 없어요. 먼저 <b>준비 다리</b>나 <b>거꾸로 찾기</b>로 판자를 고치면, 그 판자들로 매일 구보를 해요.')}<div class="acts"><a class="btn pri" href="#/back">거꾸로 찾기</a><a class="btn" href="#/me">내 수 다리로</a></div></div>`;
     return;
   }
-  const sh = makeSheet({ kind: 'run', words: false, id: rand(6), lessons: plan.map((c) => ({ c, n: 2 })), mixed: true });
+  const rep0 = KS.reportOf(K);
+  const sh = makeSheet({ kind: 'run', words: false, id: rand(6), lessons: plan.map((c) => { const want = wantOf(rep0, K.minds, c); return want ? { c, n: 2, want, trapN: 1 } : { c, n: 2 }; }), mixed: true });   // 보였던 생각이 있으면 둘 중 하나는 함정 짝
   sh.items = sh.items.filter((it) => it.ch !== 'END'); sh.chapters = sh.chapters.filter((ch) => ch.key !== 'END');
   for (let i = sh.items.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [sh.items[i], sh.items[j]] = [sh.items[j], sh.items[i]]; }   // 섞어서 [D-10]
   const R = { done: {}, it: {} }, ms = {};
@@ -80,7 +81,8 @@ export function runView(root) {
       else { K.rv[c] = { n: 0, due: now + DAY, t: now }; again.push(c); }
       const m = K.mx[c] || { tier: 0, best: null, runs: [], t2: 0 };
       m.runs = [...(m.runs || []), { t: now, ok: its.filter((y) => R.it[y.k] && R.it[y.k].s === 'ok').length, n: its.length, med, run: 1 }].slice(-10);
-      if (good && m.tier === 2 && med != null && med <= target(c) * 1.2 && now - (m.t2 || now) >= 3 * DAY) { m.tier = 3; up.push(c); }   // 며칠 뒤에도 빠르고 정확 = 오래
+      const trapsOk = its.filter((y) => y.trap).every((y) => R.it[y.k] && R.it[y.k].s === 'ok');
+      if (good && trapsOk && m.tier === 2 && med != null && med <= target(c) * 1.2 && now - (m.t2 || now) >= 3 * DAY) { m.tier = 3; up.push(c); }   // 며칠 뒤에도 빠르고 정확 = 오래
       if (good && !m.tier) m.tier = 1;
       K.mx[c] = m;
     }

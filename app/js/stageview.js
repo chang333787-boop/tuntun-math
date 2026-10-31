@@ -6,7 +6,7 @@ import * as KS from './kidstore.js';
 import { prepPlan } from './prep.js';
 import { draw } from './item.js';
 import { plankSVG } from './bridge.js';
-import { TIER, TIER_KID, target, drillN, need, newDrill, drillItem, answerDrill, resultOf, applyRun, nextGoal, elapsed } from './stage.js';
+import { TIER, TIER_KID, target, drillN, need, newDrill, drillItem, answerDrill, resultOf, applyRun, nextGoal, elapsed, wantOf } from './stage.js';
 import { esc, rand } from './local.js';
 import { toolBox } from './tools.js';
 import { itemOf } from '../../paper/js/gen.js';
@@ -51,7 +51,7 @@ export function drillView(root, c) {
   const K = KS.load(me); K.mx = K.mx || {};
   const m0 = K.mx[c], tier0 = m0 ? m0.tier : 0;
   const showClock = tier0 >= 1 && !(m0 && m0.slow);   // 정확을 딴 뒤에만 · 정답률 낮았던 다음 판은 시계 없이
-  const D = newDrill({ c, id: rand(6), clock: showClock });
+  const D = newDrill({ c, id: rand(6), clock: showClock, want: wantOf(KS.reportOf(K), K.minds, c) });
   const best = m0 && m0.best && m0.best.n === D.sheet.items.length && m0.best.ok === m0.best.n ? m0.best.total : null;
   let tick = null;
   KS.setNow(me, { mode: 'drill', c });

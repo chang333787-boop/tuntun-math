@@ -4,7 +4,7 @@ import { joinView, homeView, prepView, fixView, reviewView, meOf } from './kid.j
 import { stagesView, drillView } from './stageview.js';
 import { backView, retryView } from './back.js';
 import { runView } from './run.js';
-import { teacherHome, newClassView, openClassView, cardsView, namesView, classView, kidDetailView, groupCardView, guideView } from './teacher.js';
+import { teacherHome, newClassView, openClassView, cardsView, namesView, classView, kidDetailView, groupCardView, guideView, mindCardView } from './teacher.js';
 import { lsGet, esc } from './local.js';
 import { flush, pending } from './db.js';
 
@@ -40,6 +40,7 @@ const ROUTES = [
   [/^#\/t\/c\/(\w+)\/names$/, (m) => namesView(root, m[1])],
   [/^#\/t\/c\/(\w+)\/k\/(\d+)$/, (m) => kidDetailView(root, m[1], m[2])],
   [/^#\/t\/c\/(\w+)\/g\/(.+)$/, (m) => groupCardView(root, m[1], decodeURIComponent(m[2]))],
+  [/^#\/t\/c\/(\w+)\/m\/([\w.]+)$/, (m) => mindCardView(root, m[1], m[2])],
 ];
 function route() {
   if (typeof cleanup === 'function') { try { cleanup(); } catch (e) { /* */ } }

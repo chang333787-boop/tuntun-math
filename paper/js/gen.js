@@ -87,15 +87,18 @@ function okItem(c, it) {
   if (KUKU.has(c)) { const X = readExpr(it); return !!X && X.A.i >= 2 && X.B.i >= 2; }
   return true;
 }
-export function pickItems(c, n, r, used = new Set()) {
+//  want(p) = 이 꼴만(오개념을 가려내는 함정 문항 — engine/mis.js want) · 모자라면 꼴 없이 채움
+export function pickItems(c, n, r, used = new Set(), want = null) {
   const L = LES(c), out = [], dan = {};
-  for (let k = 0; k < n * 60 && out.length < n; k++) {
+  for (let k = 0; k < n * (want ? 200 : 60) && out.length < n; k++) {
     let it; try { it = itemOf(c, L.gen(r)); } catch (e) { continue; }
     const key = keyOf(it);
     if (used.has(key) || !okItem(c, it)) continue;
+    if (want) { let w = false; try { w = !!want(it.p); } catch (e) { w = false; } if (!w) continue; it.trap = true; }
     if (TWO[c]) { const X = readExpr(it), d = TWO[c].includes(X.A.i) ? X.A.i : X.B.i; if (!TWO[c].includes(d) || (dan[d] || 0) >= Math.ceil(n / 2)) continue; dan[d] = (dan[d] || 0) + 1; }
     used.add(key); out.push(it);
   }
+  if (want && out.length < n) out.push(...pickItems(c, n - out.length, r, used));
   return out;
 }
 
@@ -181,10 +184,10 @@ export function makeSheet({ kind, from = '1-1', to = '4-1', lessons = null, word
   for (const x of plan) {
     const ch = groupKey(x.c);
     if (!byCh[ch]) { byCh[ch] = { key: ch, g: LES(x.c).g, s: strandOf(x.c), items: [] }; chapters.push(byCh[ch]); }
-    const its = x.hyps ? pickDiscriminating(x.c, x.n, r, used, x.hyps) : pickItems(x.c, x.n, r, used);
+    const its = x.hyps ? pickDiscriminating(x.c, x.n, r, used, x.hyps) : x.want ? [...pickItems(x.c, x.trapN == null ? x.n : Math.min(x.trapN, x.n), r, used, x.want), ...(x.trapN != null && x.trapN < x.n ? pickItems(x.c, x.n - x.trapN, r, used) : [])] : pickItems(x.c, x.n, r, used);
     if (its.length < x.n) warn.push(`${x.c} ${x.n}문제 중 ${its.length}개만 만듦`);
     if (x.hyps && its.splitCount === 0) warn.push(`${lessonName(x.c)}: 두 원인(${x.hyps.join(', ')})이 이 차시 문제에서는 늘 같은 답을 내서 가르는 문제를 못 만듦 — 풀이 과정을 보고 판단해 주세요`);
-    its.forEach((it) => { const form = formOf(it); byCh[ch].items.push({ c: x.c, p: it.p, form, cls: clsOf(it, form), gate: !!x.gate, covers: x.covers || null, snap: { prompt: it.prompt, sol: it.sol, choices: it.choices || null } }); });
+    its.forEach((it) => { const form = formOf(it); byCh[ch].items.push({ c: x.c, p: it.p, form, cls: clsOf(it, form), gate: !!x.gate, covers: x.covers || null, ...(it.trap ? { trap: 1 } : {}), snap: { prompt: it.prompt, sol: it.sol, choices: it.choices || null } }); });
   }
   // 장 안 차례: 같은 배치 갈래끼리 모아 섞음(같은 차시가 나란히 몰리지 않게)
   for (const ch of chapters) {

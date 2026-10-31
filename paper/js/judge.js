@@ -18,7 +18,7 @@ export function readItem(sheet, it, r) {
   if (!r || !r.done || !r.done[it.ch]) return null;
   if (it.form === 'w') { const w = (r.w || {})[it.k] || {}; return { k: it.k, c: it.c, word: true, kind: it.word.kind, f: w.f !== 0, a: w.a !== 0 }; }
   const m = (r.it || {})[it.k] || {}, s = m.s || 'ok';
-  const out = { k: it.k, c: it.c, s, help: s === 'h', ok: s === 'ok' || s === 'h', gate: !!it.gate, covers: it.covers };
+  const out = { k: it.k, c: it.c, p: it.p, s, help: s === 'h', ok: s === 'ok' || s === 'h', gate: !!it.gate, covers: it.covers };
   if (s === 'x' && m.a && m.a.some((v) => v !== '' && v != null)) {
     let vals = m.a.map(Number), extraRem = null;
     if (it.form === 'd' && it.snap.sol.length === 1 && m.a.length > 1) { extraRem = m.a[1] === '' || m.a[1] == null ? null : Number(m.a[1]); vals = [vals[0]]; }
@@ -28,7 +28,7 @@ export function readItem(sheet, it, r) {
     let d = null; try { const ans = answerOf(view, vals); d = ans && readExpr(view) ? diagnose(view, ans, { lessonBug }) : null; } catch (e) { d = null; }
     // 고르기 문제는 어느 보기를 골라도 오답 이름이 붙음(보기 둘이면 오답 = 그 이름) — 원인 근거로 세지 않고 이름만 보여 줌
     if (it.snap.choices) { out.ans = m.a; out.note = lessonBug ? lessonBug.name : null; out.d = null; out.tests = []; return out; }
-    if (!d && lessonBug) d = { kind: 'bug', hyps: [{ id: `lesson:${lessonBug.name}`, name: lessonBug.name, kind: 'proc', to: lessonBug.to }], slip: null };
+    if (lessonBug && (!d || !d.hyps.length)) d = { kind: 'bug', hyps: [{ id: `lesson:${lessonBug.name}`, name: lessonBug.name, kind: 'proc', to: lessonBug.to }], slip: null };   // 식 읽기가 원인을 못 찾았으면 차시 오답 이름으로(8 + 4 = □ + 5 → 12 같은 꼴 · 10-31)
     if (d && d.hyps.length > 1) { const gen = d.hyps.filter((h) => !String(h.id).startsWith('lesson:')); if (gen.length) { d.alt = d.hyps.filter((h) => String(h.id).startsWith('lesson:')).map((h) => h.name); d.hyps = gen; } }   // 같은 답을 설명하는 차시 오답 이름은 같은 원인의 다른 이름 — 생성 모형만 셈
     out.ans = m.a; out.d = d; out.tests = readExpr(view) ? testable(view) : [];
   } else if (s !== 'q' && s !== 'x') { try { out.tests = readExpr(it.snap) ? testable({ prompt: it.snap.prompt, sol: it.snap.sol }) : []; } catch (e) { out.tests = []; } }
@@ -59,7 +59,7 @@ export function kidReport(sheets, results, kid, { from = '1-1', to = '4-1' } = {
   }
   // 원인 가설(차시마다 · errors.judge — 두 번 맞아떨어지고 반대 증거가 더 많지 않아야 '가능성 높음')
   for (const x of Object.values(L)) {
-    const J = judge(x.recs.map((r) => ({ ok: r.ok, idk: r.s === 'q', d: r.ok || r.s === 'q' ? null : r.d ? { hyps: r.d.hyps.map((h) => ({ id: h.id, name: h.name, kind: h.kind })), slip: r.d.slip || null, kind: r.d.kind } : null, tests: r.tests || [] })));
+    const J = judge(x.recs.map((r) => ({ c: r.c, p: r.p, ok: r.ok, idk: r.s === 'q', d: r.ok || r.s === 'q' ? null : r.d ? { hyps: r.d.hyps.map((h) => ({ id: h.id, name: h.name, kind: h.kind })), slip: r.d.slip || null, kind: r.d.kind } : null, tests: r.tests || [] })));
     const ev = (id) => x.recs.filter((r) => r.d && r.d.hyps.some((h) => h.id === id)).map((r) => ({ k: r.k, sheet: r.sheet, a: r.ans }));
     x.why = { verdict: J.verdict, sure: J.sure.map((h) => ({ ...h, ev: ev(h.id) })), maybe: J.maybe.map((h) => ({ ...h, ev: ev(h.id) })), slips: J.slips, idk: J.idk };
     // 같은 답을 두 원인이 설명 → 가르는 문항이 필요 · 한 원인만 맞아떨어진 문항들이 모두 같은 원인을 가리킬 때만 '갈림'(서로 다른 원인을 가리키면 그대로)

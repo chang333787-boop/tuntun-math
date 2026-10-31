@@ -5,7 +5,7 @@
 //  rv = 다시 보기 일정 { 차시: { n: 지난 다시 보기 수, due: 다음 날 } } — 고친 뒤 1 · 3 · 7일 [D-6][D-8]
 import { closure, itemOf, formOf, LES } from '../../paper/js/gen.js';
 import { kidReport } from '../../paper/js/judge.js';
-import { misFor } from '../../engine/mis.js';
+import { mindsOf } from '../../engine/mis.js';
 import { lsGet, lsSet } from './local.js';
 import * as db from './db.js';
 
@@ -93,11 +93,12 @@ export function summaryOf(K) {
   const last = Object.values(K.recs).filter(okRec).reduce((m, x) => Math.max(m, x.s.made), 0);
   // 오개념 카드 — 되풀이됨(s) · 한 번 보임(m) — 선생님 반 화면에서 모아 봄
   const mis = {};
-  for (const x of Object.values(rep.L)) {
-    if (!x.why) continue;
-    for (const h of x.why.sure) for (const m of misFor({ bug: h.id, lesson: x.c })) mis[m.id] = 's';
-    for (const h of x.why.maybe) for (const m of misFor({ bug: h.id, lesson: x.c })) if (!mis[m.id]) mis[m.id] = 'm';
-  }
+  for (const [id, e] of Object.entries(mindsOf(rep))) mis[id] = e.s ? 's' : 'm';
+  // 고친 생각 — 예전에 되풀이됐는데 지금은 안 보이고 그 칸이 됨(다른 꼴 함정까지 맞혀야 됨 — 판정이 최근 문항으로 봄)
+  K.minds = K.minds || {};
+  for (const [id, v] of Object.entries(mis)) if (v === 's') K.minds[id] = { s: (K.minds[id] && K.minds[id].s) || now, fixed: 0 };
+  for (const [id, x] of Object.entries(K.minds)) if (!mis[id] && x.s && !x.fixed) { x.fixed = now; }
+  for (const [id, x] of Object.entries(K.minds)) if (x.fixed && !mis[id]) mis[id] = 'r';
   return { t: now, last, mis, L, start: rep.start.map((s) => s.c), below: rep.below.map((b) => b.c), under: rep.under.map((u) => u.c), sw: cal.sureWrong, cal: { n: cal.n, m: cal.match }, fixed: K.fixed, due, help: K.help || {}, rush: K.rush || 0, jog: (K.jog || []).slice(-14), tools: K.tools || {}, mx: Object.fromEntries(Object.entries(K.mx || {}).filter(([c]) => c !== '_jog' && c !== '_tools').map(([c, x]) => [c, x.tier || 0])) };
 }
 export function pushSummary(me, K) { db.queuePut(`${base(me)}/st`, db.enc(summaryOf(K))); }

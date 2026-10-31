@@ -14,9 +14,10 @@ export const drillN = (c) => { const s = byId[c] ? byId[c].sec : 20; return s >=
 export const need = (n) => (n >= 6 ? n - 1 : n);   // 정확 = 8문제 중 7 · 6문제 중 5 · 5문제는 다
 const median = (xs) => { const s = xs.slice().sort((a, b) => a - b); return s.length ? (s.length % 2 ? s[(s.length - 1) / 2] : (s[s.length / 2 - 1] + s[s.length / 2]) / 2) : 0; };
 
-export function newDrill({ c, id, clock }) {
+//  want = 이 아이에게 보인 생각을 가려내는 함정 꼴(engine/mis.js WANT) — 있으면 절반을 함정 짝으로 [D-10][D-12]
+export function newDrill({ c, id, clock, want = null }) {
   const n = drillN(c);
-  const sh = makeSheet({ kind: 'drill', words: false, id, lessons: [{ c, n }], mixed: true });
+  const sh = makeSheet({ kind: 'drill', words: false, id, lessons: [want ? { c, n, want, trapN: Math.ceil(n / 2) } : { c, n }], mixed: true });
   sh.items = sh.items.filter((it) => it.ch !== 'END'); sh.chapters = sh.chapters.filter((ch) => ch.key !== 'END');
   return { v: 1, c, id, clock: !!clock, sheet: sh, i: 0, R: { done: {}, it: {} }, ms: {}, done: false };
 }
@@ -37,7 +38,8 @@ export function resultOf(D) {
   const ks = D.sheet.items.map((it) => it.k);
   const ok = ks.filter((k) => D.R.it[k] && D.R.it[k].s === 'ok').length;
   const okMs = ks.filter((k) => D.R.it[k] && D.R.it[k].s === 'ok').map((k) => D.ms[k] || 0);
-  return { n: ks.length, ok, med: okMs.length ? median(okMs) : null, total: elapsed(D) };
+  const traps = D.sheet.items.filter((it) => it.trap).map((it) => it.k);
+  return { n: ks.length, ok, med: okMs.length ? median(okMs) : null, total: elapsed(D), trapN: traps.length, trapOk: traps.filter((k) => D.R.it[k] && D.R.it[k].s === 'ok').length };
 }
 
 // 한 판 결과 → 표 · 내 기록(나와만 견줌)
@@ -46,7 +48,7 @@ export function applyRun(mx, c, res, now = Date.now()) {
   const before = m.tier, T = target(c), good = res.ok >= need(res.n);
   if (good && m.tier < 1) m.tier = 1;
   if (good && m.tier >= 1 && res.med != null && res.med <= T && m.tier < 2) { m.tier = 2; m.t2 = now; }
-  else if (good && m.tier === 2 && res.med != null && res.med <= T * 1.2 && now - (m.t2 || now) >= 3 * DAY) m.tier = 3;
+  else if (good && m.tier === 2 && res.med != null && res.med <= T * 1.2 && now - (m.t2 || now) >= 3 * DAY && (!res.trapN || res.trapOk === res.trapN)) m.tier = 3;   // 오래 = 함정 짝까지 맞아야(그 생각이 정말 고쳐졌나)
   const better = !m.best || res.ok / res.n > m.best.ok / m.best.n || (res.ok / res.n === m.best.ok / m.best.n && res.med != null && (m.best.med == null || res.med < m.best.med));
   const record = !!(m.best && better);
   if (better) m.best = { ok: res.ok, n: res.n, med: res.med, total: res.total };
@@ -64,4 +66,12 @@ export function nextGoal(m, c, now = Date.now()) {
   if (m.tier === 1) return `한 문제 ${T}초 안에(가운데값) — '빠르게'`;
   if (m.tier === 2) { const d = Math.ceil((m.t2 + 3 * DAY - now) / DAY); return d > 0 ? `${d}일 뒤에 다시 와서 그대로면 '오래'` : `오늘 다시 해서 그대로면 '오래'`; }
   return '다 땄어요! 기록을 더 줄여 볼 수도 있어요';
+}
+
+// 이 아이 · 이 칸에서 겨눌 함정 꼴 — 지금 보이는 생각 또는 예전에 보였던 생각(고친 뒤에도 다질 때 섞음)
+import { mindsOf, wantFor } from '../../engine/mis.js';
+export function wantOf(rep, minds, c) {
+  const ids = new Set([...Object.entries(mindsOf(rep)).filter(([, e]) => e.c.has(c)).map(([id]) => id), ...Object.keys(minds || {})]);
+  for (const id of ids) { const w = wantFor(id, c); if (w) return w; }
+  return null;
 }

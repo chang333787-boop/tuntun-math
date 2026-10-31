@@ -75,6 +75,7 @@ export async function homeView(root) {
   const me = meOf(); if (!me) return go('#/join');
   root.innerHTML = `<div class="card">${say('hi', `${esc(me.no)}번, 반가워요! 수 다리를 불러오는 중이에요…`)}</div>`;
   const { K, ok } = await KS.pull(me);
+  if (ok) KS.pushSummary(me, K);   // 판정 규칙이 바뀌어도 선생님 화면이 새 요약을 보게(쓰기 한 번)
   flush();
   const rep = KS.reportOf(K);
   const todo = todoOf(K, rep);

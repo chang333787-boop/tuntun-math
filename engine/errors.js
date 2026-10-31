@@ -9,6 +9,7 @@
 //   시험 = tests/errors.test.mjs(가상 아이: 계산 실수형 · 버그형마다 · 섞인 형)
 import { toText } from './tokens.js';
 import { F, eqv, gcd, lcm, isSimplest } from './math.js';
+import { misFor, wantFor } from './mis.js';
 
 // ── 식 읽기(보이는 꼴 그대로: 대분수 · 분수 · 소수 · 자연수) ──
 const NUM = String.raw`\d+ \d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?`;
@@ -320,8 +321,14 @@ export function judge(recs) {
     for (const id of r.tests || []) if (!r.idk && (r.ok || !(r.d && r.d.hyps.some((h) => h.id === id)))) get(id).a++;
   }
   // 차시 오답 이름(lesson:…)은 숫자 모형이 없어 '가려낼 수 있었는데 맞힌' 문항을 셀 수 없다 → 같은 차시에서 맞힌 문항을 반대 증거로 센다(보수적 · 진단은 잠정 [E4 ③4])
-  const okN = recs.filter((r) => r && r.ok && !r.idk).length;
-  for (const h of Object.values(H)) if (String(h.id).startsWith('lesson:')) h.a += okN;
+  //  가려낼 수 있는 꼴(engine/mis.js WANT)을 아는 생각이면 그 꼴로 맞힌 문항만 센다(가려내지 못하는 문항은 증거가 아님)
+  const okRecs = recs.filter((r) => r && r.ok && !r.idk);
+  for (const h of Object.values(H)) {
+    if (!String(h.id).startsWith('lesson:')) continue;
+    const c = (recs.find((r) => r && r.c) || {}).c, wants = [];
+    if (c) for (const m of misFor({ bug: h.id, lesson: c })) { const w = wantFor(m.id, c); if (w) wants.push(w); }
+    h.a += wants.length ? okRecs.filter((r) => r.p && wants.some((w) => { try { return w(r.p); } catch (e) { return false; } })).length : okRecs.length;
+  }
   const hs = Object.values(H).filter((h) => h.s > 0);
   const sure = hs.filter((h) => h.s >= 2 && h.s >= h.a).sort((x, y) => y.s - x.s);
   const maybe = hs.filter((h) => h.s === 1 && h.a === 0 && !sure.includes(h));

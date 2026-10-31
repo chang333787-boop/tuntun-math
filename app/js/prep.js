@@ -7,6 +7,7 @@
 import { NODES, byId, allPre } from '../../engine/lessons/index.js';
 import { makeSheet, closure, LES, itemOf } from '../../paper/js/gen.js';
 import { kidReport } from '../../paper/js/judge.js';
+import { mindsOf, wantFor } from '../../engine/mis.js';
 
 export const PREP = { n: 3, cap: 6, budget: 36, rounds: 16, fresh: 14 };   // 칸마다 3문제 · 한 묶음에 칸 여섯까지 · 한 판 36문제 안 · 지난 기록은 14일 안
 const KID = 'me', DAY = 864e5;
@@ -104,13 +105,16 @@ function advance(S) {
     if (S.sheets.length >= PREP.rounds) return finish(S, 'budget');
     const rep = report(S);
     const nx = nextLessons(rep, S.plan.below), probes = nx.probes, again = nx.again.filter((c) => timesAsked(S, c) < 2);
+    // 다른 꼴로 한 번 더 — 한 번 보인 생각은 이름 대신 그 생각을 가려내는 함정 꼴 문항으로(아이는 그냥 다음 문제를 풂) [docs/mis_flow.md]
+    const traps = [];
+    for (const [id, e] of Object.entries(mindsOf(rep))) { if (e.s) continue; for (const c of e.c) { const want = wantFor(id, c); if (want && S.plan.below.includes(c) && timesAsked(S, c) < 2 && !traps.some((t) => t.c === c)) traps.push({ c, n: PREP.n, want, trapN: 2 }); } }
     // 오늘 고칠 판자를 찾았으면 그만 묻고 고치러 간다 — 아래를 다 메울 때까지 붙잡지 않음 [A-R16] · 남은 갈래는 다음 시간에 지난 기록과 함께 이어서
     //  이 단원 준비 칸 안에서 찾은 것만(다른 단원 기록의 고칠 판자가 오늘 점검을 막지 않게 — 코덱스 10-31)
     const inPlan = rep.start.filter((x) => S.plan.below.includes(x.c));
     if (inPlan.length && !again.some((c) => inPlan.some((x) => x.c === c))) return finish(S, 'found');
-    if (!again.length && !probes.length) return finish(S, 'clear');
+    if (!again.length && !probes.length && !traps.length) return finish(S, 'clear');
     const room = Math.min(PREP.cap, Math.floor(left / PREP.n));
-    const take = [...probes.map(probe), ...again.map((c) => ({ c, n: PREP.n, hyps: rep.L[c] && rep.L[c].amb }))].slice(0, room);
+    const take = [...probes.map(probe), ...traps.filter((t) => !again.includes(t.c)), ...again.map((c) => { const t = traps.find((x) => x.c === c); return t || { c, n: PREP.n, hyps: rep.L[c] && rep.L[c].amb }; })].slice(0, room);
     if (push(S, take, 'prep-check')) return S;
   }
   return finish(S, 'clear');
