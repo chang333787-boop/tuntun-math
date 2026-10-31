@@ -493,7 +493,7 @@ export function paperImportView(root, C) {
 // ── 이야기 다리 10분 카드(유형 하나) ──
 //  근거: 스키마 지도 — 유형 이름 · 구조 그림 · 시범 → 함께 → 혼자 [C-9][C-10] · 핵심어 X · 불일치 이야기 섞기 [C-21][C-23] · 계산이 가벼운 수로 구조에 집중
 const STORY_ASK = {
-  change: ['처음에 얼마였나요?', '무슨 일이 일어났나요 — 생겼나요, 없어졌나요?', '그래서 나중엔 얼마가 됐을까요? 어느 칸이 ?일까요?'],
+  change: ['처음에 얼마였나요?', '무슨 일이 일어났나요 — 생겼나요, 없어졌나요?', '그래서 나중엔 얼마가 됐을까요? 모르는 수는 어느 칸일까요?'],
   combine: ['어느 것이 부분이고 어느 것이 전체인가요?', '부분을 다 모으면 무엇이 되나요?', '모르는 것은 전체인가요, 한 부분인가요?'],
   compare: ['어느 쪽이 더 많아요?', '얼마나 더 많은지 묻나요, 한쪽 수를 묻나요?', "'더'라는 말이 있으면 꼭 더하기일까요?"],
   groups: ['한 묶음에 몇 개씩 들었나요?', '묶음이 몇 개인가요?', '모두 몇 개인지 묻나요, 한 묶음을 묻나요?'],
@@ -524,13 +524,13 @@ export function storyCardView(root, C, type) {
   const calc = (pr) => pr.s.steps[1].item, frame = (pr) => frameSVG(pr.sc, pr.fr.list[pr.fr.right]);
   const story = (pr) => `<p class="qline">${toHTML(pr.s.story, { static: true })}</p>`;
   const ask = STORY_ASK[type] || [];
-  const exBox = (pr, show) => (pr ? `${story(pr)}${show ? `<div class="sbf">${frame(pr)}</div><p class="small">식: ${staticHTML(calc(pr).prompt, calc(pr).sol)}</p>` : '<p class="note">아이들이 막대 틀을 그리고 ?를 넣은 뒤 식을 써요.</p>'}` : '');
+  const exBox = (pr, show) => (pr ? `${story(pr)}${show ? `<div class="sbf">${frame(pr)}</div><p class="small">식: ${staticHTML(calc(pr).prompt, calc(pr).sol)}</p>` : '<p class="note">아이들이 막대 틀을 그리고 모르는 칸에 <b class="q">?</b>를 넣은 뒤 식을 써요.</p>'}` : '');
   root.innerHTML = `<div class="card tcard"><h2>이야기 다리 10분 카드 <small>${esc(T.kid)}</small></h2>
     ${intro('이 유형에서 이해(무슨 이야기 · 막대 틀)가 끊기는 아이 2~3명을 모아 10분. 계산은 가볍게 두고 <b>이야기의 구조</b>만 봐요. 문제는 열 때마다 바뀌어요.', 'no-print')}
     <div class="acts no-print"><button class="pri" onclick="print()">인쇄</button><a class="btn" href="#/t/c/${C}">반 보기로</a></div>
-    <dl class="lead"><dt>이 유형</dt><dd>${esc(T.say)}</dd><dt>오늘 목표</dt><dd>낱말 하나(모두 · 더 · 배 …)로 식을 고르지 않고, <b>막대 틀에 수와 ?를 놓아 보고</b> 식을 고르게 해요.</dd></dl>
+    <dl class="lead"><dt>이 유형</dt><dd>${esc(T.say)}</dd><dt>오늘 목표</dt><dd>낱말 하나(모두 · 더 · 배 …)로 식을 고르지 않고, <b>막대 틀에 수와 <span class="q">?</span>를 놓아 보고</b> 식을 고르게 해요.</dd></dl>
     <ol class="plan">
-    ${stepBox(1, '시범 — 선생님이 소리 내어 생각하기', 3, `${askP(ask[0] || '무슨 이야기일까?')}${exBox(ex[0], true)}<p class="note">수마다 '이 수는 틀의 어느 칸?'을 말하며 넣고, 모르는 수에 ?를 그려요.</p>`)}
+    ${stepBox(1, '시범 — 선생님이 소리 내어 생각하기', 3, `${askP(ask[0] || '무슨 이야기일까?')}${exBox(ex[0], true)}<p class="note">수마다 '이 수는 틀의 어느 칸일까?'를 말하며 넣고, 모르는 수 칸에 <b class="q">?</b>를 그려요.</p>`)}
     ${stepBox(2, '함께 — 아이들이 칸을 말하기', 3, `${askP(ask[1] || '어느 칸에 들어갈까?')}${exBox(ex[1], true)}`)}
     ${stepBox(3, '혼자 — 낱말에 속지 않기', 3, `${askP(ask[2] || '이 낱말이 있으면 꼭 그 셈일까?')}${exBox(ex[2], false)}${ex[2] ? `<p class="note">답: ${staticHTML(calc(ex[2]).prompt, calc(ex[2]).sol)}${ex[2].sc.inc ? ' — 낱말과 셈이 반대인 이야기예요.' : ''}</p>` : ''}`)}
     ${stepBox(4, '마무리', 1, askP('이 이야기에서 무엇을 보고 틀을 골랐나요? 한 줄로 말해 볼까?'))}

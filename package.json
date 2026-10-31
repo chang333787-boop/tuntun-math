@@ -9,7 +9,8 @@
     "serve": "python3 -m http.server 8030",
     "sim:prep": "node app/test/prep.sim.mjs 8 0.05 && DAYS=2 node app/test/prep.sim.mjs 8 0.05",
     "test:app": "node tools/ver.mjs --check && node app/test/app.test.mjs && node app/test/story.test.mjs",
-    "ver": "node tools/ver.mjs"
+    "ver": "node tools/ver.mjs",
+    "check": "node tests/src.test.mjs app/js && node tests/src.test.mjs && node tools/ver.mjs && npm run test:app"
   },
   "license": "MIT"
 }
