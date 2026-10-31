@@ -67,6 +67,7 @@ for (const L of NODES.filter((n) => hasWords(n.id))) {
     if (s.item.check(wrong, wrong.map(String)).ok) note(`${where}: 엉뚱한 답이 맞음`);
     // 이야기 답 = 차시 답
     if (s.rem) { if (Number(it.sol[0]) !== s.rem[0] || Number(it.sol[1]) !== s.rem[1]) note(`${where}: 몫 · 나머지가 다름 ${s.rem}`); }
+    else if (s.need) { if (s.x.n / s.x.d !== Number(it.sol[0]) + 1 || !(Number(it.sol[1]) > 0)) note(`${where}: '모두 ~하려면'의 답은 몫 + 1이어야 함 ${s.ans} · ${it.ans}`); }   // 나머지 해석(올림) [E2-11]
     else {
       const v = s.x.n / s.x.d, iv = itemValue(it);
       if (!(Math.abs(iv - v) < 1e-9)) note(`${where}: 이야기 답 ${s.ans} ≠ 차시 답 ${it.ans}`);

@@ -990,6 +990,8 @@ const LESSONS = [
       }
       // 자릿수가 서로 다른(한·두·세 자리) 세 소수 — 자릿수에 끌리면 틀리게
       const ask = r.pick(['max', 'min']), w = r.int(0, 9), t = r.int(1, 8);
+      // 짧으면 크다 함정(0.4 · 0.45 · 0.3□□) — 가장 큰 것이 두 자리 · 한 자리는 그보다 작고 세 자리는 가장 작음 → 짧은 쪽을 고르면 '짧으면 크다', 세 자리를 고르면 '길면 크다' [E3-2][E3-5]
+      if (r.chance(0.3)) { const t2 = Math.max(t, 2); return { ask: 'max', short: 1, xs: r.shuffle([[w * 10 + t2, 1], [w * 100 + t2 * 10 + r.int(1, 9), 2], [w * 1000 + (t2 - 1) * 100 + r.int(11, 99), 3]].map(([m, k]) => [m % 10 ? m : m + 1, k])) }; }
       if (r.chance(0.2)) return { ask, xs: r.shuffle([[w * 100 + 90 + r.int(1, 9), 2], [(w + 1) * 10 + r.int(1, 3), 1], [w * 1000 + 800 + r.int(1, 99), 3]].map(([m, k]) => [m % 10 ? m : m + 1, k])) };
       const mkd = (k) => { let m = w; for (let j = 1; j <= k; j++) m = m * 10 + (j === 1 ? t + r.int(0, 1) : j === k ? r.int(1, 9) : r.int(0, 9)); return [m, k]; };
       return { ask, xs: r.shuffle([mkd(1), mkd(2), mkd(3)]) };
@@ -1002,7 +1004,9 @@ const LESSONS = [
         if (j === right) return;
         bugs[j] = p.ask !== 'min' && k > kr ? { name: '자릿수가 많으면 크다고 봄 (자연수 규칙)', to: '4-2-3:2' }
           : p.ask === 'min' && k < kr ? { name: '자릿수가 적으면 작다고 봄 (자연수 규칙)', to: '4-2-3:2' }
-            : { name: '높은 자리부터 비교하지 않음', to: '4-2-3:2' };
+            : p.ask !== 'min' && k < kr && Math.floor(p.xs[j][0] / 10 ** (k - 1)) % 10 === Math.floor(p.xs[right][0] / 10 ** (kr - 1)) % 10 ? { name: '자릿수가 적으면 크다고 봄 (짧을수록 크다는 생각)', to: '4-2-3:2' }
+              : p.ask === 'min' && k > kr ? { name: '자릿수가 많으면 작다고 봄 (짧을수록 크다는 생각)', to: '4-2-3:2' }
+                : { name: '높은 자리부터 비교하지 않음', to: '4-2-3:2' };
       });
       return pick([p.ask === 'min' ? '가장 작은 수를 고르세요.' : '가장 큰 수를 고르세요.'], p.xs.map(([m, k]) => [fmtD(m, k)]), right, { bugs });
     },

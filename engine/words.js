@@ -220,6 +220,19 @@ function divide(e, r, g) {
       return { story: S(`끈 ${A} m를 ${Bv}명이 똑같이 나누어 가지면 한 명이 몇 m씩 가질까요?`), x, kind: 'share', right, wrongs, unit: ' m', st: e.asDecimal ? 'D' : 'F' };
     }
     const R = rem ? { rem: [qn, rn] } : {};
+    // 나머지 해석 — '모두 ~하려면 몇 개 필요?'(몫 + 1) · 몫만 답하거나 나머지를 답하면 그 이름 [E2-11][E2-12][E2-13][E2-22]
+    if (rem && rn > 0 && qn >= 1 && r.chance(0.35)) {
+      const NEED = [
+        { lo: 20, hi: 45, A: 400, t: () => `학생 ${A}명이 버스를 타요. 버스 한 대에 ${Bv}명씩 탈 수 있으면, 모두 타려면 버스가 몇 대 필요할까요?`, u: '대' },
+        { lo: 2, hi: 12, A: 200, t: () => `사과 ${A}개를 한 상자에 ${Bv}개씩 담아요. 사과를 모두 담으려면 상자가 몇 개 필요할까요?`, u: '개' },
+        { lo: 2, hi: 8, A: 100, t: () => `어린이 ${A}명이 보트를 타요. 보트 한 척에 ${Bv}명씩 탈 수 있으면, 모두 타려면 보트가 몇 척 필요할까요?`, u: '척' },
+        { lo: 5, hi: 20, A: 300, t: () => `책 ${A}권을 책꽂이 한 칸에 ${Bv}권씩 꽂아요. 모두 꽂으려면 몇 칸이 필요할까요?`, u: '칸' },
+      ].filter((n) => Bv >= n.lo && Bv <= n.hi && A <= n.A);
+      if (NEED.length) {
+        const n = r.pick(NEED);
+        return { story: S(n.t()), x: F(qn + 1, 1), kind: 'pack', need: 1, right, wrongs, unit: n.u, extra: [{ x: F(qn, 1), name: '올려야 하는데 몫만 답함 (나머지 해석)' }, ...(rn !== qn && rn !== qn + 1 ? [{ x: F(rn, 1), name: '나머지를 답으로 씀 (나머지 해석)' }] : [])] };
+      }
+    }
     const opts = [];
     // 똑같이 나누기(등분제) — 30명까지는 사람, 그보다 많으면 상자
     if (Bv >= 2) { const C = COUNT.filter((C) => fits(C, A) && (!C.lo || Bv <= 30 || C.share === 'box')); if (C.length) opts.push(['share', r.pick(C)]); }
@@ -280,11 +293,11 @@ export function storyOf(c, p, seed = 1, { plain = false } = {}) {
   if (s.rem) item = nums(['답 ', B(0), s.unit2, B(1), s.unit], s.rem, { bugs: [] });
   else {
     const bugs = (s.wrongs || []).map((w) => { try { const t = toText([].concat(w.t)), m = t.match(new RegExp(`^(${NUM}) ([+−×÷]) (${NUM})$`)); if (!m) return null; const y = ar(m[2], num(m[1]).x, num(m[3]).x, st); return y.n > 0 ? { x: y, name: w.name } : null; } catch (er) { return null; } }).filter(Boolean);
-    item = answerItem('답 ', s.x, st === 'W' && !whole(s.x) ? 'F' : st, s.unit, bugs);
+    item = answerItem('답 ', s.x, st === 'W' && !whole(s.x) ? 'F' : st, s.unit, [...bugs, ...(s.extra || [])]);
   }
   item.story = s.story;
   const calc = { kind: 'calc', why: '그 식을 계산해요.', item: makeItem(c, p), c };
-  return { c, story: s.story, item, x: s.x || null, rem: s.rem || null, kind: s.kind, steps: [pickStep(s.right, s.wrongs || [], r), calc], ans: item.ans, unit: s.unit || '', unit2: s.unit2 || '' };
+  return { c, story: s.story, item, x: s.x || null, rem: s.rem || null, need: s.need || null, kind: s.kind, steps: [pickStep(s.right, s.wrongs || [], r), calc], ans: item.ans, unit: s.unit || '', unit2: s.unit2 || '' };
 }
 export { readItem };
 // 글 검사(tests/text.test.mjs)에 쓰는 낱말 — 조사가 붙는 이름들

@@ -424,12 +424,21 @@ export default {
     },
     {
       id: '2-1-3:10', fam: 'A7', name: '□가 있는 덧셈식', kid: '덧셈식에서 □ 구하기', sec: 15,
-      make: (p) => nums(p.left ? [B(0), ` + ${p.a} = ${p.s}`] : [`${p.a} + `, B(0), ` = ${p.s}`], p.s - p.a, {
-        bugs: [{ test: (v) => v[0] === p.s + p.a, name: '빼야 할 때 더함', to: '2-1-3:9' }, { test: (v) => v[0] === p.s, name: '보이는 수를 그대로 씀', to: null }],
-      }),
-      gen: (r) => until(r, (r) => { const a = r.chance(0.4) ? r.int(3, 9) : r.int(11, 49); return { a, s: r.int(a + 3, 99), left: r.chance(0.5) }; }, (p) => p.s >= 12),
+      // eq: 양쪽에 덧셈이 있는 식(8 + 4 = □ + 5) — '='를 답 칸으로 보면 12 · 보이는 수를 모두 더하면 17 [E1-25][E1-26][E1-K1]
+      make: (p) => (p.eq
+        ? nums([`${p.a} + ${p.b} = `, B(0), ` + ${p.c}`], p.a + p.b - p.c, {
+          bugs: [{ test: (v) => v[0] === p.a + p.b, name: '등호 오른쪽을 답 칸으로 봄 (=는 답을 쓰라는 뜻)', to: null }, { test: (v) => v[0] === p.a + p.b + p.c, name: '보이는 수를 모두 더함 (등호를 답 칸으로)', to: null }],
+        })
+        : nums(p.left ? [B(0), ` + ${p.a} = ${p.s}`] : [`${p.a} + `, B(0), ` = ${p.s}`], p.s - p.a, {
+          bugs: [{ test: (v) => v[0] === p.s + p.a, name: '빼야 할 때 더함', to: '2-1-3:9' }, { test: (v) => v[0] === p.s, name: '보이는 수를 그대로 씀', to: null }],
+        })),
+      gen: (r) => (r.chance(0.3)
+        ? until(r, (r) => ({ eq: 1, a: r.int(3, 9), b: r.int(2, 9), c: r.int(2, 9) }), (p) => p.a + p.b - p.c >= 2 && p.c !== p.a && p.c !== p.b)
+        : until(r, (r) => { const a = r.chance(0.4) ? r.int(3, 9) : r.int(11, 49); return { a, s: r.int(a + 3, 99), left: r.chance(0.5) }; }, (p) => p.s >= 12)),
       prev: '2-1-3:9', pre: [],
-      steps: (p) => [{ c: 'SUB', p: { a: p.s, b: p.a }, why: `□는 ${p.s}에서 ${J(p.a, '을', '를')} 뺀 수예요.` }],
+      steps: (p) => (p.eq
+        ? [{ c: 'ADD', p: { a: p.a, b: p.b }, why: `왼쪽 ${p.a} + ${p.b}부터 구해요. =는 양쪽이 같다는 뜻이에요.` }, { c: 'SUB', p: { a: p.a + p.b, b: p.c }, why: `□ + ${p.c}도 ${p.a + p.b}이어야 하니 ${p.a + p.b}에서 ${J(p.c, '을', '를')} 빼요.` }]
+        : [{ c: 'SUB', p: { a: p.s, b: p.a }, why: `□는 ${p.s}에서 ${J(p.a, '을', '를')} 뺀 수예요.` }]),
       hint: '□ + 18 = 45는 "45에서 18을 빼면 □"예요. 뺄셈식으로 바꿔서 구해요.',
       tip: '□ + 18 = 45를 45 − 18 = □로 바꿔 쓰게 해요. 막대 그림(전체 45 = □ + 18)으로 □가 "전체에서 아는 부분을 뺀 수"임을 보여 줘요.',
     },

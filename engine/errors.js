@@ -67,7 +67,7 @@ function colAdd(a, b, { carry = true, concat = false } = {}) {
   if (c) out.push(1);   // 맨 앞 자리 합은 그대로 씀 — 받아올림을 잊은 아이도 93 + 78을 161로 씀(61 아님)
   return fromDigs(out);
 }
-// 받아내림 버그 — big: 자리마다 큰 수에서 작은 수 · noDec: 받아내리고 윗자리를 안 줄임 · zero: 0에서 받아내릴 때 0을 9로 안 바꿈
+// 받아내림 버그 — big: 자리마다 큰 수에서 작은 수 · noDec: 받아내리고 윗자리를 안 줄임 · zero: 0에서 받아내릴 때 0을 9로 안 바꿈 · stopZero: 0에서는 빌리지 않고 멈춤
 function colSub(a, b, bug = null) {
   const x = digs(a), y = digs(b), out = [];
   if (bug === 'big') { for (let i = 0; i < x.length; i++) out.push(Math.abs(x[i] - (y[i] || 0))); return fromDigs(out); }
@@ -75,7 +75,8 @@ function colSub(a, b, bug = null) {
   for (let i = 0; i < top.length; i++) {
     const yi = y[i] || 0;
     if (top[i] < yi) {
-      if (bug !== 'noDec') {
+      if (bug === 'stopZero') { if (i + 1 < top.length && top[i + 1] !== 0) top[i + 1] -= 1; }   // 0이면 빌리지 않고 멈춤(Stop-Borrow-At-Zero · VanLehn 자료 흔한 버그 넷 중 하나 [E1-4])
+      else if (bug !== 'noDec') {
         let j = i + 1;
         while (j < top.length && top[j] === 0) { if (bug !== 'zero') top[j] = 9; j++; }
         if (j >= top.length) return null;
@@ -118,12 +119,15 @@ const BUGS = [
   { id: 'sub.big', op: '−', st: ['W', 'D'], kind: 'proc', name: '자리마다 큰 수에서 작은 수를 뺌(받아내림을 안 함)', f: (X) => intOp(X, (a, b) => colSub(a, b, 'big')) },
   { id: 'sub.noDec', op: '−', st: ['W', 'D'], kind: 'proc', name: '받아내리고 윗자리에서 1을 안 뺌', f: (X) => intOp(X, (a, b) => colSub(a, b, 'noDec')) },
   { id: 'sub.zero', op: '−', st: ['W'], kind: 'proc', name: '0에서 받아내릴 때 0을 9로 바꾸지 않음', f: (X) => intOp(X, (a, b) => colSub(a, b, 'zero')) },
+  { id: 'sub.stopZero', op: '−', st: ['W'], kind: 'proc', name: '0에서는 받아내리지 않고 멈춤(윗자리 0을 그대로 둠)', f: (X) => (/0/.test(String(X.A.i).slice(0, -1)) ? intOp(X, (a, b) => colSub(a, b, 'stopZero')) : null) },
   // 곱셈
   { id: 'mul.noCarry', op: '×', st: ['W'], kind: 'proc', name: '곱셈에서 올린 수를 안 더함', f: (X) => mul1(X, 'noCarry') },
   { id: 'mul.preAdd', op: '×', st: ['W'], kind: 'proc', name: '올린 수를 곱하기 전에 더함', f: (X) => mul1(X, 'preAdd') },
   { id: 'mul.noShift', op: '×', st: ['W'], kind: 'proc', name: '둘째 줄을 한 칸 밀지 않음', f: (X) => { const a = X.A.i, b = X.B.i; if (b < 10 || b > 99 || a < 10) return null; return MW(a * (b % 10) + a * Math.floor(b / 10)); } },
   { id: 'mul.noShiftSw', op: '×', st: ['W'], kind: 'proc', name: '둘째 줄을 한 칸 밀지 않음(두 수를 바꿔 세로로 씀)', f: (X) => { const a = X.B.i, b = X.A.i; if (b < 10 || b > 99 || a < 10 || a === b) return null; return MW(a * (b % 10) + a * Math.floor(b / 10)); } },
   { id: 'mul.same', op: '×', st: ['W'], kind: 'concept', name: '같은 자리끼리만 곱함', f: (X) => { const [a, b] = big2(X); if (!b || a < 10 || a > 99 || b < 10 || b > 99) return null; return MW(Number(`${Math.floor(a / 10) * Math.floor(b / 10)}${(a % 10) * (b % 10)}`)); } },
+  // 분배를 덧셈처럼 — 두 자리 수를 몇십과 몇으로 가르고 몇십에만 곱함(4 × 23 → 83 [E2-10][E2-25])
+  { id: 'mul.addDist', op: '×', st: ['W'], kind: 'concept', name: '쪼갠 뒤 한쪽만 곱함(분배를 덧셈처럼)', f: (X) => { const [a, b] = [X.A.i, X.B.i]; const s = a < 10 ? a : b, t = a < 10 ? b : a; if (s < 2 || s > 9 || t < 11 || t > 99 || t % 10 === 0) return null; return MW(s * (t - (t % 10)) + (t % 10)); } },
   { id: 'mul.zero', op: '×', st: ['W'], kind: 'proc', name: '0을 빠뜨림(자릿값)', f: (X) => { const ok = (n) => n % 10 === 0; if (!(ok(X.A.i) || ok(X.B.i))) return null; const z = (n) => { let k = 0; while (n && n % 10 === 0) { n /= 10; k++; } return [n, k]; }; const [a] = z(X.A.i), [b] = z(X.B.i); return MW(a * b); } },
   // 나눗셈
   { id: 'div.dropZero', op: '÷', st: ['W'], kind: 'proc', name: '몫 가운데 0을 빠뜨림', f: (X) => { if (!X.intQ || X.B.i > 99 || !/0+(?=[1-9])/.test(String(Math.floor(X.A.i / X.B.i)))) return null; const t = longDiv(X.A.i, X.B.i, { dropZero: true }); return { q: t.q, r: X.A.i % X.B.i, v: F(t.q, 1) }; } },
@@ -315,6 +319,9 @@ export function judge(recs) {
     }
     for (const id of r.tests || []) if (!r.idk && (r.ok || !(r.d && r.d.hyps.some((h) => h.id === id)))) get(id).a++;
   }
+  // 차시 오답 이름(lesson:…)은 숫자 모형이 없어 '가려낼 수 있었는데 맞힌' 문항을 셀 수 없다 → 같은 차시에서 맞힌 문항을 반대 증거로 센다(보수적 · 진단은 잠정 [E4 ③4])
+  const okN = recs.filter((r) => r && r.ok && !r.idk).length;
+  for (const h of Object.values(H)) if (String(h.id).startsWith('lesson:')) h.a += okN;
   const hs = Object.values(H).filter((h) => h.s > 0);
   const sure = hs.filter((h) => h.s >= 2 && h.s >= h.a).sort((x, y) => y.s - x.s);
   const maybe = hs.filter((h) => h.s === 1 && h.a === 0 && !sure.includes(h));

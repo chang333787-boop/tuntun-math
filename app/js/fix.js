@@ -6,6 +6,7 @@ import { byId } from '../../engine/lessons/index.js';
 import { workedSteps } from '../../engine/practice.js';
 import { rng } from '../../engine/math.js';
 import { itemOf, makeSheet, pickItems } from '../../paper/js/gen.js';
+import { testable, __predict } from '../../engine/errors.js';
 
 export const FIX = { soloNeed: 3, soloMax: 6, check: 3 };
 const hash = (s) => [...String(s)].reduce((h, ch) => (Math.imul(h, 31) + ch.charCodeAt(0)) >>> 0, 7);
@@ -93,3 +94,39 @@ export function answerCheck(F, a, { conf = null, ms = 0 } = {}) {
 }
 // 혼자 단계에서 다시 볼 때 쓰는 현재 문제 · 시범 문제
 export const currentShow = (F) => ({ ex: F.ex, steps: F.steps, si: F.si });
+
+// 비교하기 — 맞는 풀이와 아이 같은 틀린 풀이를 나란히 놓고 '누가 맞았나 · 어디서 어긋났나'(설명이 붙을 때 효과 [E4-11][E4-13][E4-15])
+//  아는 방법이 하나는 있을 때(시범 · 함께 뒤)만 [E4-16] · 아이 화면엔 오개념 이름 대신 '한 일'로 말함(꼬리표 X [E4-19])
+export const KIDSAY = {
+  'add.noCarry': '받아올린 1을 윗자리에 더하지 않았어요', 'add.concat': '자리마다 더한 수를 그대로 붙여 썼어요', 'add.align': '자리를 맞추지 않고 더했어요',
+  'sub.big': '자리마다 큰 수에서 작은 수를 뺐어요', 'sub.noDec': '받아내린 뒤 윗자리를 1 줄이지 않았어요', 'sub.zero': '0에서 받아내릴 때 0을 9로 바꾸지 않았어요', 'sub.stopZero': '0인 자리에서 받아내리지 않고 멈췄어요',
+  'mul.noCarry': '곱하고 올린 수를 더하지 않았어요', 'mul.preAdd': '올린 수를 곱하기 전에 먼저 더했어요', 'mul.noShift': '둘째 줄을 한 칸 밀어 쓰지 않았어요', 'mul.noShiftSw': '둘째 줄을 한 칸 밀어 쓰지 않았어요',
+  'mul.same': '같은 자리끼리만 곱했어요', 'mul.zero': '0을 빠뜨렸어요', 'mul.addDist': '몇십에만 곱하고 몇은 그냥 더했어요',
+  'div.dropZero': '몫 가운데 0을 빠뜨렸어요', 'div.underQ': '몫을 하나 작게 해서 나머지가 너무 커졌어요', 'div.dropRem': '앞자리에서 남은 수를 버리고 따로 나눴어요', 'div.swapQR': '몫과 나머지를 바꿔 썼어요',
+  'fr.addDen': '분모끼리도 더했어요', 'fr.subDen': '분모끼리도 뺐어요', 'fr.keepDen': '분모를 같게 하지 않고 분자만 더했어요', 'fr.keepDenS': '분모를 같게 하지 않고 분자만 뺐어요',
+  'fr.lcdNum': '분모만 바꾸고 분자는 그대로 뒀어요', 'fr.lcdNumS': '분모만 바꾸고 분자는 그대로 뒀어요', 'fr.noCarry': '분수 부분에서 넘친 1을 자연수에 더하지 않았어요',
+  'fr.subBig': '분수 부분을 큰 수에서 작은 수로 뺐어요', 'fr.borrowNoDec': '자연수에서 1을 빌리고 자연수를 줄이지 않았어요', 'fr.borrow10': '빌려 온 1을 10으로 봤어요', 'fr.wholeKeep': '자연수에서 분수를 빼지 않고 붙였어요',
+  'dec.alignRight': '소수점이 아니라 끝자리를 맞췄어요', 'dec.alignRightS': '소수점이 아니라 끝자리를 맞췄어요',
+};
+const GENERIC = ['계산은 맞는데 답을 옮겨 쓸 때 틀렸어요', '문제의 수를 잘못 읽었어요'];
+// prefer = 이 아이에게 보인 원인 id들(먼저 씀) · 없으면 이 칸에서 가려낼 수 있는 틀린 방법 아무거나
+export function compareOf(c, { prefer = [], seed = Date.now() } = {}) {
+  const r = rng(hash(`${seed}:cmp:${c}`)), used = new Set();
+  let best = null;
+  for (let k = 0; k < 24 && !(best && best.mine); k++) {
+    const [it] = pickItems(c, 1, r, used); if (!it || it.choices) continue;
+    let ids = []; try { ids = testable(it).filter((id) => KIDSAY[id]); } catch (e) { ids = []; }
+    if (!ids.length) continue;
+    const preds = {}; for (const id of ids) { let v = null; try { v = __predict(it, id); } catch (e) { v = null; } if (v && JSON.stringify(v) !== JSON.stringify(it.sol)) preds[id] = v; }
+    const ok = Object.keys(preds); if (!ok.length) continue;
+    const mine = ok.find((id) => prefer.includes(id));
+    const bug = mine || ok[0];
+    const others = [...new Set(ok.filter((id) => id !== bug && KIDSAY[id] !== KIDSAY[bug] && JSON.stringify(preds[id]) !== JSON.stringify(preds[bug])).map((id) => KIDSAY[id]))];
+    const reasons = [KIDSAY[bug], ...others.slice(0, 2)];
+    while (reasons.length < 3) reasons.push(GENERIC[reasons.length - 1] || GENERIC[0]);
+    for (let i = reasons.length - 1; i > 0; i--) { const j = Math.floor(r.next() * (i + 1)); [reasons[i], reasons[j]] = [reasons[j], reasons[i]]; }
+    const cand = { it: { c, p: it.p, prompt: it.prompt, sol: it.sol }, wrong: preds[bug], bug, reasons, right: KIDSAY[bug], rightFirst: r.next() < 0.5, mine: !!mine };
+    if (!best || cand.mine) best = cand;
+  }
+  return best;
+}

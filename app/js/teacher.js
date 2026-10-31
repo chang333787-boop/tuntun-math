@@ -13,6 +13,8 @@ import { stepsOf, hintOf } from './fix.js';
 import { lsGet, lsSet, esc, rand, KEY_AL } from './local.js';
 import { stepHTML, staticHTML } from './item.js';
 import { modelHTML } from './model.js';
+import { MIS, misFor, misById, WHY } from '../../engine/mis.js';
+import { testable, __predict } from '../../engine/errors.js';
 import { go, unitLabel } from './kid.js';
 
 const TK = 'tt.t';
@@ -137,7 +139,7 @@ function normSt(st) {
   if (!st || typeof st !== 'object') return null;
   const L = {}; for (const [c, v] of Object.entries(obj(st.L))) if (LES(c) && typeof v === 'string' && ST[v]) L[c] = v;
   const num = (o) => Object.fromEntries(Object.entries(obj(o)).filter(([c, v]) => LES(c) && Number.isFinite(Number(v))).map(([c, v]) => [c, Number(v)]));
-  return { L, start: arr(st.start), below: arr(st.below), under: arr(st.under), sw: num(st.sw), fixed: num(st.fixed), help: num(st.help), due: arr(st.due), t: Number(st.t) || 0, last: Number(st.last) || 0, cal: obj(st.cal), rush: Number(st.rush) || 0, mx: num(st.mx), jog: Array.isArray(st.jog) ? st.jog.filter((d) => typeof d === 'string' && /^\d{4}-\d\d-\d\d$/.test(d)) : [] };
+  return { L, start: arr(st.start), below: arr(st.below), under: arr(st.under), sw: num(st.sw), fixed: num(st.fixed), help: num(st.help), due: arr(st.due), t: Number(st.t) || 0, last: Number(st.last) || 0, cal: obj(st.cal), rush: Number(st.rush) || 0, mx: num(st.mx), mis: Object.fromEntries(Object.entries(obj(st.mis)).filter(([k, v]) => misById[k] && (v === 's' || v === 'm'))), jog: Array.isArray(st.jog) ? st.jog.filter((d) => typeof d === 'string' && /^\d{4}-\d\d-\d\d$/.test(d)) : [] };
 }
 const normNow = (n) => (n && typeof n === 'object' ? { mode: String(n.mode || ''), c: typeof n.c === 'string' ? n.c : '', n: Number(n.n) || 0, t: Number(n.t) || 0 } : null);
 // 아이 요약 모으기(8개씩 동시에) — 열린 연결 없이 짧은 요청만
@@ -150,6 +152,13 @@ async function pullAll(C, K) {
     }));
   }
   return out;
+}
+// 오개념 카드(선생님용) — 아이 생각 · 드러나는 답 · 왜 · 가려내는 문항 · 고치는 법 · 근거 강도
+const STR = { 상: '근거 강함', 중: '근거 보통', 하: '근거 약함(교사 자료 · 엔진 관찰)' };
+export function misCard(m, tag = '') {
+  return `<details class="mis"><summary><b>${esc(m.title)}</b>${tag ? ` <span class="pill">${esc(tag)}</span>` : ''} <span class="small muted">${esc(STR[m.str] || '')}</span></summary>
+    <dl><dt>아이 생각</dt><dd>${esc(m.think)}</dd><dt>드러나는 답</dt><dd>${esc(m.shows)}</dd><dt>왜 생기나</dt><dd>${esc(WHY[m.why[0]] || '')} — ${esc(m.why[1])}</dd>
+    <dt>가려내는 문항</dt><dd>${esc(m.probe)}</dd><dt>고치는 법</dt><dd>${esc(m.fix)}</dd>${m.has === 'no' ? '<dt>엔진</dt><dd>아직 문항으로 잡지 못해요 — 수업에서 직접 물어봐 주세요</dd>' : ''}<dt>근거</dt><dd class="small muted">docs/research ${esc(m.refs)}</dd></dl></details>`;
 }
 const CELL = { ok: ['c-ok', '✓'], pass: ['c-pass', '✓'], near: ['c-near', '○'], shaky: ['c-shaky', '△'], stuck: ['c-stuck', '✕'], need: ['c-need', '?'], none: ['c-none', '·'] };
 
@@ -180,6 +189,9 @@ export function classView(root, C) {
       ${K.today ? `<p class="small">오늘 단원: <b>${esc(unitLabel(K.today.unit))}</b> (${new Date(K.today.t).toLocaleString('ko-KR')}에 열었어요) — 아이 화면 맨 위에 '오늘 단원 준비하기'가 떠요.</p>` : '<p class="small muted">단원을 열면 아이 화면 맨 위에 \'오늘 단원 준비하기\'가 떠요. 아이 주소: ' + esc(appURL()) + '</p>'}
       <p class="qmsg" id="msg"></p></div>
     ${first.length ? `<div class="card"><h2>먼저 봐 줄 아이 <small>앱보다 선생님이 먼저</small></h2><ul>${first.map((x) => `<li><a href="#/t/c/${C}/k/${x.no}">${esc(nm(K, x.no))}</a> — ${x.why.map(esc).join(' · ')}</li>`).join('')}</ul></div>` : ''}
+    ${(() => { const cnt = {}; rows.forEach((no) => { const st = S[no] && S[no].st; if (st) for (const [id, v] of Object.entries(st.mis || {})) { const e = (cnt[id] = cnt[id] || { s: [], m: [] }); e[v].push(no); } });
+      const list = Object.entries(cnt).filter(([, e]) => e.s.length).sort((a, b) => b[1].s.length - a[1].s.length || b[1].m.length - a[1].m.length).slice(0, 8);
+      return list.length ? `<div class="card"><h2>반에서 보이는 오개념 <small>되풀이된 아이만 · 왜 생기고 어떻게 고치는지는 카드를 펼쳐 보세요</small></h2>${list.map(([id, e]) => { const m = misById[id]; const c = m.lessons.find((l) => byId[l]); return `<div class="misrow">${misCard(m, `${e.s.length}명${e.m.length ? ` · 한 번 보임 ${e.m.length}명` : ''}`)}<span class="small muted">${e.s.map((no) => esc(nm(K, no))).join(', ')}</span>${c ? ` <a class="small" href="#/t/c/${C}/g/${encodeURIComponent(c)}">10분 소집단 카드</a>` : ''}</div>`; }).join('')}</div>` : ''; })()}
     <div class="card"><h2>묶어 가르치기 제안 <small>같은 판자를 고칠 아이 · 넣고 뺄지는 선생님이</small></h2>
       ${glist.length ? `<div class="groups">${glist.map(([c, nos]) => `<div class="grp"><b>${esc(lessonName(c))}</b><span class="muted small">${nos.map((no) => esc(nm(K, no))).join(', ')}</span><div class="acts"><a class="btn teal" href="#/t/c/${C}/g/${encodeURIComponent(c)}">10분 소집단 카드</a></div></div>`).join('')}</div>` : '<p class="muted">아직 같은 판자에 둘 이상 몰린 곳이 없어요.</p>'}</div>
     <div class="card"><h2>${esc(unitLabel(unit))}로 가는 칸 × 아이</h2>
@@ -229,7 +241,11 @@ export async function kidDetailView(root, C, no) {
   const medOf = (c) => { const a = (msOf[c] || []).slice().sort((p, q) => p - q); return a.length ? a[Math.floor(a.length / 2)] : null; };
   const mxK = obj(raw && raw.mx ? db.dec(raw.mx) : null);
   const tm = (c) => { const m = medOf(c), t = mxK[c] ? Number(mxK[c].tier) || 0 : 0; return `${m ? ` <span class="small">· 한 문제 ${(m / 1000).toFixed(1)}초${byId[c] ? `(기준 ${byId[c].sec}초)` : ''}</span>` : ''}${t ? ` <span class="pill">다듬기 ${['', '정확', '정확 · 빠르게', '정확 · 빠르게 · 오래'][Math.min(t, 3)]}</span>` : ''}`; };
-  const line = (c, extra = '') => `<li><b>${esc(lessonName(c))}</b> <span class="muted small">${esc(gl(LES(c).g))}</span> ${rep.L[c] ? `<span class="small">${rep.L[c].ok}/${rep.L[c].tot}</span>` : ''}${tm(c)} ${why(c)} ${extra}</li>`;
+  const cards = (c) => { const x = rep.L[c]; if (!x) return ''; const seen = new Set(), out = []; const add = (m, tag) => { if (!seen.has(m.id)) { seen.add(m.id); out.push(misCard(m, tag)); } };
+    if (x.why) { x.why.sure.forEach((h) => misFor({ bug: h.id, lesson: c }).forEach((m) => add(m, '되풀이됨'))); x.why.maybe.forEach((h) => misFor({ bug: h.id, lesson: c }).forEach((m) => add(m, '한 번 보임'))); }
+    if (!out.length && (x.st === 'stuck' || x.st === 'shaky')) misFor({ lesson: c }).slice(0, 2).forEach((m) => add(m, '이 칸에서 흔함'));
+    return out.join(''); };
+  const line = (c, extra = '') => `<li><b>${esc(lessonName(c))}</b> <span class="muted small">${esc(gl(LES(c).g))}</span> ${rep.L[c] ? `<span class="small">${rep.L[c].ok}/${rep.L[c].tot}</span>` : ''}${tm(c)} ${why(c)} ${extra}${cards(c)}</li>`;
   const recs = Object.values(KK.recs).sort((a, b) => b.s.made - a.s.made);
   root.innerHTML = `<div class="card"><h2>${esc(nm(K, no))} <small>${recs.length}묶음 · ${recs.reduce((n, x) => n + x.s.it.length, 0)}문항</small></h2>
     <div class="acts no-print"><a class="btn" href="#/t/c/${C}">반 보기로</a><button onclick="print()">인쇄</button></div>
@@ -252,6 +268,7 @@ export function groupCardView(root, C, c) {
   root.innerHTML = `<div class="card tcard"><h2>10분 소집단 카드 <small>${esc(lessonName(c))}</small></h2>
     <div class="acts no-print"><button class="pri" onclick="print()">인쇄</button><a class="btn" href="#/t/c/${C}">반 보기로</a></div>
     <p><b>목표</b> — ${esc(LES(c).kid)} · <span class="muted">${esc(hintOf(c))}</span></p>
+    ${(() => { const ms = misFor({ lesson: c }); if (!ms.length) return ''; let cmp = ''; if (ex) { const ids = (() => { try { return testable(ex); } catch (e) { return []; } })(); const id = ms.flatMap((m) => m.bugs || []).find((b) => ids.includes(b)); if (id) { let v = null; try { v = __predict(ex, id); } catch (e) { v = null; } if (v) cmp = `<p class="small"><b>비교 문항</b>(맞는 풀이와 아이 같은 틀린 풀이를 나란히 · '왜 틀렸을까'를 말하게): ${staticHTML(ex.prompt, ex.sol)} ↔ ${staticHTML(ex.prompt, v)}</p>`; } } return `<h3>이 칸에서 흔한 오개념</h3>${ms.slice(0, 3).map((m) => misCard(m)).join('')}${cmp}`; })()}
     <h3>① 시범(2분) — 생각을 소리 내어</h3>${ex ? `<div>${staticHTML(ex.prompt, null)}</div>${modelHTML(ex)}<ol class="steps">${steps.map((s) => stepHTML(s)).join('')}</ol><p>답: <b>${ans(ex)}</b></p>` : ''}
     <p class="small muted">모형이 있으면 먼저 모형으로(낱개 10개 → 십 막대 1개로 바꾸기), 그다음 그림, 그다음 식으로.</p>
     <h3>② 함께(3분) — 아이가 단계를 말하고 선생님이 받아 적기</h3><ol>${together.map((it) => `<li>${staticHTML(it.prompt, null)} <span class="small muted">답 ${ans(it)}</span></li>`).join('')}</ol>

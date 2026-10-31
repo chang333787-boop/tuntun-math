@@ -5,6 +5,7 @@
 //  rv = 다시 보기 일정 { 차시: { n: 지난 다시 보기 수, due: 다음 날 } } — 고친 뒤 1 · 3 · 7일 [D-6][D-8]
 import { closure, itemOf, formOf, LES } from '../../paper/js/gen.js';
 import { kidReport } from '../../paper/js/judge.js';
+import { misFor } from '../../engine/mis.js';
 import { lsGet, lsSet } from './local.js';
 import * as db from './db.js';
 
@@ -90,7 +91,14 @@ export function summaryOf(K) {
   const now = Date.now();
   const due = Object.entries(K.rv).filter(([, x]) => x.n < REVIEW_DAYS.length && x.due <= now).map(([c]) => c);
   const last = Object.values(K.recs).filter(okRec).reduce((m, x) => Math.max(m, x.s.made), 0);
-  return { t: now, last, L, start: rep.start.map((s) => s.c), below: rep.below.map((b) => b.c), under: rep.under.map((u) => u.c), sw: cal.sureWrong, cal: { n: cal.n, m: cal.match }, fixed: K.fixed, due, help: K.help || {}, rush: K.rush || 0, jog: (K.jog || []).slice(-14), mx: Object.fromEntries(Object.entries(K.mx || {}).filter(([c]) => c !== '_jog').map(([c, x]) => [c, x.tier || 0])) };
+  // 오개념 카드 — 되풀이됨(s) · 한 번 보임(m) — 선생님 반 화면에서 모아 봄
+  const mis = {};
+  for (const x of Object.values(rep.L)) {
+    if (!x.why) continue;
+    for (const h of x.why.sure) for (const m of misFor({ bug: h.id, lesson: x.c })) mis[m.id] = 's';
+    for (const h of x.why.maybe) for (const m of misFor({ bug: h.id, lesson: x.c })) if (!mis[m.id]) mis[m.id] = 'm';
+  }
+  return { t: now, last, mis, L, start: rep.start.map((s) => s.c), below: rep.below.map((b) => b.c), under: rep.under.map((u) => u.c), sw: cal.sureWrong, cal: { n: cal.n, m: cal.match }, fixed: K.fixed, due, help: K.help || {}, rush: K.rush || 0, jog: (K.jog || []).slice(-14), mx: Object.fromEntries(Object.entries(K.mx || {}).filter(([c]) => c !== '_jog').map(([c, x]) => [c, x.tier || 0])) };
 }
 export function pushSummary(me, K) { db.queuePut(`${base(me)}/st`, db.enc(summaryOf(K))); }
 

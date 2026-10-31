@@ -698,7 +698,10 @@ export default {
     {
       id: '5-1-4:6', fam: 'F10', name: '분모가 다른 분수의 크기 비교', kid: '분모가 다른 분수 비교', sec: 25,
       gen: (r) => {
-        const v = r.pick(['two', 'two', 'two', 'three', 'same']);
+        const v = r.pick(['two', 'two', 'three', 'same', 'gap', 'bignum']);
+        // 함정 쌍 — 간격 생각(분모 − 분자가 작으면 크다) · 큰 수 편향(분자 · 분모가 큰 쪽이 크다)이면 틀리게 [E3-7][E3-12]
+        if (v === 'gap' || v === 'bignum') return until(r, (r) => { const d1 = r.int(3, 12), d2 = r.int(3, 12); return { v, n1: cop(r, d1), d1, n2: cop(r, d2), d2, ord: r.int(0, 1) }; },
+          (p) => p.d1 !== p.d2 && lcm(p.d1, p.d2) <= 72 && p.n1 * p.d2 < p.n2 * p.d1 && (v === 'gap' ? p.d1 - p.n1 < p.d2 - p.n2 : p.n1 > p.n2 && p.d1 > p.d2));
         if (v === 'three') return until(r, (r) => { const q = pair(r), d3 = r.int(2, 9); return { v, ...q, n3: cop(r, d3), d3 }; },
           (p) => p.d3 !== p.d1 && p.d3 !== p.d2 && lcm(lcm(p.d1, p.d2), p.d3) <= 72 && new Set([p.n1 / p.d1, p.n2 / p.d2, p.n3 / p.d3]).size === 3);
         if (v === 'same') { const d = r.int(2, 5), n = cop(r, d), k1 = r.int(2, 3), k2 = k1 + r.int(1, 2); return { v, n1: n * k1, d1: d * k1, n2: n * k2, d2: d * k2 }; }
@@ -713,8 +716,13 @@ export default {
           return pick(['가장 큰 수를 고르세요.'], fs.map((f) => [fx(f[0], f[1])]), big, { bugs });
         }
         const same = p.n1 * p.d2 === p.n2 * p.d1, big = same ? 2 : p.n1 * p.d2 > p.n2 * p.d1 ? 0 : 1;
+        // 틀린 쪽에 붙일 이름 — 간격이 작은 쪽을 골랐나 · 두 수가 다 큰 쪽을 골랐나 · 그 밖은 통분하지 않음
+        const wi = 1 - big, W = fs[wi], R = fs[big];
+        const wname = same ? null : W[1] - W[0] < R[1] - R[0] ? '분모와 분자의 차가 작으면 크다고 봄 (간격 생각)' : W[0] > R[0] && W[1] > R[1] ? '분자 · 분모 숫자가 큰 쪽이 크다고 봄 (자연수 규칙)' : '통분하지 않고 비교함';
         const bugs = same ? { 0: { name: '크기가 같은 분수를 알아보지 못함', to: '5-1-4:4' }, 1: { name: '크기가 같은 분수를 알아보지 못함', to: '5-1-4:4' } }
-          : { [1 - big]: { name: '통분하지 않고 비교함', to: '5-1-4:5' }, 2: { name: '분모가 달라도 크기가 같다고 봄', to: '5-1-4:5' } };
+          : { [wi]: { name: wname, to: '5-1-4:5' }, 2: { name: W[1] - W[0] === R[1] - R[0] ? '분모와 분자의 차가 같으면 크기가 같다고 봄 (간격 생각)' : '분모가 달라도 크기가 같다고 봄', to: '5-1-4:5' } };
+        const sw = p.ord && (p.v === 'gap' || p.v === 'bignum');   // 함정 쌍은 차례를 섞음
+        if (sw) { const bb = {}; for (const [k, v] of Object.entries(bugs)) bb[k === '2' ? 2 : 1 - Number(k)] = v; return pick(['더 큰 수를 고르세요.'], [[fx(p.n2, p.d2)], [fx(p.n1, p.d1)], ['두 수의 크기가 같아요']], same ? 2 : 1 - big, { bugs: bb }); }
         return pick(['더 큰 수를 고르세요.'], [[fx(p.n1, p.d1)], [fx(p.n2, p.d2)], ['두 수의 크기가 같아요']], big, { bugs });
       },
       steps: (p) => {

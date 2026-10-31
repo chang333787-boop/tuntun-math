@@ -4,7 +4,7 @@ import { byId, UNITS, unitById, gradeIdx } from '../../engine/lessons/index.js';
 import { makeSheet, LES, itemOf } from '../../paper/js/gen.js';
 import { mascot } from '../../paper/js/mascot.js';
 import { prepPlan, newPrep, current, answer, summary, asked } from './prep.js';
-import { newFix, showNext, togetherStep, answerItem, afterReStep, checkItem, answerCheck, hintOf } from './fix.js';
+import { newFix, showNext, togetherStep, answerItem, afterReStep, checkItem, answerCheck, hintOf, compareOf, stepsOf } from './fix.js';
 import * as KS from './kidstore.js';
 import { draw, stepHTML, staticHTML } from './item.js';
 import { bridgeSVG, KIND } from './bridge.js';
@@ -254,7 +254,28 @@ export function fixView(root, c) {
     shell(F.passed ? say('cheer', `판자를 고쳤어요! <b>${esc(kidName(c))}</b> — ${was}.<br>1일 · 3일 · 7일 뒤에 다시 보면 오래 튼튼해요.`) : say('think', `아직 조금 흔들려요(${okN}/${F.check.items.length}). 괜찮아요 — 선생님과 함께 한 번 더 봐요.`),
       `<div class="acts">${F.passed && K.back && K.back.root === c && !K.back.solved ? `<a class="btn pri big" href="#/retry">처음 문제 다시 풀기 — ${esc(K.back.text)}</a>` : `<a class="btn pri big" href="#/me">내 수 다리로</a>`}${F.passed ? `<a class="btn big" href="#/drill/${c}">이어서 다듬기 — '빠르게' 표</a>` : ''}</div>`);
   }
-  function route() { ({ show, together, solo, check, done })[F.phase](); }
+  // 비교하기 — 함께 풀기 뒤, 혼자 풀기 전에 한 번(맞는 풀이 · 친구 같은 틀린 풀이 · 어디서 어긋났나)
+  function compare(X) {
+    const A = X.rightFirst ? X.it.sol : X.wrong, B = X.rightFirst ? X.wrong : X.it.sol;
+    const b = shell(head('think', '친구 둘이 같은 문제를 풀었어요. <b>누가 맞았을까요?</b>'), `<div class="qcard"><div class="cmp">
+      <button type="button" class="cmpc" data-w="${X.rightFirst ? 1 : 0}"><span class="who2">가 친구</span>${staticHTML(X.it.prompt, A)}</button>
+      <button type="button" class="cmpc" data-w="${X.rightFirst ? 0 : 1}"><span class="who2">나 친구</span>${staticHTML(X.it.prompt, B)}</button></div></div>`);
+    b.querySelectorAll('.cmpc').forEach((btn) => btn.addEventListener('click', () => why(btn.dataset.w === '1')));
+    function why(gotIt) {
+      const b2 = shell(head(gotIt ? 'cheer' : 'think', `${gotIt ? '맞아요! ' : '다시 봐요 — '}맞게 푼 건 ${staticHTML(X.it.prompt, X.it.sol)} 이에요.<br>그럼 <b>${esc(X.wrong.join(', '))}</b>라고 쓴 친구는 <b>어디서 어긋났을까요?</b>`), `<div class="todo">${X.reasons.map((t, i) => `<button type="button" class="item rs" data-i="${i}" style="text-align:left">${esc(t)}</button>`).join('')}</div>`);
+      b2.querySelectorAll('.rs').forEach((btn) => btn.addEventListener('click', () => {
+        const ok = X.reasons[Number(btn.dataset.i)] === X.right;
+        const st = stepsOf({ c: X.it.c, p: X.it.p });
+        shell(head(ok ? 'cheer' : 'point', `${ok ? '맞아요! ' : '아쉬워요 — '}틀린 친구는 <b>${esc(X.right)}</b>. 그래서 ${esc(X.wrong.join(', '))}이(가) 나왔어요.`), `${st.length ? `<p class="small muted">바르게 풀면 이렇게 이어져요</p><ol class="steps">${st.map((x) => stepHTML(x)).join('')}</ol>` : ''}<div class="qact"><button class="pri big" id="n2">이제 혼자 풀어요</button></div>`);
+        root.querySelector('#n2').addEventListener('click', route);
+      }));
+    }
+  }
+  const prefer = before && before.why ? [...before.why.sure, ...before.why.maybe].map((h) => h.id) : [];
+  function route() {
+    if (F.phase === 'solo' && !F.compared && F.solo.n === 0 && !F.reStep) { F.compared = true; const X = compareOf(c, { prefer }); if (X) return compare(X); }
+    ({ show, together, solo, check, done })[F.phase]();
+  }
   route();
 }
 

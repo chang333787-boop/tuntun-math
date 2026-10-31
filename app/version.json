@@ -1,5 +1,5 @@
 {
- "v": "32a63d5e625d",
+ "v": "86a9d3823b68",
  "files": [
   "css/app.css",
   "js/back.js",
@@ -41,6 +41,7 @@
   "../engine/lessons/ops.js",
   "../engine/lessons/read.js",
   "../engine/math.js",
+  "../engine/mis.js",
   "../engine/parse.js",
   "../engine/practice.js",
   "../engine/tokens.js",
