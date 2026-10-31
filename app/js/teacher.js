@@ -55,7 +55,7 @@ export function teacherHome(root) {
   root.innerHTML = `<div class="card"><h2>선생님 처음 화면</h2>
     ${say('hi', '반을 만들면 아이마다 <b>번호 카드</b>(반 코드 · 번호 · 핀)가 나와요.<br>아이 이름은 이 기기에만 두고 서버에 보내지 않아요.')}
     ${list.length ? `<table class="list"><tr><th>반 코드</th><th>학기</th><th>아이</th><th></th></tr>${list.map(([C, x]) => `<tr><td><b class="code">${esc(C)}</b></td><td>${esc(gl(x.g))}</td><td>${x.n}명</td><td style="text-align:right"><a class="btn teal" href="#/t/c/${C}">반 열기</a></td></tr>`).join('')}</table>` : '<p class="muted">이 기기에서 연 반이 아직 없어요. 처음이면 <b>새 반 만들기</b>부터 하세요.</p>'}
-    <div class="acts"><a class="btn pri" href="#/t/new">새 반 만들기</a><a class="btn" href="#/t/open">다른 기기에서 만든 반 열기</a><a class="btn" href="#/t/guide">한 장 안내(인쇄용)</a><a class="btn" href="../paper/" target="_blank" rel="noopener" title="인쇄해서 푸는 진단 · 점검 — 채점 결과는 반 화면의 '종이 결과 가져오기'로">종이 점검(인쇄용)</a></div></div>
+    <div class="acts"><a class="btn pri" href="#/t/new">새 반 만들기</a><a class="btn" href="#/t/open">다른 기기에서 만든 반 열기</a><a class="btn" href="#/t/guide">한 장 안내(인쇄용)</a><a class="btn" href="#/t/letter">가정 안내문(인쇄용)</a><a class="btn" href="../paper/" target="_blank" rel="noopener" title="인쇄해서 푸는 진단 · 점검 — 채점 결과는 반 화면의 '종이 결과 가져오기'로">종이 점검(인쇄용)</a></div></div>
     <div class="card"><h2>반 정보 백업</h2>
     ${intro(`반 코드 · 선생님 열쇠 · 핀 · 아이 이름은 <b>이 기기에만</b> 있어요. 브라우저 기록을 지우거나 기기를 바꾸기 전에 내려받아 두세요. 이름이 들어 있으니 학교 기기에만 두세요.`)}
     <div class="acts">${list.length ? '<button id="bk">백업 내려받기</button>' : ''}<label class="btn">백업 불러오기<input type="file" id="rs" accept="application/json" hidden></label></div><p class="qmsg tight" id="bmsg"></p></div>
@@ -536,4 +536,23 @@ export function storyCardView(root, C, type) {
     ${stepBox(4, '마무리', 1, askP('이 이야기에서 무엇을 보고 틀을 골랐나요? 한 줄로 말해 볼까?'))}
     </ol>
     <p class="small muted foot">앱의 이야기 다리도 같은 걸음(무슨 이야기 → 막대 틀 → 식 → 답)이에요. 같은 유형을 두 번 이어 맞히면 앞 두 걸음을 건너뛰어요.</p></div>`;
+}
+
+// ── 가정 안내문(인쇄용 · 반 하나에 한 장 · 아이 기록 X) ──
+//  근거: 집에서 도울 때 답을 알려 주기보다 아이가 스스로 확인하게(검산 도구 · 다시 쓰기) [D-13][D-15] · 짧고 자주 [D-6][D-8] · 시간 재촉 X [B-R14][B-R16]
+export function homeLetterView(root) {
+  const url = appURL();
+  root.innerHTML = `<div class="card tcard letter"><h2>가정 안내 — 튼튼 수 다리</h2>
+    ${intro('인쇄해서 나눠 주세요. 아이 이름 · 기록은 들어가지 않아요. 문장은 선생님 말투로 고쳐 써도 좋아요.', 'no-print')}
+    <div class="acts no-print"><button class="pri" onclick="print()">인쇄</button><a class="btn" href="#/t">처음으로</a></div>
+    <p>우리 반은 수학 시간에 <b>튼튼 수 다리</b>를 써요. 지금 배우는 단원에 꼭 필요한 앞 내용(판자) 가운데 아이가 흔들리는 곳을 찾아 고치는 연습이에요. 집에서도 같은 카드로 들어갈 수 있어요.</p>
+    <h3>들어가는 법</h3><ol class="easy"><li>주소: <b>${esc(url)}</b></li><li>아이 카드에 적힌 <b>반 코드 · 번호 · 핀</b>을 넣어요. 이름은 어디에도 저장하지 않아요.</li><li>학교에서 푼 것과 집에서 푼 것이 이어져요.</li></ol>
+    <h3>집에서 이렇게 도와주세요</h3><ul class="easy">
+      <li><b>하루 5분이면 충분해요.</b> '오늘의 구보'나 '오늘 할 일' 맨 위 하나만 해도 돼요. 길게 한 번보다 짧게 자주가 오래 남아요.</li>
+      <li><b>답을 알려 주지 말아 주세요.</b> 틀리면 화면의 <b>🔍 확인</b>(거꾸로 셈 · 어림 · 다시 읽기 …)을 눌러 아이가 스스로 어긋난 곳을 찾게 해 주세요. "어디서 달라졌어?" 한마디면 돼요.</li>
+      <li><b>시간을 재촉하지 말아 주세요.</b> 시계는 '다듬기'에서만 나오고, 아이는 자기 지난 기록하고만 견줘요.</li>
+      <li><b>'풀기 전 짐작'을 같이 봐 주세요.</b> 풀기 전에 '자신 있어요 · 조금 헷갈려요 · 잘 모르겠어요'를 골라요. 짐작이 맞아 가는 것도 실력이 느는 거예요.</li>
+      <li>문장제는 <b>이야기 다리</b>에서 '무슨 이야기 → 막대 틀 → 식 → 답'으로 나눠 풀어요. 글이 길면 '🔊 읽어 주기'를 눌러도 돼요.</li></ul>
+    <h3>이런 건 하지 않아요</h3><ul class="easy"><li>순위 · 친구와 견주기 · 점수 공개는 없어요.</li><li>틀린 까닭은 앱이 짐작한 것이고, 선생님이 학교에서 확인해요.</li></ul>
+    <p class="small muted foot">궁금한 점은 담임 선생님께 물어봐 주세요.</p></div>`;
 }
