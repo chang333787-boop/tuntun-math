@@ -29,12 +29,42 @@ export function teacherHome(root) {
   const T = tget(), list = Object.entries(T.classes);
   root.innerHTML = `<div class="card">${say('hi', '선생님, 반을 만들면 아이마다 <b>번호 카드</b>(반 코드 · 번호 · 핀)가 나와요. 아이 이름은 서버에 보내지 않아요.')}
     ${list.length ? `<table class="list"><tr><th>반 코드</th><th>학기</th><th>아이</th><th></th></tr>${list.map(([C, x]) => `<tr><td><b>${esc(C)}</b></td><td>${esc(gl(x.g))}</td><td>${x.n}명</td><td><a class="btn teal" href="#/t/c/${C}">열기</a></td></tr>`).join('')}</table>` : '<p class="muted">이 기기에 연 반이 없어요.</p>'}
-    <div class="acts"><a class="btn pri" href="#/t/new">새 반 만들기</a><a class="btn" href="#/t/open">다른 기기에서 만든 반 열기</a></div></div>
+    <div class="acts"><a class="btn pri" href="#/t/new">새 반 만들기</a><a class="btn" href="#/t/open">다른 기기에서 만든 반 열기</a><a class="btn" href="#/t/guide">한 장 안내</a></div>
+    ${list.length ? `<p class="small muted" style="margin-top:12px">반 코드 · 선생님 열쇠 · 핀 · 아이 이름은 <b>이 기기에만</b> 있어요. 브라우저 기록을 지우거나 기기를 바꾸기 전에 백업해 두세요(이름이 들어 있으니 학교 기기에만 두세요).</p>
+    <div class="acts"><button id="bk">이 기기 반 정보 백업 내려받기</button><label class="btn">백업 불러오기<input type="file" id="rs" accept="application/json" hidden></label></div><p class="qmsg" id="bmsg"></p>` : `<div class="acts"><label class="btn">백업 불러오기<input type="file" id="rs" accept="application/json" hidden></label></div><p class="qmsg" id="bmsg"></p>`}</div>
     <div class="card"><h2>이 앱이 하는 일 <small>근거: docs/evidence.md</small></h2>
     <ol><li>선생님이 <b>오늘 단원</b>을 열면, 아이마다 그 단원에 꼭 필요한 아래 칸만 5~10분 점검해요(바로 아래 칸부터 · 막히면 반씩 갈라 좁힘).</li>
     <li>고칠 판자가 나온 아이는 바로 <b>판자 고치기</b>(시범 → 함께 → 혼자 → 새 숫자로 확인) 한 바퀴 하고 오늘 수업으로 돌아가요. 아래를 다 메울 때까지 붙잡지 않아요.</li>
     <li>선생님 화면엔 칸 × 아이 표, 같은 칸에 몰린 아이 묶음 제안, '자신 있었는데 틀린' 아이, 먼저 봐 줄 아이가 떠요.</li>
     <li>고친 판자는 1 · 3 · 7일 뒤 섞어서 다시 봐요.</li></ol></div>`;
+  const bk = root.querySelector('#bk');
+  if (bk) bk.addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify({ kind: 'tuntun-teacher', v: 1, at: Date.now(), classes: tget().classes }, null, 1)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `튼튼수다리_반정보_${new Date().toISOString().slice(0, 10)}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  });
+  root.querySelector('#rs').addEventListener('change', async (e) => {
+    const f = e.target.files[0], msg = root.querySelector('#bmsg'); if (!f) return;
+    try {
+      const o = JSON.parse(await f.text());
+      if (!o || o.kind !== 'tuntun-teacher' || typeof o.classes !== 'object') throw new Error('튼튼 수 다리 반 정보 파일이 아니에요');
+      const X = tget(); let n = 0;
+      for (const [C, x] of Object.entries(o.classes)) { if (!/^[A-HJ-NP-Z2-9]{6}$/.test(C) || !x || typeof x.T !== 'string') continue; X.classes[C] = { ...(X.classes[C] || {}), ...x, names: { ...((X.classes[C] || {}).names || {}), ...(x.names || {}) } }; n++; }
+      tset(X); msg.textContent = `반 ${n}개를 불러왔어요.`; setTimeout(() => teacherHome(root), 800);
+    } catch (err) { msg.textContent = `불러오지 못했어요: ${err.message}`; }
+  });
+}
+
+// 한 장 안내(인쇄용) — 근거는 docs/evidence.md
+export function guideView(root) {
+  root.innerHTML = `<div class="card tcard"><h2>튼튼 수 다리 — 선생님 한 장 안내</h2>
+    <div class="acts no-print"><button class="pri" onclick="print()">인쇄</button><a class="btn" href="#/t">처음으로</a></div>
+    <h3>처음 한 번</h3><ol><li><b>새 반 만들기</b> — 학기 · 아이 수를 넣으면 반 코드와 번호마다 핀이 생겨요.</li><li><b>카드 인쇄</b> — 아이 카드는 잘라 나눠 주고, <b>선생님 열쇠 카드</b>는 따로 보관해요(다른 기기에서 반을 열 때 필요).</li><li><b>이름 적기</b>(선택) — 이 기기에만 저장돼요. 서버엔 번호만 가요. 처음 화면에서 <b>백업</b>을 내려받아 두세요.</li></ol>
+    <h3>수업 때(5~10분)</h3><ol><li>반 화면에서 오늘 배울 단원을 골라 <b>오늘 단원으로 열기</b>.</li><li>아이들은 주소에 들어가 카드로 들어가면 맨 위에 <b>오늘 단원 준비하기</b>가 떠요(이미 켜 둔 화면은 새로고침).</li><li>아이마다 그 단원에 꼭 필요한 아래 칸만 3문제씩 풀어요. 막히면 아래로 반씩 좁혀 <b>고칠 판자</b>를 찾고, 찾으면 바로 <b>판자 고치기</b>(시범 → 함께 → 혼자 → 확인 3문제) 한 바퀴. 아래를 다 메울 때까지 붙잡지 않아요 — 끝나면 오늘 수업으로.</li></ol>
+    <h3>선생님 화면 읽기</h3><ul><li>✓ 됨 · ○ 거의 · △ 흔들림 · ✕ 막힘 · <b>★ 고칠 판자</b>(여기서부터) · ? 자세히 볼 것 · · 안 봄. 회색 이름 칸은 준비 칸보다 더 아래.</li>
+    <li><b>먼저 봐 줄 아이</b> — 막힌 칸이 많거나, 고치기 뒤에도 흔들리거나, '자신 있었는데 틀린' 문제가 많거나, 2초 안에 찍은 아이. 앱보다 선생님이 먼저 봐 주세요.</li>
+    <li><b>묶어 가르치기 제안</b> — 같은 판자를 고칠 아이가 둘 이상이면 묶음과 <b>10분 소집단 카드</b>(시범 · 함께 · 혼자 · 마무리)가 나와요. 넣고 뺄지는 선생님이 정해요.</li>
+    <li>아이 이름을 누르면 자세히 — 원인은 '가능한 원인'이에요. <b>한 번 보임</b>은 한 문항에서만, <b>되풀이됨</b>은 서로 다른 두 문항 이상에서 같은 틀린 방법이 맞아떨어진 것. 아이 화면엔 원인 이름을 보이지 않아요.</li></ul>
+    <h3>알아 두기</h3><ul><li>점수 · 순위 · 친구 비교는 없어요. 아이는 '내 짐작이 맞은 정도'와 '내가 고친 판자'만 봐요.</li><li>고친 판자는 1 · 3 · 7일 뒤 섞어서 다시 봐요(오늘 할 일에 떠요).</li><li>효과는 앱 안 점수가 아니라 다음 단원 형성평가로 보세요. 연구에 따르면 이런 지도의 효과는 0.2~0.4 표준편차 안팎이에요.</li></ul></div>`;
 }
 
 export function newClassView(root) {

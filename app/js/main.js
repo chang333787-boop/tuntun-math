@@ -1,7 +1,7 @@
 // 튼튼 수 다리 — 화면 나누기(#/주소)
 import { mascot } from '../../paper/js/mascot.js';
 import { joinView, homeView, prepView, fixView, reviewView, meOf } from './kid.js';
-import { teacherHome, newClassView, openClassView, cardsView, namesView, classView, kidDetailView, groupCardView } from './teacher.js';
+import { teacherHome, newClassView, openClassView, cardsView, namesView, classView, kidDetailView, groupCardView, guideView } from './teacher.js';
 import { lsGet, esc } from './local.js';
 import { flush, pending } from './db.js';
 
@@ -26,6 +26,7 @@ const ROUTES = [
   [/^#\/t$/, () => teacherHome(root)],
   [/^#\/t\/new/, () => newClassView(root)],
   [/^#\/t\/open$/, () => openClassView(root)],
+  [/^#\/t\/guide$/, () => guideView(root)],
   [/^#\/t\/c\/(\w+)$/, (m) => classView(root, m[1])],
   [/^#\/t\/c\/(\w+)\/cards$/, (m) => cardsView(root, m[1])],
   [/^#\/t\/c\/(\w+)\/names$/, (m) => namesView(root, m[1])],

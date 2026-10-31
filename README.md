@@ -7,7 +7,7 @@
 - 다같이 수업 — 오늘 단원의 준비 다리를 아이마다 · 실시간 판 · 같은 빈 곳끼리 묶음
 - 캐릭터: 다리를 놓는 비버 **튼튼이**
 
-이름은 저장하지 않아요(반 코드 + 번호). 목표와 설계: [docs/goal.md](docs/goal.md) · 근거: [docs/evidence.md](docs/evidence.md)(논문 · 국가 안내서 약 140편 · 설계 요소마다 근거와 강도)
+이름은 저장하지 않아요(반 코드 + 번호). 주소: https://chang333787-boop.github.io/tuntun-math/ · 목표와 설계: [docs/goal.md](docs/goal.md) · 다음 차례: [docs/next.md](docs/next.md) · 근거: [docs/evidence.md](docs/evidence.md)(논문 · 국가 안내서 약 140편 · 설계 요소마다 근거와 강도)
 
 교육과정 대응은 2022 개정 수학과 성취기준을 기준으로 하며, 차시 이름은 이 앱이 붙인 이름입니다(특정 출판사 교과서 · 지도서와 무관).
 
