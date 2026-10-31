@@ -265,6 +265,21 @@ export const KIDSAY = {
 const GENERIC = ['계산은 맞는데 답을 옮겨 쓸 때 틀렸어요', '문제의 수를 잘못 읽었어요'];
 // 틀린 풀이를 아이가 쓸 법한 꼴로 보일 수 있나 — 대분수 칸에 자연수 부분 0(0 5/8) · 분수 부분 0(4 0/5) · 분수 부분이 1과 같거나 큼(4 4/4) · 분모 0은 X(혹평 11-01)
 //  보일 수 없는 틀린 방법은 고르지 않음 — 이 칸에 보일 만한 틀린 풀이가 하나도 없으면(5-1-5:3) 비교하기를 건너뜀
+// 대분수 빈칸에 자연수 부분이 0인 틀린 답 → 그냥 분수로 보이게(0 5/8 X · 5/8) · 친구가 쓴 답 글(1 9/35 · 5/8 · 12, 3)
+function plainFrac(prompt, v) {
+  const blank = (x) => x && typeof x === 'object' && 'b' in x;
+  let hit = false;
+  const out = (prompt || []).map((t) => { if (t && typeof t === 'object' && 'm' in t && t.m.every(blank) && Number(v[t.m[0].b]) === 0 && Number(v[t.m[1].b]) >= 1) { hit = true; return { f: [t.m[1], t.m[2]] }; } return t; });
+  return hit ? out : null;
+}
+export function answerText(prompt, v) {
+  const blank = (x) => x && typeof x === 'object' && 'b' in x;
+  for (const t of prompt || []) {
+    if (t && typeof t === 'object' && 'm' in t && t.m.every(blank)) { const [w, n, d] = t.m.map((x) => v[x.b]); return `${Number(w) ? `${w} ` : ''}${n}/${d}`; }
+    if (t && typeof t === 'object' && 'f' in t && t.f.every(blank)) { const [n, d] = t.f.map((x) => v[x.b]); return `${n}/${d}`; }
+  }
+  return (v || []).join(', ');
+}
 function showable(prompt, v) {
   const val = (x) => (x && typeof x === 'object' && 'b' in x ? Number(v[x.b]) : Number(x)), blank = (x) => x && typeof x === 'object' && 'b' in x;
   for (const t of prompt || []) {
@@ -282,7 +297,7 @@ export function compareOf(c, { prefer = [], seed = Date.now() } = {}) {
     const [it] = pickItems(c, 1, r, used); if (!it || it.choices) continue;
     let ids = []; try { ids = testable(it).filter((id) => KIDSAY[id]); } catch (e) { ids = []; }
     if (!ids.length) continue;
-    const preds = {}; for (const id of ids) { let v = null; try { v = __predict(it, id); } catch (e) { v = null; } if (v && JSON.stringify(v) !== JSON.stringify(it.sol) && showable(it.prompt, v)) preds[id] = v; }
+    const preds = {}, wp = {}; for (const id of ids) { let v = null; try { v = __predict(it, id); } catch (e) { v = null; } if (!v || JSON.stringify(v) === JSON.stringify(it.sol)) continue; if (showable(it.prompt, v)) preds[id] = v; else { const alt = plainFrac(it.prompt, v); if (alt && showable(alt, v)) { preds[id] = v; wp[id] = alt; } } }   /* 자연수 0 대분수는 그냥 분수로(5-1-5:3 비교하기가 사라지던 것) */
     const ok = Object.keys(preds); if (!ok.length) continue;
     const mine = ok.find((id) => prefer.includes(id));
     const bug = mine || ok[0];
@@ -290,7 +305,7 @@ export function compareOf(c, { prefer = [], seed = Date.now() } = {}) {
     const reasons = [KIDSAY[bug], ...others.slice(0, 2)];
     while (reasons.length < 3) reasons.push(GENERIC[reasons.length - 1] || GENERIC[0]);
     for (let i = reasons.length - 1; i > 0; i--) { const j = Math.floor(r.next() * (i + 1)); [reasons[i], reasons[j]] = [reasons[j], reasons[i]]; }
-    const cand = { it: { c, p: it.p, prompt: it.prompt, sol: it.sol }, wrong: preds[bug], bug, reasons, right: KIDSAY[bug], rightFirst: r.next() < 0.5, mine: !!mine };
+    const cand = { it: { c, p: it.p, prompt: it.prompt, sol: it.sol }, wrong: preds[bug], wrongPrompt: wp[bug] || it.prompt, wrongText: answerText(wp[bug] || it.prompt, preds[bug]), bug, reasons, right: KIDSAY[bug], rightFirst: r.next() < 0.5, mine: !!mine };
     if (!best || cand.mine) best = cand;
   }
   return best;

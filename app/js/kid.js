@@ -398,19 +398,19 @@ export function fixView(root, c) {
   function compare(X) {
     const A = X.rightFirst ? X.it.sol : X.wrong, B = X.rightFirst ? X.wrong : X.it.sol;
     const b = shell(head('think', '친구 둘이 같은 문제를 풀었어요. <b>누가 맞았을까요?</b>'), `<div class="qcard"><div class="cmp">
-      <button type="button" class="cmpc" data-w="${X.rightFirst ? 1 : 0}"><span class="who2">가 친구</span>${staticHTML(X.it.prompt, A)}</button>
-      <button type="button" class="cmpc" data-w="${X.rightFirst ? 0 : 1}"><span class="who2">나 친구</span>${staticHTML(X.it.prompt, B)}</button></div></div>`);
+      <button type="button" class="cmpc" data-w="${X.rightFirst ? 1 : 0}"><span class="who2">가 친구</span>${staticHTML(X.rightFirst ? X.it.prompt : (X.wrongPrompt || X.it.prompt), A)}</button>
+      <button type="button" class="cmpc" data-w="${X.rightFirst ? 0 : 1}"><span class="who2">나 친구</span>${staticHTML(X.rightFirst ? (X.wrongPrompt || X.it.prompt) : X.it.prompt, B)}</button></div></div>`);
     b.querySelectorAll('.cmpc').forEach((btn) => btn.addEventListener('click', () => why(btn.dataset.w === '1')));
     // 도구로 확인 — 친구의 틀린 답에 검산 도구를 써 봄(처음 배우는 자리) → 그다음 어디서 어긋났나
     let T = null; try { T = toolFor({ it: mkItem(X.it.c, X.it.p), vals: X.wrong, c, bug: X.bug }); } catch (e) { T = null; }
     function why(gotIt) {
       if (T && !why.shown) {
         why.shown = true;
-        const w = X.wrong.join(', '), bt = shell(head(gotIt ? 'cheer' : 'think', `${gotIt ? '맞아요! ' : '다시 봐요. '}${X.rightFirst ? '나' : '가'} 친구가 쓴 ${esc(w)}${P(w, '이', '가')} 맞는지 <b>${esc(T.ro)}</b> 확인해 볼까요?<br><span class="small">${esc(T.how)}</span>`), `<div class="qcard"><p class="tcheck">${T.html}</p></div><div class="qact"><button class="pri big" id="n3">그럼 어디서 어긋났을까?</button></div>`);
+        const w = X.wrongText || X.wrong.join(', '), bt = shell(head(gotIt ? 'cheer' : 'think', `${gotIt ? '맞아요! ' : '다시 봐요. '}${X.rightFirst ? '나' : '가'} 친구가 쓴 ${esc(w)}${P(w, '이', '가')} 맞는지 <b>${esc(T.ro)}</b> 확인해 볼까요?<br><span class="small">${esc(T.how)}</span>`), `<div class="qcard"><p class="tcheck">${T.html}</p></div><div class="qact"><button class="pri big" id="n3">그럼 어디서 어긋났을까?</button></div>`);
         bt.querySelector('#n3').addEventListener('click', () => why(gotIt));
         return;
       }
-      const w2 = X.wrong.join(', '), b2 = shell(head(gotIt ? 'cheer' : 'think', `${gotIt ? '맞아요! ' : '다시 봐요. '}맞게 푼 건 ${staticHTML(X.it.prompt, X.it.sol)} 이에요.<br>그럼 <b>${esc(w2)}</b>${P(w2, '이라고', '라고')} 쓴 친구는 <b>어디서 어긋났을까요?</b>`), `<div class="todo">${X.reasons.map((t, i) => `<button type="button" class="item rs" data-i="${i}" style="text-align:left">${esc(t)}</button>`).join('')}</div>`);
+      const w2 = X.wrongText || X.wrong.join(', '), b2 = shell(head(gotIt ? 'cheer' : 'think', `${gotIt ? '맞아요! ' : '다시 봐요. '}맞게 푼 건 ${staticHTML(X.it.prompt, X.it.sol)} 이에요.<br>그럼 <b>${esc(w2)}</b>${P(w2, '이라고', '라고')} 쓴 친구는 <b>어디서 어긋났을까요?</b>`), `<div class="todo">${X.reasons.map((t, i) => `<button type="button" class="item rs" data-i="${i}" style="text-align:left">${esc(t)}</button>`).join('')}</div>`);
       b2.querySelectorAll('.rs').forEach((btn) => btn.addEventListener('click', () => {
         const ok = X.reasons[Number(btn.dataset.i)] === X.right;
         const st = stepsOf({ c: X.it.c, p: X.it.p });
