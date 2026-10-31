@@ -113,7 +113,7 @@ export function newClassView(root) {
     for (let tries = 0; tries < 5; tries++) {
       const C = (zz ? 'ZZ' + rand(4) : rand(6)), T = rand(24, KEY_AL);
       if (!zz && C.startsWith('ZZ')) continue;
-      const pins = {}; for (let i = 1; i <= n; i++) pins[i] = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+      const pins = {}; for (let i = 1; i <= n; i++) pins[i] = rand(4, '0123456789');   /* 핀도 암호용 난수로(rand · local.js) */
       const up = { [`cown/${C}`]: T, [`tc/${C}/${T}/info`]: db.enc({ g, n, made: Date.now() }) };
       for (const [no, p] of Object.entries(pins)) up[`tc/${C}/${T}/pins/${no}`] = p;
       try { await db.patch('', up); } catch (e) { if (e.status === 401) continue; msg.textContent = `만들지 못했어요: ${e.message}`; return; }
