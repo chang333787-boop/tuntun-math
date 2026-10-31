@@ -41,7 +41,7 @@ export function weekView(root) {
       if (a.idk) R.it[it.k] = { s: 'q' };
       else { try { ok = !!itemOf(it.c, it.p).check(a.vals, a.raws).ok; } catch (e) { ok = false; } R.it[it.k] = ok ? { s: 'ok' } : { s: 'x', a: a.raws }; }
       ms[it.k] = t; i++;
-      fast = !ok && t < 2000 ? fast + 1 : 0;
+      fast = !ok && !a.idk && t < 2000 ? fast + 1 : a.idk ? fast : 0;   /* 몰라서 넘어감은 찍기가 아님(준비 다리와 같게 — 세지도 끊지도 않음) */
       if (fast < 3) return one();
       fast = 0; pauses++; K.rush = (K.rush || 0) + 1;
       root.innerHTML = `<div class="card">${say('think', '잠깐! 조금 빨라요. 문제를 <b>끝까지 읽고</b> 풀어요. 모르면 \'몰라서 넘어갈래요\'를 눌러도 돼요.')}<button class="pri big" id="r" disabled>다시 할게요</button></div>`;
