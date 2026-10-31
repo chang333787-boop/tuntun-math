@@ -77,23 +77,27 @@ export function answer(S, a, { conf = null, ms = 0 } = {}) {
   return { ok, k: it.k, c: it.c, bug: res && res.bug ? res.bug : null };
 }
 
-// 막힌 칸 x 아래에서 아직 모르는 칸들 U — 덮개가 U의 절반에 가장 가까운 칸을 묻는다(맞히면 그 아래 전부 통과 · 틀리면 그쪽으로 좁힘)
-function halfProbe(rep, x) {
-  const L = rep.L;
-  const U = [...closure(x)].filter((c) => c !== x && byId[c] && !(L[c] && SEEN.has(L[c].st)));
-  if (!U.length) return null;
-  const Us = new Set(U), half = U.length / 2;
-  let best = null, bs = Infinity;
-  for (const m of U) { const n = [...closure(m)].filter((c) => Us.has(c)).length; const s = Math.abs(n - half) - gi(m) / 1000; if (s < bs) { bs = s; best = m; } }
-  return best;
-}
 // 다음에 물을 칸 — ① 다시 볼 것(흔들림 · 두 원인이 같은 답 · 고립 · 도움 받은 관문) ② 막혔는데 아래를 다 모르는 칸마다 반 가르기 한 칸
 export function nextLessons(rep, plan = null) {
   const L = rep.L;
   const again = rep.checkList.filter((c) => byId[c] && L[c] && (L[c].st === 'shaky' || (L[c].amb && L[c].st !== 'ok') || (L[c].gate && L[c].st === 'near' && L[c].help)));
   rep.iso.forEach((x) => { if (!again.includes(x.c)) again.push(x.c); });
-  const probes = [];
-  for (const b of rep.below) { if (plan && !plan.includes(b.c)) continue; const m = halfProbe(rep, b.c); if (m && !again.includes(m) && !probes.includes(m)) probes.push(m); }
+  // 반 가르기 — 막힌 칸마다 따로 묻지 않고, 여러 갈래를 한꺼번에 반으로 가르는 칸을 고름(깊은 빈 곳 하나가 위 칸 여럿을 막는 일이 흔함 → 뿌리는 대개 하나)
+  //  칸 m의 점수 = m을 품은 갈래마다 (m 아래가 그 갈래 후보의 절반에 가까운 정도)의 합 · 고른 칸이 품은 갈래는 빼고 다음 칸 · 한 묶음 cap칸까지
+  //  막힌 칸마다 따로 물을 때보다 하루 한 판에 찾는 비율 74 → 86% · 문항 27 → 24 · 이틀 97 → 98%(app/test/prep.sim.mjs · 10-31)
+  const probes = [], seen = (c) => L[c] && SEEN.has(L[c].st);
+  let B = rep.below.filter((b) => !plan || plan.includes(b.c)).map((b) => ({ c: b.c, U: new Set([...closure(b.c)].filter((c) => c !== b.c && byId[c] && !seen(c))) })).filter((b) => b.U.size);
+  while (B.length && probes.length < PREP.cap) {
+    let best = null, bs = -1;
+    for (const m of new Set(B.flatMap((b) => [...b.U]))) {
+      if (again.includes(m) || probes.includes(m)) continue;
+      const cm = closure(m); let q = gi(m) / 1000;
+      for (const b of B) if (b.U.has(m)) q += 1 - Math.abs((2 * [...b.U].filter((c) => cm.has(c)).length) / b.U.size - 1);
+      if (q > bs) { bs = q; best = m; }
+    }
+    if (!best) break;
+    probes.push(best); B = B.filter((b) => !b.U.has(best));
+  }
   return { again: (plan ? again.filter((c) => plan.includes(c)) : again).sort((a, b) => gi(b) - gi(a)), probes };
 }
 // 이 판에서 그 칸을 몇 묶음에서 물었나 — 다시 묻기는 한 번까지(같은 꼴로 늘 틀리면 판정에 맡김)

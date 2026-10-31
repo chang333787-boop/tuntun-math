@@ -76,7 +76,7 @@ if (process.env.UNITS) console.log(perUnit.join('\n'));
 console.log(`준비 다리(${DAYS}일) · 빈 아이 ${gRuns}명(실수 ${SLIP * 100}%): 고칠 판자가 바로 그 칸 ${pct(hit, gRuns)} · 이웃 칸 ${pct(near, gRuns)} · 아직 아래 확인 ${pct(below, gRuns)} · 엉뚱한 칸 ${pct(falseS, gRuns)} · 평균 ${(items / gRuns).toFixed(1)}문항(최대 ${maxItems}) · 예산에서 멈춤 ${pct(budget, gRuns)}`);
 console.log(`빈 곳 없는 아이 ${cRuns}명: 헛짚음 ${pct(cFalse, cRuns)} · 평균 ${(cItems / cRuns).toFixed(1)}문항`);
 console.log(`절차 버그 아이 ${bRuns}명: 그 칸을 보여 줌 ${pct(bShown, bRuns)}`);
-const HIT = DAYS >= 2 ? 0.95 : 0.7;   // 하루 한 판으로 못 찾으면 다음 시간에 이어서 — 이틀 안에 95%
+const HIT = DAYS >= 2 ? 0.95 : 0.8;   // 하루 한 판에 80% · 못 찾으면 다음 시간에 이어서 — 이틀 안에 95%
 const pass = hit / gRuns >= HIT && falseS / gRuns <= 0.05 && cFalse / cRuns <= 0.06 && (!bRuns || bShown / bRuns >= 0.9);
 console.log(pass ? '준비 다리 시험 PASS' : '준비 다리 시험 FAIL', `(기준 바로 그 칸 ≥${HIT * 100}% · 엉뚱 ≤5% · 헛짚음 ≤6% · 버그 ≥90% · 한 판 ${PREP.budget}문항 안)`);
 if (!pass) process.exitCode = 1;
