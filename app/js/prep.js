@@ -9,7 +9,7 @@ import { makeSheet, closure, LES, itemOf } from '../../paper/js/gen.js';
 import { kidReport } from '../../paper/js/judge.js';
 import { mindsOf, wantFor } from '../../engine/mis.js';
 
-//  한 판 = 18문제(약 8분 · 40분 수업에서 준비 다리가 수업을 먹지 않게 — 혹평 11-01) · 못 찾으면 다음 시간에 지난 기록(14일)과 함께 이어서
+//  한 판 = 선생님이 고른 길이(기본 24문제 · 약 10분 · 40분 수업에서 준비 다리가 수업을 먹지 않게 — 혹평 10-31) · 못 찾으면 다음 시간에 지난 기록(14일)과 함께 이어서
 //  첫 묶음은 바깥 칸 넷까지(12문제) · 그다음 묶음은 칸 셋까지(9문제) — 묶음이 작을수록 막힌 곳 아래로 빨리 내려감
 //  이 판에서 막힌 칸이 넷 이상인데 고칠 판자를 못 좁혔으면 일찍 멈추고 '선생님과 같이'(why 'teacher') — 틀리는 문제만 이어 풀게 두지 않음
 export const PREP = { n: 3, first: 4, cap: 3, budget: 24, rounds: 8, fresh: 14, stuck: 4 };

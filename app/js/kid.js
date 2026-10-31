@@ -31,6 +31,7 @@ const plank = (c) => { const x = exampleOf(c); return x ? `${x} 같은 문제` :
 const names = (cs) => cs.map((c) => esc(plank(c))).join(', ');
 const eun = (cs) => P(plank(cs[cs.length - 1]), '은', '는');   // 마지막 말 받침으로 은 · 는
 // 선생님이 오늘 연 단원(수업 중) — 받은 준비 과제 가운데 오늘 날짜인 것
+const mins = (len) => ({ 18: 8, 24: 10, 36: 15 }[Number(len)] || 10);   /* 준비 다리 길이 → 대략 몇 분 */
 export function classTask(K) { return Object.values(K.inbox || {}).filter((x) => x && x.kind === 'prep' && x.t && today(x.t) === today()).sort((a, b) => b.t - a.t)[0] || null; }
 
 // ── 같은 크롬북을 여럿이 쓸 때 — 열 때 · 날짜가 바뀌었을 때 · 오래 쉬었다 누를 때 'n번 맞아요?'(main.js가 부름 · 혹평 17) ──
@@ -74,7 +75,7 @@ export function todoOf(K, rep) {
   const tasks = Object.entries(K.inbox || {}).map(([id, x]) => ({ id, ...x })).filter((x) => x && x.kind === 'prep').sort((a, b) => b.t - a.t);
   const t = tasks[0], lp = K.lastPrep, now = Date.now(), td = today();
   const preppedAfter = (u, since) => (lp && lp.unit === u && lp.t >= since) || Object.values(K.recs).some((x) => x && x.s && x.s.unit === u && x.s.made >= since);
-  if (t && !preppedAfter(t.unit, t.t)) out.push({ kind: 'prep', unit: t.unit, pri: true, title: '오늘 단원 준비하기', sub: `선생님이 연 단원: ${unitLabel(t.unit)} — 필요한 판자가 튼튼한지 봐요(8분쯤)`, href: `#/prep/${t.unit}` });
+  if (t && !preppedAfter(t.unit, t.t)) out.push({ kind: 'prep', unit: t.unit, pri: true, title: '오늘 단원 준비하기', sub: `선생님이 연 단원: ${unitLabel(t.unit)} — 필요한 판자가 튼튼한지 봐요(${mins(t.len)}분쯤)`, href: `#/prep/${t.unit}` });
   // 선생님과 같이 볼 판자
   const plan = lp && unitById[lp.unit] ? prepPlan(lp.unit) : null;
   const stuck = Object.values(rep.L).filter((x) => x.st === 'stuck' && byId[x.c] && (!plan || plan.below.includes(x.c))).map((x) => x.c).sort(byGrade);
@@ -180,7 +181,7 @@ export async function homeView(root) {
 }
 
 // ── 준비 다리 ──
-//  한 판 18문제(약 8분 · prep.js PREP) · 못 찾으면 다음 시간에 이어서 · 막힌 칸이 넷 넘으면 일찍 '선생님과 같이'(혹평 1)
+//  한 판 길이는 선생님이 고른 것(18 · 24 · 36문제 · prep.js LEN) · 못 찾으면 다음 시간에 이어서 · 막힌 칸이 넷 넘으면 일찍 '선생님과 같이'(혹평 1)
 export function prepView(root, unit) {
   const me = meOf(); if (!me) return go('#/join');
   if (!unitById[unit]) return go('#/me');
@@ -247,7 +248,7 @@ export function prepView(root, unit) {
     root.innerHTML = `<div class="card">${head}${S.why === 'teacher' ? '' : calLine}${acts}</div>`;
   };
   if (!asked(S) && !S.done) {
-    root.innerHTML = `<div class="card">${say('point', `<b>${esc(unitLabel(unit))}</b> 배우기 전에, 필요한 판자가 튼튼한지 볼게요(${S.prior ? '지난번에 멈춘 곳부터 · ' : ''}8분쯤).<br>문제마다 <b>먼저 짐작</b>을 고르면 답 칸이 열려요. 모르면 넘어가도 돼요.`)}<button class="pri big" id="s">시작</button></div>`;
+    root.innerHTML = `<div class="card">${say('point', `<b>${esc(unitLabel(unit))}</b> 배우기 전에, 필요한 판자가 튼튼한지 볼게요(${S.prior ? '지난번에 멈춘 곳부터 · ' : ''}${mins(S.budget)}분쯤).<br>문제마다 <b>먼저 짐작</b>을 고르면 답 칸이 열려요. 모르면 넘어가도 돼요.`)}<button class="pri big" id="s">시작</button></div>`;
     root.querySelector('#s').addEventListener('click', step);
   } else step();
 }
