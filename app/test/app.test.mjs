@@ -105,9 +105,10 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   ok(W.termPool('T5-2').length >= 10 || W.termPool('T5-2').length === PP.prepPlan('5-2-1').pre.length, `칸이 모자라면 한 학기씩 넓힘(T5-2 ${W.termPool('T5-2').length}칸)`);
   const K = { recs: {}, lastPrep: { unit: '4-1-3' }, fixed: {} }, rep = { L: {} };
   const p1 = W.weekPlan(K, rep);
-  ok(p1.length === 10 && new Set(p1).size === 10 && p1.every((c) => pool.includes(c)), '학기 범위에서 서로 다른 10칸');
+  const cur = W.curPool('T4-1');
+  ok(p1.length === 10 && new Set(p1).size === 10 && p1.filter((c) => cur.includes(c)).length === 6 && p1.filter((c) => pool.includes(c)).length === 4, `이번 학기 여섯 + 앞 학기 기초 넷 = 서로 다른 10칸(${p1.filter((c) => cur.includes(c)).length} + ${p1.filter((c) => pool.includes(c)).length})`);
   const gi = LX.gradeIdx, LES = (await import('../../paper/js/gen.js')).LES, grades = (p) => p.map((c) => gi(LES(c).g)).join('');
-  ok(grades(p1) === [...grades(p1)].sort().join(''), `학년 차례로 고르게 뽑음 — ${grades(p1)}`);
+  ok(grades(p1.filter((c) => pool.includes(c))) === [...grades(p1.filter((c) => pool.includes(c)))].sort().join(''), `기초 칸은 학년 차례로 고르게 — ${grades(p1)}`);
   ok(W.weekChart(ws).includes('<polyline') && W.weekChart(ws.slice(0, 1)).includes('<circle') && !W.weekChart(ws.slice(0, 1)).includes('<polyline'), '선 그래프(점 하나면 선 없이)');
   const mk = W.weekChart(ws, { marks: [{ t: d0 + 1.5 * wk, x: '소집단' }, { t: d0 - 30 * 864e5, x: '너무 옛날' }] });
   ok((mk.match(/stroke-dasharray/g) || []).length === 1 && !W.weekChart(ws).includes('stroke-dasharray'), '지도를 바꾼 때 = 점선 하나(선보다 한참 앞은 뺌)');

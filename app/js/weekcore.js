@@ -1,6 +1,6 @@
 // 이번 주 점검의 계산(화면 X) — 주 가르기 · 묶음 → 주마다 점 · 고를 칸 · 선 그래프 · 선 방향
 //  근거 · 설계는 week.js 머리말 · 아이 기기(kidstore 요약)와 선생님 화면이 같이 씀
-import { byId, gradeIdx, UNITS, unitById } from '../../engine/lessons/index.js';
+import { byId, gradeIdx, UNITS, unitById, NODES } from '../../engine/lessons/index.js';
 import { LES } from '../../paper/js/gen.js';
 import { prepPlan } from './prep.js';
 import { esc } from './local.js';
@@ -41,15 +41,27 @@ export const doneThisWeek = (recs) => weeksOf(recs).some((w) => w.wk === weekKey
 // 아이에게 보일 선 — 학기를 알면 그 학기 · 모르면 마지막 학기(학기가 섞인 선 X)
 export const lineOf = (recs, term) => (term ? weeksOf(recs, term) : lastLine(weeksOf(recs)));
 // 점검 학기 — 마지막 준비 다리 단원의 학기 → 없으면 지난번 점검한 학기
-export const weekTerm = (K) => termOf(K.lastPrep && K.lastPrep.unit) || ((weeksOf(K.recs).slice(-1)[0] || {}).term) || null;
+export const weekTerm = (K) => termOf(K.lastPrep && K.lastPrep.unit) || termOf((Object.values(K.inbox || {}).filter((x) => x && x.kind === 'prep' && x.unit).sort((a, b) => b.t - a.t)[0] || {}).unit) || ((weeksOf(K.recs).slice(-1)[0] || {}).term) || null;   /* 준비 다리 → 선생님이 연 단원 → 지난 점검 학기 */
 
 // 점검할 칸 — 학기 범위에서 학기 · 학년 차례로 고르게 n칸(칸마다 한 문제 · 시작점은 주마다 다름) · 학기를 모르면 판정에 나온 칸
+// 이번 학기 칸 — 그 학기 단원들의 차시 전부(아직 안 배운 것도 · CBM은 한 학기 내용을 처음부터 고르게 섞어 재고 배울수록 선이 오름 [B-R18][B-R19])
+//  점검은 판정에 안 들어가고(kidstore history) 아이는 점수 대신 선만 봄 — 안 배운 문제를 틀려도 '빈 곳'이 되지 않음(11-01 교사 '굳이 앞 학기만?')
+export function curPool(term) {
+  const g = termG(term); if (!g) return [];
+  const us = new Set(UNITS.filter((u) => u.g === g).map((u) => u.id));
+  return NODES.filter((n) => byId[n.id] && us.has(n.u)).map((n) => n.id).sort((a, b) => (a < b ? -1 : 1));
+}
+const spread = (pool, k) => { if (pool.length <= k) return pool.slice(); const off = Math.random(), step = pool.length / k; return Array.from({ length: k }, (_, i) => pool[Math.min(pool.length - 1, Math.floor((i + off) * step))]); };
+// 점검할 칸 — 이번 학기 여섯 + 앞 학기 기초 넷(가까운 학기부터 고르게) · 학기를 모르면 판정에 나온 칸
+export const WEEK_MIX = { cur: 6, base: 4 };
 export function weekPlan(K, rep, term = weekTerm(K)) {
-  let pool = termPool(term);
-  if (pool.length < 4) pool = [...new Set([...pool, ...Object.keys(K.fixed || {}), ...Object.values(rep.L).filter((x) => x.st && x.st !== 'none').map((x) => x.c)])].filter((c) => byId[c]).sort((a, b) => gradeIdx(LES(a).g) - gradeIdx(LES(b).g) || (a < b ? -1 : 1));
-  if (pool.length <= WEEK.n) return pool;
-  const off = Math.random(), step = pool.length / WEEK.n;
-  return Array.from({ length: WEEK.n }, (_, i) => pool[Math.min(pool.length - 1, Math.floor((i + off) * step))]);
+  const cur = curPool(term), base = termPool(term);
+  if (cur.length + base.length >= 4) {
+    const c = spread(cur, Math.min(WEEK_MIX.cur + Math.max(0, WEEK_MIX.base - base.length), cur.length)), b = spread(base, Math.min(WEEK.n - c.length, base.length));
+    return [...new Set([...b, ...c])];
+  }
+  const pool = [...new Set([...Object.keys(K.fixed || {}), ...Object.values(rep.L).filter((x) => x.st && x.st !== 'none').map((x) => x.c)])].filter((c) => byId[c]).sort((a, b) => gradeIdx(LES(a).g) - gradeIdx(LES(b).g) || (a < b ? -1 : 1));
+  return spread(pool, WEEK.n);
 }
 // 선 그래프 — 10점으로 맞춤 · 밋밋하게(점 · 선 · 날짜) · marks = 선생님이 지도를 바꾼 때 [{ t, x }] → 세로 점선(번호) — CBM의 '바꾼 때' 줄 [B-R19][B-R20]
 export function weekChart(weeks, { w = 420, h = 130, marks = [] } = {}) {
