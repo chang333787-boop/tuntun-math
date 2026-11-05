@@ -49,6 +49,25 @@ export function pickSection(sec, r, used, v2 = false) {
   return out;
 }
 
+// 기능 카드의 예시 둘(선생님 화면 #/t/sheet) — 첫 갈래에서 쉬운 쪽 하나 · 끝 갈래에서 어려운 쪽 하나(갈래가 하나면 그 안에서 작은 수 · 큰 수)
+//  씨앗은 기능 id로 고정(늘 같은 예시) · 거르기(re) 지킴 · 글이 짧은 것 먼저(카드가 길어지지 않게 — 글 문제뿐인 칸은 그대로) · 둘은 서로 다름
+//  크기 = 문제 글 · 보기 속 수의 자릿값 합(작은 수 · 적은 수 = 쉬운 쪽)
+const hashS = (s) => [...String(s)].reduce((h, ch) => (Math.imul(h, 31) + ch.charCodeAt(0)) >>> 0, 7);
+const sizeOf = (it) => { const t = keyOf(it); return (t.match(/\d+(?:\.\d+)?/g) || []).reduce((a, x) => a + Math.log10(Number(x) + 1), 0) + t.length / 200; };
+export function examplesOf(s) {
+  const r = rng(hashS(`ex:${s.id}`));
+  const cands = (p) => {
+    const re = p.re ? new RegExp(p.re) : null, xs = pickItems(p.c, 24, r, new Set()).filter((it) => !re || re.test(toText(it.prompt))).slice(0, 8);
+    const sh = xs.filter((it) => keyOf(it).length <= 46);
+    return (sh.length >= 2 ? sh : xs).map((it) => ({ it, z: sizeOf(it) })).sort((a, b) => a.z - b.z).map((x) => x.it);
+  };
+  const first = s.parts[0], last = s.parts[s.parts.length - 1], multi = s.parts.length > 1;
+  const A = cands(first), B = multi ? cands(last) : A;
+  const easy = A[Math.floor((A.length - 1) / (multi ? 3 : 4))];
+  const hard = [...B].reverse().find((it) => !easy || keyOf(it) !== keyOf(easy));
+  return [easy && { it: easy, c: first.c, label: multi ? first.label : '' }, hard && { it: hard, c: multi ? last.c : first.c, label: multi ? last.label : '' }].filter(Boolean);
+}
+
 // 연습지 한 벌 — 갈래마다 { ...갈래 설정, items, ex(보기), warn } · 보기를 끄더라도 뽑기는 같게(보기를 켜고 끄면 문제가 바뀌지 않게)
 export function buildSheet(spec) {
   const r = rng(Number(spec.seed) || 1), used = new Set(), v2 = Number(spec.v) >= 2, same = v2 ? keyOf : txtOf;

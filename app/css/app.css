@@ -3,7 +3,7 @@
   /* 바탕 · 글 — 글 대비: 글 17.1 · 흐린 글 7.3(흰 면) */
   --paper:#FAF6EE;--surface:#FFFFFF;--panel:#F4EFE6;--ink:#1F1B16;--mute:#5E554B;--line:#E7DFD2;--line2:#D8CDBD;--field:#968A7B;
   /* 구조 청록 · 주된 행동 주황 · 강조 노랑 — 주황 위 흰 글 4.63 · 글자로 쓰는 주황은 더 짙게(--pri-ink 5.25) */
-  --teal:#0E6F68;--teal-t:#E3F1EF;--teal-l:#9FC5C3;--pri:#C4511A;--pri-d:#853712;--pri-ink:#AE4716;--pri-t:#F9EEE8;--sun:#F4C247;
+  --teal:#0E6F68;--teal-t:#E3F1EF;--teal-l:#9FC5C3;--teal-d:#0A4E49;--pri:#C4511A;--pri-d:#853712;--pri-ink:#AE4716;--pri-t:#F9EEE8;--sun:#F4C247;
   /* 상태 — 됨 · 흔들 · 막힘 · 잠김(옅은 바탕 위 글은 4.5 넘게) */
   --ok:#2E7D4F;--ok-t:#E3F2E8;--ok-ink:#276B43;--shaky:#8A5A0F;--shaky-t:#FBF0D9;--stuck:#B4361F;--stuck-t:#FBE3DD;--off:#ECE7DF;--off-ink:#6F675E;
   /* 다리 그림 · 표의 나무 */
@@ -506,8 +506,8 @@ body.tv main{max-width:none}body.tv .ctab table{font-size:18px}body.tv .ctab td,
 .try-b b{font-size:20px}.try-b span{font-size:14px;color:var(--mute)}.try-b svg{color:var(--teal)}
 .try-b:active,.try-b.press{transform:translateY(3px);box-shadow:0 1px 0 var(--line)}
 .try-b.on{border-color:var(--teal);background:var(--teal2)}
-/* 맞춤 연습지(#/t/sheet · sheet.js) — 왼쪽 기능 고르기 | 오른쪽 고른 기능(따라 붙음) · 고르는 칸도 턱 손맛 · 고름 = 청록 테두리 + 옅은 청록 · 좁으면 고른 기능이 위 */
-.sh-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(380px,1fr);gap:0 20px;align-items:start}
+/* 맞춤 연습지(#/t/sheet · sheet.js) — 왼쪽 기능 카드(1366에서 3열) | 오른쪽 고른 기능(따라 붙음) · 카드도 턱 손맛 · 고름 = 청록 테두리 + 옅은 청록 + ✓ · 좁으면 카드 아래에 판 + 아래 붙는 띠 */
+.sh-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(400px,1fr);gap:0 20px;align-items:start}
 .sh-cart{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;overscroll-behavior:contain}
 .sh-h{display:flex;gap:14px;align-items:flex-start}.sh-h>svg.mascot{flex:none;margin-top:2px}.sh-h h2{margin-bottom:6px}.sh-h .intro{margin-bottom:6px}
 .sh-pick>.acts.sub{margin:4px 0 10px}
@@ -518,13 +518,49 @@ body.tv main{max-width:none}body.tv .ctab table{font-size:18px}body.tv .ctab td,
 .sh-tabs button:active,.sh-tabs button.press{box-shadow:0 1px 0 var(--line2)}
 .sh-tabs button[aria-pressed="true"]{border-color:var(--teal);background:var(--teal-t);color:var(--teal);box-shadow:0 3px 0 var(--teal-l)}
 .sh-list h3{margin:18px 0 8px;font-size:17px}.sh-list h3 small{font-weight:400;color:var(--mute);font-size:13.5px;margin-left:4px}
-.sh-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
-.sk{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;min-height:52px;border:2px solid var(--line2);border-radius:14px;background:var(--surface);box-shadow:0 3px 0 var(--line2);cursor:pointer;transition:transform var(--press),box-shadow var(--press),border-color var(--press)}
-.sk:active,.sk.press{transform:translateY(2px);box-shadow:0 1px 0 var(--line2)}
-.sk.on{border-color:var(--teal);background:var(--teal-t);box-shadow:0 3px 0 var(--teal-l)}
-.sk input{flex:none;width:20px;height:20px;margin:3px 0 0;accent-color:var(--teal)}
-.sk-b{display:flex;flex-direction:column;min-width:0;flex:1}.sk-b b{font-size:16px;line-height:1.4}.sk-p{font-size:13px;color:var(--mute);line-height:1.45}
-.sk .pill{flex:none;margin-top:1px;font-variant-numeric:tabular-nums}
+/* 기능 카드 — 카드 = 누를 것 하나(턱 4px · 누르면 3px 내려가고 턱 1px) · 안의 단추(.sc-main)는 키보드용이라 단추 모양을 모두 풂 */
+.sc-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 12px;align-items:stretch}
+.sc{position:relative;display:flex;flex-direction:column;min-width:0;container-type:inline-size;border:2px solid var(--line2);border-radius:16px;background:var(--surface);box-shadow:0 4px 0 var(--line2);cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none;transition:transform var(--press),box-shadow var(--press),border-color var(--press),background-color var(--press)}
+.sc.press{transform:translateY(3px);box-shadow:0 1px 0 var(--line2)}
+.sc.on{border-color:var(--teal);background:var(--teal-t);box-shadow:0 4px 0 var(--teal-l)}
+.sc.on.press{box-shadow:0 1px 0 var(--teal-l)}
+.sc>.sc-main{flex:1;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:10px;width:100%;min-height:0;padding:14px 14px 8px;margin:0;border:0;border-radius:14px 14px 0 0;background:none;box-shadow:none;color:inherit;font-weight:400;text-align:left;line-height:1.4;cursor:pointer}
+.sc>.sc-main:active,.sc>.sc-main.press{transform:none;box-shadow:none}
+.sc>.sc-main:focus-visible{outline:3px solid var(--teal);outline-offset:-3px;border-radius:14px}
+.sc-h{display:flex;flex-direction:column;gap:1px;padding-right:32px}
+.sc-h b{font-size:18px;font-weight:700;line-height:1.35;letter-spacing:-.2px}
+.sc-g{font-size:12.5px;color:var(--mute);font-variant-numeric:tabular-nums}
+.sc-why{display:flex;flex-wrap:wrap;gap:4px}.sc-why .pill{font-size:12.5px;padding:0 8px;line-height:1.7}
+.pill.wy-start,.pill.wy-stuck{background:var(--stuck-t);border-color:#E3B2A6;color:#8F2C17}.pill.wy-shaky{background:var(--shaky-t);border-color:#E2C88E;color:var(--shaky)}.pill.wy-mind{background:#fff;border-color:var(--teal-l);color:var(--teal)}
+.sc-ok{position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:50%;background:var(--teal);color:#fff;display:none;align-items:center;justify-content:center;pointer-events:none}
+.sc.on .sc-ok{display:inline-flex}
+/* 예시 둘 — 종이 쪽지 모양(흰 면 · 가는 테두리 · 빈칸은 빈 네모 · 그림은 종이처럼 회색) · 위 = 쉬운 쪽 · 아래 = 어려운 쪽 */
+.sc-ex{display:flex;flex-direction:column;gap:6px}.sc-ex.wait{min-height:150px;border-radius:10px;background:var(--panel)}
+.sc-q{display:flex;flex-direction:column;gap:2px;min-width:0;padding:7px 10px 8px;border:1.5px solid #DDD2C2;border-radius:10px;background:#fff}
+.sc-l{font-size:12px;font-weight:700;color:var(--mute);line-height:1.35}
+.sc-q .math{font-size:18px;gap:.1em .22em;line-height:1.45;color:var(--ink)}
+.sc-q .math .kr{font-size:14px;font-weight:500}
+.sc-q .blank-s{min-width:1.5em;height:1.15em;padding:0;border:1.5px solid var(--ink);border-radius:5px;color:transparent;background:#fff;vertical-align:middle;line-height:1}
+.sc-q .fr .blank-s{min-width:1.1em;height:.95em;margin:.05em 0}
+.sc-q .fr-t{border-bottom-width:1.5px}
+.sc-q .pic{display:flex;margin:2px 0}.sc-q .pic svg{max-height:52px;max-width:100%;width:auto;height:auto}
+.sc-q .pic .dot{fill:#555}.sc-q .pic .grp{fill:none;stroke:#555;stroke-width:2;stroke-dasharray:4 3}.sc-q .pic .cell{fill:#fff;stroke:#222;stroke-width:2}.sc-q .pic .cell.on{fill:#9a9a9a}
+.sc-ch{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:15px;line-height:1.5;font-variant-numeric:tabular-nums}
+.sc-ch>span{display:inline-flex;align-items:center;gap:3px;white-space:nowrap}.sc-ch .fr{font-size:.92em}.sc-ch .pic svg{max-height:32px}
+/* 문제 수 칩 — 고르기 전에도 그 자리(흐린 숫자 · 누르면 그 수로 고름) · 고른 카드는 턱 있는 칩 · 지금 수 = 꽉 찬 청록 */
+.sc-n{display:flex;align-items:center;flex-wrap:wrap;gap:3px;padding:2px 14px 14px}
+.sc-n>span{font-size:13px;color:var(--mute);margin-left:3px;white-space:nowrap}
+@container (max-width:214px){.sc-n>span{display:none}}
+.sc-n button{flex:0 0 auto;min-width:36px;min-height:40px;padding:0 5px;font-size:16px;font-weight:700;border:1.5px solid transparent;border-radius:10px;background:transparent;box-shadow:none;color:var(--mute);font-variant-numeric:tabular-nums}
+.sc-n button:active:not(:disabled),.sc-n button.press:not(:disabled){transform:none;box-shadow:none}
+.sc.on .sc-n button{border-color:var(--teal-l);background:var(--surface);color:var(--ink);box-shadow:0 3px 0 var(--teal-l)}
+.sc.on .sc-n button[aria-pressed="true"]{background:var(--teal);border-color:var(--teal);color:#fff;box-shadow:0 3px 0 var(--teal-d)}
+.sc.on .sc-n button:active:not(:disabled),.sc.on .sc-n button.press:not(:disabled){transform:translateY(2px);box-shadow:0 1px 0 var(--teal-l)}
+.sc.on .sc-n button[aria-pressed="true"]:active,.sc.on .sc-n button[aria-pressed="true"].press{box-shadow:0 1px 0 var(--teal-d)}
+.sc-note{margin:-2px 0 10px}
+/* 판 위 합계 · 좁은 화면의 아래 붙는 띠 */
+.sh-sum{margin:-6px 0 14px;font-size:17px;color:var(--mute);font-variant-numeric:tabular-nums}.sh-sum b{font-size:24px;color:var(--ink);margin:0 1px}.sh-sum span{font-size:15px}
+.sh-dock{display:none}
 .sh-kid{font-size:15px;line-height:1.6;border-left:6px solid var(--teal)}
 .sh-who{margin:6px 0 14px}.sh-who input{font:inherit;font-size:18px;min-height:50px;padding:6px 14px;border:2px solid var(--field);border-radius:14px;max-width:100%;letter-spacing:0;background:var(--surface)}
 .sh-sel{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
@@ -549,6 +585,9 @@ body.tv main{max-width:none}body.tv .ctab table{font-size:18px}body.tv .ctab td,
 .sh-saved{list-style:none;margin:8px 0 0;padding:0}.sh-saved li{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px dashed var(--line2)}.sh-saved li:last-child{border-bottom:0}
 .sh-saved li>div{flex:1;min-width:0;display:flex;flex-direction:column}.sh-saved li>div .small{font-size:13px}
 .sh-saved button{min-height:42px;padding:4px 14px;font-size:15px;border-width:1.5px;border-radius:12px;box-shadow:0 3px 0 var(--line2)}.sh-saved button.mini{margin-left:0}
-@media (max-width:1099px){.sh-grid{grid-template-columns:minmax(0,1fr)}.sh-cart{position:static;max-height:none;overflow:visible;order:-1}}
-@media (max-width:760px){.sh-h>svg.mascot{display:none}.ss-c,.ss-x{grid-column:1 / -1}.ss-c .sel{flex:1 1 110px}.sh-items{grid-template-columns:minmax(0,1fr)}}
-@media (hover:hover){body:not(.touch) .sk:not(.on):hover,body:not(.touch) .sh-opt:not(.on):hover{border-color:var(--field)}}
+@media (max-width:1099px){.sh-grid{grid-template-columns:minmax(0,1fr)}.sh-cart{position:static;max-height:none;overflow:visible;scroll-margin-top:12px}
+  .sh-dock:not([hidden]){position:sticky;bottom:12px;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:10px;margin:18px -4px 0;padding:10px 10px 10px 16px;border:2px solid var(--teal);border-radius:16px;background:var(--surface);box-shadow:0 4px 0 var(--teal-l)}
+  .sd-t{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-variant-numeric:tabular-nums;min-width:0}.sd-t .ic{color:var(--teal)}.sd-t b{font-size:19px}
+  .sh-dock button{min-height:46px;padding:6px 14px;flex:none}}
+@media (max-width:760px){.sh-h>svg.mascot{display:none}.ss-c,.ss-x{grid-column:1 / -1}.ss-c .sel{flex:1 1 110px}.sc-grid{grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}.sd-t{font-size:15px}.sd-t b{font-size:17px}.sd-k{display:none}}
+@media (hover:hover){body:not(.touch) .sc:not(.on):hover,body:not(.touch) .sh-opt:not(.on):hover{border-color:var(--field)}body:not(.touch) .sc:not(.on) .sc-n button:hover{border-color:var(--line2);color:var(--ink)}}

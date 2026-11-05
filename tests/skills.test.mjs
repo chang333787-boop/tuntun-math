@@ -4,10 +4,11 @@
 //  ④ 지시 한 줄의 {n} 자리가 모두 풀리고 글 검사(lint_ko) 통과 ⑤ 함정 꼴(want) — WANT가 있는 차시는 함정 문항이 실제로 섞임
 //  ⑥ 예전 설정(want · dup · mix 없음)은 예전 뽑기와 같은 문제 ⑦ 메인이 손으로 만든 설정 둘을 기능 이름으로 그대로 만들 수 있음
 //  ⑧ 이 아이 칸 위주(focusShares) — 그 칸은 두 몫 · 앞 갈래는 한 몫 · 뒤 갈래는 뺌 · 어느 칸에 맞춰도 10문제가 다 나옴
+//  ⑨ 기능 카드 예시 둘(examplesOf) — 늘 둘 · 서로 다름 · 늘 같음 · 첫 갈래 → 끝 갈래 · 거르기 지킴
 import { NODES, byId } from '../engine/lessons/index.js';
 import { SKILLS, SKILL, GROUPS, COUNTS, LEFT, secOf, noteOf, splitN, skillsOf, partsText, focusShares } from '../engine/skills.js';
 import { WANT, wantFor } from '../engine/mis.js';
-import { buildSheet } from '../paper/js/pick.js';
+import { buildSheet, examplesOf } from '../paper/js/pick.js';
 import { pickItems } from '../paper/js/gen.js';
 import { rng } from '../engine/math.js';
 import { toText } from '../engine/tokens.js';
@@ -146,6 +147,21 @@ ok(parts('a.one') === '1-1-3:6 → 1-2-6:2' && parts('s.one') === '1-1-3:10 → 
 ok(parts('n.split9') === '1-1-3:3' && parts('n.teen') === '1-1-5:4' && parts('n.parity') === '1-2-1:6' && parts('s.teen') === '1-2-6:4', '한 차시 기능 짜임');
 // 차시 → 기능 찾기(아이 자세히 → 이 아이 연습지)
 ok(skillsOf('2-1-3:7')[0].id === 's.d22' && skillsOf('2-2-2:4')[0].id === 'm.k36', `차시로 기능 찾기 — 2-1-3:7 → ${skillsOf('2-1-3:7')[0].id} · 2-2-2:4 → ${skillsOf('2-2-2:4')[0].id}`);
+
+// ⑨ 기능 카드 예시 둘(선생님 화면 #/t/sheet) — 늘 둘 · 서로 다름 · 같은 기능이면 늘 같음 · 쉬운 쪽은 첫 갈래 · 어려운 쪽은 끝 갈래 · 거르기 지킴 · 문제 글에 학년 X
+{ const kx = (it) => (it.choices ? `${toText(it.prompt)} ⟨${it.choices.map((c) => toText(c)).join(' / ')}⟩` : toText(it.prompt));
+  const t1 = Date.now();
+  for (const s of SKILLS) {
+    const a = examplesOf(s), b = examplesOf(s), first = s.parts[0], last = s.parts[s.parts.length - 1];
+    ok(a.length === 2, `${s.id} 카드 예시가 둘이 아님 — ${a.length}개`);
+    if (a.length < 2) continue;
+    ok(kx(a[0].it) !== kx(a[1].it), `${s.id} 카드 예시 둘이 같음 — ${kx(a[0].it)}`);
+    ok(JSON.stringify(a.map((x) => kx(x.it))) === JSON.stringify(b.map((x) => kx(x.it))), `${s.id} 카드 예시가 열 때마다 바뀜`);
+    ok(a[0].it.c === first.c && a[1].it.c === last.c, `${s.id} 카드 예시 차시 — ${a[0].it.c} · ${a[1].it.c}`);
+    for (const [x, p] of [[a[0], first], [a[1], last]]) if (p.re) ok(new RegExp(p.re).test(toText(x.it.prompt)), `${s.id} 카드 예시 거르기 어김 — ${toText(x.it.prompt)}`);
+    ok(!/학년|학기/.test(a.map((x) => kx(x.it)).join(' ')), `${s.id} 카드 예시에 학년 글`);
+  }
+  info(`카드 예시 ${SKILLS.length * 2}개 만들기 ${Date.now() - t1}ms(두 번씩)`); }
 
 console.log(`기능 ${SKILLS.length}개 · 갈래 ${GROUPS.length}개 — ${checks}개 확인 · ${fails ? `실패 ${fails}` : '모두 통과'}`);
 process.exit(fails ? 1 : 0);
