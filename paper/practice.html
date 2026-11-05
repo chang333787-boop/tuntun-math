@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>맞춤 연습지</title>
 <style>
-/* 맞춤 연습지 — 선생님이 한 아이에게 고른 칸만 연습(인쇄용 A4) · 갈래마다 한 쪽 · 보기 하나(풀이 채움) · 문제 10개 · 끝에 정답 · 학년 표시 X */
+/* 맞춤 연습지 — 선생님이 한 아이에게 고른 칸만 연습(인쇄용 A4) · 갈래마다 한 쪽(문제가 10개를 넘으면 이어서 다음 쪽) · 보기 하나(풀이 채움) · 끝에 정답(넘치면 다음 쪽) · 학년 표시 X */
 @page{size:A4;margin:0}
 *{box-sizing:border-box}
 body{margin:0;background:#e9e4dc;color:#1f1b16;font:12pt/1.5 'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;word-break:keep-all}
@@ -34,7 +34,7 @@ body{margin:0;background:#e9e4dc;color:#1f1b16;font:12pt/1.5 'Noto Sans KR','App
 .pic .dot{fill:#444}.pic .grp{fill:none;stroke:#555;stroke-width:2;stroke-dasharray:4 3}.pic .cell{fill:#fff;stroke:#222;stroke-width:2}.pic .cell.on{fill:#9a9a9a}
 .tx.kr{letter-spacing:-.2px}
 .foot{display:flex;justify-content:space-between;font-size:10pt;color:#7a7067;margin-top:4mm}
-.key h1{font-size:19pt;margin:0 0 4mm}
+.key h1{font-size:19pt;margin:0 0 4mm}.key .foot{margin-top:auto}
 .key section{border-left:1.2mm solid var(--c);padding:1.5mm 0 1.5mm 4mm;margin-bottom:3.5mm;break-inside:avoid}
 .key h2{margin:0 0 1mm;font-size:12.5pt}
 .key ol{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(5,1fr);gap:.6mm 3mm;font-size:11pt}

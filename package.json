@@ -4,7 +4,7 @@
   "type": "module",
   "description": "튼튼 수 다리 — 아이마다 빈 선수 개념을 찾아 스스로 고치고, 교사는 반 전체를 한눈에 보는 초등 수학 앱",
   "scripts": {
-    "test": "node tests/items.test.mjs && STRICT=1 node tests/lessons.test.mjs && node tests/rules.test.mjs && node tests/parse.test.mjs && node tests/read.test.mjs && node tests/engine.test.mjs && node tests/practice.test.mjs && node tests/types.test.mjs && node tests/bridges.test.mjs && node tests/words.test.mjs && node tests/errors.test.mjs && node tests/text.test.mjs && node tests/audit.test.mjs && node tests/src.test.mjs && CHECK=1 node tests/sim.test.mjs && CHECK=1 node tests/lsim.mjs",
+    "test": "node tests/items.test.mjs && STRICT=1 node tests/lessons.test.mjs && node tests/rules.test.mjs && node tests/parse.test.mjs && node tests/read.test.mjs && node tests/engine.test.mjs && node tests/practice.test.mjs && node tests/types.test.mjs && node tests/bridges.test.mjs && node tests/words.test.mjs && node tests/errors.test.mjs && node tests/text.test.mjs && node tests/audit.test.mjs && node tests/skills.test.mjs && node tests/src.test.mjs && CHECK=1 node tests/sim.test.mjs && CHECK=1 node tests/lsim.mjs",
     "sim": "node paper/test/sim.mjs 300 0.05",
     "serve": "python3 -m http.server 8030",
     "sim:prep": "node app/test/prep.sim.mjs 8 0.05 && DAYS=2 node app/test/prep.sim.mjs 8 0.05",

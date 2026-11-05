@@ -1,5 +1,5 @@
 {
- "v": "372d1bf9a87f",
+ "v": "b74c6b4004d4",
  "files": [
   "css/app.css",
   "js/back.js",
@@ -18,6 +18,7 @@
   "js/prep.js",
   "js/qr.js",
   "js/run.js",
+  "js/sheet.js",
   "js/speak.js",
   "js/stage.js",
   "js/stageview.js",
@@ -55,6 +56,7 @@
   "../engine/parse.js",
   "../engine/practice.js",
   "../engine/schema.js",
+  "../engine/skills.js",
   "../engine/tokens.js",
   "../engine/types/index.js",
   "../engine/types/kit.js",
@@ -65,6 +67,7 @@
   "../paper/js/main.js",
   "../paper/js/mascot.js",
   "../paper/js/paper.js",
+  "../paper/js/pick.js",
   "../paper/js/practice.js",
   "../paper/js/store.js"
  ]

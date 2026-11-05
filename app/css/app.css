@@ -506,3 +506,49 @@ body.tv main{max-width:none}body.tv .ctab table{font-size:18px}body.tv .ctab td,
 .try-b b{font-size:20px}.try-b span{font-size:14px;color:var(--mute)}.try-b svg{color:var(--teal)}
 .try-b:active,.try-b.press{transform:translateY(3px);box-shadow:0 1px 0 var(--line)}
 .try-b.on{border-color:var(--teal);background:var(--teal2)}
+/* 맞춤 연습지(#/t/sheet · sheet.js) — 왼쪽 기능 고르기 | 오른쪽 고른 기능(따라 붙음) · 고르는 칸도 턱 손맛 · 고름 = 청록 테두리 + 옅은 청록 · 좁으면 고른 기능이 위 */
+.sh-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(380px,1fr);gap:0 20px;align-items:start}
+.sh-cart{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;overscroll-behavior:contain}
+.sh-h{display:flex;gap:14px;align-items:flex-start}.sh-h>svg.mascot{flex:none;margin-top:2px}.sh-h h2{margin-bottom:6px}.sh-h .intro{margin-bottom:6px}
+.sh-pick>.acts.sub{margin:4px 0 10px}
+.sh-tools input{font:inherit;font-size:17px;width:100%;min-height:50px;padding:8px 14px;border:2px solid var(--field);border-radius:14px;background:var(--surface);color:var(--ink)}
+.sh-tools input:focus,.sh-who input:focus,.sh-save input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 4px var(--teal-t)}
+.sh-tabs{display:flex;flex-wrap:wrap;gap:8px 6px;margin:12px 0 2px}
+.sh-tabs button{min-height:40px;padding:4px 14px;font-size:15px;font-weight:600;border-width:1.5px;border-radius:999px;box-shadow:0 3px 0 var(--line2)}
+.sh-tabs button:active,.sh-tabs button.press{box-shadow:0 1px 0 var(--line2)}
+.sh-tabs button[aria-pressed="true"]{border-color:var(--teal);background:var(--teal-t);color:var(--teal);box-shadow:0 3px 0 var(--teal-l)}
+.sh-list h3{margin:18px 0 8px;font-size:17px}.sh-list h3 small{font-weight:400;color:var(--mute);font-size:13.5px;margin-left:4px}
+.sh-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.sk{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;min-height:52px;border:2px solid var(--line2);border-radius:14px;background:var(--surface);box-shadow:0 3px 0 var(--line2);cursor:pointer;transition:transform var(--press),box-shadow var(--press),border-color var(--press)}
+.sk:active,.sk.press{transform:translateY(2px);box-shadow:0 1px 0 var(--line2)}
+.sk.on{border-color:var(--teal);background:var(--teal-t);box-shadow:0 3px 0 var(--teal-l)}
+.sk input{flex:none;width:20px;height:20px;margin:3px 0 0;accent-color:var(--teal)}
+.sk-b{display:flex;flex-direction:column;min-width:0;flex:1}.sk-b b{font-size:16px;line-height:1.4}.sk-p{font-size:13px;color:var(--mute);line-height:1.45}
+.sk .pill{flex:none;margin-top:1px;font-variant-numeric:tabular-nums}
+.sh-kid{font-size:15px;line-height:1.6;border-left:6px solid var(--teal)}
+.sh-who{margin:6px 0 14px}.sh-who input{font:inherit;font-size:18px;min-height:50px;padding:6px 14px;border:2px solid var(--field);border-radius:14px;max-width:100%;letter-spacing:0;background:var(--surface)}
+.sh-sel{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.sh-sel li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:8px 10px;align-items:start;padding:12px 14px;border-radius:14px;background:var(--panel)}
+.sh-sel .no{width:28px;height:28px;border-radius:50%;background:var(--teal);color:#fff;font-weight:700;font-size:15px;display:inline-flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
+.ss-b{min-width:0;padding-top:2px}.ss-b b{display:block;font-size:16.5px;line-height:1.4}.ss-b .small{display:block;font-size:13px;line-height:1.45}
+.ss-c{grid-column:2;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.ss-c .sel{min-height:42px;padding:4px 8px;font-size:15px}
+.ss-c button{min-height:42px;min-width:42px;padding:2px 10px;font-size:15px;border-width:1.5px;border-radius:12px;box-shadow:0 3px 0 var(--line2)}
+.ss-c button:active:not(:disabled),.ss-c button.press:not(:disabled){box-shadow:0 1px 0 var(--line2)}
+.ss-x{grid-column:2;display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:13.5px}
+.ss-trap{font-weight:700;color:var(--teal)}.ss-warn{font-weight:700;color:#8F2C17}
+.sh-opts{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
+.sh-opt{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:4px 16px 4px 12px;border:1.5px solid var(--line2);border-radius:999px;background:var(--surface);font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 3px 0 var(--line2);transition:transform var(--press),box-shadow var(--press)}
+.sh-opt:active,.sh-opt.press{transform:translateY(2px);box-shadow:0 1px 0 var(--line2)}
+.sh-opt.on{border-color:var(--teal);background:var(--teal-t);box-shadow:0 3px 0 var(--teal-l)}
+.sh-opt input{flex:none;width:18px;height:18px;margin:0;accent-color:var(--teal)}
+.sh-opt.sm{min-height:34px;padding:2px 12px 2px 8px;font-size:13.5px;box-shadow:0 2px 0 var(--line2)}.sh-opt.sm.on{box-shadow:0 2px 0 var(--teal-l)}
+.sh-tip{margin:4px 0 0}.sh-empty{padding:14px 16px;border-radius:14px;background:var(--panel);margin:0}
+.sh-cart .acts .pri{flex:1 1 220px}
+.sh-save{display:flex;gap:8px;flex-wrap:wrap}.sh-save input{font:inherit;font-size:16px;flex:1 1 200px;min-width:0;min-height:48px;padding:6px 12px;border:2px solid var(--field);border-radius:12px;background:var(--surface)}
+.sh-saved{list-style:none;margin:8px 0 0;padding:0}.sh-saved li{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px dashed var(--line2)}.sh-saved li:last-child{border-bottom:0}
+.sh-saved li>div{flex:1;min-width:0;display:flex;flex-direction:column}.sh-saved li>div .small{font-size:13px}
+.sh-saved button{min-height:42px;padding:4px 14px;font-size:15px;border-width:1.5px;border-radius:12px;box-shadow:0 3px 0 var(--line2)}.sh-saved button.mini{margin-left:0}
+@media (max-width:1099px){.sh-grid{grid-template-columns:minmax(0,1fr)}.sh-cart{position:static;max-height:none;overflow:visible;order:-1}}
+@media (max-width:760px){.sh-h>svg.mascot{display:none}.ss-c,.ss-x{grid-column:1 / -1}.ss-c .sel{flex:1 1 110px}.sh-items{grid-template-columns:minmax(0,1fr)}}
+@media (hover:hover){body:not(.touch) .sk:not(.on):hover,body:not(.touch) .sh-opt:not(.on):hover{border-color:var(--field)}}

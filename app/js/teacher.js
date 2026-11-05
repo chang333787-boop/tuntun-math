@@ -27,6 +27,7 @@ import { frameSVG } from './story.js';
 import { testable, __predict } from '../../engine/errors.js';
 import { go, unitLabel } from './kid.js';
 import { icon } from './icons.js';
+import { kidSheet } from './sheet.js';
 
 const TK = 'tt.t';
 const tget = () => lsGet(TK, { classes: {} });
@@ -57,7 +58,7 @@ export function teacherHome(root) {
   root.innerHTML = `<div class="card"><h2>선생님 처음 화면</h2>
     ${say('hi', '반을 만들면 아이마다 <b>번호 카드</b>(반 코드 · 번호 · 핀)가 나와요.<br>아이 이름은 이 기기에만 두고 서버에 보내지 않아요.')}
     ${list.length ? `<table class="list"><tr><th>반 코드</th><th>학기</th><th>아이</th><th></th></tr>${list.map(([C, x]) => `<tr><td><b class="code">${esc(C)}</b></td><td>${esc(gl(x.g))}</td><td>${x.n}명</td><td style="text-align:right"><a class="btn teal" href="#/t/c/${C}">반 열기</a></td></tr>`).join('')}</table>` : '<p class="muted">이 기기에서 연 반이 아직 없어요. 처음이면 <b>새 반 만들기</b>부터 하세요.</p>'}
-    <div class="acts"><a class="btn pri" href="#/t/new">새 반 만들기</a><a class="btn" href="#/t/open">다른 기기에서 만든 반 열기</a></div><div class="acts sub"><a class="btn" href="#/t/guide">한 장 안내(인쇄용)</a><a class="btn" href="#/t/letter">가정 안내문(인쇄용)</a><a class="btn" href="../paper/" target="_blank" rel="noopener" title="인쇄해서 푸는 진단 · 점검 — 채점 결과는 반 화면의 '종이 결과 가져오기'로">종이 점검(인쇄용)</a></div></div>
+    <div class="acts"><a class="btn pri" href="#/t/new">새 반 만들기</a><a class="btn" href="#/t/open">다른 기기에서 만든 반 열기</a></div><div class="acts sub"><a class="btn" href="#/t/guide">한 장 안내(인쇄용)</a><a class="btn" href="#/t/letter">가정 안내문(인쇄용)</a><a class="btn" href="../paper/" target="_blank" rel="noopener" title="인쇄해서 푸는 진단 · 점검 — 채점 결과는 반 화면의 '종이 결과 가져오기'로">종이 점검(인쇄용)</a><a class="btn" href="#/t/sheet" title="기능 이름으로 골라 한 아이에게 그 칸만 연습시키는 종이">맞춤 연습지(인쇄용)</a></div></div>
     <div class="tgrid2"><div class="card"><h2>반 정보 백업</h2>
     ${intro(`반 코드 · 선생님 열쇠 · 핀 · 아이 이름은 <b>이 기기에만</b> 있어요. 브라우저 기록을 지우거나 기기를 바꾸기 전에 내려받아 두세요. 이름이 들어 있으니 학교 기기에만 두세요.`)}
     <div class="acts">${list.length ? '<button id="bk">백업 내려받기</button>' : ''}<label class="btn">백업 불러오기<input type="file" id="rs" accept="application/json" hidden></label></div><p class="qmsg tight" id="bmsg"></p></div>
@@ -226,7 +227,7 @@ export function classView(root, C) {
       <div class="acts"><select id="u" class="sel">${units.map((u) => `<option value="${u.id}" ${u.id === unit ? 'selected' : ''}>${esc(gl(u.g))} · ${esc(u.nm)}</option>`).join('')}</select>
       <select id="len" class="sel" title="아이 한 명이 한 판에 푸는 준비 문제 수 — 못 찾으면 다음 시간에 이어서">${[[18, '짧게 · 18문제(약 8분)'], [24, '보통 · 24문제(약 10분)'], [36, '길게 · 36문제(약 15분)']].map(([v, t]) => `<option value="${v}" ${v === len ? 'selected' : ''}>준비 다리 ${t}</option>`).join('')}</select>
       <button class="pri" id="open">오늘 단원으로 열기</button></div>
-      <div class="acts sub"><button id="re" class="btn">새로 보기</button><button id="csv" class="btn" title="효과를 재거나 기록해 둘 때 — 번호만 들어가요(이름 X)">기록 내려받기(CSV)</button><a class="btn" href="#/t/c/${C}/paper" title="종이로 푼 진단 · 점검 결과를 아이 기록에 넣어요">종이 결과 가져오기</a><a class="btn" href="#/t/c/${C}/cards">아이 카드 인쇄</a><a class="btn" href="#/t/c/${C}/names">이름 적기</a><a class="btn" href="#/t/guide">한 장 안내</a></div>
+      <div class="acts sub"><button id="re" class="btn">새로 보기</button><button id="csv" class="btn" title="효과를 재거나 기록해 둘 때 — 번호만 들어가요(이름 X)">기록 내려받기(CSV)</button><a class="btn" href="#/t/c/${C}/paper" title="종이로 푼 진단 · 점검 결과를 아이 기록에 넣어요">종이 결과 가져오기</a><a class="btn" href="#/t/sheet?c=${C}" title="기능 이름으로 골라 한 아이에게 그 칸만 연습시키는 종이">맞춤 연습지</a><a class="btn" href="#/t/c/${C}/cards">아이 카드 인쇄</a><a class="btn" href="#/t/c/${C}/names">이름 적기</a><a class="btn" href="#/t/guide">한 장 안내</a></div>
       ${K.today ? `<p class="small">지금 열린 단원: <b>${esc(unitLabel(K.today.unit))}</b> <span class="muted">(${new Date(K.today.t).toLocaleString('ko-KR')}에 열었어요)</span></p>` : `<p class="small muted">아이 주소: ${esc(appURL())}</p>`}
       <p class="qmsg tight" id="msg"></p></div>
     <div class="trow">${first.length ? `<div class="card first"><h2>먼저 봐 줄 아이 <small>${first.length}명</small></h2>${intro('앱이 혼자 고치기 어려워 보이는 아이예요. 수업 중에 먼저 들러 주세요. 이름을 누르면 자세히 봐요.')}<ul class="who">${first.map((x) => `<li><a href="#/t/c/${C}/k/${x.no}">${esc(nm(K, x.no))}</a><span class="whys">${x.why.map((w) => `<span class="pill">${esc(w)}</span>`).join('')}</span></li>`).join('')}</ul></div>` : ''}
@@ -332,7 +333,7 @@ export async function kidDetailView(root, C, no) {
   const swList = Object.entries(cal.sureWrong);
   root.innerHTML = `<div class="card kd"><h2>${esc(nm(K, no))} <small>푼 묶음 ${recs.length}개 · ${recs.reduce((n, x) => n + x.s.it.length, 0)}문제</small></h2>
     ${intro('이 아이가 푼 문제를 칸(판자)마다 모아 본 화면이에요. <b>고칠 판자</b>부터 봐 주세요. 칸 아래 카드를 누르면 어떤 생각으로 틀렸을지와 도와주는 법이 나와요.', 'no-print')}
-    <div class="acts no-print"><a class="btn" href="#/t/c/${C}">반 보기로</a><button onclick="print()">인쇄</button></div>
+    <div class="acts no-print"><a class="btn" href="#/t/c/${C}">반 보기로</a><button onclick="print()">인쇄</button><button type="button" class="teal" id="ksheet" title="고칠 판자 · 막힌 칸 · 흔들리는 칸만 골라 둔 맞춤 연습지">이 아이 연습지</button></div>
     <div class="kd-grid"><div class="kd-a">
     <h3>고칠 판자 <small>여기서부터 고치면 돼요</small></h3>${rep.start.length ? `<ul class="lines">${rep.start.map((s) => line(s.c)).join('')}</ul>` : '<p class="muted">없어요.</p>'}
     ${rep.below.length ? `<h3>아래 칸 먼저 확인 <small>더 아래 칸을 아직 안 봤어요</small></h3><ul class="lines">${rep.below.map((b) => line(b.c, `아직 안 본 아래 칸: ${b.check.map((x) => esc(lessonName(x))).join(', ')}`)).join('')}</ul>` : ''}
@@ -352,6 +353,7 @@ export async function kidDetailView(root, C, no) {
       <div class="acts"><button id="aicp">복사</button><span class="small muted" id="aimsg"></span></div></details>
     </div></div>
     <p class="small muted foot">원인은 짐작이에요. '한 번 보임'은 한 문제에서만, '여러 번 보임'은 서로 다른 두 문제 이상에서 같은 틀린 방법이 나온 거예요. 아이 화면엔 원인 이름이 나오지 않아요.</p></div>`;
+  root.querySelector('#ksheet').addEventListener('click', () => kidSheet({ C, rep, st, cal, who: nm(K, no) }));
   const aicp = root.querySelector('#aicp');
   if (aicp) aicp.addEventListener('click', async () => { const ta = root.querySelector('#aiq'); let ok = false; try { await navigator.clipboard.writeText(ta.value); ok = true; } catch (e) { ta.select(); try { ok = document.execCommand('copy'); } catch (e2) { ok = false; } } root.querySelector('#aimsg').textContent = ok ? '복사했어요. Claude에 붙여 넣어요.' : '복사가 막혔어요. 글을 길게 눌러 직접 복사해요.'; });
   const nadd = root.querySelector('#nadd');

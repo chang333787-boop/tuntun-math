@@ -8,6 +8,7 @@ import { weekView } from './week.js';
 import { storyView } from './story.js';
 import { stopSpeak } from './speak.js';
 import { tryView, tryInfo } from './try.js';
+import { sheetView } from './sheet.js';
 import { teacherHome, newClassView, openClassView, cardsView, namesView, classView, kidDetailView, groupCardView, guideView, mindCardView, paperImportView, storyCardView, homeLetterView } from './teacher.js';
 import { lsGet, esc } from './local.js';
 import { flush, pending } from './db.js';
@@ -62,6 +63,7 @@ const ROUTES = [
   [/^#\/t\/open$/, () => openClassView(root)],
   [/^#\/t\/guide$/, () => guideView(root)],
   [/^#\/t\/letter$/, () => homeLetterView(root)],
+  [/^#\/t\/sheet(\?.*)?$/, () => sheetView(root)],
   [/^#\/t\/c\/(\w+)$/, (m) => classView(root, m[1])],
   [/^#\/t\/c\/(\w+)\/cards$/, (m) => cardsView(root, m[1])],
   [/^#\/t\/c\/(\w+)\/names$/, (m) => namesView(root, m[1])],
