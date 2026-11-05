@@ -1,5 +1,5 @@
 {
- "v": "cef82b27f12a",
+ "v": "7fee1ff1a64c",
  "files": [
   "css/app.css",
   "js/back.js",
@@ -65,6 +65,7 @@
   "../paper/js/main.js",
   "../paper/js/mascot.js",
   "../paper/js/paper.js",
+  "../paper/js/practice.js",
   "../paper/js/store.js"
  ]
 }
