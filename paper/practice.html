@@ -20,7 +20,9 @@ body{margin:0;background:#e9e4dc;color:#1f1b16;font:12pt/1.5 'Noto Sans KR','App
 .ex b{flex:0 0 auto;color:var(--c);font-size:12pt;border:1.2px solid var(--c);border-radius:99px;padding:.5mm 3mm;background:#fff}
 .grid{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(5,minmax(0,1fr));gap:4mm 6mm}
 .q{border:1.2px solid #d9cdbb;border-radius:3mm;padding:calc(3mm * var(--k,1)) 4mm;display:flex;flex-direction:column;justify-content:center;gap:calc(2mm * var(--k,1));min-width:0;overflow:hidden}
-.q .n{font-size:11pt;font-weight:800;color:var(--c)}
+.q{position:relative}.q .n{font-size:11pt;font-weight:800;color:var(--c)}
+.ck{position:absolute;top:2.5mm;right:3mm;display:flex;align-items:center;gap:1.2mm;font-size:8.5pt;color:#7a7067}.ck i{width:6mm;height:6mm;border:1.4px solid #8a8076;border-radius:50%}
+.cknote{color:var(--c);font-weight:700}
 .q .p{font-size:calc(18pt * var(--k,1));line-height:1.5}
 .q .p.long{font-size:calc(15pt * var(--k,1))}
 .blank-s{display:inline-block;min-width:15mm;height:calc(10mm * var(--k,1));border:1.6px solid #1f1b16;border-radius:1.8mm;background:#fff;vertical-align:middle;margin:0 1.2mm;font-size:0;color:transparent}
