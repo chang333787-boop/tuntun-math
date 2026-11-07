@@ -69,7 +69,7 @@ export function frameSVG(sc, f) {
     const body = b(6, 25, 48, 'start') + b(246, ry, rh, 'res')
       + `<path d="M100 49 H236 M226 42 L238 49 L226 56" fill="none" stroke="${INK}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`
       + `<rect x="138" y="10" width="62" height="30" rx="4" fill="#fff" stroke="${INK}" stroke-width="${q('chg') ? 2.2 : 1.4}"${q('chg') ? ' stroke-dasharray="6 4"' : ''}/>` + numG(v('chg'), 169, 25, { size: 16 })
-      + T(169, 68, up ? '늘어남' : '줄어듦', { size: 14, bold: true })
+      + T(169, 70, up ? '늘어남' : '줄어듦', { size: 18, bold: true })
       + T(50, 96, RL.start, { size: 13.5, fill: '#6f6355' }) + T(169, 96, RL.chg, { size: 13.5, fill: '#6f6355' }) + T(290, 96, RL.res, { size: 13.5, fill: '#6f6355' });
     return svg(106, body, `${label}, ${up ? '늘어남' : '줄어듦'}`);
   }
@@ -247,7 +247,7 @@ export function storyView(root, arg) {
       const i = Number(btn.dataset.i), ok = i === pr.fr.right;
       if (quick(performance.now() - t0, ok, () => stepFrame(lead))) return;
       st.s[1] = ok ? 1 : 0;
-      if (ok) return stepEq('맞아요! 틀이 이야기와 같아요. ');
+      if (ok) return stepEq('맞아요! 그림이 이야기와 같아요. ');
       const L = LETTER[pr.fr.right], b2 = shell(1, 'think', `맞는 틀은 <b>‘${L}’ 틀</b>이에요.<br>${whyOf(pr.sc)}`, frames(i));
       next(b2, '식 고르기', () => stepEq(''));
     }));
@@ -264,7 +264,7 @@ export function storyView(root, arg) {
         st.s[2] = 0;
         const cue = cueOf(pr.sc, res.bug && res.bug.name, toText(pr.s.story));
         if (cue) return wordPick(cue, [k]);
-        const b2 = shell(2, 'think', `틀을 다시 봐요. ${whyOf(pr.sc)}`, '', 'plain', rightFrame());
+        const b2 = shell(2, 'think', `그림을 다시 봐요. ${whyOf(pr.sc)}`, '', 'plain', rightFrame());
         return next(b2, '식 다시 고르기', () => stepEq('', 1, [k]));
       }
       const rt = pk.choices[pk.sol[0]], b3 = shell(2, 'point', `맞는 식은 <b class="sb-eq">${toHTML(rt, { static: true })}</b>${ye(toText(rt))}.`, '', 'plain', rightFrame());

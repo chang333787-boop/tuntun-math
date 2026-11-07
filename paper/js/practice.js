@@ -10,7 +10,7 @@ const PER = 10;   /* 한 쪽에 문제 10개(두 줄 × 다섯 칸) */
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 const chHTML = (it, mark = null) => `<div class="ch">${it.choices.map((ch, k) => `<span class="${mark === k ? 'on' : ''}">${NUM[k]} ${toHTML(ch, { static: true })}</span>`).join('')}</div>`;
-let CHK = false;   /* 실수가 잦은 아이 — 문제마다 '확인' 동그라미(풀고 거꾸로 셈으로 확인하면 ✓) */
+let CHK = false;   /* 실수가 잦은 아이 — 문제마다 '확인' 동그라미(풀고 거꾸로 계산해서 확인하면 ✓) */
 const qHTML = (it, i) => { const long = toText(it.prompt).length > 22; return `<div class="q"><span class="n">${i + 1}</span>${CHK ? '<span class="ck"><i></i>확인</span>' : ''}<div class="p${long ? ' long' : ''}">${toHTML(it.prompt, { static: true })}</div>${it.choices ? chHTML(it) : ''}</div>`; };
 const exHTML = (it) => `<div class="ex"><b>보기</b><div>${toHTML(it.prompt, { static: true, vals: it.choices ? null : it.sol })}${it.choices ? chHTML(it, Number(it.sol[0])) : ''}</div></div>`;
 const hasB = (t) => t && typeof t === 'object' && ('b' in t || ['f', 'm'].some((k) => Array.isArray(t[k]) && t[k].some((x) => x && typeof x === 'object' && 'b' in x)));
@@ -31,7 +31,7 @@ else {
     for (let from = 0; from < Math.max(1, s.items.length); from += PER) {
       const first = from === 0, its = s.items.slice(from, from + PER);
       pages.push(`<div class="page${first ? '' : ' more'}" style="--c:${c};--t:${t}">${band(s, k)}
-      ${first && (s.note || CHK) ? `<p class="note">${esc(s.note || '')}${CHK ? ' <span class="cknote">다 풀면 거꾸로 셈으로 확인하고 ○에 ✓ 해요.</span>' : ''}</p>` : ''}${first && showEx && s.ex ? exHTML(s.ex) : ''}
+      ${first && (s.note || CHK) ? `<p class="note">${esc(s.note || '')}${CHK ? ' <span class="cknote">다 풀면 거꾸로 계산해서 확인하고 ○에 ✓ 해요.</span>' : ''}</p>` : ''}${first && showEx && s.ex ? exHTML(s.ex) : ''}
       <div class="grid">${its.map((it, i) => qHTML(it, from + i)).join('')}</div>${foot}</div>`);
     }
     return pages.join(''); }).join('')

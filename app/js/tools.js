@@ -10,7 +10,7 @@ import { ansSay, stepHTML } from './item.js';
 import { stepsOf, ruleFor } from './fix.js';
 
 export const TOOLS = {
-  inverse: { name: '거꾸로 셈', ro: '거꾸로 셈으로', how: '뺄셈은 더해 보고, 나눗셈은 곱해 봐요 — 처음 수가 나오나요?' },
+  inverse: { name: '거꾸로 계산', ro: '거꾸로 계산해서', how: '뺄셈은 더해 보고, 나눗셈은 곱해 봐요 — 처음 수가 나오나요?' },   /* '셈'보다 '계산'이 아이 말(처음 보는 눈 11-08) */
   estimate: { name: '어림', ro: '어림으로', how: '계산하기 전에 대충 얼마쯤인지 — 답이 그 근처인가요?' },
   line: { name: '수직선', ro: '수직선으로', how: '두 수를 수직선에 놓아 봐요 — 오른쪽이 더 커요' },
   balance: { name: '저울', ro: '저울로', how: '=의 양쪽을 따로 계산해 같은지 봐요' },

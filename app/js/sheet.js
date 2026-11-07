@@ -169,7 +169,7 @@ export function sheetView(root) {
       <div class="field sh-who"><label for="swho">종이에 쓸 이름</label><input id="swho" maxlength="24" value="${esc(cfg.who)}" placeholder="아이 번호나 별명 (예: 3번)" autocomplete="off"><span class="small muted">이 기기에만 두고 서버로 보내지 않아요.</span></div>
       ${cfg.sel.length ? `<ol class="sh-sel">${cfg.sel.map(row).join('')}</ol>` : '<p class="muted sh-empty">카드를 눌러 기능을 골라 주세요. 고른 차례대로 종이가 한 쪽씩 나와요.</p>'}
       <div class="sh-opts">${optHTML('o-chk', cfg.chk, '확인 동그라미')}${optHTML('o-ex', cfg.ex, '보기')}${optHTML('o-key', cfg.key, '정답 쪽')}</div>
-      <p class="small muted sh-tip">확인 동그라미는 문제마다 ○를 두고, 다 풀면 거꾸로 셈으로 확인해 ✓ 하게 해요(실수 · 찍기가 잦은 아이).</p>
+      <p class="small muted sh-tip">확인 동그라미는 문제마다 ○를 두고, 다 풀면 거꾸로 계산해서 확인해 ✓ 하게 해요(실수 · 찍기가 잦은 아이).</p>
       <div class="acts"><button type="button" class="pri big" id="go"${cfg.sel.length ? '' : ' disabled'}>미리 보기 · 인쇄</button><button type="button" class="teal" id="again"${cfg.sel.length ? '' : ' disabled'}>같은 설정으로 다른 문제</button></div>
       <p class="small muted">문제 묶음 번호 <b>${cfg.seed}</b> — 같은 번호면 같은 문제가 나와요. 새 탭에서 Ctrl+P로 인쇄해요(여백 '없음' · 배경 그래픽 켜기).</p>
       <div class="acts sub"><button type="button" id="clear"${cfg.sel.length || cfg.kid ? '' : ' disabled'}>처음부터</button></div>
