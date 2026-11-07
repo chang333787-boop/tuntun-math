@@ -1,4 +1,4 @@
-// 문제 카드 하나 — 자신감 세 칸(풀기 전 짐작 [D-1][D-3]) · 빈칸 · 보기 · '몰라서 넘어갈래요'
+// 문제 카드 하나 — 자신감 세 칸(풀기 전 짐작 [D-1][D-3]) · 빈칸 · 보기 · '못 풀겠어요 · 넘어가기'
 //  draw(root, { prompt, choices, tag, dots, conf, onAnswer, given, hide, say }) — onAnswer({ vals, raws } | { idk:true }, conf, ms)
 //  짐작은 정말 '풀기 전'에 — 문제를 보인 뒤 짐작을 고르기 전에는 답 칸 · 보기가 잠겨 있음(답을 먼저 쓰고 고르거나 보기를 눌렀다 무시되지 않게 · 혹평 11-01)
 //  given = { 빈칸 번호: 값 } 튼튼이가 채워 둔 빈칸(함께) · hide = [보기 번호] 튼튼이가 지운 보기(함께) · say = 카드 위 튼튼이 말(그 문제 숫자로)
@@ -15,7 +15,7 @@ import { icon, ACT } from './icons.js';
 export const CONF = [[2, '자신 있어요'], [1, '조금 헷갈려요'], [0, '잘 모르겠어요']];
 // 진행 — 카드 오른쪽 위 같은 자리 · dots = [지금까지 푼 수, 모두] · 12개까지 칸 막대 · 넘으면 긴 막대(준비 다리는 판 전체 · 많아야 18 · 24 · 36) · 새로 찬 만큼만 200ms
 export function progHTML([i, n]) {
-  if (!n || n < 0) return `<span class="qprog" role="img" aria-label="${i + 1}번째 문제"><span class="cnt">문제 <b>${i + 1}</b>${n < 0 ? ` <small>· 많아야 ${-n}문제</small>` : ''}</span></span>`;   /* n < 0 = 많아야 |n|문제(일찍 끝날 수 있음) */   /* 끝이 정해지지 않은 판(오늘 단원 점검 — 찾으면 일찍 끝남)은 분모 없이(11-07 '1 / 18인데 12에서 끝남') */
+  if (!n || n < 0) return `<span class="qprog" role="img" aria-label="${i + 1}번째 문제"><span class="cnt">문제 <b>${i + 1}</b>${n < 0 ? ` <small>· ${-n}문제까지</small>` : ''}</span></span>`;   /* n < 0 = 많아야 |n|문제(일찍 끝날 수 있음) */   /* 끝이 정해지지 않은 판(오늘 단원 점검 — 찾으면 일찍 끝남)은 분모 없이(11-07 '1 / 18인데 12에서 끝남') */
   const k = Math.min(i + 1, n), lab = `${n}문제 가운데 ${k}번째`, pc = (x) => Math.round((Math.max(0, Math.min(x, n)) / n) * 100);
   const show = n > 12 ? `<span class="pbar"><i style="width:${pc(i)}%;--p0:${pc(i - 1)}%"></i></span>` : `<span class="pseg">${Array.from({ length: n }, (_, j) => `<i class="${j < i ? 'on' : ''}${j === i - 1 ? ' nw' : ''}"></i>`).join('')}</span>`;
   return `<span class="qprog" role="img" aria-label="${lab}">${show}<span class="cnt"><b>${k}</b> / ${n}</span></span>`;
@@ -44,7 +44,7 @@ export function draw(root, { prompt, choices = null, tag = '', act = '', dots = 
       ${conf ? `<div class="conf"><p><b>답 내기</b> — ${choices ? '보기를 고르고' : '답을 쓰고'} 얼마나 자신 있는지 하나 눌러요</p><div class="row">${CONF.map(([v, t]) => `<button type="button" class="cfs" data-cf="${v}">${icon('send', 16)}${t}</button>`).join('')}</div></div>` : ''}
       <div class="qact">
         ${choices || conf ? '' : `<button class="pri big" id="ok">${esc(okLabel)}</button>`}
-        ${idk ? '<button id="idk">몰라서 넘어갈래요</button>' : ''}
+        ${idk ? '<button id="idk">못 풀겠어요 · 넘어가기</button>' : ''}
       </div>
     </div>
   </div></div>`;
@@ -65,7 +65,7 @@ export function draw(root, { prompt, choices = null, tag = '', act = '', dots = 
   let pick = null;   /* 자신감이 있는 고르기 문항 — 보기를 먼저 고르고(초록 테두리) 자신감 단추로 냄 */
   const readBlanks = () => {
     const raws = blanks.map((b) => b.value.trim().replace(/,/g, ''));
-    if (raws.some((x) => !x)) { nudge('빈칸을 모두 채워 주세요. 모르면 "몰라서 넘어갈래요"를 눌러요.', open.find((b) => !b.value.trim())); return null; }
+    if (raws.some((x) => !x)) { nudge('빈칸을 모두 채워 주세요. 모르면 "못 풀겠어요 · 넘어가기"를 눌러요.', open.find((b) => !b.value.trim())); return null; }
     const vals = raws.map(parseNum);
     if (vals.some((v) => Number.isNaN(v))) { nudge('숫자로 써 주세요.', blanks[vals.findIndex((v) => Number.isNaN(v))]); return null; }
     return { vals, raws };
@@ -105,7 +105,7 @@ export function rushGuard() {
   return (ms, a, ok) => { n = a.idk ? n : ms < 2000 && !ok ? n + 1 : 0; if (n >= 3) { n = 0; return true; } return false; };
 }
 export function rushPause(root, onGo) {
-  root.innerHTML = `<div class="card msg"><div class="say">${mascot('think', 104)}<div class="bub">잠깐! 조금 빨라요. 문제를 <b>끝까지 읽고</b> 풀어요.<br>모르는 문제는 '몰라서 넘어갈래요'를 눌러도 괜찮아요.</div></div><div class="acts"><button class="pri big" id="r" disabled>다시 해 볼게요</button></div></div>`;
+  root.innerHTML = `<div class="card msg"><div class="say">${mascot('think', 104)}<div class="bub">잠깐! 조금 빨라요. 문제를 <b>끝까지 읽고</b> 풀어요.<br>모르는 문제는 '못 풀겠어요 · 넘어가기'를 눌러도 괜찮아요.</div></div><div class="acts"><button class="pri big" id="r" disabled>다시 해 볼게요</button></div></div>`;
   const b = root.querySelector('#r'); setTimeout(() => { b.disabled = false; b.focus(); }, 3000);
   b.addEventListener('click', onGo);
 }

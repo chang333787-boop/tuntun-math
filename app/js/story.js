@@ -23,7 +23,7 @@ import { speakButton, stopSpeak } from './speak.js';
 import { icon, tile } from './icons.js';
 
 const say = (pose, html, size = 60) => `<div class="say">${mascot(pose, size)}<div class="bub">${html}</div></div>`;
-const STEPS = ['무슨 이야기?', '막대 틀', '식', '계산 · 답'];
+const STEPS = ['무슨 이야기?', '막대 그림', '식 쓰기', '답 쓰기'];   /* 첫 화면 '네 단계'와 같은 말(11-07) */
 const LETTER = ['가', '나', '다', '라'];
 const ye = (w) => P(w, '이에요', '예요');
 
@@ -166,7 +166,7 @@ function chooser(root, me, K) {
   const known = familiarTypes(log).map((t) => TYPES[t].kid);
   root.innerHTML = `<div class="card msg act-story"><p class="eyebrow">${tile('story', 22)}이야기 문제</p>${say('point', '이야기 문제를 <b>네 단계</b>로 풀어요.<br>① 무슨 이야기인지 고르기 ② 막대 그림 채우기 ③ 식 쓰기 ④ 답 쓰기', 104)}
     ${fresh(S) ? `<div class="acts" style="margin-top:0;margin-bottom:18px"><a class="btn pri big" href="#/story/${encodeURIComponent(S.cs.join(','))}">이어서 하기 (${S.i + 1}번째 이야기부터)</a></div>` : ''}
-    <div class="grid2">${['as', 'md'].map((f) => `<a class="big-pick sb-fam" href="#/story/${encodeURIComponent(fam(f).cs.join(','))}">${tile('story', 28)}<b>${esc(FAMILY[f].kid)}</b><span>예: ${esc(FAMILY[f].eg)}</span><span class="btn pri sb-go">시작</span></a>`).join('')}</div>
+    <div class="grid2">${['as', 'md'].map((f) => `<a class="big-pick sb-fam" href="#/story/${encodeURIComponent(fam(f).cs.join(','))}">${tile('story', 28)}<b>"${esc(FAMILY[f].eg)}"</b><span>이런 이야기 — ${esc(FAMILY[f].kid)}</span><span class="btn pri sb-go">시작</span></a>`).join('')}</div>
     ${known.length ? `<p class="small">익숙해진 이야기 — <b>${known.map(esc).join(', ')}</b>: 다음엔 바로 식부터 써요.</p>` : '<p class="small muted">한 번에 이야기 여섯 개예요. 잘 풀면 다음엔 단계가 줄어요.</p>'}
     <div class="acts"><a class="btn" href="#/me">처음 화면으로</a></div></div>`;
 }
@@ -234,14 +234,14 @@ export function storyView(root, arg) {
       st.s[0] = 0;
       if (!again) return stepType('', true, t);
       const b2 = shell(0, 'point', `이 이야기는 <b>${esc(nm)}</b>${ye(nm)}.<br>${esc(TYPES[pr.sc.type].say)}`, '', 'split');
-      next(b2, '막대 틀 보기', () => stepFrame(''));
+      next(b2, '막대 그림 보기', () => stepFrame(''));
     }));
   }
   // ② 막대 틀
   const frames = (pick = null) => `<div class="sb-frames">${pr.fr.list.map((f, i) => `<button type="button" class="sb-fr${pick == null ? '' : i === pr.fr.right ? ' right' : i === pick ? ' no' : ' dim'}" data-i="${i}"${pick == null ? '' : ' disabled'}><span class="sb-l">${LETTER[i]}</span>${frameSVG(pr.sc, f)}</button>`).join('')}</div>`;
   const rightFrame = () => `<div class="sb-ref">${frameSVG(pr.sc, pr.fr.list[pr.fr.right])}</div>`;
   function stepFrame(lead) {
-    const b = shell(1, 'point', `${lead}이야기에 맞는 <b>막대 틀</b>을 골라요.<br><span class="small"><b class="q">?</b>는 묻는 수예요.</span>`, frames());
+    const b = shell(1, 'point', `${lead}이야기에 맞는 <b>막대 그림</b>을 골라요.<br><span class="small"><b class="q">?</b>는 묻는 수예요.</span>`, frames());
     const t0 = performance.now();
     b.querySelectorAll('.sb-fr').forEach((btn) => btn.addEventListener('click', () => {
       const i = Number(btn.dataset.i), ok = i === pr.fr.right;
@@ -375,7 +375,7 @@ export function storyView(root, arg) {
     const hard = Object.entries(lastOf).filter(([, x]) => x.s[0] === 0 || x.s[1] === 0).map(([t]) => TYPES[t].kid);
     const word = mine.some((p, i) => rs[i] && p.sc.inc && rs[i].s[2] === 0);
     const here = new Set(mine.map((p) => p.sc.type)), known = familiarTypes(log).filter((t) => here.has(t)).map((t) => TYPES[t].kid);
-    const tip = hard.length ? `다음엔 <b>${esc(hard[0])}</b>${P(hard[0], '을', '를')} 막대 틀로 먼저 그려 보고 식을 세워요.` : word ? '낱말 하나만 보지 말고, <b>묻는 것</b>을 끝까지 읽고 식을 세워요.' : '이야기를 나눠 읽고 틀을 먼저 세웠어요.';
+    const tip = hard.length ? `다음엔 <b>${esc(hard[0])}</b>${P(hard[0], '을', '를')} 막대 그림으로 먼저 나타내 보고 식을 세워요.` : word ? '낱말 하나만 보지 말고, <b>묻는 것</b>을 끝까지 읽고 식을 세워요.' : '이야기를 나눠 읽고 틀을 먼저 세웠어요.';
     /* 걸음마다 — 바로(첫 번에) · 다시(다시 보고) · 건너뜀(익숙해서) */
     const rows = STEPS.map((nm, j) => { const xs = rs.map((x) => (j < 3 ? x.s[j] : x.s[3] === 1 && x.s[4] === 1 ? 1 : 0)); return { nm, j, a: xs.filter((x) => x === 1).length, b: xs.filter((x) => x === 0).length, c: xs.filter((x) => x == null).length }; });
     const cnt = (w, k) => (k ? `${w} ${k}개` : '');
@@ -383,10 +383,10 @@ export function storyView(root, arg) {
       <p class="small">걸음마다 돌아봐요 <span class="muted">— 바로 = 첫 번에 · 다시 = 다시 보고 · 건너뜀 = 익숙해서</span></p>
       <ul class="sb-recap">${rows.map((x) => `<li class="${x.b ? 'again' : x.a ? 'ok' : 'skip'}"><span>${x.j + 1}. ${x.nm}</span><b>${[cnt('바로', x.a), cnt('다시', x.b), cnt('건너뜀', x.c)].filter(Boolean).join(' · ')}</b></li>`).join('')}</ul>
       ${known.length ? `<p class="small">익숙해진 이야기 — <b>${known.map(esc).join(', ')}</b>: 묻는 자리가 같으면 다음엔 바로 식부터 해요.</p>` : ''}
-      <div class="acts"><a class="btn pri big" href="#/story/${encodeURIComponent(S.cs.join(','))}?${Date.now()}">한 판 더</a><a class="btn big" href="#/story">다른 이야기</a><a class="btn big" href="#/me">처음 화면으로</a></div></div>`;
+      <div class="acts"><a class="btn pri big" href="#/story/${encodeURIComponent(S.cs.join(','))}?${Date.now()}">한 판 더</a><a class="btn big" href="#/story">다른 이야기 고르기</a><a class="btn big" href="#/me">처음 화면으로</a></div></div>`;
   }
   if (S.i === 0 && !Object.keys(S.res).length) {
-    root.innerHTML = `<div class="card msg act-story"><p class="eyebrow">${tile('story', 22)}이야기 문제</p>${say('point', `이야기 ${S.items.length}개를 풀어요. 문제마다 <b>걸음 넷</b>이에요.<br>① 무슨 이야기? ② 막대 틀 ③ 식 ④ 계산 · 답`, 104)}<div class="acts"><button class="pri big" id="s">시작</button><a class="btn" href="#/story">다른 이야기</a></div></div>`;
+    root.innerHTML = `<div class="card msg act-story"><p class="eyebrow">${tile('story', 22)}이야기 문제</p>${say('point', `이야기 ${S.items.length}개를 풀어요. 문제마다 <b>네 단계</b>예요.<br>① 무슨 이야기인지 고르기 ② 막대 그림 채우기 ③ 식 쓰기 ④ 답 쓰기`, 104)}<div class="acts"><button class="pri big" id="s">시작</button><a class="btn" href="#/story">다른 이야기</a></div></div>`;
     root.querySelector('#s').addEventListener('click', start);
   } else start();
 }

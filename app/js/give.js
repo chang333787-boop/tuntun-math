@@ -78,6 +78,6 @@ export function giveView(root, id) {
       <div class="acts">${learn ? `<a class="btn pri big" href="#/fix/${encodeURIComponent(learn)}">튼튼이와 배우기</a><a class="btn big" href="#/me">처음 화면으로</a>` : '<a class="btn pri big" href="#/me">처음 화면으로</a>'}</div>`);
   };
   if (S.i > 0) return one();
-  head(`<div class="say">${art('prac', 104, 'say-art')}<div class="bub">선생님이 골라 준 문제예요. 모두 <b>${sh.items.length}문제</b>.${sh.note ? `<br><span class="small">${esc(sh.note)}</span>` : ''}<br>틀리면 그 자리에서 다시 보는 법을 알려 줘요.</div></div><div class="acts"><button class="pri big" id="s">시작</button><a class="btn big" href="#/me">처음 화면으로</a></div>`);
+  head(`<div class="say">${art('prac', 104, 'say-art')}<div class="bub">선생님이 골라 준 문제예요. 모두 <b>${sh.items.length}문제</b>.${sh.note ? `<br>${esc(sh.note)}` : ''}<br>틀리면 튼튼이가 한 단계씩 같이 풀어 줘요.</div></div><div class="acts"><button class="pri big" id="s">시작</button><a class="btn big" href="#/me">처음 화면으로</a></div>`);
   root.querySelector('#s').addEventListener('click', one);
 }

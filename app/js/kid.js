@@ -116,7 +116,7 @@ export function todoOf(K, rep) {
 const CARDS = [
   { k: 'chk', no: 1, t: '점검', what: '내가 어디까지 아는지 알아봐요', none: '지금 할 점검이 없어요' },
   { k: 'prac', no: 2, t: '배울 것', what: '모르는 것을 배우고 연습해요', none: '지금 배울 것이 없어요' },
-  { k: 'daily', no: 3, t: '매일 연습', what: '아는 것을 잊지 않게 날마다 조금씩 풀어요', none: '점검이나 연습을 하면 매일 연습할 문제가 생겨요' },
+  { k: 'daily', no: 3, t: '매일 연습', what: '아는 것을 잊지 않게 날마다 조금씩 풀어요', none: '점검에서 맞힌 문제와 배운 것이 며칠 뒤 여기 다시 나와요' },
 ];
 function helpItem(t) {
   return `<li class="c3-help"><details><summary><b>${esc(t.title)}</b><span>${esc(t.sub)}</span></summary>
@@ -177,7 +177,7 @@ export async function homeView(root) {
       <div class="mine-row">
         <div class="mine-c"><span class="k">이번 주 점검 맞힌 수</span><span class="v">${weekLine}</span></div>
         <div class="mine-c"><span class="k">배우기로 고친 것</span><span class="v">${fixedN}개</span>${fixedN ? `<details class="more"><summary>보기</summary><p class="small">${names(Object.keys(K.fixed))}</p></details>` : ''}</div>
-        <div class="mine-c"><span class="k">이번 주 틀리고 나서 다시 풀어 맞힌 문제</span><span class="v">${selfWk}개${selfLast != null ? ` <small>(지난주 ${selfLast}개)</small>` : ''}</span></div>
+        <div class="mine-c"><span class="k">다시 풀어 맞힌 문제(이번 주)</span><span class="v">${selfWk}개${selfLast != null ? ` <small>(지난주 ${selfLast}개)</small>` : ''}</span></div>
         <div class="mine-c"><span class="k">'자신 있어요' 하고 맞힌 문제</span><span class="v">${cal.n ? `${Math.round(cal.match * cal.n)}문제 <small>(${cal.n}문제 중)</small>` : '<small>아직 없어요</small>'}</span></div>
       </div>
       <p class="mine-links small"><a href="#/story">이야기 문제 풀기</a><a href="#/back">막힌 문제 직접 넣어 보기</a></p>

@@ -47,7 +47,7 @@ export function weekView(root) {
       fast = !ok && !a.idk && t < 2000 ? fast + 1 : a.idk ? fast : 0;   /* 몰라서 넘어감은 찍기가 아님(준비 다리와 같게 — 세지도 끊지도 않음) */
       if (fast < 3) return one();
       fast = 0; pauses++; K.rush = (K.rush || 0) + 1;
-      root.innerHTML = `<div class="card msg">${say('think', '잠깐! 조금 빨라요. 문제를 <b>끝까지 읽고</b> 풀어요. 모르면 \'몰라서 넘어갈래요\'를 눌러도 돼요.')}<div class="acts"><button class="pri big" id="r" disabled>다시 할게요</button></div></div>`;
+      root.innerHTML = `<div class="card msg">${say('think', '잠깐! 조금 빨라요. 문제를 <b>끝까지 읽고</b> 풀어요. 모르면 \'못 풀겠어요 · 넘어가기\'를 눌러도 돼요.')}<div class="acts"><button class="pri big" id="r" disabled>다시 할게요</button></div></div>`;
       const b = root.querySelector('#r'); setTimeout(() => { b.disabled = false; b.focus(); }, 3000); b.addEventListener('click', one);
     } });
   };
@@ -68,6 +68,6 @@ export function weekView(root) {
     const list = miss.length ? `<h3>다시 볼 문제 ${miss.length}개 <small class="muted">(바른 답을 넣어 보여 줘요)</small></h3><ul class="steps">${miss.slice(0, 4).map(li).join('')}</ul>${miss.length > 4 ? `<details><summary>${miss.length - 4}개 더 보기</summary><ul class="steps">${miss.slice(4).map(li).join('')}</ul></details>` : ''}${drill}` : `<p>${n}문제 모두 맞혔어요.</p>`;
     root.innerHTML = `<div class="card msg msg2 act-week">${EB}${head}<div class="split"><div><h3>주마다 맞힌 수 <small class="muted">(나하고만 비교해요)</small></h3>${weekChart(ws)}</div><div>${list}</div></div><div class="acts"><a class="btn pri big" href="#/me">처음 화면으로</a></div></div>`;   /* 넓으면 왼쪽 주마다 맞힌 수 · 오른쪽 다시 볼 문제 */
   };
-  root.innerHTML = `<div class="card msg act-week">${EB}${say('hi', `<b>이번 주 점검</b> — 이번 학기 문제와 앞에서 배운 문제를 섞은 ${plan.length}문제, 3~5분이면 돼요.<br>아직 안 배운 문제도 섞여 있어요. 모르면 '몰라서 넘어갈래요'를 눌러도 괜찮아요. 학기 끝으로 갈수록 더 많이 맞혀요.`)}${(() => { const ws = lineOf(K.recs, term); return ws.length ? `<h3>주마다 맞힌 수</h3>${weekChart(ws)}` : ''; })()}<div class="acts"><button class="pri big" id="s">시작</button><a class="btn" href="#/me">처음 화면으로</a></div></div>`;
+  root.innerHTML = `<div class="card msg act-week">${EB}${say('hi', `<b>이번 주 점검</b> — 이번 학기 문제와 앞에서 배운 문제를 섞은 ${plan.length}문제, 3~5분이면 돼요.<br>아직 안 배운 문제도 섞여 있어요. 모르면 '못 풀겠어요 · 넘어가기'를 눌러도 괜찮아요. 학기 끝으로 갈수록 더 많이 맞혀요.`)}${(() => { const ws = lineOf(K.recs, term); return ws.length ? `<h3>주마다 맞힌 수</h3>${weekChart(ws)}` : ''; })()}<div class="acts"><button class="pri big" id="s">시작</button><a class="btn" href="#/me">처음 화면으로</a></div></div>`;
   root.querySelector('#s').addEventListener('click', one);
 }

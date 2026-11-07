@@ -68,7 +68,7 @@ export function teacherHome(root) {
     <div class="card"><h2>이 앱이 하는 일</h2>
     <p>아이마다 빠진 앞 학년 셈을 <b>찾고</b>, 그 아이에게 <b>그것만 주고</b>, 아이는 <b>매일 조금씩</b> 풀어 메워요.</p>
     <ol class="easy"><li><b>점검</b> — 오늘 단원 점검(그 단원에 꼭 필요한 앞 학년 셈만 · 12~24문제) · 종이와 같은 점검지(화면에서 12문제씩 이어 풀기) · 이번 주 점검(10문제). 결과는 바로 반 표에 들어가요.</li>
-    <li><b>반 표</b> — 가로줄 = 셈 기능(맞춤 연습지와 같은 이름) · 세로줄 = 아이 번호. ✕ 부족 · △ 가끔 틀림 · ○ 됨만 봐요.</li>
+    <li><b>반 표</b> — 가로줄 = 셈 기능(맞춤 연습지와 같은 이름) · 세로줄 = 아이 번호. 표시는 ✕ 부족 · △ 가끔 틀림 · ○ 됨 셋이에요.</li>
     <li><b>보충 주기</b> — 부족한 아이에게 그 기능 문제를 보내요. 아이 화면 '배울 것'에 뜨고, 같은 문제를 종이로도 뽑을 수 있어요.</li>
     <li>아이 화면도 카드 셋이에요 — <b>점검 · 배울 것 · 매일 연습</b>. 틀리면 그 자리에서 튼튼이가 풀이를 보여 줘요</li></ol></div></div>`;
   const bk = root.querySelector('#bk');
@@ -101,14 +101,14 @@ export function guideView(root) {
     <li><b>보충 주기</b> — 기능 · 아이 · 문제 수(5~20)를 골라 보내요. 아이 처음 화면 2번 '배울 것'에 '선생님이 준 문제'로 떠요. 다 풀면 결과(맞힌 수)가 보낸 목록에 나와요. 같은 문제를 종이로도 뽑을 수 있어요.</li></ol>
     <h3>반 표 읽기</h3><div class="legend2"><span><i class="c-root">✕</i>부족 — 여기서부터</span><span><i class="c-stuck">✕</i>부족</span><span><i class="c-shaky">△</i>가끔 틀림</span><span><i class="c-ok">○</i>됨</span><span><i class="c-none"></i>아직 안 풂</span></div>
     <ul class="easy"><li><b>먼저 봐 줄 아이</b> — 막힌 칸이 많거나, 배우고도 가끔 틀리거나, 이번 주 점검 맞힌 수가 줄거나, '자신 있었는데 틀린' 문제가 많거나, 2초 안에 찍은 아이예요. 앱보다 선생님이 먼저 봐 주세요.</li>
-    <li><b>더 보기</b>(반 화면 아래) — 같은 생각으로 틀린 아이끼리 · 같은 칸을 배울 아이끼리 묶음과 <b>10분 카드</b>(인쇄용 소집단 안내) · 이야기 문제가 어디서 끊기나 · 기록 내려받기.</li>
+    <li><b>더 보기</b>(반 화면 아래) — 같은 생각으로 틀린 아이끼리 · 같은 차시를 배울 아이끼리 묶음과 <b>10분 카드</b>(인쇄용 소집단 안내) · 이야기 문제가 어디서 끊기나 · 기록 내려받기.</li>
     <li><b>아이 자세히</b> — 틀린 생각은 짐작이에요. <b>한 번 보임</b>은 한 문제에서만, <b>여러 번 보임</b>은 서로 다른 두 문제 이상에서 같은 틀린 방법이 나온 거예요. 아이 화면엔 원인 이름이 나오지 않아요.</li></ul>
     <h3>첫 시범 15분 — 아이 2~3명으로 먼저(진짜 크롬북)</h3><ol class="easy"><li><b>5분 전</b> — 카드 2~3장 · 크롬북 2~3대 · <b>점검 내기</b>에서 점검지(사전) 또는 오늘 단원 점검을 열어 둬요.</li>
     <li><b>아이에게 할 말은 한마디만</b> — "카드 보고 들어가서 주황 단추만 따라가 봐. 막히면 손 들어." 미리 설명하지 않아야 처음 쓰는 모습 그대로 보여요.</li>
     <li><b>볼 것(체크)</b> — □ 혼자 들어갔나 □ 첫 문제까지 혼자 갔나 □ 답 내는 법(자신감 단추)을 바로 알았나 □ 틀렸을 때 '모르겠어요 — 한 단계씩'을 썼나 □ 받아올림 · 받아내림 문제에서 막대 · 낱개가 움직이는 그림이 끊기지 않았나 □ 지루해하거나 어려워한 곳 □ 손 든 곳(화면 맨 위 이름)</li>
     <li><b>끝나고 물을 것</b> — "어디가 헷갈렸어?" "제일 좋았던 것 · 싫었던 것 하나씩?"</li>
     <li>막힌 화면은 사진(아이 얼굴 X)으로 남겨 두면 바로 고칠 수 있어요.</li></ol>
-    <h3>알아 두기</h3><ul class="easy"><li>순위 · 친구 비교는 없어요. 아이가 보는 숫자는 '자신 있어요' 하고 맞힌 문제 · 배워서 고친 것 · 이번 주 점검의 내 맞힌 수(지난번과 비교)뿐이에요.</li><li>배워서 고친 칸은 1 · 3 · 7일 뒤 매일 연습에 섞여 다시 나와요.</li><li><b>AI에게 물어보기</b>(아이 자세히 맨 아래) — 번호만 들어간 근거 글을 복사해 Claude에 붙여 넣으면 막힌 까닭 후보 · 발문 · 확인 문항을 받아요. AI 답은 짐작이라 선생님이 확인한 뒤에만 써요.</li><li>효과는 앱 안 기록보다 다음 단원 형성평가로 보세요. 큰 변화는 한두 주가 아니라 한 학기에 걸쳐 나타나요.</li></ul></div>`;
+    <h3>알아 두기</h3><ul class="easy"><li>순위 · 친구 비교는 없어요. 아이가 보는 숫자는 이번 주 점검의 내 맞힌 수(지난번과 비교) · 배우기로 고친 것 · 다시 풀어 맞힌 문제 · '자신 있어요' 하고 맞힌 문제 넷뿐이에요.</li><li>배워서 고친 칸은 1 · 3 · 7일 뒤 매일 연습에 섞여 다시 나와요.</li><li><b>AI에게 물어보기</b>(아이 자세히 맨 아래) — 번호만 들어간 근거 글을 복사해 Claude에 붙여 넣으면 막힌 까닭 후보 · 발문 · 확인 문항을 받아요. AI 답은 짐작이라 선생님이 확인한 뒤에만 써요.</li><li>효과는 앱 안 기록보다 다음 단원 형성평가로 보세요. 큰 변화는 한두 주가 아니라 한 학기에 걸쳐 나타나요.</li></ul></div>`;
 }
 
 export function newClassView(root) {
@@ -266,21 +266,22 @@ export function classView(root, C) {
     <div class="trow">${first.length ? `<div class="card first"><h2>먼저 봐 줄 아이 <small>${first.length}명</small></h2>${intro('앱이 혼자 고치기 어려워 보이는 아이예요. 수업 중에 먼저 들러 주세요. 이름을 누르면 자세히 봐요.')}<ul class="who">${first.map((x) => `<li><a href="#/t/c/${C}/k/${x.no}">${esc(nm(K, x.no))}</a><span class="whys">${x.why.map((w) => `<span class="pill">${esc(w)}</span>`).join('')}</span></li>`).join('')}</ul></div>` : ''}
     ${(() => { const today = K.today && K.today.unit === unit ? K.today : null, fresh = (n) => n && n.t && Date.now() - n.t < 3 * 60000;
       const MODE = { prep: '오늘 단원 점검', fix: '배우는 중', drill: '빠르게 풀기', run: '매일 연습', back: '거꾸로 찾기', story: '이야기 문제', week: '이번 주 점검', review: '다시 보기', give: '선생님이 준 문제', check: '점검지' };
-      const g = { out: [], in: [], doing: [], done: [], fix: [], help: [], more: [] };
+      const g = { out: [], in: [], doing: [], done: [], fix: [], help: [], more: [] }, fin = [];   /* fin = 오늘 단원 점검을 끝낸 아이 모두(지금 다른 걸 하는 중이어도 · 점검 카드의 '끝낸 아이'와 같은 수) */
       rows.forEach((no) => { const x = S[no] || {}, st = x.st, n = x.now;
+        const done = st && st.prep && today && st.prep.u === unit && st.prep.t >= today.t;
+        if (done) fin.push(no);
         if (!st && !fresh(n)) return g.out.push(no);
         if (fresh(n) && n.mode && n.mode !== 'home') return g.doing.push([no, MODE[n.mode] || n.mode]);
-        const done = st && st.prep && today && st.prep.u === unit && st.prep.t >= today.t;
         if (done && st.prep.why === 'teacher') return g.help.push(no);
         if (done && st.start.some((c) => P.below.includes(c))) return g.fix.push(no);
         if (done && (st.prep.why === 'budget' || P.below.some((c) => ['stuck', 'shaky', 'need'].includes(st.L[c])))) return g.more.push(no);   /* 문제 수에서 멈췄거나 흔들 · 막힌 칸이 남음 — '튼튼'이 아님(회귀 10-31) */
         if (done) return g.done.push(no);
         g.in.push(no); });
       const names = (xs) => xs.map((no) => `<a href="#/t/c/${C}/k/${no}">${esc(nm(K, no))}</a>`).join(' ');
-      return `<div class="card strip"><h2>지금 반 <small>${today ? `${esc(uName)} — ${new Date(today.t).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}에 열었어요` : '오늘 단원 점검을 열면 끝낸 아이가 보여요'}</small></h2>
+      return `<div class="card strip"><h2>지금 우리 반 <small>${today ? `${esc(uName)} — ${new Date(today.t).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}에 열었어요` : '오늘 단원 점검을 열면 끝낸 아이가 보여요'}</small></h2>
         <div class="st-row${g.doing.length ? '' : ' zero'}"><span class="st-k">하는 중 <b>${g.doing.length}</b></span><span class="st-v">${g.doing.map(([no, m]) => `<a href="#/t/c/${C}/k/${no}">${esc(nm(K, no))}</a><i>${esc(m)}</i>`).join(' ') || '<span class="muted">없음</span>'}</span></div>
         ${today && g.help.length ? `<div class="st-row help"><span class="st-k">선생님과 같이 <b>${g.help.length}</b></span><span class="st-v">${names(g.help)} <span class="muted small">— 막힌 칸이 많아 앱이 일찍 멈췄어요. 먼저 들러 주세요.</span></span></div>` : ''}
-        ${today ? (() => { const fin = [...g.fix, ...g.more, ...g.done]; return `<div class="st-row${fin.length ? '' : ' zero'}"><span class="st-k">점검 끝 <b>${fin.length}</b></span><span class="st-v">${names(fin) || '<span class="muted">없음</span>'}${fin.length ? ' <span class="muted small">— 누가 무엇이 부족한지는 반 표에서</span>' : ''}</span></div>`; })() : ''}
+        ${today ? (() => `<div class="st-row${fin.length ? '' : ' zero'}"><span class="st-k">점검 끝 <b>${fin.length}</b></span><span class="st-v">${names(fin) || '<span class="muted">없음</span>'}${fin.length ? ' <span class="muted small">— 누가 무엇이 부족한지는 반 표에서</span>' : ''}</span></div>`)() : ''}
         <div class="st-row${g.in.length ? '' : ' zero'}"><span class="st-k">${today ? '아직 점검 전' : '들어온 적 있음'} <b>${g.in.length}</b></span><span class="st-v">${names(g.in) || '<span class="muted">없음</span>'}</span></div>
         <div class="st-row${g.out.length ? '' : ' zero'}"><span class="st-k">안 들어옴 <b>${g.out.length}</b></span><span class="st-v">${names(g.out) || '<span class="muted">없음</span>'}</span></div></div>`; })()}</div>
     <details class="card more-all"><summary><b>더 보기</b> <span class="small muted">틀린 뒤 스스로 고친 비율 · 같은 생각끼리 · 이야기 문제 · 이번 주 점검 맞힌 수 · 같은 칸을 배울 아이끼리 · 기록 내려받기 · 종이 결과</span></summary>
@@ -293,12 +294,12 @@ export function classView(root, C) {
         ${t ? `<p class="g-tool">앱 도구 ${icon('search', 16)} ${esc(t.name)}</p>` : ''}${e.s.length ? `<div class="acts"><a class="btn teal" href="#/t/c/${C}/m/${id}">이 생각 10분 카드</a></div>` : ''}${misCard(m, '', '이 생각 자세히')}</div>`; }).join('')}</div></div>` : ''; })()}
     ${(() => { const L2 = rows.map((no) => { const st = S[no] && S[no].st; const x = st ? storyStep(st.story) : null; return x ? { no, ...x } : null; }).filter(Boolean); if (!L2.length) return '';
       const g = {}; L2.forEach((x) => { if (x.weak) (g[x.weak] = g[x.weak] || []).push(x.no); });
-      return `<div class="card"><h2>이야기 문제 — 문장제가 어디서 끊기나</h2><p class="small muted">이야기 문제를 여덟 문제 넘게 푼 아이 ${L2.length}명을, 이해(무슨 이야기인지 · 막대 틀) → 바꾸기(식) → 계산(답) 가운데 처음 끊기는 것 같은 곳으로 묶었어요(짐작 — 수업에서 한 번 더 확인). 이해에서 끊기는 아이는 계산 연습보다 '나눠 읽기'부터예요.</p>${Object.keys(g).length ? `<ul>${Object.entries(g).map(([w, nos]) => `<li><b>${esc(w)}</b> — ${nos.map((no) => esc(nm(K, no))).join(', ')}</li>`).join('')}</ul>` : '<p>세 걸음 모두 잘하고 있어요.</p>'}${(() => { const byT = {}; L2.forEach((x) => x.types.forEach((sh) => { const ty = Object.keys(TYPES).find((k) => TYPES[k].short === sh); if (ty) (byT[ty] = byT[ty] || []).push(x.no); })); const ks = Object.keys(byT); return ks.length ? `<p class="small"><b>유형별 10분 카드</b> — 이해가 끊기는 유형</p><div class="acts">${ks.map((ty) => `<a class="btn teal" href="#/t/c/${C}/s/${ty}" title="${byT[ty].map((no) => esc(nm(K, no))).join(', ')}">${esc(TYPES[ty].kid)} · ${byT[ty].length}명</a>`).join('')}</div>` : ''; })()}</div>`; })()}
+      return `<div class="card"><h2>이야기 문제 — 문장제가 어디서 끊기나</h2><p class="small muted">이야기 문제를 여덟 문제 넘게 푼 아이 ${L2.length}명을, 이해(무슨 이야기인지 · 막대 그림) → 바꾸기(식) → 계산(답) 가운데 처음 끊기는 것 같은 곳으로 묶었어요(짐작 — 수업에서 한 번 더 확인). 이해에서 끊기는 아이는 계산 연습보다 '나눠 읽기'부터예요.</p>${Object.keys(g).length ? `<ul>${Object.entries(g).map(([w, nos]) => `<li><b>${esc(w)}</b> — ${nos.map((no) => esc(nm(K, no))).join(', ')}</li>`).join('')}</ul>` : '<p>세 걸음 모두 잘하고 있어요.</p>'}${(() => { const byT = {}; L2.forEach((x) => x.types.forEach((sh) => { const ty = Object.keys(TYPES).find((k) => TYPES[k].short === sh); if (ty) (byT[ty] = byT[ty] || []).push(x.no); })); const ks = Object.keys(byT); return ks.length ? `<p class="small"><b>유형별 10분 카드</b> — 이해가 끊기는 유형</p><div class="acts">${ks.map((ty) => `<a class="btn teal" href="#/t/c/${C}/s/${ty}" title="${byT[ty].map((no) => esc(nm(K, no))).join(', ')}">${esc(TYPES[ty].kid)} · ${byT[ty].length}명</a>`).join('')}</div>` : ''; })()}</div>`; })()}
     ${(() => { const W = rows.map((no) => { const st = S[no] && S[no].st; const all = st ? st.wk : [], ws = lastLine(all); return { no, ws, last: all[all.length - 1], tr: weekTrend(ws) }; }); const any = W.filter((x) => x.ws.length); if (!any.length) return '';
       const sc = (v) => Math.round((v.ok / v.n) * 10), wk = weekKey(), list = (xs) => xs.map((x) => `${esc(nm(K, x.no))}(${x.ws.slice(-4).map((v) => v.ok).join('→')})`).join(', ');
       const down = any.filter((x) => x.tr === 'down'), low = any.filter((x) => x.tr !== 'down' && x.ws.length >= 3 && x.ws.slice(-3).reduce((a, v) => a + sc(v), 0) / 3 <= 5.5), up = any.filter((x) => x.tr === 'up'), not = W.filter((x) => !(x.last && x.last.wk === wk));
       return `<div class="card"><h2>이번 주 점검 — 맞힌 수</h2><p class="small muted">주 1회 섞은 열 문제 — 이번 학기 단원 칸 여섯(아직 안 배운 것도) + 앞 학기 기초 칸 넷. 학기 내내 같은 범위라, 학기 초엔 적게 맞히고 배울수록 많이 맞혀요. 다섯 주 넘게 쌓이고 두 주 이어서 같은 쪽일 때만 '늘어요 · 줄어요'를 말해요. 줄거나 적게 그대로면, 그 아이에게 하던 방법을 바꿔 볼 때예요. 괄호 안은 주마다 맞힌 수예요.</p><ul>${down.length ? `<li><b>줄어요</b> — ${list(down)}</li>` : ''}${low.length ? `<li><b>적게 그대로</b> — ${list(low)}</li>` : ''}${up.length ? `<li>늘어요 — ${list(up)}</li>` : ''}<li class="muted">이번 주 아직 — ${not.length ? not.map((x) => esc(nm(K, x.no))).join(', ') : '없음'}</li></ul></div>`; })()}
-    <div class="card"><h2>같은 칸을 배울 아이끼리</h2>${intro('같은 칸을 배워야 하는 아이끼리예요. <b>10분 소집단 카드</b>로 시범 → 함께 → 혼자 차례로 가르칠 수 있어요.')}
+    <div class="card"><h2>같은 차시를 배울 아이끼리</h2>${intro('같은 차시를 배워야 하는 아이끼리예요. <b>10분 소집단 카드</b>로 시범 → 함께 → 혼자 차례로 가르칠 수 있어요.')}
       ${glist.length ? `<div class="groups">${glist.map(([c, nos]) => `<div class="grp"><b class="g-t">${esc(lessonName(c))}</b><p class="g-who">${nos.map((no) => esc(nm(K, no))).join(', ')} <span class="muted">(${nos.length}명)</span></p><div class="acts"><a class="btn teal" href="#/t/c/${C}/g/${encodeURIComponent(c)}">10분 소집단 카드</a></div></div>`).join('')}</div>` : '<p class="muted">아직 같은 칸에 둘 이상 몰린 곳이 없어요.</p>'}</div></div>
     </details>
     `;
@@ -342,7 +343,7 @@ export async function kidDetailView(root, C, no) {
   const tm = (c) => { const m = medOf(c), t = mxK[c] ? Number(mxK[c].tier) || 0 : 0; return `${m ? ` <span class="small muted">한 문제 ${(m / 1000).toFixed(1)}초${byId[c] ? `(기준 ${byId[c].sec}초)` : ''}</span>` : ''}${t ? ` <span class="pill">${['', '정확하게 됨', '빠르게도 됨', '며칠 뒤에도 됨'][Math.min(t, 3)]}</span>` : ''}`; };
   const cards = (c) => { const x = rep.L[c]; if (!x) return ''; const seen = new Set(), out = []; const add = (m, tag) => { if (!seen.has(m.id)) { seen.add(m.id); out.push(misCard(m, tag)); } };
     if (x.why) { x.why.sure.forEach((h) => misFor({ bug: h.id, lesson: c }).forEach((m) => add(m, '여러 번 보임'))); x.why.maybe.forEach((h) => misFor({ bug: h.id, lesson: c }).forEach((m) => add(m, '한 번 보임'))); }
-    if (!out.length && (x.st === 'stuck' || x.st === 'shaky')) misFor({ lesson: c }).slice(0, 2).forEach((m) => add(m, '이 칸에서 흔함'));
+    if (!out.length && (x.st === 'stuck' || x.st === 'shaky')) misFor({ lesson: c }).slice(0, 2).forEach((m) => add(m, '이 차시에서 자주 보임'));
     return out.length ? `<div class="misrow">${out.join('')}</div>` : ''; };
   const line = (c, extra = '') => `<li class="lrow"><div class="lr-h"><b>${esc(lessonName(c))}</b> <span class="muted small">${esc(gl(LES(c).g))}</span>${rep.L[c] ? ` <span class="pill">맞힘 ${rep.L[c].ok}/${rep.L[c].tot}</span>` : ''}${tm(c)} ${why(c)}</div>${extra ? `<p class="lr-x">${extra}</p>` : ''}${cards(c)}</li>`;
   const recs = Object.values(KK.recs).sort((a, b) => b.s.made - a.s.made);
@@ -484,7 +485,7 @@ export function storyStep(sto) {
   const t = Object.values(sto || {}).reduce((a, v) => ({ n: a.n + v.n, type: a.type + v.type, frame: a.frame + v.frame, eq: a.eq + v.eq, ans: a.ans + v.ans }), { n: 0, type: 0, frame: 0, eq: 0, ans: 0 });
   if (t.n < 8) return null;   /* 여덟 문제부터 — 고르기 셋 중 둘의 최솟값이라 세 문제는 우연으로도 '이해에서 끊김'이 됨(혹평 10-31) */
   const r = (x) => x / t.n, und = Math.min(r(t.type), r(t.frame)), conv = r(t.eq), calc = r(t.ans);
-  const weak = und < 0.7 ? '이해(무슨 이야기 · 막대 틀)' : conv < 0.7 ? '바꾸기(식 세우기)' : calc < 0.8 ? '계산' : null;
+  const weak = und < 0.7 ? '이해(무슨 이야기 · 막대 그림)' : conv < 0.7 ? '바꾸기(식 세우기)' : calc < 0.8 ? '계산' : null;
   return { n: t.n, und, conv, calc, weak, types: Object.entries(sto).filter(([, v]) => v.n >= 2 && (v.type + v.frame) / (2 * v.n) < 0.6).map(([k]) => k) };
 }
 
@@ -599,18 +600,18 @@ export function storyCardView(root, C, type) {
   const calc = (pr) => pr.s.steps[1].item, frame = (pr) => frameSVG(pr.sc, pr.fr.list[pr.fr.right]);
   const story = (pr) => `<p class="qline">${toHTML(pr.s.story, { static: true })}</p>`;
   const ask = STORY_ASK[type] || [];
-  const exBox = (pr, show) => (pr ? `${story(pr)}${show ? `<div class="sbf">${frame(pr)}</div><p class="small">식: ${staticHTML(calc(pr).prompt, calc(pr).sol)}</p>` : '<p class="note">아이들이 막대 틀을 그리고 모르는 칸에 <b class="q">?</b>를 넣은 뒤 식을 써요.</p>'}` : '');
+  const exBox = (pr, show) => (pr ? `${story(pr)}${show ? `<div class="sbf">${frame(pr)}</div><p class="small">식: ${staticHTML(calc(pr).prompt, calc(pr).sol)}</p>` : '<p class="note">아이들이 막대 그림을 그리고 모르는 칸에 <b class="q">?</b>를 넣은 뒤 식을 써요.</p>'}` : '');
   root.innerHTML = `<div class="card tcard"><h2>이야기 문제 10분 카드 <small>${esc(T.kid)}</small></h2>
-    ${intro('이 유형에서 이해(무슨 이야기 · 막대 틀)가 끊기는 아이 2~3명을 모아 10분. 계산은 가볍게 두고 <b>이야기의 구조</b>만 봐요. 문제는 열 때마다 바뀌어요.', 'no-print')}
+    ${intro('이 유형에서 이해(무슨 이야기 · 막대 그림)가 끊기는 아이 2~3명을 모아 10분. 계산은 가볍게 두고 <b>이야기의 구조</b>만 봐요. 문제는 열 때마다 바뀌어요.', 'no-print')}
     <div class="acts no-print"><button class="pri" onclick="print()">인쇄</button><a class="btn" href="#/t/c/${C}">반 보기로</a></div>
-    <dl class="lead"><dt>이 유형</dt><dd>${esc(T.say)}</dd><dt>오늘 목표</dt><dd>낱말 하나(모두 · 더 · 배 …)로 식을 고르지 않고, <b>막대 틀에 수와 <span class="q">?</span>를 놓아 보고</b> 식을 고르게 해요.</dd></dl>
+    <dl class="lead"><dt>이 유형</dt><dd>${esc(T.say)}</dd><dt>오늘 목표</dt><dd>낱말 하나(모두 · 더 · 배 …)로 식을 고르지 않고, <b>막대 그림에 수와 <span class="q">?</span>를 놓아 보고</b> 식을 고르게 해요.</dd></dl>
     <ol class="plan">
     ${stepBox(1, '시범 — 선생님이 소리 내어 생각하기', 3, `${askP(ask[0] || '무슨 이야기일까?')}${exBox(ex[0], true)}<p class="note">수마다 '이 수는 틀의 어느 칸일까?'를 말하며 넣고, 모르는 수 칸에 <b class="q">?</b>를 그려요.</p>`)}
     ${stepBox(2, '함께 — 아이들이 칸을 말하기', 3, `${askP(ask[1] || '어느 칸에 들어갈까?')}${exBox(ex[1], true)}`)}
     ${stepBox(3, '혼자 — 낱말에 속지 않기', 3, `${askP(ask[2] || '이 낱말이 있으면 꼭 그 셈일까?')}${exBox(ex[2], false)}${ex[2] ? `<p class="note">답: ${staticHTML(calc(ex[2]).prompt, calc(ex[2]).sol)}${ex[2].sc.inc ? ' — 낱말과 셈이 반대인 이야기예요.' : ''}</p>` : ''}`)}
     ${stepBox(4, '마무리', 1, askP('이 이야기에서 무엇을 보고 틀을 골랐나요? 한 줄로 말해 볼까?'))}
     </ol>
-    <p class="small muted foot">앱의 이야기 문제도 같은 걸음(무슨 이야기 → 막대 틀 → 식 → 답)이에요. 같은 유형을 두 번 이어 맞히면 앞 두 걸음을 건너뛰어요.</p></div>`;
+    <p class="small muted foot">앱의 이야기 문제도 같은 걸음(무슨 이야기 → 막대 그림 → 식 → 답)이에요. 같은 유형을 두 번 이어 맞히면 앞 두 걸음을 건너뛰어요.</p></div>`;
 }
 
 // ── 가정 안내문(인쇄용 · 반 하나에 한 장 · 아이 기록 X) ──
@@ -627,7 +628,7 @@ export function homeLetterView(root) {
       <li><b>답을 알려 주지 말아 주세요.</b> 틀리면 화면의 <b>돋보기 단추 '확인해 볼까요?'</b>(거꾸로 셈 · 어림 · 다시 읽기 …)을 눌러 아이가 스스로 어긋난 곳을 찾게 해 주세요. "어디서 달라졌어?" 한마디면 돼요.</li>
       <li><b>시간을 재촉하지 말아 주세요.</b> 아이는 자기 지난 기록하고만 비교해요.</li>
       <li><b>'풀기 전 짐작'을 같이 봐 주세요.</b> 풀기 전에 '자신 있어요 · 조금 헷갈려요 · 잘 모르겠어요'를 골라요. 짐작이 맞아 가는 것도 실력이 느는 거예요.</li>
-      <li>문장제는 <b>이야기 문제</b>에서 '무슨 이야기 → 막대 틀 → 식 → 답'으로 나눠 풀어요. 글이 길면 '읽어 주기' 단추를 눌러도 돼요.</li></ul>
+      <li>문장제는 <b>이야기 문제</b>에서 '무슨 이야기 → 막대 그림 → 식 → 답'으로 나눠 풀어요. 글이 길면 '읽어 주기' 단추를 눌러도 돼요.</li></ul>
     <h3>이런 건 하지 않아요</h3><ul class="easy"><li>순위 · 친구와 비교하기 · 점수 공개는 없어요.</li><li>틀린 까닭은 앱이 짐작한 것이고, 선생님이 학교에서 확인해요.</li></ul>
     <p class="small muted foot">궁금한 점은 담임 선생님께 물어봐 주세요.</p></div>`;
 }

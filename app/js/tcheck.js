@@ -81,7 +81,7 @@ export function checkCard(C, K, S = {}) {
     const ids = [...new Set(nos(K).flatMap((no) => Object.keys((S[no] && S[no].st && S[no].st.ck) || {})))].filter((id) => /^ck\d{8}/.test(id)).sort().reverse();
     sheet = ids.length ? `푼 아이 <b>${nos(K).filter((no) => S[no] && S[no].st && S[no].st.ck && S[no].st.ck[ids[0]]).length}</b>명 <span class="muted small">(문제 수는 점검 내기 화면에서)</span>` : '<span class="muted">아직 낸 점검지가 없어요</span>';
   }
-  return `<div class="ckc"><p class="ckc-r"><span class="ckc-k">오늘 단원 점검</span><span class="ckc-v">${today}</span></p><p class="ckc-r"><span class="ckc-k">점검지</span><span class="ckc-v">${sheet}</span></p></div>`;   /* 단추는 반 화면 카드 ①의 [점검 내기] 하나만 */
+  return `<div class="ckc"><p class="ckc-r"><span class="ckc-k">오늘 단원 점검</span><span class="ckc-v">${today}</span></p><p class="ckc-r"><span class="ckc-k">점검지</span><span class="ckc-v">${sheet} <a class="small" href="#/t/c/${esc(C)}/paper">종이로 푼 결과 넣기</a></span></p></div>`;   /* 단추는 반 화면 카드 ①의 [점검 내기] 하나만 · 종이 결과는 글 링크로(더 보기 맨 끝에 숨어 있던 것 · 11-07) */
 }
 
 // 사전 · 사후 비교하기(시범 운영 · 연구 기록) — 가장 최근 '사전'과 그 뒤 가장 최근 '사후' · 아이마다 맞힌 비율(푼 문제 기준) 전 → 후 · 반 평균 · 사전 아래 30% 아이들 평균

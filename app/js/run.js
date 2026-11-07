@@ -58,7 +58,7 @@ export function runView(root) {
   const K = KS.load(me);
   const rep0 = KS.reportOf(K), plan = runPlan(K, Date.now(), rep0);
   if (!plan.length) {
-    root.innerHTML = `<div class="card msg act-run"><p class="eyebrow">${tile('daily', 22)}매일 연습</p>${say('think', plan.later ? '오늘 점검에서 푼 문제는 <b>내일부터</b> 매일 연습에 나와요.' : '아직 매일 연습할 문제가 없어요.<br><b>점검</b>에서 맞힌 것이나 튼튼이와 배운 것이 생기면, 그 문제로 날마다 조금씩 연습해요.', 104)}<div class="acts"><a class="btn pri" href="#/me">처음 화면으로</a></div></div>`;
+    root.innerHTML = `<div class="card msg act-run"><p class="eyebrow">${tile('daily', 22)}매일 연습</p>${say('think', plan.later ? '오늘 점검에서 푼 문제는 <b>내일부터</b> 매일 연습에 나와요.' : '아직 매일 연습할 문제가 없어요.<br><b>점검</b>에서 맞힌 문제와 <b>배우기</b>로 고친 것이 며칠 뒤 여기 다시 나와요.', 104)}<div class="acts"><a class="btn pri" href="#/me">처음 화면으로</a></div></div>`;
     return;
   }
   const sh = makeSheet({ kind: 'run', words: false, id: rand(6), lessons: plan.map((c) => { const want = wantOf(rep0, K.minds, c); return want ? { c, n: 2, want, trapN: 1 } : { c, n: 2 }; }), mixed: true });   // 보였던 생각이 있으면 둘 중 하나는 함정 짝
