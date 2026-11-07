@@ -20,6 +20,7 @@ import { TOOLS, CARD_TOOL } from './tools.js';
 import { KIDSAY } from './fix.js';
 import { weeksOf, weekChart, weekTrend, weekKey, lastLine } from './weekcore.js';
 import { packetOf, promptOf } from './copilot.js';
+import { aiKey, setAiKey, keyTail, askClaude } from './ai.js';
 import { qrSVG } from './qr.js';
 import { TYPES } from '../../engine/schema.js';
 import { planOf, probOf, EASY as STORY_EASY } from './storylog.js';
@@ -371,13 +372,24 @@ export async function kidDetailView(root, C, no) {
     ${(() => { const x = st ? storyStep(st.story) : null; if (!x) return ''; const pc = (v) => `${Math.round(v * 100)}%`; return `<h3>이야기 문제(문장제)</h3><p>${x.n}문제 · 이해 ${pc(x.und)} · 바꾸기(식) ${pc(x.conv)} · 계산(답) ${pc(x.calc)}${x.weak ? ` — 먼저 <b>${esc(x.weak)}</b>` : ''}${x.types.length ? `<br><span class="small muted">헷갈리는 이야기: ${x.types.map(esc).join(', ')}</span>` : ''}</p>`; })()}
     ${(() => { const L = st ? st.lad || [] : []; if (!L.length) return ''; return `<h3>틀린 뒤 스스로 고친 비율 <small>주마다</small></h3><table class="list lad"><tr><th>주</th><th>떠올려 고침</th><th>풀이 순서로 고침</th><th>답 봄</th><th>스스로</th></tr>${L.slice(-6).map((a) => { const p = ladPct(a); return `<tr><td>${esc(wkShort(a[0]))}</td><td>${a[1]}</td><td>${a[2]}</td><td>${a[3]}</td><td><b>${p == null ? '—' : `${p}%`}</b></td></tr>`; }).join('')}</table><p class="small muted">스스로 고친 비율 = (떠올려 고침 + 풀이 순서로 고침) ÷ 도움을 받은 문제 전체(답 봄까지) · 반 표 판정은 첫 답만 써요.</p>`; })()}
     <h3>배워서 고친 차시 · 다시 보기</h3><p>${Object.keys(st && st.fixed || {}).map((c) => `${esc(lessonName(c))}${rv[c] ? ` <span class="small muted">(다시 보기 ${rv[c].n}/3)</span>` : ''}`).join(', ') || '<span class="muted">아직 없어요.</span>'}</p>
-    <details class="no-print ai"><summary><b>AI에게 물어보기</b> <span class="small muted">— 이 아이 근거를 Claude에 붙여 넣을 글로(번호만 · 이름 X)</span></summary>
-      <p class="small">아래 글을 복사해 Claude(claude.ai)에 붙여 넣으면 막힌 까닭 후보 · 먼저 볼 칸 · 소집단 발문 · 가르는 확인 문항을 받아요. 붙여 넣기 전에 한 번 읽어 보세요. AI 답은 짐작이라, 아이나 가정에 전하기 전에 선생님이 확인해요.</p>
+    <details class="no-print ai"><summary><b>AI에게 물어보기</b> <span class="small muted">— 이 아이 근거로 막힌 까닭 후보 · 발문 · 확인 문항(번호만 · 이름 X)</span></summary>
+      <p class="small">아래 글이 AI에게 가는 근거 전부예요(이름 없음). 맨 아래 <b>[AI 진단 받기]</b>로 바로 받거나, 복사해 Claude(claude.ai)에 붙여 넣어도 돼요. 막힌 까닭 후보 · 먼저 볼 차시 · 소집단 발문 · 가르는 확인 문항이 와요. AI 답은 짐작이라, 아이나 가정에 전하기 전에 선생님이 확인해요.</p>
       <textarea id="aiq" rows="10" readonly style="width:100%;font-size:13px">${esc(promptOf(no, packetOf(rep, st, { unit: K.today && K.today.unit ? unitLabel(K.today.unit) : '', weeks: lastLine(weeksOf(KK.recs)), trend: { up: '올라감', down: '내려감', flat: '그대로' }[weekTrend(lastLine(weeksOf(KK.recs)))], story: st ? storyStep(st.story) : null, fixed: st ? st.fixed : {} }), String(K.g || '')[0] || ''))}</textarea>
-      <div class="acts"><button id="aicp">복사</button><span class="small muted" id="aimsg"></span></div></details>
+      <div class="acts"><button id="aicp">복사</button><span class="small muted" id="aimsg"></span></div>
+      <div class="ai-go" id="aigo"></div></details>
     </div></div>
     <p class="small muted foot">틀린 생각은 짐작이에요. '한 번 보임'은 한 문제에서만, '여러 번 보임'은 서로 다른 두 문제 이상에서 같은 틀린 방법이 나온 거예요. 아이 화면엔 원인 이름이 나오지 않아요.</p></div>`;
   root.querySelector('#ksheet').addEventListener('click', () => kidSheet({ C, rep, st, cal, who: nm(K, no) }));
+  /* 바로 묻기(선생님 키 · 이 기기에만 · ai.js) — 지난 답은 이 기기에 남겨 두고 다시 묻기 전까지 보여 줌 */
+  const aigo = root.querySelector('#aigo'), RK = `tt.ai.res.${C}.${no}`;
+  const aiRender = (busy = false, err = '') => { if (!aigo) return; const k = aiKey(), last = lsGet(RK, null);
+    aigo.innerHTML = !k ? `<p class="small"><b>바로 묻기</b>(골라서) — Claude API 키를 넣으면 복사하지 않고 이 화면에서 바로 진단을 받아요. 키는 <b>이 기기에만</b> 저장되고 아이 기기 · 서버로 가지 않아요. 한 번 묻는 데 몇십~백 원쯤(선생님 크레딧).</p><div class="acts"><input id="aik" type="password" autocomplete="off" placeholder="sk-ant-…" class="sel" style="flex:1 1 260px"><button id="aiks">키 저장</button></div>`
+      : `<div class="acts"><button class="pri" id="aiask"${busy ? ' disabled' : ''}>${busy ? '묻는 중… (20초쯤)' : last ? 'AI 진단 다시 받기' : 'AI 진단 받기'}</button><span class="small muted">키 ${esc(keyTail(k))} 저장됨 · <button type="button" class="link" id="aikx">키 지우기</button></span></div>${err ? `<p class="qmsg">${esc(err)}</p>` : ''}${last && last.text ? `<div class="ai-res">${esc(last.text)}</div><p class="small muted">${esc(new Date(last.t).toLocaleString('ko-KR'))} · AI 답은 짐작이에요. 아이나 가정에 전하기 전에 선생님이 확인해요.</p>` : ''}`;
+    const ks = aigo.querySelector('#aiks'); if (ks) ks.addEventListener('click', () => { setAiKey(aigo.querySelector('#aik').value); aiRender(); });
+    const kx = aigo.querySelector('#aikx'); if (kx) kx.addEventListener('click', () => { setAiKey(''); aiRender(); });
+    const go = aigo.querySelector('#aiask'); if (go) go.addEventListener('click', async () => { aiRender(true); const r = await askClaude(root.querySelector('#aiq').value);
+      if (r.text) { lsSet(RK, { t: Date.now(), text: r.cut ? `${r.text}\n\n(답이 길어 여기서 끊겼어요.)` : r.text }); aiRender(); } else aiRender(false, r.refusal ? 'AI가 이 질문에는 답하지 않았어요. 위 글을 복사해 붙여 넣는 방식으로 해 보세요.' : r.error); }); };
+  aiRender();
   const aicp = root.querySelector('#aicp');
   if (aicp) aicp.addEventListener('click', async () => { const ta = root.querySelector('#aiq'); let ok = false; try { await navigator.clipboard.writeText(ta.value); ok = true; } catch (e) { ta.select(); try { ok = document.execCommand('copy'); } catch (e2) { ok = false; } } root.querySelector('#aimsg').textContent = ok ? '복사했어요. Claude에 붙여 넣어요.' : '복사가 막혔어요. 글을 길게 눌러 직접 복사해요.'; });
   const nadd = root.querySelector('#nadd');

@@ -1,0 +1,42 @@
+// 선생님 기기에서 바로 Claude에게 묻기(M4 · 서버 없이) — copilot.js가 만든 근거 글(번호만 · 이름 X)을 그대로 보냄
+//  키 = 선생님이 넣은 Claude API 키 · 이 기기 localStorage에만(아이 기기 · Firebase로 가지 않음 · 코드 · 저장소에 없음)
+//  공식 SDK(@anthropic-ai/sdk 1.1.0 · jsdelivr ESM) · dangerouslyAllowBrowser = 선생님이 자기 키를 자기 브라우저에서 쓸 때만(아이 화면엔 이 모듈을 부르지 않음)
+//  모델 claude-opus-5-5 · 생각 깊이 medium · 거절이면 같은 요청을 다른 모델로(fallbacks 'default') · AI 답은 짐작 — 아이 · 가정에 가기 전에 선생님이 확인 [goal.md M4]
+import { lsGet, lsSet, lsDel } from './local.js';
+
+const SDK = 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.1.0/+esm';
+const KEY = 'tt.ai.key';
+export const MODEL = 'claude-opus-5-5';
+export const aiKey = () => { const k = lsGet(KEY, ''); return typeof k === 'string' ? k : ''; };
+export const setAiKey = (k) => { const v = String(k || '').trim(); if (v) lsSet(KEY, v); else lsDel(KEY); };
+export const keyTail = (k = aiKey()) => (k ? `…${k.slice(-4)}` : '');
+
+let sdk = null;
+// 묻기 → { text } · { refusal: true } · 실패는 { error: '선생님이 읽을 한 줄' }
+export async function askClaude(prompt) {
+  const apiKey = aiKey();
+  if (!apiKey) return { error: '키를 먼저 넣어 주세요.' };
+  try { sdk = sdk || (await import(SDK)); } catch (e) { return { error: 'AI 도구를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.' }; }
+  const Anthropic = sdk.default;
+  const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true, maxRetries: 1 });
+  try {
+    const res = await client.beta.messages.create({
+      model: MODEL,
+      max_tokens: 16000,
+      betas: ['server-side-fallback-2026-07-01'],
+      fallbacks: 'default',
+      output_config: { effort: 'medium' },
+      messages: [{ role: 'user', content: prompt }],
+    });
+    if (res.stop_reason === 'refusal') return { refusal: true };
+    const text = res.content.filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim();
+    return text ? { text, cut: res.stop_reason === 'max_tokens' } : { error: '답이 비어 있어요. 한 번 더 눌러 주세요.' };
+  } catch (e) {
+    if (e instanceof Anthropic.AuthenticationError) return { error: '키가 맞지 않아요. 키를 다시 넣어 주세요.' };
+    if (e instanceof Anthropic.PermissionDeniedError) return { error: '이 키로는 쓸 수 없어요(권한 · 크레딧을 확인해 주세요).' };
+    if (e instanceof Anthropic.RateLimitError) return { error: '잠깐 너무 많이 물었어요. 1분 뒤 다시 눌러 주세요.' };
+    if (e instanceof Anthropic.APIConnectionError) return { error: '인터넷 연결을 확인해 주세요.' };
+    if (e instanceof Anthropic.APIError) return { error: `AI 쪽에서 답하지 못했어요(${e.status || '?'}). 잠시 뒤 다시 눌러 주세요.` };
+    return { error: '묻지 못했어요. 잠시 뒤 다시 눌러 주세요.' };
+  }
+}

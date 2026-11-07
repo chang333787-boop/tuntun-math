@@ -139,7 +139,7 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   let it; while ((it = P2.current(S))) P2.answer(S, G2.closure(it.c).has('2-1-6:3') ? (it.snap.choices ? { vals: [(Number(it.snap.sol[0]) + 1) % it.snap.choices.length], raws: [String((Number(it.snap.sol[0]) + 1) % it.snap.choices.length)] } : { vals: it.snap.sol.map((v) => Number(v) + 1), raws: it.snap.sol.map((v) => String(Number(v) + 1)) }) : { vals: it.snap.sol.map(Number), raws: it.snap.sol.map(String) });
   const rep = P2.report(S), pk = CP.packetOf(rep, { cal: { n: 9, m: 0.7 }, sw: { '2-1-6:3': 2 }, rush: 0 }, { unit: '덧셈과 뺄셈', weeks: [{ ok: 6, n: 10 }, { ok: 7, n: 10 }] });
   const q = CP.promptOf('7', pk);
-  ok(pk.고칠_판자.length && pk.고칠_판자[0].틀린_문항.length && pk.고칠_판자[0].틀린_문항[0].mine && pk.고칠_판자[0].틀린_문항[0].right, `고칠 판자 · 틀린 문항(내 답 · 바른 답) — ${pk.고칠_판자.map((x) => x.칸).join(', ')}`);
+  ok(pk.먼저_배울_차시.length && pk.먼저_배울_차시[0].틀린_문항.length && pk.먼저_배울_차시[0].틀린_문항[0].mine && pk.먼저_배울_차시[0].틀린_문항[0].right, `먼저 배울 차시 · 틀린 문항(내 답 · 바른 답) — ${pk.먼저_배울_차시.map((x) => x.칸).join(', ')}`);
   ok(q.includes('7번 아이(이름 X)') && !/이름[":]\s*"/.test(q) && q.length < 6000 && q.includes('모름'), `붙여 넣을 글 ${q.length}자 · 이름 칸 없음`);
 }
 // ⑫ 다듬기 기록이 많아도 서버 규칙(mx 6만 자) 안 — 판마다 최근 기록만 보냄 · 표(tier)는 그대로

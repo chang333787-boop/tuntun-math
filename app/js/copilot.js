@@ -28,7 +28,7 @@ export function packetOf(rep, st = null, extra = {}) {
   const shaky = Object.values(L).filter((x) => x.st === 'shaky' && byId[x.c]).map((x) => x.c).slice(0, 4);
   return {
     오늘_단원: extra.unit || '',
-    고칠_판자: rep.start.map((s) => lesson(s.c)).slice(0, 3),
+    먼저_배울_차시: rep.start.map((s) => lesson(s.c)).slice(0, 3),
     위에서_막힘_까닭은_아래: rep.under.map((u) => ({ 칸: nameOf(u.c), 아래: u.because.map(nameOf) })).slice(0, 3),
     아래_먼저_확인: rep.below.map((b) => ({ 칸: nameOf(b.c), 확인할_칸: b.check.map(nameOf).slice(0, 4) })).slice(0, 3),
     흔들림: shaky.map(lesson),
@@ -37,7 +37,7 @@ export function packetOf(rep, st = null, extra = {}) {
     빨리_넘김: st ? st.rush || 0 : 0,
     이번_주_점검: extra.weeks && extra.weeks.length ? { 점수_10점: extra.weeks.map((w) => Math.round((w.ok / w.n) * 10)), 방향: extra.trend || '아직 모름(점 다섯 전 · 두 주 이어서 같은 쪽일 때만)' } : null,
     문장제: extra.story || null,
-    고친_판자: Object.keys(extra.fixed || {}).map(nameOf),
+    배워서_고친_차시: Object.keys(extra.fixed || {}).map(nameOf),
   };
 }
 // 빈 칸 · 빈 배열은 뺌(붙여 넣는 글을 짧게)
@@ -51,7 +51,7 @@ ${JSON.stringify(prune(packet), null, 1)}
 
 [부탁]
 1. 이 아이가 막힌 까닭 후보 2~3개 — 각각 확신(높음 · 중간 · 낮음)과 근거로 삼은 문항(위 문제 글 그대로). 엔진이 본 원인과 다르게 본다면 왜인지.
-2. 먼저 볼 판자 하나와 그 까닭(한두 줄).
+2. 먼저 볼 차시 하나와 그 까닭(한두 줄).
 3. 소집단 10분에서 선생님이 그대로 읽을 발문 3개 — ${grade ? `${grade}학년` : '그 학년'} 눈높이 · 답을 바로 주지 않고 아이가 자기 방법을 말하게.
 4. 까닭을 가르는 확인 문항 2개 — 후보 까닭마다 아이 답이 달라지게(숫자까지).
 5. 근거로 알 수 없는 것은 '모름'이라고 써 주세요.

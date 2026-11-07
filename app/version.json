@@ -1,7 +1,8 @@
 {
- "v": "34310cedeee2",
+ "v": "c015c8ed409e",
  "files": [
   "css/app.css",
+  "js/ai.js",
   "js/back.js",
   "js/bridge.js",
   "js/check.js",

@@ -129,7 +129,7 @@ const UNIT = '2-2-2', GAP = '2-1-6:3';
   await pg.goto(BASE + `#/t/c/${C}/k/1`); await w(2500);
   const moved1 = (await pg.textContent('h2 small')).trim();
   await pg.goto(BASE + `#/t/c/${C}/k/2`); await w(2500);
-  const ai = await pg.$eval('#aiq', (el) => ({ n: el.value.length, fix: el.value.includes('고칠_판자'), name: /이름[":]\s*"/.test(el.value) })).catch(() => null);
+  const ai = await pg.$eval('#aiq', (el) => ({ n: el.value.length, fix: el.value.includes('먼저_배울_차시'), name: /이름[":]\s*"/.test(el.value) })).catch(() => null);
   await pg.goto(BASE + `#/t/c/${C}/s/compare`); await w(1500);
   const scard = { title: (await pg.textContent('h2')).trim().slice(0, 30), frames: (await pg.$$('.sbf svg')).length };
   await pg.goto(BASE + '#/t/letter'); await w(800);
