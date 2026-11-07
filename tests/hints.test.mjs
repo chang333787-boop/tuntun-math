@@ -8,7 +8,7 @@ import { toText } from '../engine/tokens.js';
 
 const STRICT = !!process.env.STRICT;
 const ONLY = process.env.STRANDS ? new Set(process.env.STRANDS.split(',')) : null;   /* STRANDS=N,A 처럼 영역만 */
-let fail = 0, noCue = [], noStep = [], leak = [], bad = [];
+let fail = 0, noCue = [], noStep = [], leak = [], bad = [], planN = 0;
 const nums = (t) => (String(t).match(/\d+(?:\.\d+)?/g) || []).map(Number);
 const LIST = NODES.filter((n) => !ONLY || ONLY.has(n.s || '?'));
 for (const n of LIST) {
@@ -28,6 +28,11 @@ for (const n of LIST) {
     }
     let st = []; try { st = stepsOf(n.id, p); } catch (e) { st = []; }
     if (st.length) stepN++;
+    if (HINTS[n.id] && typeof HINTS[n.id].plan === 'function') {   /* 풀이 순서 이름(교사 11-07 '단계적으로 하나씩') — 개수 = 단계 수 · 숫자 없음(아직 안 한 단계의 답이 새지 않게) */
+      planN++; let pl = null; try { pl = HINTS[n.id].plan(p); } catch (e) { pl = null; }
+      if (!Array.isArray(pl) || pl.length !== st.length) bad.push(`${n.id} 풀이 순서 이름 수(${pl ? pl.length : '없음'})가 단계 수(${st.length})와 달라요`);
+      else if (pl.some((x) => !x || /\d/.test(x) || x === '한 단계 풀기')) bad.push(`${n.id} 풀이 순서 이름이 비었거나 숫자가 있어요: ${pl.join(' · ')}`);
+    }
     for (const s of st) { try { const x = makeItem(s.c, s.p); if (!x.sol || !x.sol.length) bad.push(`${n.id} 단계 문항에 답이 없어요(${s.c})`); } catch (e) { bad.push(`${n.id} 단계 문항을 못 만들어요(${s.c}): ${e.message}`); break; } }
   }
   if (!cueN) noCue.push(n.id);
@@ -35,6 +40,7 @@ for (const n of LIST) {
 }
 const T = LIST.length;
 console.log(`떠올리기 말: ${T - noCue.length}/${T} 차시 · 단계: ${T - noStep.length}/${T} 차시(까닭 있는 '단계 없음' 포함)`);
+console.log(`풀이 순서 이름(plan) 검사: ${planN}문항`);
 if (leak.length) { console.log(`✗ 답을 말한 떠올리기 말 ${leak.length}개`); leak.slice(0, 12).forEach((x) => console.log('  ', x)); fail++; }
 if (bad.length) { console.log(`✗ 모양이 이상한 것 ${bad.length}개`); [...new Set(bad)].slice(0, 12).forEach((x) => console.log('  ', x)); fail++; }
 if (STRICT && noCue.length) { console.log(`✗ 떠올리기 말 없는 차시 ${noCue.length}개: ${noCue.join(' ')}`); fail++; }
