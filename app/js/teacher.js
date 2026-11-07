@@ -319,6 +319,7 @@ export function classView(root, C) {
     root.querySelectorAll('details').forEach((d, i) => { if (keep.open[i]) d.open = true; });
     if (data) window.scrollTo(0, keep.y);
     root.querySelector('#re').addEventListener('click', refresh);
+    document.title = waitL.length ? `(${waitL.length}) 선생님을 기다려요 · 튼튼 수 다리` : '튼튼 수 다리';   /* 다른 탭을 보고 있어도 손 든 아이가 보이게 */
     { const gx = root.querySelector('#gonx'); if (gx) gx.addEventListener('click', () => { const n = root.querySelector('.nexts'); if (n) { n.open = true; n.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }); }
     root.querySelector('#csv').addEventListener('click', () => exportCSV(C, K, S, unit));
   }

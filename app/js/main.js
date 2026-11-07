@@ -88,6 +88,7 @@ function route() {
   if (typeof cleanup === 'function') { try { cleanup(); } catch (e) { /* */ } }
   stopSpeak();
   cleanup = null;
+  document.title = '튼튼 수 다리';   /* 반 화면이 '(n) 선생님을 기다려요'로 바꾼 탭 제목을 되돌림 */
   const h = location.hash || '#/';
   const kid = /^#\/(me|prep|fix|review|join|stages|drill|back|retry|run|story|week|give|check)/.test(h);
   document.body.classList.toggle('kid', kid);
