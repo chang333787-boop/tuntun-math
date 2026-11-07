@@ -221,7 +221,10 @@ export function answerItem(F, vals, raws) {
   const it = itemOf(F.cur.c, F.cur.p);
   let res = null; try { res = it.check(vals, raws || vals.map(String)); } catch (e) { res = { ok: false }; }
   const ok = !!(res && res.ok);
-  if (F.phase === 'together') { F.phase = 'solo'; startItem(F); return { ok, sol: it.sol, bug: res && res.bug }; }
+  if (F.phase === 'together') {
+    if (!ok && F.curSteps.length && !F.tw) { F.tw = 1; return { ok, retry: true, sol: it.sol }; }   /* 단계를 다 한 뒤 전체 답도 처음 틀리면 한 번 더(단계는 다시 쓰는데 마지막만 바로 답이 나오던 것 · 11-08 처음 보는 눈) */
+    F.tw = 0; F.phase = 'solo'; startItem(F); return { ok, sol: it.sol, bug: res && res.bug };
+  }
   if (F.phase === 'solo') {
     F.solo.n++; if (ok) { F.solo.ok++; F.solo.run = 0; } else F.solo.run++;
     F.solo.log.push({ ok, p: F.cur.p, a: raws });

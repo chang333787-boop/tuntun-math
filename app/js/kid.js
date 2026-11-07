@@ -348,7 +348,7 @@ export function fixView(root, c, opt = {}) {
     if (F.assist) return assist();
     const st = F.curSteps[F.si];
     if (!st) {   // 단계 다 함 → 원래 문제
-      draw(slot(), { lead: head('think', '단계를 다 했어요. 이제 이 문제의 답을 써요.') + planHTML(F.curSteps, planNames(F.cur.c || c, F.cur.p, F.curSteps), F.curSteps.length), prompt: F.cur.prompt, choices: F.cur.choices, conf: false, idk: false, extra: stepCtx(F.cur, F.curSteps, F.curSteps.length, { C: colFor(F.cur, F.curSteps), head: false, fresh: F.curSteps.length - 1 }), onAnswer: (a) => { const it0 = F.cur; const r = answerItem(F, a.vals, a.raws); feedback({ ...r, it0, how: 'steps' }, route); } });
+      draw(slot(), { lead: head('think', F.tw ? '아직 아니에요. 세로셈 아래에 모인 수를 <b>차례로</b> 한 번 더 써 봐요.' : '단계를 다 했어요. 이제 이 문제의 답을 써요.') + planHTML(F.curSteps, planNames(F.cur.c || c, F.cur.p, F.curSteps), F.curSteps.length), prompt: F.cur.prompt, choices: F.cur.choices, conf: false, idk: false, extra: stepCtx(F.cur, F.curSteps, F.curSteps.length, { C: colFor(F.cur, F.curSteps), head: false, fresh: F.curSteps.length - 1 }), onAnswer: (a) => { const it0 = F.cur; const r = answerItem(F, a.vals, a.raws); if (r.retry) return feedback({ ok: false, msg: '아직 아니에요. 채운 단계의 답을 모아 <b>한 번 더</b> 써 봐요.', label: '다시 써 보기' }, together); feedback({ ...r, it0, how: 'steps' }, route); } });
       return;
     }
     /* 왼쪽 위 = 같이 풀 문제 · 세로셈 · 채운 단계(도움 사다리와 같은 모양 hint.js stepCtx) · 오른쪽 튼튼이 말 = 몇 단계 · 할 일 */
@@ -363,7 +363,7 @@ export function fixView(root, c, opt = {}) {
   }
   function solo() {
     if (F.reStep) return reStep();
-    draw(slot(), { lead: head('hi', `이제 혼자 풀어 봐요. <span class="muted small">(맞힌 것 ${F.solo.ok} / 3)</span>`), prompt: F.cur.prompt, choices: F.cur.choices, conf: false, idk: false, onAnswer: (a) => { const it0 = F.cur; const r = answerItem(F, a.vals, a.raws); soloBack(r, it0, a); } });
+    draw(slot(), { lead: head('hi', `이제 혼자 풀어 봐요. <span class="muted small">(3개 맞히면 확인으로 · 지금 ${F.solo.ok}개)</span>`), prompt: F.cur.prompt, choices: F.cur.choices, conf: false, idk: false, onAnswer: (a) => { const it0 = F.cur; const r = answerItem(F, a.vals, a.raws); soloBack(r, it0, a); } });
   }
   // 혼자에서 틀린 뒤 — 세 번 내리 틀림이면 같이 한 번 더 / 선생님과 · 아니면 다음에 할 한 가지: 검산 도구(답 보기 전에) → 같은 숫자로 나눠 보기 → 방법 한 줄
   function soloBack(r, it0, a) {
