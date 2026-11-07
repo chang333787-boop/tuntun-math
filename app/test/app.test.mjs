@@ -180,10 +180,10 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   const st = KS4.reportOf(K).L['2-1-3:5'];
   ok(st && st.st === 'ok' && st.tot === 3, `점검에서 틀려도 판정은 그대로 '${st && st.st}'(${st && st.tot}문제)`);
 }
-// ⑯ 준비 다리 한 판 = 선생님이 고른 길이 안(기본 24 · 18 · 36) · 막힌 칸이 넷 넘으면 일찍 '선생님과 같이'(teacher) · 다음 판은 지난 기록과 이어 감(물었던 바깥 칸을 다시 묻지 않음)
+// ⑯ 준비 다리 한 판 = 선생님이 고른 길이 안(12 · 기본 18 · 24 — 11-05 길게 36 없앰) · 막힌 칸이 넷 넘으면 일찍 '선생님과 같이'(teacher) · 다음 판은 지난 기록과 이어 감(물었던 바깥 칸을 다시 묻지 않음)
 {
   const P6 = await import('../js/prep.js');
-  ok(P6.PREP.budget === 24 && P6.LEN.join() === '18,24,36' && P6.newPrep({ unit: '2-1-3', id: 'L', budget: 18 }).budget === 18 && P6.newPrep({ unit: '2-1-3', id: 'L2', budget: 99 }).budget === 24, `한 판 길이 기본 ${P6.PREP.budget} · 고른 길이(18) 따름 · 이상한 값은 기본`);
+  ok(P6.PREP.budget === 18 && P6.LEN.join() === '12,18,24' && P6.newPrep({ unit: '2-1-3', id: 'L', budget: 12 }).budget === 12 && P6.newPrep({ unit: '2-1-3', id: 'L1', budget: 36 }).budget === 18 && P6.newPrep({ unit: '2-1-3', id: 'L2', budget: 99 }).budget === 18, `한 판 길이 기본 ${P6.PREP.budget} · 고른 길이(12) 따름 · 없앤 36 · 이상한 값은 기본`);
   const wrong = (it) => (it.snap.choices ? { vals: [(Number(it.snap.sol[0]) + 1) % it.snap.choices.length], raws: [String((Number(it.snap.sol[0]) + 1) % it.snap.choices.length)] } : { vals: it.snap.sol.map((v) => Number(v) + 7), raws: it.snap.sol.map((v) => String(Number(v) + 7)) });
   const S = P6.newPrep({ unit: '2-1-3', id: 'WEAK' });
   let it, n = 0; while ((it = P6.current(S)) && n++ < 60) P6.answer(S, wrong(it));

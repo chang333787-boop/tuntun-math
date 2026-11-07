@@ -28,7 +28,7 @@ import { testable, __predict } from '../../engine/errors.js';
 import { go, unitLabel } from './kid.js';
 import { icon } from './icons.js';
 import { kidSheet } from './sheet.js';
-import { checkCard } from './tcheck.js';
+import { checkCard, syncChecks } from './tcheck.js';
 import { SKILL, skillsOf, gText } from '../../engine/skills.js';
 import { tableCard, skillState } from './ttable.js';
 
@@ -275,7 +275,7 @@ export function classView(root, C) {
     root.querySelector('#re').addEventListener('click', refresh);
     root.querySelector('#csv').addEventListener('click', () => exportCSV(C, K, S, unit));
   }
-  async function refresh() { if (!alive) return; data = await pullAll(C, K); if (!alive) return;
+  async function refresh() { if (!alive) return; const [d] = await Promise.all([pullAll(C, K), syncChecks(C).catch(() => null)]); data = d; if (!alive) return; Object.assign(K, cls(C) || {});
     try { const lv = db.dec(await db.get(`tc/${C}/${K.T}/live`)); if (lv && typeof lv.unit === 'string' && Number(lv.t) > ((K.today && K.today.t) || 0)) { const X = tget(); X.classes[C].today = { unit: lv.unit, t: Number(lv.t), len: Number(lv.len) || 24 }; tset(X); Object.assign(K, X.classes[C]); if (!K.today || unit !== lv.unit) unit = lv.unit; } } catch (e) { /* */ }   /* 다른 기기에서 연 단원도(회귀 10-31) */ const a = document.activeElement; if (a && root.contains(a) && /SELECT|INPUT|TEXTAREA/.test(a.tagName)) return; render(); }   /* 고르는 중엔 다시 그리지 않음 */
   render(); refresh();
   timer = setInterval(() => { if (document.visibilityState === 'visible') refresh(); }, 15000);

@@ -662,3 +662,40 @@ body.tv main{max-width:none}body.tv .ctab table{font-size:18px}body.tv .ctab td,
   .sh-dock button{min-height:46px;padding:6px 14px;flex:none}}
 @media (max-width:760px){.sh-h>svg.mascot{display:none}.ss-c,.ss-x{grid-column:1 / -1}.ss-c .sel{flex:1 1 110px}.sc-grid{grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}.sd-t{font-size:15px}.sd-t b{font-size:17px}.sd-k{display:none}}
 @media (hover:hover){body:not(.touch) .sc:not(.on):hover,body:not(.touch) .sh-opt:not(.on):hover{border-color:var(--field)}body:not(.touch) .sc:not(.on) .sc-n button:hover{border-color:var(--line2);color:var(--ink)}}
+/* ── 점검지(check.js · tcheck.js) ── 선생님 점검 내기: 위 띠(반 화면으로 + 제목) · 고를 것 셋 가로(1366에서 한 줄) · 낸 점검지 표 · 인쇄 미리보기 */
+.ck-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:0 0 16px}.ck-bar h2.sec{margin:0}.ckp-h .ck-bar{margin-bottom:4px}
+.ck-pick{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.2fr) minmax(0,.7fr);gap:16px;align-items:stretch}
+.ck-pick .card{margin:0;padding:20px 22px;display:flex;flex-direction:column}
+.ck-c h3{display:flex;align-items:center;gap:10px;margin:0 0 8px;font-family:var(--head);font-size:21px;font-weight:700;font-synthesis:none}
+.ck-no{flex:none;width:30px;height:30px;border-radius:50%;background:var(--teal);color:#fff;font:700 16px var(--num);display:inline-flex;align-items:center;justify-content:center}
+.ck-c .intro{margin-bottom:10px}.ck-c .acts{margin:10px 0 4px}.ck-c .qmsg{margin:4px 0 0}
+.ck-f{display:flex;align-items:center;gap:10px;margin:6px 0}.ck-f>span:first-child{flex:0 0 5.6em;font-weight:700;font-size:15px;color:var(--mute)}.ck-f .sel{flex:1 1 auto;min-width:0;min-height:46px}
+.ck-rg{display:flex;align-items:center;gap:8px;flex:1 1 auto;min-width:0}.ck-rg .sel{flex:1 1 0}
+.ck-cnt{margin:8px 0 0;font-size:17px}.ck-cnt b{font-size:20px;font-variant-numeric:tabular-nums}
+.ck-s{margin:6px 0 0}
+.ck-w{background:var(--panel);border-style:dashed}
+.ck-list{margin-top:20px;padding:20px 22px}.ck-list h2{display:flex;align-items:center;flex-wrap:wrap}.ck-list button.mini{margin-left:auto}
+.ck-tw{overflow-x:auto}
+.ck-t{font-size:15px}.ck-t th{font-size:14px;color:var(--mute);font-weight:700;white-space:nowrap}.ck-t td{vertical-align:top}
+.ck-t td>.small{display:block;line-height:1.4;margin-top:2px}.ck-t .ck-d,.ck-t .ck-rgt{white-space:nowrap}
+.ck-t .ck-n b{font-size:19px;font-variant-numeric:tabular-nums}
+.ck-t .btn.ck-pr{min-height:40px;padding:5px 14px;font-size:15px;border-width:1.5px;border-radius:12px;box-shadow:0 3px 0 var(--line2);white-space:nowrap}
+/* 반 화면 카드 ①에 들어가는 짧은 줄(checkCard) */
+.ckc .ckc-r{display:flex;gap:12px;align-items:baseline;margin:0;padding:6px 0;border-top:1px dashed var(--line2)}.ckc .ckc-r:first-child{border-top:0}
+.ckc .ckc-k{flex:0 0 7.5em;font-size:15px;color:var(--mute)}.ckc .ckc-v b{font-variant-numeric:tabular-nums}
+.ckc .acts{margin:8px 0 0}.ckc .acts .btn{min-height:44px;padding:6px 16px}
+/* 같은 문제 인쇄 — 종이 css(paper/css/paper.css)는 이 화면에서만 붙음 · 미리보기는 줄여서 */
+.ckp-h{margin-bottom:12px}.ckp-h .acts{margin:10px 0 6px}
+.paper.preview.ckp-pv{justify-content:flex-start;padding:0}
+/*   앱 규칙(.lead 선생님 안내 칸 · .math 문제 카드 글 크기 · .fr)이 종이 쪽에 새지 않게 — 종이 앱(paper/index.html)과 같은 모양으로 되돌림 */
+.paper .lead{display:block;grid-template-columns:none;gap:0;padding:0 0 0 6mm;background:none;border:0;border-radius:0}
+.paper .math{font-family:inherit;font-size:inherit;line-height:inherit;gap:0;font-variant-numeric:normal}.paper .fr{font-size:inherit}
+@media (max-width:1099px){.ck-pick{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.ck-w{grid-column:1 / -1}}
+@media (max-width:760px){
+  .ck-pick{grid-template-columns:minmax(0,1fr);gap:12px}.ck-pick .card{padding:16px}
+  .ck-f{flex-wrap:wrap;gap:4px 10px}.ck-f>span:first-child{flex-basis:100%}
+  .ck-t thead{display:none}.ck-t tr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 10px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .ck-t td{border:0;padding:0}.ck-t td:nth-child(1),.ck-t td:nth-child(2),.ck-t td:nth-child(6){grid-column:1 / -1}
+  .ck-t .ck-n::before{display:block;font-size:13px;color:var(--mute)}.ck-t td:nth-child(3)::before{content:'다 푼 아이'}.ck-t td:nth-child(4)::before{content:'하는 중'}.ck-t td:nth-child(5)::before{content:'안 함'}
+  .paper.preview.ckp-pv{zoom:.42}
+}

@@ -11,7 +11,7 @@ import { tryView, tryInfo } from './try.js';
 import { sheetView } from './sheet.js';
 import { giveView } from './give.js';
 import { checkRunView } from './check.js';
-import { checkView } from './tcheck.js';
+import { checkView, checkPrintView } from './tcheck.js';
 import { tableView, giveTView } from './ttable.js';
 import { teacherHome, newClassView, openClassView, cardsView, namesView, classView, kidDetailView, groupCardView, guideView, mindCardView, paperImportView, storyCardView, homeLetterView } from './teacher.js';
 import { lsGet, esc } from './local.js';
@@ -62,7 +62,6 @@ const ROUTES = [
   [/^#\/retry$/, () => retryView(root)],
   [/^#\/drill\/([\w:.-]+?)(\?.*)?$/, (m) => drillView(root, decodeURIComponent(m[1]))],
   [/^#\/give\/([\w-]+)$/, (m) => giveView(root, m[1])],
-  [/^#\/check\/([\w-]+)$/, (m) => checkRunView(root, m[1])],
   [/^#\/t$/, () => teacherHome(root)],
   [/^#\/t\/new/, () => newClassView(root)],
   [/^#\/t\/open$/, () => openClassView(root)],
@@ -71,11 +70,13 @@ const ROUTES = [
   [/^#\/t\/sheet(\?.*)?$/, () => sheetView(root)],
   [/^#\/t\/c\/(\w+)$/, (m) => classView(root, m[1])],
   [/^#\/t\/c\/(\w+)\/cards$/, (m) => cardsView(root, m[1])],
-  [/^#\/t\/c\/(\w+)\/check$/, (m) => checkView(root, m[1])],
   [/^#\/t\/c\/(\w+)\/table(\?.*)?$/, (m) => tableView(root, m[1])],
   [/^#\/t\/c\/(\w+)\/give(\?.*)?$/, (m) => giveTView(root, m[1])],
   [/^#\/t\/c\/(\w+)\/names$/, (m) => namesView(root, m[1])],
   [/^#\/t\/c\/(\w+)\/paper$/, (m) => paperImportView(root, m[1])],
+  [/^#\/check\/([A-Za-z0-9-]{1,24})$/, (m) => checkRunView(root, m[1])],
+  [/^#\/t\/c\/(\w+)\/check$/, (m) => checkView(root, m[1])],
+  [/^#\/t\/c\/(\w+)\/check\/([A-Za-z0-9-]{1,24})\/print$/, (m) => checkPrintView(root, m[1], m[2])],
   [/^#\/t\/c\/(\w+)\/s\/(\w+)$/, (m) => storyCardView(root, m[1], m[2])],
   [/^#\/t\/c\/(\w+)\/k\/(\d+)$/, (m) => kidDetailView(root, m[1], m[2])],
   [/^#\/t\/c\/(\w+)\/g\/(.+)$/, (m) => groupCardView(root, m[1], decodeURIComponent(m[2]))],
