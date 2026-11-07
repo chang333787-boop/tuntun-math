@@ -52,7 +52,7 @@ export function draw(root, { prompt, choices = null, tag = '', act = '', dots = 
   const blanks = [...root.querySelectorAll('.blank')].sort((a, b) => a.dataset.i - b.dataset.i);
   if (given) blanks.forEach((b) => { const v = given[b.dataset.i]; if (v != null) { b.value = String(v); b.readOnly = true; b.classList.add('given'); b.tabIndex = -1; b.setAttribute('aria-label', `튼튼이가 채운 빈칸 ${v}`); } });
   const open = blanks.filter((b) => !b.readOnly);
-  if (blanks.length === 2 && /…/.test(toText(prompt || [])) && !given) { blanks[0].placeholder = '몫'; blanks[1].placeholder = '나머지'; }   /* □ … □ 두 칸이 무엇인지(처음 보는 눈 11-08) */
+  if (blanks.length === 2 && /÷.*…/.test(toText(prompt || [])) && !given) { blanks[0].placeholder = '몫'; blanks[1].placeholder = '나머지'; }   /* □ … □ 두 칸이 무엇인지(처음 보는 눈 11-08) */
   const nudge = (t, el) => { msg.classList.remove('soft'); msg.textContent = t; card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); if (el) el.focus(); };
   const ok = root.querySelector('#ok');
   const lock = (on) => {
