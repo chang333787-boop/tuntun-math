@@ -22,12 +22,12 @@ export const TYPES = {
   combine: { fam: 'as', kid: '여러 부분이 모여 전체가 되는 이야기', short: '부분과 전체', say: '몇 부분이 모여 전체가 돼요.' },
   compare: { fam: 'as', kid: '두 수를 비교하는 이야기', short: '비교', say: '두 수 가운데 어느 쪽이 얼마나 더 많은지 봐요.' },
   groups: { fam: 'md', kid: '같은 수씩 묶는 이야기', short: '같은 묶음', say: '같은 수씩 든 묶음이 여러 개 있어요.' },
-  times: { fam: 'md', kid: '몇 배 이야기', short: '몇 배', say: '한 양이 다른 양의 몇 배인지 비교해요.' },
+  times: { fam: 'md', kid: '몇 배 이야기', short: '몇 배', say: '한 수가 다른 수의 몇 배인지 비교해요.' },
   share: { fam: 'md', kid: '똑같이 나누는 이야기', short: '똑같이 나누기', say: '전체를 똑같이 나누어 한 몫을 봐요.' },
   pack: { fam: 'md', kid: '몇씩 덜어 내는 이야기', short: '몇씩 덜어 내기', say: '전체에서 같은 수씩 덜어 내어 몇 번인지 봐요.' },
 };
 export const FAMILY = {
-  as: { kid: '늘어나요 · 줄어요 · 합쳐요 · 비교해요', eg: '사탕이 5개 있었는데 3개를 더 받았어요.', types: ['change', 'combine', 'compare'], ask: '수가 생기거나 없어졌나요? 부분이 모여 전체가 되나요? 두 양을 비교하나요?' },
+  as: { kid: '늘어나요 · 줄어요 · 합쳐요 · 비교해요', eg: '사탕이 5개 있었는데 3개를 더 받았어요.', types: ['change', 'combine', 'compare'], ask: '수가 생기거나 없어졌나요? 부분이 모여 전체가 되나요? 두 수를 비교하나요?' },
   md: { kid: '똑같이 묶어요 · 몇 배 · 똑같이 나눠요', eg: '한 봉지에 4개씩 3봉지가 있어요.', types: ['groups', 'times', 'share', 'pack'], ask: '같은 수씩 든 묶음이 여럿인가요? 몇 배인가요? 똑같이 나누나요? 같은 수씩 덜어 내나요?' },
 };
 // words.js kind → 유형(모든 kind를 덮음 — 시험이 확인)
@@ -217,7 +217,7 @@ export const isCue = (cue, w) => !!cue && cue.parts.some((p) => stem(w).startsWi
 export function cueWhy(sc, w) {
   const L = sc.len, q = `‘${w}’`;
   switch (sc.slot) {
-    case 'diff−': return `${q}${P(w, '이', '가')} 있어도, 묻는 것은 두 양이 <b>얼마나 차이 나는지</b>예요.`;
+    case 'diff−': return `${q}${P(w, '이', '가')} 있어도, 묻는 것은 두 수가 <b>얼마나 차이 나는지</b>예요.`;
     case 'more−': return `${q}${P(w, '은', '는')} 아는 쪽이 더 ${L ? '길다' : '많다'}는 말이에요. 묻는 쪽은 <b>더 ${L ? '짧아요' : '적어요'}</b>.`;
     case 'less+': return `${q}${P(w, '은', '는')} 아는 쪽이 더 ${L ? '짧다' : '적다'}는 말이에요. 묻는 쪽은 <b>더 ${L ? '길어요' : '많아요'}</b>.`;
     case 'start+': return `${q}${P(w, '이', '가')} 있어도, 묻는 것은 <b>처음</b> 수예요. 처음 수는 남은 수보다 많아요.`;
@@ -230,7 +230,7 @@ export function cueWhy(sc, w) {
 export function rereadOf(sc) {
   if (sc.need) return '남는 것까지 모두 들어가야 해요. 몫만큼으로는 모자라요.';
   if (sc.rem) return '몫과 남는 수를 따로 써요. 남는 수는 나누는 수보다 작아요.';
-  if (sc.slot === 'timesB÷') return '묻는 것은 기준이 되는 작은 쪽이에요. 큰 양보다 작아야 해요.';
+  if (sc.slot === 'timesB÷') return '묻는 것은 기준이 되는 작은 쪽이에요. 큰 수보다 작아야 해요.';
   return '묻는 말을 다시 읽고, 내 답이 그 물음에 맞는 수인지 봐요.';
 }
 
