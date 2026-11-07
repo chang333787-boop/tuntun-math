@@ -16,7 +16,7 @@ import { tile } from './icons.js';
 export const CK = { per: 12 };
 export const CK_ID = /^[A-Za-z0-9-]{1,24}$/;   /* '_'는 기록 id(<점검 id>_<번째>)의 가름표라 점검 id에는 쓰지 않음 */
 const say = (pose, html, size = 104) => `<div class="say">${mascot(pose, size)}<div class="bub">${html}</div></div>`;
-const EB = `<p class="eyebrow">${tile('prep', 22)}점검지</p>`;
+const EB = `<p class="eyebrow">${tile('chk', 22)}점검지</p>`;
 
 // 과제가 바른 꼴인가(아이 기기는 받은 값을 믿지 않고 맞춰 읽음)
 export const okTask = (id, x) => !!(x && x.kind === 'check' && CK_ID.test(String(id)) && gradeIdx(x.from) >= 0 && gradeIdx(x.to) >= gradeIdx(x.from) && Number(x.n) > 0);
@@ -96,7 +96,7 @@ export function checkRunView(root, id) {
         if (i >= items.length) return endBatch();
         const it = items[i];
         if (Date.now() - lastNow > 5000) { lastNow = Date.now(); KS.setNow(me, { mode: 'check', n: total - leftNow() + i }); }
-        draw(root, { prompt: it.snap.prompt, choices: it.snap.choices, tag: '점검지', act: 'prep', dots: [i, items.length], conf: false, onAnswer: (a, cf, ms) => {
+        draw(root, { prompt: it.snap.prompt, choices: it.snap.choices, tag: '점검지', act: 'chk', dots: [i, items.length], conf: false, onAnswer: (a, cf, ms) => {
           let ok = false;
           if (a.idk) wip.R[it.k] = { s: 'q' };
           else { try { ok = !!itemOf(it.c, it.p).check(a.vals, a.raws).ok; } catch (e) { ok = false; } wip.R[it.k] = ok ? { s: 'ok' } : { s: 'x', a: a.raws }; }

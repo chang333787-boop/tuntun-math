@@ -150,7 +150,7 @@ export function checkView(root, C) {
       await db.patch('', up);
       K = putCls(C, (k) => { k.today = { unit, t, len }; k.len = len; }) || K;
       if (!alive) return;
-      render(); root.querySelector('#m1').textContent = '열었어요! 아이들 화면 맨 위에 30초 안에 떠요.';
+      render(); root.querySelector('#m1').textContent = '열었어요! 아이들 처음 화면 1번 점검 카드에 30초 안에 떠요.';
     } catch (e) { msg.textContent = `열지 못했어요: ${e.message}`; b.disabled = false; }
   }
   async function give() {
