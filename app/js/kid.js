@@ -86,7 +86,7 @@ export function todoOf(K, rep) {
   const preppedAfter = (u, since) => (lp && lp.unit === u && lp.t >= since) || Object.values(K.recs).some((x) => x && x.s && x.s.unit === u && x.s.made >= since);
   const me0 = meOf(), sp = me0 ? lsGet(`tt.prep.${me0.C}.${me0.no}`) : null;
   const spOn = (u) => !!(sp && sp.unit === u && !sp.done && now - sp.made <= 3 * 3600e3 && asked(sp) > 0);   /* 하다가 나간 점검(3시간 안 · prepView와 같은 기준) */
-  if (t && !preppedAfter(t.unit, t.t)) out.push(spOn(t.unit) ? { kind: 'prep', unit: t.unit, pri: true, resume: true, title: '오늘 단원 점검 — 이어서', sub: `${asked(sp) + 1}번째 문제부터 이어서 풀어요`, href: `#/prep/${t.unit}` } : { kind: 'prep', unit: t.unit, pri: true, title: '오늘 단원 점검', sub: `선생님이 연 단원: ${unitLabel(t.unit)} · 약 ${mins(t.len)}분`, href: `#/prep/${t.unit}` });
+  if (t && (spOn(t.unit) || !preppedAfter(t.unit, t.t))) out.push(spOn(t.unit) ?   /* 다 푼 묶음은 그때그때 기록이 되므로 — 하던 점검이 있으면 '했음'보다 '이어서'가 먼저(코덱스 11-08) */ { kind: 'prep', unit: t.unit, pri: true, resume: true, title: '오늘 단원 점검 — 이어서', sub: `${asked(sp) + 1}번째 문제부터 이어서 풀어요`, href: `#/prep/${t.unit}` } : { kind: 'prep', unit: t.unit, pri: true, title: '오늘 단원 점검', sub: `선생님이 연 단원: ${unitLabel(t.unit)} · 약 ${mins(t.len)}분`, href: `#/prep/${t.unit}` });
   /* 하다가 나간 배우기(3시간 안 · 같이 풀기 · 혼자 풀기 · 확인) — 배울 것 맨 앞에 '이어서'(fixView resume과 같은 기준) */
   const fx0 = me0 ? lsGet(`tt.fx.${me0.C}.${me0.no}`) : null, FXN = { together: '같이 풀기', solo: '혼자 풀기', check: '확인 3문제' };
   if (fx0 && byId[fx0.c] && FXN[fx0.phase] && now - fx0.t < 3 * 3600e3 && !(K.fixed && K.fixed[fx0.c] > fx0.t)) out.push({ kind: 'fix', c: fx0.c, resume: true, title: '배우기 — 이어서', sub: `'${FXN[fx0.phase]}'부터 이어서 해요 · ${plank(fx0.c)}`, href: `#/fix/${fx0.c}` });
@@ -94,7 +94,7 @@ export function todoOf(K, rep) {
   const plan = lp && unitById[lp.unit] ? prepPlan(lp.unit) : null;
   const stuck = Object.values(rep.L).filter((x) => x.st === 'stuck' && byId[x.c] && (!plan || plan.below.includes(x.c))).map((x) => x.c).sort(byGrade);
   const helpFix = Object.entries(K.help || {}).filter(([c, h]) => byId[c] && today(h) === td && !(K.fixed && K.fixed[c] > h)).map(([c]) => c);
-  const prepHelp = lp && lp.why === 'teacher' && today(lp.t) === td;
+  const prepHelp = lp && lp.why === 'teacher' && today(lp.t) === td && [...rep.start.map((s) => s.c), ...stuck].some((c) => !(K.fixed && K.fixed[c] > lp.t));   /* 같이 볼 칸을 모두 배워 고쳤으면 하루 종일 남지 않게(코덱스 11-08) */
   const lost = !rep.start.length && stuck.length >= 3 && !(lp && (lp.why === 'budget' || lp.why === 'teacher'));   /* 이어서 찾을 수 있으면 그게 먼저 */
   if (prepHelp || lost || helpFix.length) {
     const cs = [...new Set([...helpFix, ...(prepHelp || lost ? [...rep.start.map((s) => s.c).filter((c) => !plan || plan.below.includes(c)).sort(byGrade), ...stuck] : [])])].slice(0, 3);
@@ -153,7 +153,7 @@ export async function homeView(root) {
   const ct = classTask(K);
   // 카드 셋에 나눠 담기 — ① 점검(오늘 단원 점검 · 선생님 점검지 · 이번 주 점검) ② 배울 것(선생님과 같이 · 선생님이 준 문제 · 배우기) ③ 매일 연습
   const chk = [...todo.filter((x) => x.kind === 'prep'), ...checkTasks(K).map((x) => ({ ...x, kind: 'check' }))];
-  const me1 = meOf(), wr = me1 ? lsGet(`tt.week.${me1.C}.${me1.no}`) : null, wOn = wr && wr.wk === weekKey() && wr.sh && Array.isArray(wr.sh.items) && wr.i > 0 && wr.i < wr.sh.items.length;
+  const me1 = meOf(), wr = me1 ? lsGet(`tt.week.${me1.C}.${me1.no}`) : null, wOn = wr && wr.wk === weekKey() && wr.sh && Array.isArray(wr.sh.items) && wr.i > 0 && wr.i < wr.sh.items.length && !doneThisWeek(K.recs);   /* 다른 기기에서 이미 끝냈으면 이어서 X */
   if (wOn) chk.unshift({ kind: 'week', resume: true, title: '이번 주 점검 — 이어서', sub: `${wr.i + 1}번째 문제부터 이어서 풀어요(모두 ${wr.sh.items.length}문제)`, href: '#/week' });
   else if (wp.length >= 4 && Object.keys(K.recs || {}).length) chk.push({ kind: 'week', title: '이번 주 점검', sub: `섞은 문제 ${wp.length}개 · 3~5분 · 주마다 한 번`, href: '#/week' });
   const fixR = todo.find((x) => x.kind === 'fix' && x.resume), gvs = giveTasks(K);
@@ -168,6 +168,8 @@ export async function homeView(root) {
   const firstDay = !Object.keys(K.recs || {}).length, hasHelp = prac.some((x) => x.kind === 'help');
   const resN = [chk, prac, daily].findIndex((l) => l[0] && l[0].resume);   /* 하던 것이 있으면 그 카드가 주황 단추(수업 중 선생님이 연 점검만 그보다 앞 · 11-07 '다시 들어와도 이어서') */
   const classFix = !doneOne && !!(ct && Date.now() - ct.t < 3 * 3600e3 && lpN && lpN.unit === ct.unit && lpN.t >= ct.t && lpN.why === 'found') && prac.some((x) => x.kind === 'fix');   /* 수업 중 점검으로 찾은 배울 것 = 점검 끝 화면이 '지금 하나 배우고'라 한 것 — 하다 만 매일 연습 · 이번 주 점검 이어서보다 먼저(11-08) */
+  if (classPrep) { const i = chk.findIndex((x) => x.kind === 'prep'); if (i > 0) chk.unshift(chk.splice(i, 1)[0]); }   /* 수업 점검이 이번 주 점검 이어서보다 앞(주황 단추가 #/week로 가던 것) */
+  if (classFix && prac[0] && prac[0].kind !== 'help') { const i = prac.findIndex((x) => x.kind === 'fix'); if (i > 0) prac.unshift(prac.splice(i, 1)[0]); }   /* '지금 하나 배우고' = 찾은 배울 것이 보충보다 앞 */
   const nowNo = doneOne || classRest ? 0 : classPrep ? 1 : classFix ? 2 : resN >= 0 ? resN + 1 : prac.some((x) => x.kind === 'help' || x.kind === 'give') ? 2 : chk.some((x) => x.kind === 'check') ? 1 : prac.length ? 2 : chk.length ? 1 : daily.length ? 3 : 0;
   if (hasHelp && nowNo === 2 && prac[0].kind === 'help' && Date.now() - KS.lastAsk(me) > 15 * 60e3) KS.setNow(me, { mode: 'home', c: prac[0].cs[0] || '', ask: Date.now() });   /* 처음 화면 '선생님과 같이 봐요'가 지금 할 것 = 손 든 아이 → 선생님 반 화면 맨 위(이 아이가 15분 안에 손 든 게 없을 때만 · 다른 것을 시작하면 풀리고 돌아오면 다시) */
   const lists = [chk, prac, daily];

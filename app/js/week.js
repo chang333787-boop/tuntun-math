@@ -21,6 +21,7 @@ export function weekView(root) {
   const me = meOf(); if (!me) return go('#/join');
   const K = KS.load(me), rep = KS.reportOf(K), term = weekTerm(K);
   if (doneThisWeek(K.recs)) {
+    lsDel(`tt.week.${me.C}.${me.no}`);   /* 다른 기기에서 끝낸 주의 하던 판은 지움 */
     root.innerHTML = `<div class="card msg act-week">${EB}${say('cheer', '이번 주 점검은 벌써 했어요. 다음 주에 또 해요!')}${weekChart(lineOf(K.recs, term))}<div class="acts"><a class="btn big" href="#/me">처음 화면으로</a></div></div>`;
     return;
   }

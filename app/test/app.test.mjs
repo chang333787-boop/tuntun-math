@@ -365,6 +365,13 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   ok(!/배우기를 해 봤지만/.test(e.t), `배우기 뒤에 보충을 풀었으면 그 결과를 따름 — ${e.t}`);
   const pa = T9.nextOf({ C: 'ZZ', no: '3', rep, now: { mode: 'prep', c: '1-2-6:4', t: Date.now() - 60e3, ask: Date.now() - 60e3 } });
   ok(/선생님을 기다려요<\/b> — 오늘 단원 점검에서 막힘/.test(pa.t) && /\?no=3$/.test(pa.href), `점검에서 손 든 아이도 맨 먼저 · 10분 카드는 그 아이로 — ${pa.t}`);
+  const sn = T9.nextOf({ C: 'ZZ', no: '3', rep, now: { mode: 'fix', c: '1-2-6:4', t: Date.now() - 60e3, ask: Date.now() - 60e3 }, seen: Date.now() });
+  ok(!/선생님을 기다려요/.test(sn.t), `'다녀왔어요'를 누른 뒤엔 다음 할 것도 기다림 X — ${sn.t}`);
+  const ag = T9.nextOf({ C: 'ZZ', no: '3', rep, st: { fixed: { '1-2-6:4': 1, '2-1-3:7': 1 } } });
+  ok(/부족한 것/.test(ag.t), `고친 뒤 다시 막힌 칸은 다시 후보(목록에서 빠지지 않게) — ${ag.t}`);
+  const repS = { L: { '1-2-6:4': { c: '1-2-6:4', st: 'shaky' } }, start: [] }, sk2 = T9.nextOf({ C: 'ZZ', no: '3', rep: repS }).href.match(/sk=([^&]+)/)[1];
+  const sh2 = T9.nextOf({ C: 'ZZ', no: '3', rep: repS, inbox: { gvS: { kind: 'give', sk: sk2 } } });
+  ok(/푸는 중/.test(sh2.t) && !sh2.a, `가끔 틀림도 같은 기능 보충이 열려 있으면 기다림 — ${sh2.t}`);
   const g2 = T9.nextOf({ C: 'ZZ', no: '3', rep, st: { help: { '1-2-6:4': 50 }, gv: { gvA: [2, 10, 10], gvB: [9, 10, 90] } }, inbox: { gvA: { kind: 'give', sk }, gvB: { kind: 'give', sk } }, recs: { gvA: 1, gvB: 1 } });
   ok(/9\/10 맞혔어요/.test(g2.t), `같은 기능 보충이 여럿이면 가장 최근 결과(보충 A → 배우기 못 넘음 → 보충 B 9/10) — ${g2.t}`);
   const f = T9.nextOf({ C: 'ZZ', no: '3', rep, now: { mode: 'fix', c: '1-2-6:4', t: Date.now() - 9 * 60e3, ask: Date.now() - 9 * 60e3 } });
