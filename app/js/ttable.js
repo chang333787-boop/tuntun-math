@@ -54,20 +54,21 @@ export function wantOf(minds, s) {
   return want;
 }
 // 반 표의 줄 — 기록에 나온 차시마다 가장 좁은 기능 · 오늘 단원만이면 그 단원 준비 칸 · 아래 칸에 든 기능만
+export const skillCmp = (a, b) => (a.g < b.g ? -1 : a.g > b.g ? 1 : ORDER[a.id] - ORDER[b.id]);   /* 낮은 학년 → 같은 학년이면 기능 차례(반 표 · 아이 자세히가 같은 '먼저') */
 export function skillRows(K, S, { unit = null } = {}) {
   const nos = Array.from({ length: K.n }, (_, i) => String(i + 1));
   const P = unit ? prepPlan(unit) : null, inUnit = P ? new Set([...P.pre, ...P.below]) : null;
-  const ids = new Set();
-  for (const no of nos) { const st = S[no] && S[no].st; if (!st) continue; for (const c of [...Object.keys(st.L), ...st.start]) { if (!LES(c) || (inUnit && !inUnit.has(c))) continue; const sk = skillsOf(c)[0]; if (sk) ids.add(sk.id); } }
+  const ids = new Set(), shown = new Set();   /* ids = 아이에게 보인 모든 기능('가장 아래'는 단원과 상관없이) · shown = 단원으로 좁힌 표에 보일 것 */
+  for (const no of nos) { const st = S[no] && S[no].st; if (!st) continue; for (const c of [...Object.keys(st.L), ...st.start]) { if (!LES(c)) continue; const sk = skillsOf(c)[0]; if (!sk) continue; ids.add(sk.id); if (!inUnit || inUnit.has(c)) shown.add(sk.id); } }
   const rows = [...ids].map((id) => {
     const s = SKILL[id], cells = nos.map((no) => skillState(S[no] && S[no].st, s));
     const lack = nos.filter((no, i) => LACK(cells[i])), shaky = nos.filter((no, i) => cells[i] === 'shaky'), seen = cells.filter(Boolean).length;
     return { s, cells, lack, shaky, seen };
   });
   /* 아이마다 가장 아래(낮은 학년)의 부족한 기능 — 더 아래가 빈 아이에게 위 기능 보충이 먼저 가지 않게(first = 이 기능부터인 아이 · later = 더 아래부터 · 처음 보는 눈 11-07) */
-  const low = {}; for (const r of rows) r.lack.forEach((no) => { const o = low[no]; if (!o || r.s.g < o.s.g || (r.s.g === o.s.g && ORDER[r.s.id] < ORDER[o.s.id])) low[no] = r; });
+  const low = {}, isRoot = (r, no) => r.cells[nos.indexOf(no)] === 'root'; for (const r of rows) r.lack.forEach((no) => { const o = low[no]; if (!o || (isRoot(r, no) && !isRoot(o, no)) || (isRoot(r, no) === isRoot(o, no) && skillCmp(r.s, o.s) < 0)) low[no] = r; });   /* '여기서부터'(진한 ✕)가 있으면 그것이 먼저 — 아이 자세히 '먼저 배울 곳'과 같게 */
   rows.forEach((r) => { r.first = r.lack.filter((no) => low[no] === r); r.later = r.lack.filter((no) => low[no] !== r).map((no) => [no, low[no].s]); });
-  return rows.sort((a, b) => b.lack.length - a.lack.length || b.shaky.length - a.shaky.length || ORDER[a.s.id] - ORDER[b.s.id]);
+  return rows.filter((r) => shown.has(r.s.id)).sort((a, b) => b.lack.length - a.lack.length || b.shaky.length - a.shaky.length || ORDER[a.s.id] - ORDER[b.s.id]);
 }
 // 반 화면 카드 ②에 넣는 짧은 줄 — 부족한 아이가 많은 기능 셋
 export function tableCard(C, K, S) {

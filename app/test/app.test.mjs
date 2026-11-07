@@ -285,7 +285,7 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
 // ㉒ 매일 연습은 오늘 이미 푼 칸을 내지 않음(11-07 · 예전엔 뒤로만) — 마지막으로 푼 때에 모든 기록 시각
 {
   const RN = await import('../js/run.js'), G6 = await import('../../paper/js/gen.js'), KS6 = await import('../js/kidstore.js');
-  const now = Date.now(), day = 864e5;
+  const now = new Date().setHours(12, 0, 0, 0), day = 864e5;   /* 오늘 정오 — 자정 바로 뒤에 '1분 전'이 어제가 되어 틀리던 것 */
   const mk = (c, made) => { const sh = G6.makeSheet({ kind: 'prep', words: false, id: 'R' + made, lessons: [{ c, n: 3 }], mixed: true }); sh.items = sh.items.filter((x) => x.ch !== 'END'); sh.chapters = sh.chapters.filter((x) => x.key !== 'END'); sh.made = made; return { s: KS6.pack(sh), r: { done: Object.fromEntries(sh.chapters.map((x) => [x.key, true])), it: Object.fromEntries(sh.items.map((x) => [x.k, { s: 'ok' }])) }, cf: {}, ms: {} }; };
   const K = { recs: { a: mk('2-2-2:4', now - 60000), b: mk('2-2-2:3', now - 5 * day) }, rv: {}, fixed: {}, mx: { '2-2-2:4': { tier: 1, runs: [] }, '2-2-2:3': { tier: 1, runs: [] } } };
   const plan = RN.runPlan(K, now);
@@ -300,7 +300,7 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
 // ㉔ 코덱스 11-07 — 점검지 · 보충만 푼 새 아이도 매일 연습이 생김(판정된 칸) · 오늘 푼 것뿐이면 '내일부터'(later)
 {
   const RN = await import('../js/run.js'), G7 = await import('../../paper/js/gen.js'), KS7 = await import('../js/kidstore.js');
-  const now = Date.now(), day = 864e5;
+  const now = new Date().setHours(12, 0, 0, 0), day = 864e5;   /* 오늘 정오 — 자정 바로 뒤에 '1분 전'이 어제가 되어 틀리던 것 */
   const mk = (c, made) => { const sh = G7.makeSheet({ kind: 'prep', words: false, id: 'Q' + made, lessons: [{ c, n: 3 }], mixed: true }); sh.items = sh.items.filter((x) => x.ch !== 'END'); sh.chapters = sh.chapters.filter((x) => x.key !== 'END'); sh.made = made; return { s: KS7.pack(sh), r: { done: Object.fromEntries(sh.chapters.map((x) => [x.key, true])), it: Object.fromEntries(sh.items.map((x) => [x.k, { s: 'ok' }])) }, cf: {}, ms: {} }; };
   const one = (x) => ({ [x.s.id]: x });   /* 기록 id = 묶음 id(addSheet와 같게 — 판정이 이 id로 결과를 찾음) */
   const K = { recs: one(mk('2-2-2:3', now - 3 * day)), rv: {}, fixed: {}, mx: {} };

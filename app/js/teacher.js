@@ -31,7 +31,7 @@ import { icon } from './icons.js';
 import { kidSheet } from './sheet.js';
 import { checkCard, syncChecks } from './tcheck.js';
 import { SKILL, skillsOf, gText } from '../../engine/skills.js';
-import { tableCard, skillState } from './ttable.js';
+import { tableCard, skillState, skillCmp } from './ttable.js';
 
 const TK = 'tt.t';
 const tget = () => lsGet(TK, { classes: {} });
@@ -397,7 +397,7 @@ export async function kidDetailView(root, C, no) {
   const recs = Object.values(KK.recs).sort((a, b) => b.s.made - a.s.made);
   /* 부족한 기능 — 반 표와 같은 줄 고르기(차시마다 가장 좁은 기능) · 칩마다 [보충 주기](이 아이만 골라 둠) */
   const skIds = st ? [...new Set([...Object.keys(st.L), ...st.start].filter((c) => LES(c)).map((c) => (skillsOf(c)[0] || {}).id).filter(Boolean))] : [];
-  const skRows = skIds.map((id) => ({ s: SKILL[id], v: skillState(st, SKILL[id]) })).filter((x) => x.v === 'root' || x.v === 'bad' || x.v === 'shaky').sort((a, b) => ['root', 'bad', 'shaky'].indexOf(a.v) - ['root', 'bad', 'shaky'].indexOf(b.v) || (a.s.g < b.s.g ? -1 : a.s.g > b.s.g ? 1 : 0));   /* 같은 표시끼리는 낮은 학년부터 */
+  const skRows = skIds.map((id) => ({ s: SKILL[id], v: skillState(st, SKILL[id]) })).filter((x) => x.v === 'root' || x.v === 'bad' || x.v === 'shaky').sort((a, b) => ['root', 'bad', 'shaky'].indexOf(a.v) - ['root', 'bad', 'shaky'].indexOf(b.v) || skillCmp(a.s, b.s));   /* 같은 표시끼리는 반 표와 같은 차례(낮은 학년 → 기능 차례) */
   const firstSk = skRows[0] && skRows[0].v !== 'shaky' ? skRows[0].s.id : null;   /* 맨 위 = 먼저 배울 곳(단추도 이 줄만 주황 · 처음 보는 눈 11-07) */
   const kmOf = (sk) => { const cs = new Set(sk.parts.map((x) => x.c)); return st && st.mis ? MIS.filter((m) => (st.mis[m.id] === 's' || st.mis[m.id] === 'm') && m.lessons.some((x) => cs.has(x))) : []; };   /* 이 기능에서 보인 틀린 생각 */
   const lackHTML = `<div class="klack no-print"><h3>부족 · 가끔 틀림 <small>${skRows.length ? `기능 ${skRows.length}개 · ✕ 부족 · △ 가끔 틀림` : ''}</small></h3>${skRows.length ? `<ul class="klist">${skRows.map((x) => `<li class="${x.v === 'shaky' ? 'sh' : 'bad'}"><i>${x.v === 'shaky' ? '△' : '✕'}</i><b>${esc(x.s.name)}</b><span class="small muted">${esc(gText(x.s).replace(/(\d)-(\d)/g, '$1학년 $2학기'))}${x.s.id === firstSk ? ' · <b>먼저 배울 곳</b>' : ''}</span>${kmOf(x.s).length ? `<span class="km">틀린 생각: ${kmOf(x.s).map((m) => esc(m.title)).join(', ')}</span>` : ''}<a class="btn ${x.s.id === firstSk ? 'pri' : 'teal'} mini" href="#/t/c/${C}/give?sk=${x.s.id}&who=${no}">${icon('send', 16)}${x.s.id === firstSk ? '여기부터 보충 주기' : '보충 주기'}</a></li>`).join('')}</ul>` : '<p class="muted">부족하거나 가끔 틀리는 기능이 없어요.</p>'}</div>`;
