@@ -23,7 +23,7 @@ import { speakButton, stopSpeak } from './speak.js';
 import { icon, tile } from './icons.js';
 
 const say = (pose, html, size = 60) => `<div class="say">${mascot(pose, size)}<div class="bub">${html}</div></div>`;
-const STEPS = ['무슨 이야기?', '막대 그림', '식 쓰기', '답 쓰기'];   /* 첫 화면 '네 단계'와 같은 말(11-07) */
+const STEPS = ['무슨 이야기?', '막대 그림', '식 고르기', '답 쓰기'];   /* 첫 화면 '네 단계'와 같은 말(11-07) */
 const LETTER = ['가', '나', '다', '라'];
 const ye = (w) => P(w, '이에요', '예요');
 
@@ -386,7 +386,7 @@ export function storyView(root, arg) {
       <div class="acts"><a class="btn pri big" href="#/story/${encodeURIComponent(S.cs.join(','))}?${Date.now()}">한 판 더</a><a class="btn big" href="#/story">다른 이야기 고르기</a><a class="btn big" href="#/me">처음 화면으로</a></div></div>`;
   }
   if (S.i === 0 && !Object.keys(S.res).length) {
-    root.innerHTML = `<div class="card msg act-story"><p class="eyebrow">${tile('story', 22)}이야기 문제</p>${say('point', `이야기 ${S.items.length}개를 풀어요. 문제마다 <b>네 단계</b>예요.<br>① 무슨 이야기인지 고르기 ② 막대 그림 채우기 ③ 식 쓰기 ④ 답 쓰기`, 104)}<div class="acts"><button class="pri big" id="s">시작</button><a class="btn" href="#/story">이야기 종류 다시 고르기</a></div></div>`;
+    root.innerHTML = `<div class="card msg act-story"><p class="eyebrow">${tile('story', 22)}이야기 문제</p>${say('point', `이야기 ${S.items.length}개를 풀어요. 문제마다 <b>네 단계</b>예요.<br>① 무슨 이야기인지 고르기 ② 막대 그림 고르기 ③ 식 고르기 ④ 계산해서 답 쓰기`, 104)}<div class="acts"><button class="pri big" id="s">시작</button><a class="btn" href="#/story">이야기 종류 다시 고르기</a></div></div>`;
     root.querySelector('#s').addEventListener('click', start);
   } else start();
 }
