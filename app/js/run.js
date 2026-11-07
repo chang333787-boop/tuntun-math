@@ -13,8 +13,9 @@ import { ladder } from './hint.js';
 import { target, wantOf, isFact, lastReady } from './stage.js';
 import { esc, rand } from './local.js';
 import { go, meOf } from './kid.js';
-import { tile } from './icons.js';
+import { tile, art } from './icons.js';
 
+const sayArt = (k, html, size = 104) => `<div class="say">${art(k, size, 'say-art')}<div class="bub">${html}</div></div>`;
 const say = (pose, html, size = 64) => `<div class="say">${mascot(pose, size)}<div class="bub">${html}</div></div>`;
 const kid = (c) => (LES(c) ? LES(c).kid : c);
 const DAY = 864e5;
@@ -102,6 +103,6 @@ export function runView(root) {
       <p>이번 주 연습한 날 ${weekHTML(K, now)}</p>
       <div class="acts"><a class="btn pri big" href="#/me">처음 화면으로</a></div></div>`;
   };
-  root.innerHTML = `<div class="card msg act-run"><p class="eyebrow">${tile('daily', 22)}매일 연습</p>${say('hi', `<b>매일 연습</b> — 섞은 ${sh.items.length}문제, 3~5분이면 돼요.<br>아는 것도 며칠 안 풀면 잊어요. 날마다 조금씩 꺼내 풀면 오래 남아요.`, 104)}<p>이번 주 연습한 날 ${weekHTML(K)}</p><div class="acts"><button class="pri big" id="s">시작</button><a class="btn" href="#/me">처음 화면으로</a></div></div>`;
+  root.innerHTML = `<div class="card msg act-run"><p class="eyebrow">${tile('daily', 22)}매일 연습</p>${sayArt('daily', `<b>매일 연습</b> — 섞은 ${sh.items.length}문제, 3~5분이면 돼요.<br>아는 것도 며칠 안 풀면 잊어요. 날마다 조금씩 꺼내 풀면 오래 남아요.`, 104)}<p>이번 주 연습한 날 ${weekHTML(K)}</p><div class="acts"><button class="pri big" id="s">시작</button><a class="btn" href="#/me">처음 화면으로</a></div></div>`;
   root.querySelector('#s').addEventListener('click', one);
 }

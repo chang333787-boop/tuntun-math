@@ -18,13 +18,14 @@ import { runPlan, weekHTML, today } from './run.js';
 import { toolFor, nextStep } from './tools.js';
 import { lineOf, weekTerm, weekPlan, doneThisWeek, weekKey } from './weekcore.js';
 import { makeItem as mkItem } from '../../engine/lessons/index.js';
-import { icon, tile, ACT } from './icons.js';
+import { icon, tile, ACT, art } from './icons.js';
 import { giveTasks } from './give.js';
 import { ladder, stepCtx, colFor, planHTML, planNames } from './hint.js';
 import { checkTasks } from './check.js';
 
 export const go = (h) => { location.hash = h; };
 const say = (pose, html, size = 72) => `<div class="say">${mascot(pose, size)}<div class="bub">${html}</div></div>`;
+const sayArt = (k, html, size = 96) => `<div class="say">${art(k, size, 'say-art')}<div class="bub">${html}</div></div>`;   /* 튼튼이 그림(app/img)으로 말하기 */
 export const meOf = () => lsGet('tt.me');
 const kidName = (c) => (LES(c) ? LES(c).kid : c);
 export const unitLabel = (u) => (unitById[u] ? unitById[u].nm : u);
@@ -119,7 +120,7 @@ function cardHTML(c, list, now, extra = '') {
   const first = list[0], go1 = first && first.href ? first : list.find((x) => x.href);
   const items = list.slice(0, 3).map((t) => (t.kind === 'help' ? helpItem(t) : `<li><a href="${t.href}"><b>${esc(t.title)}</b><span>${esc(t.sub)}</span></a></li>`)).join('');
   return `<section class="c3 act-${(ACT[c.k] || ACT.prep)[1]}${now ? ' now' : ''}${list.length ? '' : ' empty'}" aria-label="${c.no}. ${c.t}">
-    <div class="c3-h">${tile(c.k, 30)}<h2>${c.t}</h2>${list.length ? `<span class="c3-cnt">${list.length}개</span>` : ''}</div>
+    <div class="c3-h">${art(c.k, 76, 'c3-art') || tile(c.k, 30)}<h2>${c.t}</h2>${list.length ? `<span class="c3-cnt">${list.length}개</span>` : ''}</div>
     <p class="c3-what">${c.what}</p>
     ${list.length ? `<ul class="c3-list">${items}</ul>${list.length > 3 ? `<p class="small muted">그 밖에 ${list.length - 3}개 더 있어요</p>` : ''}` : `<p class="c3-none">${c.none}</p>`}
     ${extra}
@@ -152,9 +153,9 @@ export async function homeView(root) {
   const lists = [chk, prac, daily];
   const head = doneOne ? say('cheer', '하나 배웠어요! 이제 <b>선생님 수업</b>으로 가요. 남은 것은 다음 시간에 해요.', 88)
     : classRest ? say('cheer', '오늘 단원 점검을 끝냈어요. 지금은 <b>선생님 수업 시간</b>이에요. 남은 것은 다음 시간에 해요.', 88)
-    : hasHelp ? say('think', '<b>선생님과 같이</b> 볼 것이 있어요. 손을 들고 선생님께 알려요.<br>기다리는 동안 주황 단추로 다른 것을 해도 돼요.', 88)
+    : hasHelp ? sayArt('hand', '<b>선생님과 같이</b> 볼 것이 있어요. 손을 들고 선생님께 알려요.<br>기다리는 동안 주황 단추로 다른 것을 해도 돼요.', 88)
     : nowNo ? say('point', `오늘은 <b>${CARDS[nowNo - 1].t}</b>부터 해요. 주황 단추를 눌러요.`, 88)
-    : firstDay ? say('hi', '반가워요! 선생님이 점검을 열면 <b>점검</b> 카드에 나와요.<br>기다리는 동안 아래 <b>이야기 문제 풀기</b>를 해 봐도 돼요.', 88)
+    : firstDay ? sayArt('wait', '반가워요! 선생님이 점검을 열면 <b>점검</b> 카드에 나와요.<br>기다리는 동안 아래 <b>이야기 문제 풀기</b>를 해 봐도 돼요.', 88)
     : say('cheer', `오늘 할 것을 다 했어요! 더 하고 싶으면 <a class="btn mini" href="#/story">이야기 문제에 도전</a>해 봐요.`, 88);
   // 내 기록 — 나하고만 견줌 · 사실만(점검 맞힌 수 · 연습한 날 · 배워서 고친 것)
   const ws = lineOf(K.recs, weekTerm(K)), wl = ws[ws.length - 1], wb = ws[ws.length - 2];
@@ -260,7 +261,7 @@ export function prepView(root, unit) {
     root.innerHTML = `<div class="card msg act-prep"><p class="eyebrow">${tile('chk', 22)}오늘 단원 점검</p>${head}${S.why === 'teacher' ? '' : okLine + calLine}${acts}</div>`;
   };
   if (!asked(S) && !S.done) {
-    root.innerHTML = `<div class="card msg act-prep"><p class="eyebrow">${tile('chk', 22)}오늘 단원 점검</p>${say('point', `<b>${esc(unitLabel(unit))}</b> 배우기 전에, 꼭 필요한 앞 문제를 알고 있는지 볼게요(${S.prior ? '지난번에 멈춘 곳부터 · ' : ''}약 ${mins(S.budget)}분).<br>답을 쓰고, <b>얼마나 자신 있는지</b> 단추를 눌러 내요. 모르면 넘어가도 돼요.`, 104)}<div class="acts"><button class="pri big" id="s">시작</button></div></div>`;
+    root.innerHTML = `<div class="card msg act-prep"><p class="eyebrow">${tile('chk', 22)}오늘 단원 점검</p>${sayArt('chk', `<b>${esc(unitLabel(unit))}</b> 배우기 전에, 꼭 필요한 앞 문제를 알고 있는지 볼게요(${S.prior ? '지난번에 멈춘 곳부터 · ' : ''}약 ${mins(S.budget)}분).<br>답을 쓰고, <b>얼마나 자신 있는지</b> 단추를 눌러 내요. 모르면 넘어가도 돼요.`, 104)}<div class="acts"><button class="pri big" id="s">시작</button></div></div>`;
     root.querySelector('#s').addEventListener('click', step);
   } else step();
 }

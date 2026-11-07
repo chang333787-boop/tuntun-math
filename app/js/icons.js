@@ -35,3 +35,7 @@ export const ACT = {
 };
 // 아이콘 타일(색 바탕 + 흰 선) — 활동 이름(ACT 열쇠)으로
 export const tile = (kind, size = 26) => { const a = ACT[kind] || ACT.prep; return `<span class="ico act-${a[1]}">${icon(a[0], size)}</span>`; };
+
+// 튼튼이 그림(app/img · 코덱스가 지금 튼튼이를 참고해 그림 · 11-07) — 카드 · 첫날 · 선생님과 같이 · 활동 시작 화면 · 장식이 아니라 '무슨 카드인지'를 글 없이 알게(글 읽기가 느린 아이)
+export const ART = { chk: 'chk', prac: 'prac', give: 'prac', daily: 'daily', run: 'daily', wait: 'wait', hand: 'hand', prep: 'chk', week: 'chk', fix: 'prac' };
+export const art = (k, size = 72, cls = '') => (ART[k] ? `<img class="art${cls ? ` ${cls}` : ''}" src="img/${ART[k]}.webp" alt="" width="${size}" height="${size}" decoding="async">` : '');
