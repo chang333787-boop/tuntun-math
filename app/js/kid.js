@@ -431,6 +431,7 @@ export function fixView(root, c, opt = {}) {
         `<div class="panel"><p class="small muted">선생님과 같이 볼 문제</p><p><b>${esc(ex)}</b></p></div><div class="acts"><a class="btn big" href="#/me">처음 화면으로</a></div>`);
       return;
     }
+    if (!F.passed && !inClass) KS.setNow(me, { mode: 'fix', c, ask: Date.now() });   /* 확인을 못 넘음 → '선생님과 같이 한 번 더' = 선생님 화면에도 '선생님을 기다려요'(수업 중엔 수업으로 가니 X) */
     const was = before && before.tot ? ` 처음엔 ${before.tot}문제 중 ${before.ok}개 맞혔어요.` : '';
     const retry = F.passed && K.back && K.back.root === c && !K.back.solved;
     const nx = F.passed && !inClass && !retry ? todoOf(K, KS.reportOf(K)).find((x) => x.kind === 'fix' && x.c !== c && x.href) : null;   /* 통과 뒤 배울 것이 더 있으면 바로 그것으로(처음 화면을 거치지 않게) */
