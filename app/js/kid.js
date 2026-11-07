@@ -192,7 +192,7 @@ export async function homeView(root) {
         <div class="mine-c"><span class="k">다시 풀어 맞힌 문제(이번 주)</span><span class="v">${selfWk}개${selfLast != null ? ` <small>(지난주 ${selfLast}개)</small>` : ''}</span></div>
         <div class="mine-c"><span class="k">'자신 있어요' 하고 맞힌 문제</span><span class="v">${cal.n ? `${cal.sureRight}문제 <small>(${cal.n}문제 중)</small>` : '<small>아직 없어요</small>'}</span></div>
       </div>
-      <p class="mine-links small">${(() => { const so = lsGet(`tt.story.${me.C}.${me.no}`, null); return so && !so.done && Date.now() - so.made < 3 * 3600e3 && Array.isArray(so.items) && so.i < so.items.length ? `<a href="#/story"><b>이야기 문제 이어서 하기</b>(${so.i + 1}번째 이야기부터)</a>` : '<a href="#/story">이야기 문제 풀기</a>'; })()}<a href="#/back">막힌 문제 직접 넣어 보기</a></p>
+      <p class="mine-links small">${(() => { const so = lsGet(`tt.story.${me.C}.${me.no}`, null); return so && !so.done && Date.now() - so.made < 3 * 3600e3 && Array.isArray(so.items) && so.i < so.items.length ? `<a href="#/story"><b>이야기 문제 이어서 하기</b>(${so.i + 1}번째 이야기부터)</a>` : '<a href="#/story">이야기 문제 풀기</a>'; })()}${(() => { const bk = lsGet(`tt.back.${me.C}.${me.no}`, null); return bk && !bk.done && Date.now() - bk.t0 < 3 * 3600e3 && bk.problem ? `<a href="#/back"><b>막힌 문제 찾기 이어서 하기</b>(${esc(bk.problem.text || '')})</a>` : '<a href="#/back">막힌 문제 직접 넣어 보기</a>'; })()}</p>
       <p class="out-row small"><button class="link" id="out">나가기(다른 친구가 이 크롬북을 쓸 때)</button></p></section>
   </div>`;
   root.querySelector('#out').addEventListener('click', () => { if (confirm('이 기기에서 나갈까요? 푼 기록은 서버에 남아 있어요.')) { lsDel('tt.me'); lsDel('tt.who'); WHO.ok = false; go('#/'); } });

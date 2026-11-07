@@ -49,9 +49,11 @@ export function batchRec(id, no, items, R, made = Date.now()) {
 
 // 아이 홈 카드 ①에 넣을 할 일 — 다 푼 점검지는 뺌 · 새로 낸 것부터
 export function checkTasks(K) {
+  const me = meOf(), w = me ? lsGet(wipKey(me)) : null;   /* 하다가 나간 묶음(이 기기 · 아직 기록에 안 옮김)도 푼 수에 넣고 '이어서'로 */
   return Object.entries(K.inbox || {}).filter(([id, x]) => okTask(id, x)).map(([id, x]) => {
-    const total = Number(x.n), done = [...doneKs(K, id)].filter((k) => k <= total).length, left = Math.max(0, total - done);
-    return { id, title: '선생님이 낸 점검지', sub: done ? `남은 문제 ${left}개 · 이어서 풀어요` : `모두 ${total}문제 · 한 번에 ${CK.per}문제씩 풀어요`, href: `#/check/${id}`, left, total, t: Number(x.t) || 0 };
+    const ks = doneKs(K, id); if (w && w.id === id && w.R && typeof w.R === 'object') for (const k of Object.keys(w.R)) ks.add(Number(k));
+    const total = Number(x.n), done = [...ks].filter((k) => k <= total).length, left = Math.max(0, total - done);
+    return { id, resume: done > 0, title: done ? '선생님이 낸 점검지 — 이어서' : '선생님이 낸 점검지', sub: done ? `남은 문제 ${left}개 · 이어서 풀어요` : `모두 ${total}문제 · 한 번에 ${CK.per}문제씩 풀어요`, href: `#/check/${id}`, left, total, t: Number(x.t) || 0 };
   }).filter((x) => x.left > 0).sort((a, b) => b.t - a.t).map(({ t, ...x }) => x);
 }
 

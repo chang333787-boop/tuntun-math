@@ -69,6 +69,16 @@ ok(T.length === 1 && T[0].left === N - answered && /남은 문제/.test(T[0].sub
 ok(CKM.checkTasks(K).length === 0 && KS.summaryOf(K).ck[id] === N, `다 풀면 할 일에서 빠짐 · 요약 ${KS.summaryOf(K).ck[id]}/${N}`);
 // 다른 기기에서 푼 기록도 셈(기록이 정본) — 같은 기록을 다른 K에 옮겨도 진행이 같음
 { const K3 = { recs: JSON.parse(JSON.stringify(K.recs)), inbox: { [id]: task } }; ok(CKM.doneKs(K3, id).size === N && CKM.checkTasks(K3).length === 0, '다른 기기 기록(pull로 들어온 것)으로도 진행을 셈'); }
+// ⑦ 하다가 나간 묶음(이 기기의 wip · 아직 기록 전)도 처음 화면에서 '이어서' · 남은 수에 넣음(11-07 '다시 들어와도 이어서')
+{
+  const mem = new Map(); globalThis.localStorage = { getItem: (k) => (mem.has(k) ? mem.get(k) : null), setItem: (k, v) => mem.set(k, String(v)), removeItem: (k) => mem.delete(k) };
+  localStorage.setItem('tt.me', JSON.stringify({ C: 'ZZCK', no: '2', pin: '0000' }));
+  const ks3 = A.items.slice(0, 3).map((it) => it.k);
+  localStorage.setItem('tt.ck.ZZCK.2', JSON.stringify({ id, items: A.items.slice(0, 12).map((it) => ({ k: it.k, c: it.c, p: it.p })), R: Object.fromEntries(ks3.map((k) => [k, { s: 'ok' }])), ms: {} }));
+  const t = CKM.checkTasks({ recs: {}, inbox: { [id]: task } })[0];
+  ok(t && t.resume && /이어서/.test(t.title) && t.left === N - 3, `하다가 나간 묶음 → '${t && t.title}' · 남은 ${t && t.left}/${N}`);
+  delete globalThis.localStorage;
+}
 // 기록 크기 — 서버 규칙(r/ 8000자) 안
 { const big = Math.max(...Object.values(K.recs).map((x) => JSON.stringify(x).length)); ok(big <= 8000, `기록 하나 가장 큰 것 ${big}자 ≤ 8000`); }
 
