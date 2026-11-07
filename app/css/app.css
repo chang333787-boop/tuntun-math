@@ -284,6 +284,23 @@ div.cmpc{box-shadow:none}
 .klist li{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.klist li>i{font-style:normal;font-weight:800;width:26px;height:26px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;background:var(--stuck-t);color:var(--stuck)}.klist li.sh>i{background:var(--shaky-t);color:var(--shaky)}
 .klist li>b{font-size:16px}.klist li>.btn{margin-left:auto}
 .fb-acts{display:flex;gap:10px;flex-wrap:wrap}.fb-acts button{flex:1 1 auto}.fb-steps{margin:12px 0 4px}
+/* 틀렸을 때 도움 사다리(hint.js) — 오른쪽 튼튼이 말: 떠올리기 · 단계 글 · 왼쪽 위: 처음 문제(작게) + 채운 단계(맞음 ✓ · 답을 본 단계는 옅게) · 새로 채운 단계만 살짝 나타남 */
+.hl .bub{display:flex;flex-direction:column;gap:6px}
+.hl-was{font-size:16px;color:var(--mute)}.hl-was b{color:var(--stuck)}
+.hl-cue-t{font-size:20px;font-weight:700;line-height:1.5;color:var(--ink)}
+.hl-k{display:inline-block;align-self:flex-start;font-size:14px;font-weight:800;color:var(--teal-d);background:var(--teal-t);border-radius:999px;padding:1px 12px}
+.hl-why{font-size:19px;font-weight:600;line-height:1.5}.hl-re{font-size:16px;font-weight:700;color:var(--stuck)}
+.hl-go{margin:12px 0 0 74px;min-height:46px;font-size:16px;color:var(--teal);border-color:var(--teal);box-shadow:0 3px 0 var(--teal-l)}
+.hl-ctx{display:flex;flex-direction:column;gap:8px;margin:0 0 14px;padding:12px 14px;background:var(--panel);border-radius:14px}
+.hl-ctx>.hl-k{background:none;padding:0;color:var(--mute)}.hl-ctx>.math{font-size:clamp(22px,2.6cqi,30px)}
+.hl-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.hl-steps li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;align-items:center;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:6px 12px}
+.hl-steps .hl-n{grid-row:span 2;width:26px;height:26px;border-radius:50%;background:var(--ok);color:#fff;font-weight:800;font-size:14px;display:inline-flex;align-items:center;justify-content:center}
+.hl-steps li.shown .hl-n{background:var(--off-ink)}.hl-steps li.shown{border-style:dashed}
+.hl-steps .why{font-size:14px;color:var(--mute);line-height:1.4}.hl-steps .math{font-size:clamp(20px,2.4cqi,26px)}
+@media (prefers-reduced-motion:no-preference){.hl-steps li:last-child{animation:hlIn .26s ease-out both}.hl .bub{animation:hlFade .2s ease-out both}}
+@keyframes hlIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes hlFade{from{opacity:.2}to{opacity:1}}
 @media (max-width:1000px){.cards3,.mine-row{grid-template-columns:minmax(0,1fr)}.c3-h h2{font-size:26px}}
 @media (max-width:700px){.stab th.lack,.stab td.lack{position:static}.stab th.sk{min-width:150px}.tv-h .btn{min-height:44px}}
 .todo{display:flex;flex-direction:column;gap:14px}

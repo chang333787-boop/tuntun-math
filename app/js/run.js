@@ -8,10 +8,10 @@ import { byId, gradeIdx } from '../../engine/lessons/index.js';
 import { makeSheet, itemOf, LES } from '../../paper/js/gen.js';
 import { mascot } from '../../paper/js/mascot.js';
 import * as KS from './kidstore.js';
-import { draw, ansSay, fbSlot } from './item.js';
+import { draw } from './item.js';
+import { ladder } from './hint.js';
 import { target, wantOf, isFact, lastReady } from './stage.js';
 import { esc, rand } from './local.js';
-import { nextStep } from './tools.js';
 import { go, meOf } from './kid.js';
 import { tile } from './icons.js';
 
@@ -70,12 +70,8 @@ export function runView(root) {
       else { try { ok = !!itemOf(it.c, it.p).check(a.vals, a.raws).ok; } catch (e) { ok = false; } R.it[it.k] = ok ? { s: 'ok' } : { s: 'x', a: a.raws }; }
       ms[it.k] = t; i++;
       if (ok) return one();
-      const box = document.createElement('div'); box.className = a.idk ? 'fb' : 'fb no';   /* 넘어간 문제는 ✕ 없이(솔직한 모름 · docs/ui.md) */
-      try { nextStep(box, { it: itemOf(it.c, it.p), vals: a.vals || [], c: it.c, idk: !!a.idk, after: '이 문제는 내일 한 번 더 나와요.', onSelfFix: (t) => KS.selfFix(me, K, t) }); } catch (e) { box.innerHTML = `${ansSay(it.snap)} 이 문제는 내일 한 번 더 나와요.`; }
-      const b = document.createElement('button'); b.className = 'pri'; b.textContent = '다음'; box.appendChild(b);
-      root.querySelectorAll('.qcard input, .qcard .qact button, .qcard .choices button').forEach((x) => (x.disabled = true));
-      fbSlot(root).appendChild(box);
-      b.focus(); b.addEventListener('click', one);
+      /* 틀리면 넘어가지 않고 떠올리기 → 한 단계씩 → 처음 문제 다시(hint.js · 판정 · 내일 다시는 첫 답으로) */
+      ladder(root, { it: itemOf(it.c, it.p), c: it.c, raws: a.idk ? null : a.raws, tag: '매일 연습', act: 'daily', dots: [i - 1, sh.items.length], onEnd: (r) => { if (r.how !== 'shown') KS.selfFix(me, K, r.how); one(); } });
     } });
   };
   const fin = () => {

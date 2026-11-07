@@ -1,5 +1,5 @@
 {
- "v": "0fa069f719ac",
+ "v": "e27581623fec",
  "files": [
   "css/app.css",
   "js/back.js",
@@ -10,6 +10,7 @@
   "js/firebase-config.js",
   "js/fix.js",
   "js/give.js",
+  "js/hint.js",
   "js/icons.js",
   "js/item.js",
   "js/kid.js",

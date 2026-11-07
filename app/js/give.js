@@ -1,16 +1,15 @@
 // 선생님이 준 문제(보충) — 선생님이 반 표 · 아이 자세히에서 고른 기능 하나 · n문제(docs/what.md ② 연습할 것)
 //  과제 = in/<id> { kind: 'give', sk: 기능 id(engine/skills.js), n, seed, t } · 같은 씨앗 = 종이 맞춤 연습지와 같은 문제(paper/js/pick.js buildSheet)
 //  다 풀면 기록 kind 'gv' · 기록 id = 과제 id → 판정(반 표)에 들어감 · 요약 gv = [맞힘, 문제 수, 때](kidstore.summaryOf)
-//  틀리면 그 자리에서 다음에 할 한 가지(검산 도구) + [풀이 보기] · 맞으면 바로 다음 · 도중에 나가도 이 기기에서 이어서
+//  틀리면 넘어가지 않고 도움 사다리(hint.js — 떠올리기 → 한 단계씩 → 처음 문제 다시) · 맞으면 바로 다음 · 도중에 나가도 이 기기에서 이어서
 import { SKILL, secOf } from '../../engine/skills.js';
 import { buildSheet, examplesOf } from '../../paper/js/pick.js';
 import { formOf, itemOf } from '../../paper/js/gen.js';
 import { toText } from '../../engine/tokens.js';
 import { mascot } from '../../paper/js/mascot.js';
 import * as KS from './kidstore.js';
-import { draw, ansSay, fbSlot, stepHTML } from './item.js';
-import { nextStep } from './tools.js';
-import { stepsOf } from './fix.js';
+import { draw } from './item.js';
+import { ladder } from './hint.js';
 import { lsGet, lsSet, lsDel, esc } from './local.js';
 import { go, meOf } from './kid.js';
 import { tile } from './icons.js';
@@ -61,19 +60,8 @@ export function giveView(root, id) {
       else { try { ok = !!itemOf(it.c, it.p).check(a.vals, a.raws).ok; } catch (e) { ok = false; } S.R.it[it.k] = ok ? { s: 'ok' } : { s: 'x', a: a.raws }; }
       S.ms[it.k] = Math.max(0, Math.round(t || 0)); S.i++; keep();
       if (ok) return one();
-      const box = document.createElement('div'); box.className = a.idk ? 'fb' : 'fb no';
-      try { nextStep(box, { it: itemOf(it.c, it.p), vals: a.vals || [], c: it.c, idk: !!a.idk, onSelfFix: (tl) => KS.selfFix(me, K, tl) }); } catch (e) { box.innerHTML = ansSay(it.snap); }
-      let steps = []; try { steps = stepsOf({ c: it.c, p: it.p }) || []; } catch (e) { steps = []; }
-      const acts = document.createElement('div'); acts.className = 'fb-acts';
-      if (steps.length) {
-        const sb = document.createElement('button'); sb.type = 'button'; sb.className = 'teal'; sb.textContent = '풀이 보기'; acts.appendChild(sb);
-        sb.addEventListener('click', () => { sb.remove(); const ol = document.createElement('ol'); ol.className = 'steps fb-steps'; ol.innerHTML = steps.map((x) => stepHTML(x)).join(''); box.insertBefore(ol, acts); });
-      }
-      const nb = document.createElement('button'); nb.type = 'button'; nb.className = 'pri'; nb.textContent = S.i >= sh.items.length ? '끝내기' : '다음'; acts.appendChild(nb);
-      box.appendChild(acts);
-      root.querySelectorAll('.qcard input, .qcard .qact button, .qcard .choices button').forEach((x) => (x.disabled = true));
-      fbSlot(root).appendChild(box);
-      nb.focus(); nb.addEventListener('click', one);
+      /* 틀리면 넘어가지 않고 떠올리기 → 한 단계씩 → 처음 문제 다시(hint.js · 기록은 첫 답 그대로) */
+      ladder(root, { it: itemOf(it.c, it.p), c: it.c, raws: a.idk ? null : a.raws, tag: '선생님이 준 문제', act: 'give', dots: [S.i - 1, sh.items.length], onEnd: (r) => { if (r.how !== 'shown') KS.selfFix(me, K, r.how); one(); } });
     } });
   };
   const fin = () => {

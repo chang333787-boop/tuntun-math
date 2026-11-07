@@ -20,6 +20,7 @@ import { lineOf, weekTerm, weekPlan, doneThisWeek } from './weekcore.js';
 import { makeItem as mkItem } from '../../engine/lessons/index.js';
 import { icon, tile, ACT } from './icons.js';
 import { giveTasks } from './give.js';
+import { ladder } from './hint.js';
 import { checkTasks } from './check.js';
 
 export const go = (h) => { location.hash = h; };
@@ -320,6 +321,8 @@ export function fixView(root, c) {
   }
   // 혼자에서 틀린 뒤 — 세 번 내리 틀림이면 같이 한 번 더 / 선생님과 · 아니면 다음에 할 한 가지: 검산 도구(답 보기 전에) → 같은 숫자로 나눠 보기 → 방법 한 줄
   function soloBack(r, it0, a) {
+    /* 틀리면(세 번 내리 · 선생님과가 아니면) 도움 사다리 — 떠올리기 → 한 단계씩 → 처음 문제 다시(hint.js · 교사 11-07) · 혼자 풀기 맞힌 수는 첫 답 그대로 */
+    if (!r.ok && !r.back && !r.help) return ladder(slot(), { it: mkItem(it0.c || c, it0.p), c: it0.c || c, raws: a.raws, tag: '혼자 풀기', act: 'fix', onEnd: (x) => { if (x.how !== 'shown') KS.selfFix(me, K, x.how); if (F.reStep) afterReStep(F); route(); } });
     const box = fbBox(r.ok);
     let selfFixed = false;
     if (r.ok) box.innerHTML = '맞았어요! 혼자서 풀었어요.';
