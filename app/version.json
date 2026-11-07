@@ -33,7 +33,6 @@
   "js/ttable.js",
   "js/week.js",
   "js/weekcore.js",
-  "../engine/bridges.js",
   "../engine/concepts/dec.js",
   "../engine/concepts/div.js",
   "../engine/concepts/frac.js",
@@ -44,7 +43,6 @@
   "../engine/concepts/ratio.js",
   "../engine/engine.js",
   "../engine/errors.js",
-  "../engine/fluency.js",
   "../engine/hints/index.js",
   "../engine/hints/mdf.js",
   "../engine/hints/na.js",
@@ -65,17 +63,13 @@
   "../engine/schema.js",
   "../engine/skills.js",
   "../engine/tokens.js",
-  "../engine/types/index.js",
   "../engine/types/kit.js",
-  "../engine/types/list.js",
   "../engine/words.js",
   "../paper/js/gen.js",
   "../paper/js/judge.js",
-  "../paper/js/main.js",
   "../paper/js/mascot.js",
   "../paper/js/paper.js",
   "../paper/js/pick.js",
-  "../paper/js/practice.js",
   "../paper/js/store.js"
  ]
 }
