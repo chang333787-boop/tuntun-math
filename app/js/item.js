@@ -52,7 +52,7 @@ export function draw(root, { prompt, choices = null, tag = '', act = '', dots = 
   const blanks = [...root.querySelectorAll('.blank')].sort((a, b) => a.dataset.i - b.dataset.i);
   if (given) blanks.forEach((b) => { const v = given[b.dataset.i]; if (v != null) { b.value = String(v); b.readOnly = true; b.classList.add('given'); b.tabIndex = -1; b.setAttribute('aria-label', `튼튼이가 채운 빈칸 ${v}`); } });
   const open = blanks.filter((b) => !b.readOnly);
-  const nudge = (t, el) => { msg.textContent = t; card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); if (el) el.focus(); };
+  const nudge = (t, el) => { msg.classList.remove('soft'); msg.textContent = t; card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); if (el) el.focus(); };
   const ok = root.querySelector('#ok');
   const lock = (on) => {
     card.classList.toggle('locked', on);
@@ -61,7 +61,17 @@ export function draw(root, { prompt, choices = null, tag = '', act = '', dots = 
     if (ok) ok.disabled = on;
   };
   lock(false);
-  const done = (a) => onAnswer(a, conf ? cf : null, Math.round(performance.now() - t0));
+  /* 답을 다 쓰고 10초 동안 내지 않으면 한 줄 알림 + 내는 단추 테두리(흔들기 X · 첫 시범 '답만 쓰고 멈췄나' 대비 · 11-07) */
+  let idleT = 0;
+  const armIdle = () => { clearTimeout(idleT); idleT = setTimeout(() => {
+    if (!card.isConnected || card.classList.contains('locked')) return;
+    if (!(choices ? pick != null : open.length && open.every((x) => x.value.trim()))) return;
+    msg.classList.add('soft'); msg.textContent = conf ? '답을 다 썼으면 아래 단추 중 하나를 눌러 내요.' : `답을 다 썼으면 '${okLabel}'를 눌러요.`;
+    const c = root.querySelector('.conf') || ok; if (c) c.classList.add('wake');
+  }, 10000); };
+  open.forEach((x) => x.addEventListener('input', armIdle));
+  root.querySelectorAll('[data-k]').forEach((x) => x.addEventListener('click', armIdle));
+  const done = (a) => { clearTimeout(idleT); onAnswer(a, conf ? cf : null, Math.round(performance.now() - t0)); };
   let pick = null;   /* 자신감이 있는 고르기 문항 — 보기를 먼저 고르고(초록 테두리) 자신감 단추로 냄 */
   const readBlanks = () => {
     const raws = blanks.map((b) => b.value.trim().replace(/,/g, ''));

@@ -250,7 +250,7 @@ export function prepView(root, unit) {
     let head, acts;
     if (S.why === 'teacher') {
       head = say('think', `오늘은 여기까지 할게요. 어려운 문제가 몇 개 있어요 — 괜찮아요.<br><b>선생님과 같이</b> 하나씩 풀어요. 손을 들고 선생님께 이 화면을 보여 주세요.`);
-      acts = `<div class="panel"><p class="small muted">선생님과 같이 볼 문제</p><ul>${[...new Set([...fix, ...stuck])].slice(0, 3).map((c) => `<li><b>${esc(plank(c))}</b></li>`).join('')}</ul>${fix.length ? '<p class="small">선생님을 기다리는 동안 튼튼이랑 맨 위 문제부터 먼저 해 볼 수 있어요.</p>' : '<p class="small muted">다음 시간에 이어서 찾아요.</p>'}</div><div class="acts">${fix.length ? `<a class="btn big" href="#/fix/${fix[0]}">튼튼이랑 먼저 해 보기</a>` : ''}<a class="btn big" href="#/me">처음 화면으로</a></div>`;
+      acts = `<div class="panel"><p class="small muted">선생님과 같이 볼 문제</p><ul>${[...new Set([...fix, ...stuck])].slice(0, 3).map((c) => `<li><b>${esc(plank(c))}</b></li>`).join('')}</ul>${fix.length ? '<p class="small">선생님을 기다리는 동안 튼튼이랑 맨 위 문제부터 먼저 해 볼 수 있어요.</p>' : '<p class="small muted">다음 시간에 이어서 찾아요.</p>'}</div><div class="acts">${fix.length ? `<a class="btn pri big" href="#/fix/${fix[0]}">튼튼이랑 먼저 해 보기</a>` : ''}<a class="btn big${fix.length ? '' : ' pri'}" href="#/me">처음 화면으로</a></div>`;   /* 다음에 누를 것 하나를 주황으로(가상 첫 시범 11-07) */
     } else if (fix.length) {
       head = say('fix', `어디서부터 배우면 될지 찾았어요: <b>${esc(plank(fix[0]))}</b>.<br>${inClass ? '지금 튼튼이랑 하나 배우고, 그다음 선생님 수업으로 가요.' : '지금 튼튼이랑 배워 볼까요?'}${fix.length > 1 ? `<br><span class="small">배울 것이 ${fix.length - 1}개 더 있어요 — 처음 화면 2번에서 하나씩 해요.</span>` : ''}`);
       acts = `<div class="acts"><a class="btn pri big" href="#/fix/${fix[0]}">배우러 가기</a><a class="btn big" href="#/me">처음 화면으로</a></div>`;

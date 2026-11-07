@@ -127,7 +127,8 @@ button:focus-visible,.btn:focus-visible,a:focus-visible,summary:focus-visible,.b
 #view>.card.fx>#b,#view>.card.fx>#slot,.card.fx #b>#slot,.card.fx #b>.qcard,.card.fx #slot>.qcard{flex:1;display:flex;flex-direction:column}
 .card.fx .qcard>.qgrid{flex:1}
 /* 진행 — 오른쪽 위 같은 자리 · 칸 막대(12칸까지) 또는 긴 막대 + 숫자 · 새로 찬 칸만 200ms */
-.qprog{margin-left:auto;display:inline-flex;align-items:center;gap:10px}
+.qprog{margin-left:auto;display:inline-flex;align-items:center;gap:10px}.qprog .cnt small{font-size:14px}.qmsg.soft{color:var(--teal-d)}
+.conf.wake{outline:3px solid var(--teal);outline-offset:4px;border-radius:12px}#ok.wake{outline:3px solid var(--teal);outline-offset:3px}   /* 답만 쓰고 멈췄을 때 내는 단추 자리(item.js armIdle) */
 .pseg{display:inline-flex;gap:4px}.pseg i{width:16px;height:10px;border-radius:999px;background:var(--line)}.pseg i.on{background:var(--wood2)}
 .pbar{display:block;width:clamp(120px,24cqi,240px);height:10px;border-radius:999px;background:var(--line);overflow:hidden}.pbar i{display:block;height:100%;background:var(--wood2);border-radius:999px}
 .cnt{font-size:15px;font-weight:700;color:var(--mute);font-variant-numeric:tabular-nums;white-space:nowrap}.cnt b{color:var(--ink);font-size:18px}
