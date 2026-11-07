@@ -33,6 +33,7 @@ const norm = (a, k) => k === 0 || a % 10 !== 0; // 끝자리 0 없는 소수
 // a ÷ b가 나누어떨어지려면 0을 몇 개 내려야 하나 (몫이 끝나지 않으면 -1)
 const extra = (a, b) => { for (let m = 0; m <= 4; m++) if ((a * T(m)) % b === 0) return m; return -1; };
 const quot = (a, k, b) => r6(a / b / T(k));
+const shiftStep = (Qi, qp, why) => (qp === 1 ? ext('DEC4', { v: 'd10', k: Qi * 100 }, why) : qp === 2 ? { c: '4-2-3:7', p: { v: 'd100', m: Qi * 10 }, why } : ext('DEC4', { v: 'd10', k: Qi }, `${why} ${Qi}의 1/1000은 ${fmt(Qi / 100)}의 1/10이에요.`));
 // 높은 자리부터 나눌 때 첫 몫 뒤로 나머지가 생기지 않는가 (각 자리에서 나누어떨어짐)
 function noCarry(a, b) {
   let cur = 0, on = false;
@@ -138,14 +139,12 @@ const FAMS = [
       const why = k === 0
         ? `${jn(a, '을', '를')} ${ron(a.toFixed(m))} 보고 소수점을 떼면 ${A} ÷ ${jn(b, '과', '와')} 같은 숫자가 나와요.`
         : m > 0
-          ? `${D} 뒤에 0을 ${m}개 내려 쓰고 소수점을 떼면 ${A} ÷ ${jn(b, '이에요', '예요')}.`
+          ? `${D} 끝에 0을 ${m}개 붙이고 소수점을 떼면 ${A} ÷ ${jn(b, '이에요', '예요')}.`
           : `소수점을 떼고 자연수의 나눗셈 ${A} ÷ ${jn(b, '을', '를')} 해요.`;
       out.push({ c: 'DIV', p: { a: A, b }, why });
       // 소수점 찍기는 4학년 '소수 사이의 관계'(1/10 · 1/100)로 — 뒤 차시(6-1-3:8 어림)로 보내지 않는다
-      const Qi = A / b, qp = k + m, why2 = `${D}${pn(D, '은', '는')} ${A}의 1/${T(qp)}이니까 몫도 ${Qi}의 1/${T(qp)}이에요.`;
-      if (qp === 1) out.push(ext('DEC4', { v: 'd10', k: Qi * 100 }, why2));
-      else if (qp === 2) out.push({ c: '4-2-3:7', p: { v: 'd100', m: Qi * 10 }, why: why2 });
-      else out.push(ext('DEC4', { v: 'd10', k: Qi }, `${why2} ${Qi}의 1/1000은 ${fmt(Qi / 100)}의 1/10이에요.`));
+      const Qi = A / b, qp = k + m;
+      out.push(shiftStep(Qi, qp, `${D}${pn(D, '은', '는')} ${A}의 1/${T(qp)}이니까 몫도 ${Qi}의 1/${T(qp)}이에요.`));
       return out;
     },
   },
@@ -263,9 +262,13 @@ const FAMS = [
       return nums([`${D} ÷ ${E}의 몫을 반올림하여 ${['자연수로', '소수 첫째 자리까지', '소수 둘째 자리까지'][p.pl]} 나타내면 `, B(0)], R, { noFrac: true, bugs });
     },
     steps: (p) => {
-      const e = p.kb + p.pl + 1 - p.ka, W = p.a * T(e), place = ['소수 첫째 자리', '소수 둘째 자리', '소수 셋째 자리'][p.pl];
-      // 10-11 교정: 소수점 떼기 · 한 자리 더 구하기 · 반올림을 한 문장에 섞지 않고, 떼고 구한 몫이 진짜 몫의 몇 배인지 밝힘
-      return [{ c: 'DIV', p: { a: W, b: p.b }, why: `반올림하려면 몫을 ${place}까지 구해요. 소수점을 떼고 ${W} ÷ ${jn(p.b, '을', '를')} 하면 그 몫은 진짜 몫의 ${T(p.pl + 1)}배예요. 몫의 오른쪽 ${p.pl + 1}자리가 소수 부분이 되게 소수점을 찍은 다음 반올림해요.` }];
+      const e = p.kb + p.pl + 1 - p.ka, W = p.a * T(e), place = ['소수 첫째 자리', '소수 둘째 자리', '소수 셋째 자리'][p.pl], qp = p.pl + 1, q = Math.floor(W / p.b);
+      // 10-11 교정 · 11-07 한 단계에 한 가지: ① 소수점을 떼고 한 자리 더 나누기 ② 떼고 구한 몫이 처음 몫의 몇 배인지 보고 소수점 찍기 ③ 반올림
+      return [
+        { c: 'DIV', p: { a: W, b: p.b }, why: `반올림하려면 몫을 ${place}까지 구해요. 소수점을 떼고 ${W} ÷ ${jn(p.b, '을', '를')} 해요.` },
+        shiftStep(q, qp, `${W} ÷ ${p.b}의 몫은 처음 몫의 ${T(qp)}배라서 1/${T(qp)}${pn(1, '을', '를')} 해요.`),
+        { c: '5-2-1:7', p: { m: 'half', v: 'val', xi: q, dp: qp, pk: -p.pl }, why: `구한 몫을 반올림하여 ${['자연수로', '소수 첫째 자리까지', '소수 둘째 자리까지'][p.pl]} 나타내요.` },
+      ];
     },
   },
   {
@@ -318,7 +321,8 @@ const FAMS = [
         ],
       });
     },
-    steps: (p) => [{ c: '6-2-4:5', p: { v: 'x', a: p.a, b: p.b, c: p.c, d: p.d, pos: 3 }, why: `비례식을 세우면 ${p.a} : ${p.b} = ${p.c} : □예요.` }],
+    /* 비례식을 세우고 그 □를 구하는 걸음 그대로(예전: 비례식 문항 하나 = 처음 문제를 말만 바꿔 되풀이 · 11-07) */
+    steps: (p) => { const xs = propSteps({ a: p.a, b: p.b, c: p.c, d: p.d, pos: 3 }); return [{ ...xs[0], why: `비례식 ${p.a} : ${p.b} = ${p.c} : □를 세워요. ${xs[0].why}` }, ...xs.slice(1)]; },
   },
 ];
 
@@ -339,7 +343,24 @@ const remapBugs = (it, map) => {
 };
 
 // ── 단계 도우미 (분수의 나눗셈)
+// 비례식 a : b = c : d의 pos 자리(□) 구하기 — □ 짝이 아는 짝의 자연수 배면 비의 성질로, 아니면 외항의 곱 = 내항의 곱(6-2-4:5 · 6-2-4:6)
+function propSteps({ a, b, c, d, pos }) {
+  if (pos === 3 && c % a === 0 && c > a) return [{ c: 'R2', p: { v: 'int', big: c, small: a }, why: `${a}${pn(a, '이', '가')} ${c}${pn(c, '이', '가')} 되려면 몇 배?` }, { c: 'MUL', p: { a: b, b: c / a }, why: `${b}에도 같은 배를 해요.` }];
+  if (pos === 2 && d % b === 0 && d > b) return [{ c: 'R2', p: { v: 'int', big: d, small: b }, why: `${b}${pn(b, '이', '가')} ${d}${pn(d, '이', '가')} 되려면 몇 배?` }, { c: 'MUL', p: { a, b: d / b }, why: `${a}에도 같은 배를 해요.` }];
+  const [x1, x2, by, side] = { 3: [b, c, a, '내항'], 2: [a, d, b, '외항'], 1: [a, d, c, '외항'], 0: [b, c, d, '내항'] }[pos];
+  return [
+    { c: 'MUL', p: { a: x1, b: x2 }, why: `${side}의 곱을 구해요.` },
+    { c: 'DIV', p: { a: x1 * x2, b: by }, why: `${by} × □ = ${jn(x1 * x2, '이니까', '니까')} □는 ${jn(x1 * x2, '을', '를')} ${ron(by)} 나눈 수예요.` },
+  ];
+}
 const f16 = (a, b, why) => ({ c: 'F16', p: { v: a < b ? 'small' : 'big', a, b }, why });
+/* (분수)÷(자연수) n/d ÷ k 단계 — 분자가 나누어떨어지면 분자만 · 아니면 크기가 같은 분수로 바꿔 분자를 나눔(6-1-1:4 · 6-1-1:6) */
+const fdivNatSteps = (n, d, k) => (n % k === 0
+  ? [{ c: 'DIV', p: { a: n, b: k }, why: `분자 ${n}${pn(n, '을', '를')} ${ron(k)} 나눠요. 분모는 그대로예요.` }]
+  : [
+    ext('F7', { v: 'up', n, d, k }, `분자가 ${ron(k)} 나누어떨어지게 크기가 같은 분수로 바꿔요.`),
+    { c: 'DIV', p: { a: n * k, b: k }, why: `${n}/${d} = ${n * k}/${d * k}${pn(n * k, '이니까', '니까')} 분자 ${n * k}${pn(n * k, '을', '를')} ${ron(k)} 나눠요.` },
+  ]);
 
 export default {
   FAMS,
@@ -373,12 +394,7 @@ export default {
       }, (p) => gcd(p.n, p.d) === 1 && p.n < 2 * p.d),
       is: (p) => !p.mix, prev: '6-1-1:2', pre: ['5-1-4:3'],
       make: (p) => fdivNat([fx(p.n, p.d)], p),
-      steps: (p) => (p.n % p.k === 0
-        ? [{ c: 'DIV', p: { a: p.n, b: p.k }, why: `분자 ${p.n}${pn(p.n, '을', '를')} ${ron(p.k)} 나눠요. 분모는 그대로예요.` }]
-        : [
-          ext('F7', { v: 'up', n: p.n, d: p.d, k: p.k }, `분자가 ${ron(p.k)} 나누어떨어지게 크기가 같은 분수로 바꿔요.`),
-          { c: 'DIV', p: { a: p.n * p.k, b: p.k }, why: `${p.n}/${p.d} = ${p.n * p.k}/${p.d * p.k}${pn(p.n * p.k, '이니까', '니까')} 분자 ${p.n * p.k}${pn(p.n * p.k, '을', '를')} ${ron(p.k)} 나눠요.` },
-        ]),
+      steps: (p) => fdivNatSteps(p.n, p.d, p.k),
       hint: '분자가 나누어떨어지면 분자만 나눠요: 4/5 ÷ 2 = 2/5. 안 되면 크기가 같은 분수로 바꿔요: 3/5 ÷ 2 = 6/10 ÷ 2 = 3/10.',
       tip: '3/4 ÷ 2를 띠 그림으로 나눠 봐요. 분자 3이 2로 나누어떨어지지 않으면 크기가 같은 분수 6/8으로 바꿔 분자를 나눠요(6/8 ÷ 2 = 3/8). 분모를 나누는 실수(3/4 ÷ 2 = 3/2)는 그림으로 크기를 비교해 짚어 줘요.',
     },
@@ -402,7 +418,7 @@ export default {
       },
       steps: (p) => [
         ext('F5', { v: 'toImp', w: Math.floor(p.n / p.d), n: p.n % p.d, d: p.d }, '대분수를 가분수로 바꿔요.'),
-        { c: '6-1-1:4', p: { v: p.n % p.k ? 'eq' : 'div', n: p.n, d: p.d, k: p.k }, why: `${p.n}/${p.d} ÷ ${jn(p.k, '을', '를')} 계산해요.` },
+        ...fdivNatSteps(p.n, p.d, p.k),   /* 가분수 ÷ 자연수를 한 번에 묻지 않고 그 걸음 그대로(처음 문제를 말만 바꿔 되풀이 X · 11-07) */
       ],
       hint: '먼저 대분수를 가분수로 바꿔요. 2 2/5 ÷ 3 = 12/5 ÷ 3 = 4/5!',
       tip: '대분수를 가분수로 바꾼 뒤 (분수)÷(자연수)로 계산해요. 자연수 부분이나 분수 부분만 나누는 실수가 많으니, 2 2/5 ÷ 3을 띠 그림 세 묶음으로 나눠 보게 해요.',
@@ -616,15 +632,16 @@ export default {
         }
         return r.chance(0.3) ? { v: 'one', n, d } : { v: 'n', n, d, N: n * r.int(2, 5) };
       },
-      is: (p) => p.v === 'one' || p.v === 'n' || p.v === 'dir' || p.v === 'size', prev: '6-2-1:2', pre: ['3-1-3:6'],
-      make: (p) => (p.v === 'dir' || p.v === 'size' ? sizeAsk(p, '÷') : C.F21.make(p)),
+      is: (p) => p.v === 'one' || p.v === 'n' || p.v === 'dir' || p.v === 'size' || p.v === 'flip', prev: '6-2-1:2', pre: ['3-1-3:6'],
+      /* flip = 나누는 분수의 분모와 분자를 바꾼 수(6-2-1:6 단계에서만 · gen은 내지 않음) — 1 ÷ n/d의 몫과 같아서 이 차시에 둠 */
+      make: (p) => (p.v === 'dir' || p.v === 'size' ? sizeAsk(p, '÷') : p.v === 'flip' ? frac([fx(p.n, p.d), '의 분모와 분자를 바꾸면 ', fb(0, 1)], F(p.d, p.n)) : C.F21.make(p)),
       steps: (p) => {
         if (p.v === 'dir' || p.v === 'size') return [];
         if (p.v === 'one') return [ext('F3', { v: 'whole', w: 1, d: p.d }, `1은 1/${p.d}이 몇 개인가요?`)];
         const k = p.N / p.n;
-        if (p.n === 1) return [{ c: 'MUL', p: { a: p.N, b: p.d }, why: `1은 1/${p.d}이 ${p.d}개예요. ${jn(p.N, '은', '는')} 1/${p.d}이 몇 개인가요? ${p.N} × ${p.d}` }];
+        if (p.n === 1) return [{ c: 'MUL', p: { a: p.N, b: p.d }, why: `1은 1/${p.d}이 ${p.d}개예요. ${jn(p.N, '은', '는')} 1/${p.d}이 몇 개인가요?` }];
         return [
-          { c: 'DIV', p: { a: p.N, b: p.n }, why: `${p.n}/${p.d}${pn(p.n, '이', '가')} ${jn(p.N, '이면', '면')} 1/${p.d}${pn(1, '은', '는')} ${p.N} ÷ ${jn(p.n, '이에요', '예요')}.` },
+          { c: 'DIV', p: { a: p.N, b: p.n }, why: `${p.n}/${p.d}${pn(p.n, '이', '가')} ${jn(p.N, '이면', '면')} 1/${p.d}${pn(1, '은', '는')} ${p.n === 2 ? '그 절반이에요.' : `${jn(p.N, '을', '를')} ${p.n}묶음으로 똑같이 나눈 하나예요.`}` },
           { c: 'MUL', p: { a: k, b: p.d }, why: `1은 1/${p.d}이 ${p.d}개예요.` },
         ];
       },
@@ -655,7 +672,7 @@ export default {
         };
       },
       steps: (p) => [
-        { c: 'F21', p: { v: 'one', n: p.n2, d: p.d2 }, why: `1 ÷ ${p.n2}/${p.d2}${pn(p.n2, '은', '는')} 얼마인가요?` },
+        { c: '6-2-1:5', p: { v: 'flip', n: p.n2, d: p.d2 }, why: `나누는 분수 ${p.n2}/${p.d2}의 분모와 분자를 바꿔요.` },
         p.n2 !== 1
           ? ext('F15', { n1: p.n1, d1: p.d1, n2: p.d2, d2: p.n2 }, `${p.n1}/${p.d1}에 ${p.d2}/${p.n2}${pn(p.d2, '을', '를')} 곱해요.`)
           : p.n1 < p.d1
@@ -769,7 +786,7 @@ export default {
         const { a, b, k } = p, pos = p.pos || 3, A = a * k, Bk = b * k;
         const [kn, kb2, other] = pos === 3 ? [a, A, b] : [b, Bk, a]; // 아는 짝(kn ↔ kb2)과 □ 짝의 다른 항
         const ratio = p.v === 'div'
-          ? { c: 'R2', p: { v: 'int', big: kb2, small: kn }, why: `${kb2}${pn(kb2, '이', '가')} ${kn}${pn(kn, '이', '가')} 되었어요. 몇으로 나누었나요? (${kb2}${pn(kb2, '은', '는')} ${kn}의 몇 배?)` }
+          ? { c: 'R2', p: { v: 'int', big: kb2, small: kn }, why: `${kb2}${pn(kb2, '이', '가')} ${kn}${pn(kn, '이', '가')} 되었으니 몇으로 나누었나요? ${kb2}${pn(kb2, '은', '는')} ${kn}의 몇 배인지 봐요.` }
           : { c: 'R2', p: { v: 'int', big: kb2, small: kn }, why: `${kn}${pn(kn, '이', '가')} ${kb2}${pn(kb2, '이', '가')} 되었어요. 몇 배 했나요?` };
         return [
           kn > 1 ? ratio : null,
@@ -813,7 +830,8 @@ export default {
       },
       steps: (p) => {
         if (p.v === 'int') return [ext('G3', { a: p.a * p.k, b: p.b * p.k }, '두 수의 최대공약수를 찾아요.'), { c: 'DIV', p: { a: p.a * p.k, b: p.k }, why: `앞의 수를 최대공약수 ${ron(p.k)} 나눠요.` }, { c: 'DIV', p: { a: p.b * p.k, b: p.k }, why: `뒤의 수도 ${ron(p.k)} 나눠요.` }];
-        if (p.v === 'dec') return [ext('DEC4', { v: 'x10', k: p.a * 10 }, '앞과 뒤를 10배 해서 자연수의 비로 만들어요.'), gcd(p.a, p.b) > 1 ? ext('G3', { a: p.a, b: p.b }, `${p.a} : ${p.b}에서 ${jn(p.a, '과', '와')} ${p.b}의 최대공약수를 찾아요.`) : null].filter(Boolean);
+        /* 앞 · 뒤 두 항을 모두 단계로(예전: 앞의 수만 10배 · 뒤는 건너뜀) */
+        if (p.v === 'dec') return [ext('DEC4', { v: 'x10', k: p.a * 10 }, '앞과 뒤를 10배 해서 자연수의 비로 만들어요.'), ext('DEC4', { v: 'x10', k: p.b * 10 }, `뒤의 ${ds(p.b, 1)}도 10배 해요.`), gcd(p.a, p.b) > 1 ? ext('G3', { a: p.a, b: p.b }, `${p.a} : ${p.b}에서 ${jn(p.a, '과', '와')} ${p.b}의 최대공약수를 찾아요.`) : null].filter(Boolean);
         if (p.v === 'frac') {
           const L = lcm(p.d1, p.d2);
           return [ext('G4', { a: p.d1, b: p.d2 }, '두 분모의 최소공배수를 찾아요.'), ext('F14', { N: L, n: p.n1, d: p.d1 }, `앞의 분수에 ${jn(L, '을', '를')} 곱해요.`), ext('F14', { N: L, n: p.n2, d: p.d2 }, `뒤의 분수에도 ${jn(L, '을', '를')} 곱해요.`)];
@@ -823,6 +841,7 @@ export default {
         return [
           ext('F11', { n: p.n, d: p.d }, '분수를 소수로 바꿔요.'),
           ext('DEC4', { v: S === 10 ? 'x10' : 'x100', k: p.x * 10 }, `${ds(p.x, 1)} : ${ds(Bn, S === 10 ? 1 : 2)}의 앞과 뒤를 ${S}배 해서 자연수의 비로 만들어요.`),
+          ext('DEC4', { v: S === 10 ? 'x10' : 'x100', k: S === 10 ? Bn * 10 : Bn }, `뒤의 ${ds(Bn, S === 10 ? 1 : 2)}도 ${S}배 해요.`),
           gcd(A, Bn) > 1 ? ext('G3', { a: A, b: Bn }, `${A} : ${Bn}에서 ${jn(A, '과', '와')} ${Bn}의 최대공약수를 찾아요.`) : null,
         ].filter(Boolean);
       },
@@ -883,19 +902,7 @@ export default {
           ],
         });
       },
-      steps: (p) => {
-        const { a, b, c, d, pos } = p;
-        if (p.v === 'prod') return [{ c: 'MUL', p: { a, b: d }, why: '외항끼리 곱해요.' }, { c: 'MUL', p: { a: b, b: c }, why: '내항끼리 곱해요.' }];
-        // 비의 성질로 바로 되는 경우 (□ 짝이 아는 짝의 자연수 배)
-        if (pos === 3 && c % a === 0 && c > a) return [{ c: 'R2', p: { v: 'int', big: c, small: a }, why: `${a}${pn(a, '이', '가')} ${c}${pn(c, '이', '가')} 되려면 몇 배?` }, { c: 'MUL', p: { a: b, b: c / a }, why: `${b}에도 같은 배를 해요.` }];
-        if (pos === 2 && d % b === 0 && d > b) return [{ c: 'R2', p: { v: 'int', big: d, small: b }, why: `${b}${pn(b, '이', '가')} ${d}${pn(d, '이', '가')} 되려면 몇 배?` }, { c: 'MUL', p: { a, b: d / b }, why: `${a}에도 같은 배를 해요.` }];
-        // 외항의 곱 = 내항의 곱
-        const [x1, x2, by, side] = { 3: [b, c, a, '내항'], 2: [a, d, b, '외항'], 1: [a, d, c, '외항'], 0: [b, c, d, '내항'] }[pos];
-        return [
-          { c: 'MUL', p: { a: x1, b: x2 }, why: `${side}의 곱을 구해요.` },
-          { c: 'DIV', p: { a: x1 * x2, b: by }, why: `${by} × □ = ${jn(x1 * x2, '이니까', '니까')} □ = ${x1 * x2} ÷ ${by}` },
-        ];
-      },
+      steps: (p) => (p.v === 'prod' ? [{ c: 'MUL', p: { a: p.a, b: p.d }, why: '외항끼리 곱해요.' }, { c: 'MUL', p: { a: p.b, b: p.c }, why: '내항끼리 곱해요.' }] : propSteps(p)),
       hint: '외항의 곱과 내항의 곱은 같아요. 3 : 4 = □ : 20이면 4 × □ = 3 × 20 = 60이라서 □ = 15!',
     },
     {
@@ -920,7 +927,7 @@ export default {
       steps: (p) => {
         const s = p.a + p.b;
         // 교과서 방법 그대로: 전체 × (앞)/(앞 + 뒤) — (자연수)×(분수) 차시로 내려간다
-        const parts = [ext('F14', { N: p.N, n: p.a, d: s }, `전항 ${p.a}에 해당하는 양은 ${p.N}의 ${p.a}/${s}${pn(p.a, '이에요', '예요')}.`), ext('F14', { N: p.N, n: p.b, d: s }, `뒤의 몫은 ${p.N}의 ${p.b}/${s}${pn(p.b, '이에요', '예요')}.`)];
+        const parts = [ext('F14', { N: p.N, n: p.a, d: s }, `전항 ${p.a}에 해당하는 양은 ${p.N}의 ${p.a}/${s}${pn(p.a, '이에요', '예요')}.`), ext('F14', { N: p.N, n: p.b, d: s }, `후항 ${p.b}에 해당하는 양은 ${p.N}의 ${p.b}/${s}${pn(p.b, '이에요', '예요')}.`)];
         return [{ c: 'ADD', p: { a: p.a, b: p.b }, why: `전체를 ${p.a} + ${p.b} 조각으로 봐요.` }, ...parts];
       },
       hint: '전체를 (앞 + 뒤) 조각으로 나눠요. 35를 3 : 4로 나누면 7조각 중 3조각은 15, 4조각은 20!',

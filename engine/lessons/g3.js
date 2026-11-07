@@ -79,7 +79,7 @@ function divSplit(a, b, self) {
   };
   if (q <= 9) return byTable(a);
   const qt = Math.floor(q / 10) * 10, a1 = b * qt, a2 = a - a1, q2 = Math.floor(a2 / b);
-  if (a2 === 0) return [{ c: 'DIV', p: { a: a / 10, b }, why: `${a}${P(a, '은', '는')} ${a / 10}의 10배예요. ${a / 10} ÷ ${b}부터 해요. 몫은 그 10배예요.` }];
+  if (a2 === 0) return [{ c: 'DIV', p: { a: a / 10, b }, why: `${a}${P(a, '은', '는')} ${a / 10}의 10배라서 ${a / 10} ÷ ${b}부터 해요. 몫은 그 10배예요.` }];
   const rest = a2 < b ? ` 남은 ${a2}${P(a2, '은', '는')} ${b}보다 작으니 나머지예요.` : '';
   const out = [{ c: 'DIV', p: { a: a1, b }, why: `${J(a, '을', '를')} ${J(a1, '과', '와')} ${RO(a2)} 갈라 ${a1} ÷ ${b}부터 해요.${rest}` }];
   if (a2 >= b) {
@@ -244,7 +244,14 @@ const FAMS = [
         ],
       });
     },
-    steps: (p) => { const Q = QTY[p.u]; return [{ c: 'F4', p: { N: Q.N, n: p.n, d: p.d }, why: `${Q.eq}. ${Q.N}의 ${p.n}/${p.d}${P(p.n, '을', '를')} 구해요.` }]; },
+    /* 단위를 바꾼 뒤 3-2-4:3과 같은 두 걸음(한 묶음 → 몇 묶음) — 예전 '60의 2/3를 구해요'는 처음 문제를 말만 바꿔 되풀이(11-07) */
+    steps: (p) => {
+      const Q = QTY[p.u], k = Q.N / p.d;
+      return [
+        { c: 'DIV', p: { a: Q.N, b: p.d }, why: `${Q.eq}. ${Q.N}${P(Q.N, '을', '를')} ${p.d}묶음으로 똑같이 나누면 한 묶음은 얼마인가요?` },
+        p.n > 1 ? { c: 'MUL', p: { a: k, b: p.n }, why: `한 묶음이 ${k}${P(k, '이니까', '니까')} ${p.n}묶음은 얼마인가요?` } : null,
+      ].filter(Boolean);
+    },
   },
   {
     id: 'g3_FCMP', s: 'F', sec: 12,
@@ -709,7 +716,7 @@ export default {
         const k = p.N / p.d;
         return [
           { c: 'DIV', p: { a: p.N, b: p.d }, why: `${J(p.N, '을', '를')} ${p.d}묶음으로 똑같이 나누면 한 묶음은 얼마인가요?` },
-          p.n > 1 ? { c: 'MUL', p: { a: k, b: p.n }, why: `한 묶음이 ${k}이니까 ${p.n}묶음은 얼마인가요?` } : null,
+          p.n > 1 ? { c: 'MUL', p: { a: k, b: p.n }, why: `한 묶음이 ${k}${P(k, '이니까', '니까')} ${p.n}묶음은 얼마인가요?` } : null,
         ];
       },
       hint: '12의 2/3는 12를 3묶음으로 똑같이 나눈 것 중 2묶음이에요. 12 ÷ 3 = 4, 4 × 2 = 8이에요.',

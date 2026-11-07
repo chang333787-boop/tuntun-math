@@ -3,7 +3,7 @@
 //            g5_MIXADD · g5_MIXSUB 분모가 다른 대분수의 덧셈·뺄셈 · g5_RANGE 이상·이하·초과·미만 · g5_ROUND 올림·버림·반올림
 //            g5_DMUL 소수의 곱셈 · g5_DPOINT 곱의 소수점 위치
 //   다시 쓴 개념 가족: G1~G4 · R1 · F7~F15a (차시마다 gen으로 유형을 좁히고 is로 가른다)
-import { nums, frac, mixed, pick, fx, fb, B, P, F, gcd, sizeAsk } from '../concepts/kit.js';
+import { nums, frac, mixed, pick, fx, fb, B, P, RO, F, gcd, sizeAsk } from '../concepts/kit.js';
 import { lcm, eqv, near, fmt, divisors, simp } from '../math.js';
 import { twoBars, toText } from '../tokens.js';
 import { KIND, danOf } from './ops.js';
@@ -427,18 +427,22 @@ const MIXSUBFAM = {
   },
   steps: (p) => fmixSteps(p, '-'),
 };
-// 통분(5-1-4:5) → 분모가 같은 대분수의 덧셈·뺄셈(4-2-1:3 · :5 · :7)
+// 통분(5-1-4:5) → 분모가 같은 대분수의 덧셈·뺄셈(4-2-1:3 · :5) · 받아내림은 4-2-1:7 걸음(보태기 → 자연수 → 분수)
 function fmixSteps(p, op) {
   const L = p.L || lcm(p.d1, p.d2), N1 = (p.n1 * L) / p.d1, N2 = (p.n2 * L) / p.d2;
+  const head = { c: 'F9', p: { v: 'given', n1: p.n1, d1: p.d1, n2: p.n2, d2: p.d2, L }, why: '분수 부분을 먼저 통분해요.' };
+  if (op === '-' && N1 < N2) {
+    return [
+      head,
+      { c: 'g4_FMIX', p: { op: '=', w: p.w1, n: N1, d: L }, why: `${N1}/${L}에서 ${N2}/${L}${P(N2, '을', '를')} 뺄 수 없어요. 자연수에서 1을 ${RO(`${L}/${L}`)} 바꿔 분수 부분에 보태요.` },
+      p.w2 && p.w1 - 1 > p.w2 ? { c: 'SUB', p: { a: p.w1 - 1, b: p.w2 }, why: '1을 보내고 남은 자연수 부분끼리 빼요.' } : null,
+      { c: 'F6', p: { op: '-', a: L + N1, b: N2, d: L }, why: '분수 부분끼리 빼요.' },
+    ].filter(Boolean);
+  }
   const why = op === '+'
-    ? `분모가 같은 대분수가 되었어요. 자연수끼리, 분수끼리 더해요.${N1 + N2 >= L ? ' 분수 부분의 합이 1보다 크면 1을 자연수 부분으로 올려요.' : ''}`
-    : N1 < N2
-      ? `분모가 같은 대분수가 되었어요. ${N1}/${L}에서 ${N2}/${L}${P(N2, '을', '를')} 뺄 수 없으니 자연수에서 1을 받아내려 빼요.`
-      : '분모가 같은 대분수가 되었어요. 자연수끼리, 분수끼리 빼요.';
-  return [
-    { c: 'F9', p: { v: 'given', n1: p.n1, d1: p.d1, n2: p.n2, d2: p.d2, L }, why: '분수 부분을 먼저 통분해요.' },
-    { c: 'g4_FMIX', p: { op, w1: p.w1, n1: N1, w2: p.w2, n2: N2, d: L }, why },
-  ];
+    ? `분모가 같은 대분수가 되었어요. 자연수끼리, 분수끼리 ${N1 + N2 >= L ? '더하고, 분수 부분이 1보다 크면 1을 자연수 부분으로 올려요' : '더해요'}.`
+    : '분모가 같은 대분수가 되었어요. 자연수끼리, 분수끼리 빼요.';
+  return [head, { c: 'g4_FMIX', p: { op, w1: p.w1, n1: N1, w2: p.w2, n2: N2, d: L }, why }];
 }
 function genMixPair(r, kind) {
   return until(r, (r) => {
@@ -456,11 +460,12 @@ function genMixPair(r, kind) {
 //   params { a, ad, b, bd } — 곱하는 두 수 = a ÷ 10^ad, b ÷ 10^bd (정수로 들고 다녀서 소수 끝자리 오류가 없다)
 const dnum = (i, d) => fmt(i / 10 ** d);
 const dval = (i, d) => Number((i / 10 ** d).toFixed(d));
-const placeStep = (n, k) => {
-  if (k === 1) return [{ c: 'DEC1', p: { v: 'count', n }, why: `곱은 0.1이 ${n}개예요. 얼마인지 생각해요.` }];
-  if (k === 2) return [{ c: 'DEC2', p: { v: 'count', n }, why: `곱은 0.01이 ${n}개예요. 얼마인지 생각해요.` }];
+//  lead = 곱이 왜 그 단위가 몇 개인지(0.1 × 0.1 = 0.01이니까 · 자리 수를 더하면) — 같은 문장 앞에 붙임(한 단계 두 문장 안)
+const placeStep = (n, k, lead = '') => {
+  if (k === 1) return [{ c: 'DEC1', p: { v: 'count', n }, why: `${lead}곱은 0.1이 ${n}개예요. 얼마인지 생각해요.` }];
+  if (k === 2) return [{ c: 'DEC2', p: { v: 'count', n }, why: `${lead}곱은 0.01이 ${n}개예요. 얼마인지 생각해요.` }];
   // 소수 세 자리 — 곱은 0.001이 n개(0.1 × 0.01 = 0.001) · 0.01이 n개를 먼저 구하고 그 1/10(10-11 교정: '0.01이 n개'로 오해하지 않게)
-  return [{ c: 'DEC2', p: { v: 'count', n }, why: `곱은 0.001이 ${n}개예요. 먼저 0.01이 ${n}개이면 얼마인지 구해요.` }, { c: 'DEC4', p: { v: 'd10', k: n }, why: '0.001은 0.01의 1/10이니까, 그 수의 1/10이 곱이에요.' }];
+  return [{ c: 'DEC2', p: { v: 'count', n }, why: `${lead}곱은 0.001이 ${n}개예요. 먼저 0.01이 ${n}개이면 얼마인지 구해요.` }, { c: 'DEC4', p: { v: 'd10', k: n }, why: '0.001은 0.01의 1/10이니까, 그 수의 1/10이 곱이에요.' }];
 };
 const DMULFAM = {
   id: 'g5_DMUL', s: 'DEC', sec: 25,
@@ -478,9 +483,10 @@ const DMULFAM = {
   },
   steps: (p) => {
     const pr = p.a * p.b, k = p.ad + p.bd;
-    const unit = (i, d) => (d ? `${jx(dnum(i, d), '은', '는')} ${d === 1 ? '0.1' : '0.01'}이 ${i}개예요.` : '');
-    const why = `${[unit(p.a, p.ad), unit(p.b, p.bd)].filter(Boolean).join(' ')} 소수점을 떼고 ${p.a} × ${p.b}부터 해요.`;
-    return [{ c: 'MUL', p: { a: p.a, b: p.b }, why }, ...placeStep(pr, k)];
+    const unit = (i, d) => (d ? `${jx(dnum(i, d), '은', '는')} ${d === 1 ? '0.1' : '0.01'}이 ${i}개` : '');
+    const why = `${[unit(p.a, p.ad), unit(p.b, p.bd)].filter(Boolean).join(', ')}예요. 소수점을 떼고 ${p.a} × ${p.b}부터 해요.`;   /* 조사 고정: 앞 글이 늘 '…개'로 끝남 */
+    const lead = p.ad && p.bd ? (k === 2 ? '0.1 × 0.1 = 0.01이니까 ' : '0.1 × 0.01 = 0.001이니까 ') : '';
+    return [{ c: 'MUL', p: { a: p.a, b: p.b }, why }, ...placeStep(pr, k, lead)];
   },
 };
 // 소수 한 자리(끝자리가 0이 아님) · 소수 두 자리
@@ -519,9 +525,8 @@ const DPOINTFAM = {
   steps: (p) => {
     if (p.v === 'shift') {
       // 자연수의 곱은 주어졌으니, 소수점 아래 자리 수를 더해 0.1·0.01이 몇 개인 수인지로 소수점을 찍는다
-      const k = p.ad + p.bd, st = placeStep(p.a * p.b, k);
-      st[0] = { ...st[0], why: `두 수의 소수점 아래 자리 수를 더하면 ${p.ad} + ${p.bd} = ${k}개예요. ${st[0].why}` };
-      return st;
+      const k = p.ad + p.bd;
+      return placeStep(p.a * p.b, k, `두 수의 소수점 아래 자리 수를 더하면 ${p.ad} + ${p.bd} = ${k}개라서 `);
     }
     if (p.xd > 2 || ![1, 2, -1].includes(p.e)) return [];
     const k = p.xi * 10 ** (2 - p.xd);
@@ -552,6 +557,7 @@ const f12make = (p) => {
 // 개념 가족 문항의 오답 방향만 바꾼다 (채점은 그대로) — { 오답 이름: 새 방향 }
 // 약수가 아닌 수 (2 ~ 절반 사이에서)
 const g1Not = (p) => { const cand = []; for (let i = 2; i <= p.n / 2; i++) if (p.n % i) cand.push(i); return cand[p.s % cand.length]; };
+const g1Ch = (p) => { const yes = divisors(p.n).filter((x) => x > 1 && x < p.n); return [...uniq([0, 1, 2].map((i) => yes[(p.s + i) % yes.length])), g1Not(p)].sort((a, b) => a - b); };
 const remapBugs = (it, map) => {
   const check = it.check;
   it.check = (v, r) => { const res = check.call(it, v, r); if (res && res.bug && res.bug.name in map) return { ...res, bug: { ...res.bug, to: map[res.bug.name] } }; return res; };
@@ -602,9 +608,7 @@ export default {
       // '약수가 아닌 것' 보기는 그럴듯한 수(그 수의 절반 이하)로 — 45의 31처럼 한눈에 보이는 답을 내지 않는다
       make: (p) => {
         if (p.v !== 'isnt') return CF.G1.make(p);
-        const yes = divisors(p.n).filter((x) => x > 1 && x < p.n), not = g1Not(p);
-        const three = uniq([0, 1, 2].map((i) => yes[(p.s + i) % yes.length]));
-        const ch = [...three, not].sort((a, b) => a - b), right = ch.indexOf(not), bugs = {};
+        const not = g1Not(p), ch = g1Ch(p), right = ch.indexOf(not), bugs = {};
         ch.forEach((x, i) => { if (i !== right) bugs[i] = { name: '약수인 수를 약수가 아니라고 봄 (나누어 보지 않음)', to: KIND.DIV({ a: p.n, b: x }) }; });
         return pick([`${p.n}의 약수가 아닌 것을 고르세요.`], ch.map((x) => [String(x)]), right, { bugs });
       },
@@ -612,8 +616,8 @@ export default {
         const ds = divisors(p.n).filter((x) => x > 1 && x < p.n);
         if (p.v === 'count') return ds.slice(0, 2).map((d) => ({ c: 'DIV', p: { a: p.n, b: d }, why: `${p.n} ÷ ${d}${P(d, '이', '가')} 나누어떨어지면 ${d}${P(d, '과', '와')} 그 몫이 모두 약수예요.` }));
         if (p.v === 'list') return ds.filter((d) => d > 1 && d * d < p.n).slice(0, 2).map((d) => ({ c: 'DIV', p: { a: p.n, b: d }, why: `${d}${P(d, '과', '와')} 짝이 되는 약수는 ${p.n} ÷ ${d}의 몫이에요.` }));
-        const not = g1Not(p);
-        return [{ c: 'DIV', p: { a: p.n, b: not }, why: `보기의 수로 ${p.n}${P(p.n, '을', '를')} 하나씩 나눠 봐요. 나머지가 있는 수가 약수가 아니에요.` }];
+        /* 보기마다 나눠 보기(예전: 약수가 아닌 수 하나만 나눠서 답을 골라 줌 · 11-07) */
+        return g1Ch(p).map((x, i) => ({ c: 'DIV', p: { a: p.n, b: x }, why: i ? `이번에는 ${RO(x)} 나눠요.` : `보기의 수로 차례로 나눠서 나머지가 있는 수를 찾아요. 먼저 ${RO(x)} 나눠요.` }));
       },
       hint: '그 수를 나누어떨어지게 하는 수가 약수예요. 12 = 1 × 12 = 2 × 6 = 3 × 4니까 12의 약수는 1, 2, 3, 4, 6, 12예요.',
     },
@@ -658,7 +662,7 @@ export default {
       gen: (r) => CF.R1.gen(r), is: (p) => p.op === '×', prev: null, pre: (p) => uniq(['4-1-6:2', p && p.k <= 9 ? danOf(p.k) : null]),
       // 개념 가족 R1 문항 그대로(10-11: R1 이 '오징어가 6마리일 때 … □개예요.'까지 쓰므로 여기서 덧붙이지 않음)
       make: (p) => CF.R1.make(p),
-      steps: (p) => [{ c: 'MUL', p: { a: p.x, b: p.k }, why: '한 개에 몇씩인지 표에서 찾아요. 그만큼씩 몇 배가 되는지 곱셈으로 구해요.' }],
+      steps: (p) => [{ c: 'MUL', p: { a: p.x, b: p.k }, why: `표에서 위 수가 1일 때 아래 수를 찾아요. 위 수 ${p.x}에 그 수를 곱해요.` }],
       hint: '표를 위아래 짝으로 봐요. 탁자 1개에 의자 4개, 탁자 2개에 의자 8개면 의자 수는 탁자 수의 4배예요.',
     },
     {
@@ -740,7 +744,6 @@ export default {
           const [wn, wd] = p.n1 * p.d2 > p.n2 * p.d1 ? [p.n1, p.d1] : [p.n2, p.d2];
           out.push({ c: 'F9', p: { v: 'given', n1: wn, d1: wd, n2: p.n3, d2: p.d3 }, why: `더 큰 ${wn}/${wd}${P(wn, '과', '와')} 남은 ${p.n3}/${p.d3}${P(p.n3, '을', '를')} 통분해서 비교해요.` });
         }
-        if (p.v === 'same') out.unshift({ c: 'F8', p: { n: p.n1 / gcd(p.n1, p.d1), d: p.d1 / gcd(p.n1, p.d1), k: gcd(p.n1, p.d1) }, why: '약분해 보면 같은 분수인지 바로 보여요.' });
         return out;
       },
       hint: '통분해서 분모를 같게 하면 분자만 비교하면 돼요. 3/4과 5/6 → 9/12, 10/12 → 더 큰 수는 5/6!',
@@ -913,7 +916,10 @@ export default {
         : p.N % p.d === 0 ? CF.F14.make(p)
         : fracAns([`${p.N} × `, fx(p.n, p.d), ' = '], F(p.N * p.n, p.d), [{ test: (v) => v[0] === p.N * p.n && v[1] === p.d * p.N, name: '분모에도 곱함', to: '3-2-4:3' }])),
       // 나누어떨어지지 않으면(3 × 3/7) '3의 3/7'로 — 3의 1/7은 1/7이 3개, 3의 3/7은 그것이 3개(예전: '3/7의 3묶음' = 진분수 × 자연수 뜻 · 혹평 11-01)
-      steps: (p) => (p.dir || p.sz ? [] : p.N % p.d === 0 ? [{ c: 'F4', p: { N: p.N, n: p.n, d: p.d }, why: `${p.N} × ${p.n}/${p.d}${P(p.n, '은', '는')} ${p.N}의 ${p.n}/${p.d}${P(p.n, '이라는', '라는')} 뜻이에요.` }] : [
+      steps: (p) => (p.dir || p.sz ? [] : p.N % p.d === 0 ? [
+        { c: 'DIV', p: { a: p.N, b: p.d }, why: `${p.N}의 ${p.n}/${p.d}${P(p.n, '은', '는')} ${p.N}${P(p.N, '을', '를')} ${p.d}묶음으로 똑같이 나눈 것 중 ${p.n}묶음이에요. 한 묶음은 얼마인가요?` },
+        p.n > 1 ? { c: 'MUL', p: { a: p.N / p.d, b: p.n }, why: `한 묶음이 ${p.N / p.d}${P(p.N / p.d, '이니까', '니까')} ${p.n}묶음은 얼마인가요?` } : null,
+      ].filter(Boolean) : [
         { c: 'F3', p: { v: 'build', n: p.N, d: p.d }, why: `${p.N} × ${p.n}/${p.d}${P(p.n, '은', '는')} ${p.N}의 ${p.n}/${p.d}${P(p.n, '이에요', '예요')}. ${p.n > 1 ? '먼저 ' : ''}${p.N}의 1/${p.d}${P(1, '은', '는')} 1의 1/${p.d}이 ${p.N}개 모인 수예요.` },
         p.n > 1 ? { c: 'MUL', p: { a: p.N, b: p.n }, why: `${p.N}의 ${p.n}/${p.d}${P(p.n, '은', '는')} ${p.N}의 1/${p.d}이 ${p.n}개예요. 1/${p.d}이 모두 몇 개인지 곱해요.` } : null,
         p.n > 1 ? { c: 'F3', p: { v: 'build', n: p.N * p.n, d: p.d }, why: `1/${p.d}이 ${p.N * p.n}개인 수를 분수로 써요.` } : null,
