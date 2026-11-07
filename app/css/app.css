@@ -497,7 +497,8 @@ button.pk:active,button.pk.press{box-shadow:0 1px 0 var(--line2)}
 .sb-ic{flex:none;width:46px;height:38px;color:#5B4FB3}
 .sb-ty:disabled .sb-ic{color:var(--off-ink)}
 .sb-ty.right,.sb-ty.right:disabled{border-color:var(--ok);background:var(--ok-t)}.sb-ty.right:disabled .sb-ic{color:var(--ok-ink)}.sb-ty.right:disabled small{color:var(--ink)}.sb-ty.dim{opacity:.5}.sb-ty .sb-ok{display:block;margin-top:4px;font-style:normal;font-weight:700;color:var(--ok-ink)}   /* 두 번 틀린 뒤 맞는 카드 */
-.sb-right #b>.qact{margin-top:16px}   /* 그림 · 카드 바로 밑에 붙어 그 카드 단추처럼 보이던 것 */
+.sb-right #b>.qact{margin-top:16px}
+.was-t{display:block;font-size:13px;font-weight:400;color:var(--mute);margin-top:2px}.sb-cue{margin:6px 0 0}   /* 식 다시 고르기 · 계산 도움 한 줄 */   /* 그림 · 카드 바로 밑에 붙어 그 카드 단추처럼 보이던 것 */
 .sb-frames{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .sb-fr{position:relative;display:block;width:100%;border-radius:16px;padding:26px 10px 8px;min-height:0;font-weight:400}
 .sb-fr:disabled{background:var(--surface);border-color:var(--line2);color:var(--ink);cursor:default}
