@@ -153,7 +153,7 @@ export async function homeView(root) {
   // 내 기록 — 나하고만 견줌 · 사실만(점검 맞힌 수 · 연습한 날 · 배워서 고친 것)
   const ws = lineOf(K.recs, weekTerm(K)), wl = ws[ws.length - 1], wb = ws[ws.length - 2];
   const fixedN = Object.keys(K.fixed || {}).length, cal = KS.calOf(K);
-  const ladW = Object.keys(K.lad || {}).sort(), lw = (w) => (w && K.lad[w] ? (K.lad[w].r || 0) + (K.lad[w].s || 0) : 0), thisW = weekKey();   /* 떠올리기 · 풀이 순서로 고친 것(나하고만 견줌) */
+  const ladW = Object.keys(K.lad || {}).sort(), lad0 = K.lad || {}, lw = (w) => (w && lad0[w] ? (lad0[w].r || 0) + (lad0[w].s || 0) : 0), thisW = weekKey();   /* 떠올리기 · 풀이 순서로 고친 것(나하고만 견줌) */
   const selfWk = lw(thisW), prevW = ladW.filter((w) => w < thisW).pop(), selfLast = prevW ? lw(prevW) : null;
   const weekLine = wl ? `${wb ? `지난번 ${wb.ok}개 → ` : ''}이번 ${wl.ok}개 <small>(${wl.n}문제 중)</small>` : '<small>아직 안 했어요</small>';
   const tok = rand(4); root.dataset.home = tok;
