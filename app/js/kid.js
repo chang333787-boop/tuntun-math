@@ -127,7 +127,7 @@ const CARDS = [
 ];
 function helpItem(t) {
   return `<li class="c3-help"><details><summary><b>${esc(t.title)}</b><span>${esc(t.sub)}</span></summary>
-    <div class="helpbox"><p>선생님이 오시면 같이 풀어 볼 문제예요.</p>${t.cs.length ? `<ul>${t.cs.map((c) => `<li><b>${esc(plank(c))}</b> <a class="btn mini teal" href="#/fix/${encodeURIComponent(c)}/check">선생님과 본 뒤 — 확인 3문제</a></li>`).join('')}</ul>` : ''}<p class="small muted">어려운 문제가 있는 건 괜찮아요. 같이 하면 하나씩 풀 수 있어요. ${t.wait ? '선생님을 기다리는 동안 아래 것을 먼저 해도 돼요.' : '선생님이 오실 때까지 이 화면을 켜 두어요.'}</p></div></details></li>`;
+    <div class="helpbox"><p>선생님이 오시면 같이 풀어 볼 문제예요. 같이 본 <b>뒤에</b> 옆 단추로 확인 3문제를 풀어요.</p>${t.cs.length ? `<ul>${t.cs.map((c) => `<li><b>${esc(plank(c))}</b> <a class="btn mini teal" href="#/fix/${encodeURIComponent(c)}/check">선생님과 같이 본 뒤에 — 확인 3문제</a></li>`).join('')}</ul>` : ''}<p class="small muted">어려운 문제가 있는 건 괜찮아요. 같이 하면 하나씩 풀 수 있어요. ${t.wait ? '선생님을 기다리는 동안 아래 것을 먼저 해도 돼요.' : ''}</p></div></details></li>`;
 }
 function cardHTML(c, list, now, extra = '') {
   const first = list[0], go1 = first && first.href ? first : list.find((x) => x.href);
@@ -170,10 +170,10 @@ export async function homeView(root) {
   const lists = [chk, prac, daily];
   const head = doneOne ? say('cheer', '하나 배웠어요! 이제 <b>선생님 수업</b>으로 가요. 남은 것은 다음 시간에 해요.', 88)
     : classRest ? say('cheer', '오늘 단원 점검을 끝냈어요. 지금은 <b>선생님 수업 시간</b>이에요. 남은 것은 다음 시간에 해요.', 88)
-    : hasHelp ? sayArt('hand', `<b>선생님과 같이</b> 볼 것이 있어요. 손을 들고 선생님께 알려요.<br>${nowNo && lists[nowNo - 1].some((x) => x.href) ? '기다리는 동안 주황 단추로 다른 것을 해도 돼요.' : '선생님이 오실 때까지 이 화면을 켜 두어요.'}`, 88)   /* 주황 단추가 없을 때 '주황 단추로'라고 하지 않게 */
+    : hasHelp ? sayArt('hand', `<b>선생님과 같이</b> 볼 것이 있어요. 손을 들고 선생님께 알려요.<br>${nowNo && lists[nowNo - 1].some((x) => x.href) ? '기다리는 동안 주황 단추로 다른 것을 해도 돼요.' : '기다리는 동안 <a class="btn mini" href="#/story">이야기 문제 풀기</a>를 해도 돼요.'}`, 88)   /* 주황 단추가 없을 때 '주황 단추로'라고 하지 않게 */
     : nowNo && lists[nowNo - 1][0] && lists[nowNo - 1][0].resume ? say('point', '하던 것이 있어요. <b>이어서 하기</b>를 눌러요.', 88)
     : nowNo ? say('point', `오늘은 <b>${CARDS[nowNo - 1].t}</b>부터 해요. 주황 단추를 눌러요.`, 88)
-    : firstDay ? sayArt('wait', '반가워요! 선생님이 점검을 열면 <b>점검</b> 카드에 나와요.<br>기다리는 동안 아래 <b>이야기 문제 풀기</b>를 해 봐도 돼요.', 88)
+    : firstDay ? sayArt('wait', '반가워요! 선생님이 점검을 열면 <b>점검</b> 카드에 나와요.<br>기다리는 동안 <a class="btn mini" href="#/story">이야기 문제 풀기</a>를 해 봐도 돼요.', 88)
     : say('cheer', `오늘 할 것을 다 했어요! 더 하고 싶으면 <a class="btn mini" href="#/story">이야기 문제에 도전</a>해 봐요.`, 88);
   // 내 기록 — 나하고만 견줌 · 사실만(점검 맞힌 수 · 연습한 날 · 배워서 고친 것)
   const ws = lineOf(K.recs, weekTerm(K)), wl = ws[ws.length - 1], wb = ws[ws.length - 2];
@@ -183,13 +183,13 @@ export async function homeView(root) {
   const weekLine = wl ? `${wb ? `지난번 ${wb.ok}개 → ` : ''}이번 ${wl.ok}개 <small>(${wl.n}문제 중)</small>` : '<small>아직 안 했어요</small>';
   const tok = rand(4); root.dataset.home = tok;
   root.innerHTML = `<div class="home3">
-    <div class="home3-top">${head}${ok ? '' : '<p class="warn small">서버에 닿지 않아 이 기기에 저장된 것만 보여요. 푼 것은 이 기기에 모았다가 나중에 보내요.</p>'}</div>
+    <div class="home3-top">${head}${ok ? '' : '<p class="small muted">인터넷이 잠깐 끊겼어요. 푼 것은 이 기기에 모아 두었다가 이어지면 보내요.</p>'}</div>
     <div class="cards3">${CARDS.map((c, i) => cardHTML(c.k === 'daily' && ran && !lists[i].length ? { ...c, none: '오늘 매일 연습을 했어요. 내일 또 해요.' } : c, lists[i], nowNo === c.no, c.k === 'daily' ? `<p class="c3-days">이번 주 연습한 날 ${weekHTML(K)}</p>` : '')).join('')}</div>
     <section class="mine" aria-label="내 기록"><h2 class="sec">내 기록 <small>나하고만 비교해요</small></h2>
       <div class="mine-row">
         <div class="mine-c"><span class="k">이번 주 점검 맞힌 수</span><span class="v">${weekLine}</span></div>
-        <div class="mine-c"><span class="k">배우기로 고친 것</span><span class="v">${fixedN}개</span>${fixedN ? `<details class="more"><summary>보기</summary><p class="small">${names(Object.keys(K.fixed))}</p></details>` : ''}</div>
-        <div class="mine-c"><span class="k">다시 풀어 맞힌 문제(이번 주)</span><span class="v">${selfWk}개${selfLast != null ? ` <small>(지난주 ${selfLast}개)</small>` : ''}</span></div>
+        <div class="mine-c"><span class="k">배우기로 고친 것</span><span class="v">${fixedN ? `${fixedN}개` : '<small>아직 없어요</small>'}</span>${fixedN ? `<details class="more"><summary>보기</summary><p class="small">${names(Object.keys(K.fixed))}</p></details>` : ''}</div>
+        <div class="mine-c"><span class="k">다시 풀어 맞힌 문제(이번 주)</span><span class="v">${!selfWk && selfLast == null ? '<small>아직 없어요</small>' : `${selfWk}개${selfLast != null ? ` <small>(지난주 ${selfLast}개)</small>` : ''}`}</span></div>
         <div class="mine-c"><span class="k">'자신 있어요' 하고 맞힌 문제</span><span class="v">${cal.n ? `${cal.sureRight}문제 <small>(${cal.n}문제 중)</small>` : '<small>아직 없어요</small>'}</span></div>
       </div>
       <p class="mine-links small">${(() => { const so = lsGet(`tt.story.${me.C}.${me.no}`, null); return so && !so.done && Date.now() - so.made < 3 * 3600e3 && Array.isArray(so.items) && so.i < so.items.length ? `<a href="#/story"><b>이야기 문제 이어서 하기</b>(${so.i + 1}번째 이야기부터)</a>` : '<a href="#/story">이야기 문제 풀기</a>'; })()}${(() => { const bk = lsGet(`tt.back.${me.C}.${me.no}`, null); return bk && !bk.done && Date.now() - bk.t0 < 3 * 3600e3 && bk.problem ? `<a href="#/back"><b>막힌 문제 찾기 이어서 하기</b>(${esc(bk.problem.text || '')})</a>` : '<a href="#/back">막힌 문제 직접 넣어 보기</a>'; })()}</p>
