@@ -2,7 +2,7 @@
 //   ADD {a,b} · ADD3 {a,b,c} · SUB {a,b} · MUL {a,b} · DIV {a,b} (나누어떨어지지 않으면 몫과 나머지)
 //   addKind/subKind/mulKind/divKind(a, b) → 차시 id. 차시 정의의 is(p)는 이 분류기와 같아야 한다(한 곳에서만 정함)
 //   예전 개념 id(A1~A8, M3~M10, D4~D7)로 적힌 단계·오답 방향은 ALIAS로 이 가족에 옮겨 온다
-import { nums, B, J, P } from '../concepts/kit.js';
+import { nums, B, J, P, RO } from '../concepts/kit.js';
 import { addNoCarry, subSmallFromLarge } from '../concepts/num.js';
 import { forgotCarry, carryThenMul } from '../concepts/mul.js';
 
@@ -158,39 +158,66 @@ function divBugs(a, b) {
 }
 
 // ── 같은 숫자로 쪼갠 단계
+//  단계 글(11-05 교사 '받아내려 · 윗자리만 말하면 4학년이 무엇을 할지 모름') — 한 단계 한두 문장 · 자리 이름(십의 자리 · 백의 자리)으로
+//    받아내림 · 받아올림은 무엇이 어떻게 바뀌는지 숫자로(36 − 28 → '십의 자리 3에서 10을 하나 가져오면 일의 자리는 16, 십의 자리는 2가 돼요')
+//    단계 글은 그 단계의 답을 말하지 않는다(같이 풀기 · 나눠 풀기에서 빈칸 위에 보임) · 앞 단계의 답은 말해도 됨
+const PLN = ['일', '십', '백', '천', '만', '십만'];
+export const placeOf = (k) => `${PLN[k] || PLN[PLN.length - 1]}의 자리`;
+const placeVal = (k) => String(10 ** k);
+// 받아내림 — i 자리 x에서 y를 뺄 수 없을 때 위 자리에서 하나를 가져와 바뀐 수를 말함
+//  up = i+1 자리부터 위 자리 숫자(아직 내주지 않은 그대로) · lent = 이 자리가 이미 아래에 하나를 내줘 x가 하나 줄어 있음
+//  nm(k) · val(k) = k 자리 이름 · 그 자리 하나의 값 글(소수 단계는 다른 이름표를 넘김 — g4 decCols)
+export function borrowWhy(i, x, y, up, { lent = false, nm = placeOf, val = placeVal } = {}) {
+  let k = 0;
+  while (k < up.length - 1 && up[k] === 0) k++;
+  const K = i + 1 + k, X = up[k], a = nm(i), top = `${lent ? '하나 줄어든 ' : ''}${a} ${x}에서 ${y}${P(y, '은', '는')} 뺄 수 없`;
+  const after = `${a}${P(a, '은', '는')} ${x + 10}`, hi = `${nm(K)}${P(nm(K), '은', '는')} ${X - 1}${P(X - 1, '이', '가')} 돼요.`;
+  if (!k) {
+    const from = `${nm(K)} ${X}에서 ${val(K)}${P(val(K), '을', '를')} 하나 가져오면`;
+    return val(i) === '1' ? `${top}어요. ${from} ${after}, ${hi}` : `${top}어요. ${from} ${val(K)}${P(val(K), '은', '는')} ${val(i)}${P(val(i), '이', '가')} 10개라서 ${after}, ${hi}`;
+  }
+  const zs = Array.from({ length: k }, (_, j) => nm(i + 1 + j)), z = zs.join('와 ');
+  if (k === 1) return `${top}는데 ${z}${P(z, '이', '가')} 0이에요. ${nm(K)} ${X}에서 하나를 가져와 ${z}${P(z, '을', '를')} 10으로 만들고, 그 10에서 하나를 ${RO(a)} 가져오면 ${after}, ${z}${P(z, '은', '는')} 9, ${hi}`;
+  return `${top}는데 ${z}${P(z, '이', '가')} 0이에요. ${nm(K)} ${X}에서 하나를 가져와 차례로 내려 주면 ${after}, ${z}${P(z, '은', '는')} 모두 9, ${hi}`;
+}
+// 받아올림 — 앞 자리 합 S(10 이상)를 어떻게 쓰고 올리는지(38 + 45의 십의 자리: '일의 자리 합 13에서 3은 일의 자리에 쓰고, 10은 십의 자리로 올려 1로 써요.')
+export const carryLead = (lo, hi, S) => `${lo} 합 ${S}에서 ${S - 10}${P(S - 10, '은', '는')} ${lo}에 쓰고, 10은 ${RO(hi)} 올려 1로 써요.`;
 function addColumns(a, b) {
   const L = Math.max(len(a), len(b));
   if (L === 1) return [];
   if (len(Math.min(a, b)) === 1 && L === 2) {
     // (두 자리)+(한 자리): 일의 자리끼리 더하고 몇십을 더한다
-    const big = Math.max(a, b), small = Math.min(a, b);
-    return [{ c: 'ADD', p: { a: ones(big), b: small }, why: '일의 자리끼리 더해요.' }, { c: 'ADD', p: { a: big - ones(big), b: ones(big) + small }, why: `몇십에 그 결과를 더해요.` }];
+    const big = Math.max(a, b), small = Math.min(a, b), t = big - ones(big), s1 = ones(big) + small;
+    return [{ c: 'ADD', p: { a: ones(big), b: small }, why: '일의 자리끼리 더해요.' }, { c: 'ADD', p: { a: t, b: s1 }, why: `${s1 >= 10 ? `일의 자리 합 ${s1}${P(s1, '은', '는')} 10과 ${s1 - 10}${P(s1 - 10, '이에요', '예요')}. ` : ''}${t}에 ${s1}${P(s1, '을', '를')} 더해요.` }];
   }
-  const out = []; let c = 0;
-  const names = ['일', '십', '백', '천', '만'];
+  const out = []; let c = 0, prev = 0;
   for (let i = 0; i < L; i++) {
-    const x = dig(a, i), y = dig(b, i);
-    if (i > 0 && x === 0 && y === 0 && !c) continue;
+    const x = dig(a, i), y = dig(b, i), lead = c ? `${carryLead(placeOf(i - 1), placeOf(i), prev)} ` : '';
+    if (i > 0 && x === 0 && y === 0 && !c) { prev = 0; continue; }
     // 받아올린 1까지 세 수 — 10이 되는 짝이 없고 합이 10을 넘으면 (5 + 8 + 1) '세 수 덧셈'(9까지)이 아니라 받아올림 덧셈이 필요하므로 1을 먼저 더한 두 수로
-    if (c && x + y + c >= 10 && x + y !== 10 && x !== 9 && y !== 9) out.push({ c: 'ADD', p: { a: x + c, b: y }, why: `${names[i]}의 자리: 받아올린 1을 ${x}에 먼저 더하면 ${x + c}, 여기에 ${y}${P(y, '을', '를')} 더해요.` });
-    else if (c) out.push({ c: 'ADD3', p: { a: x, b: y, c }, why: `${names[i]}의 자리: 받아올린 1까지 더해요.` });
-    else out.push({ c: 'ADD', p: { a: x, b: y }, why: `${names[i]}의 자리끼리 더해요.` });
-    c = x + y + c >= 10 ? 1 : 0;
+    if (c && x + y + c >= 10 && x + y !== 10 && x !== 9 && y !== 9) out.push({ c: 'ADD', p: { a: x + c, b: y }, why: `${lead}올린 1을 ${x}에 먼저 더하면 ${x + c}, 여기에 ${y}${P(y, '을', '를')} 더해요.` });
+    else if (c) out.push({ c: 'ADD3', p: { a: x, b: y, c }, why: `${lead}${placeOf(i)}${P(placeOf(i), '은', '는')} ${x} + ${y}에 올린 1까지 더해요.` });
+    else out.push({ c: 'ADD', p: { a: x, b: y }, why: `${placeOf(i)}끼리 더해요.` });
+    prev = x + y + c;
+    c = prev >= 10 ? 1 : 0;
   }
   return out.filter((s) => !(s.c === 'ADD' && s.p.a === 0 && s.p.b === 0));
 }
 function subColumns(a, b) {
   if (a <= 10 || (a < 20 && b <= 9)) {
-    if (a > 10 && a < 20 && ones(a) < b) return [{ c: 'SUB', p: { a: 10, b: b - ones(a) }, why: `${b}${P(b, '을', '를')} ${ones(a)}${P(ones(a), '과', '와')} ${b - ones(a)}(으)로 갈라 10에서 빼요.` }];
+    if (a > 10 && a < 20 && ones(a) < b) { const o = ones(a), r = b - o; return [{ c: 'SUB', p: { a: 10, b: r }, why: `${a}에서 ${o}${P(o, '을', '를')} 먼저 빼면 10이에요. ${b} = ${o} + ${r}${P(r, '이라서', '라서')} 10에서 남은 ${r}${P(r, '을', '를')} 빼요.` }]; }
     return [];
   }
   const out = []; let br = 0;
-  const names = ['일', '십', '백', '천', '만'];
   for (let i = 0; i < len(a); i++) {
     const x = dig(a, i) - br, y = dig(b, i);
     if (i >= len(b) && !br) break;
-    if (x < y) { out.push({ c: 'SUB', p: { a: x + 10, b: y }, why: `${names[i]}의 자리: 윗자리에서 10을 받아내려 ${x + 10} − ${y}${P(y, '을', '를')} 해요.` }); br = 1; }
-    else { if (x >= 0 && !(x === 0 && y === 0)) out.push({ c: 'SUB', p: { a: x, b: y }, why: br ? `${names[i]}의 자리: 아랫자리에 10을 내려 주어 ${x}${P(x, '이', '가')} 남아요. ${x}에서 ${y}${P(y, '을', '를')} 빼요.` : `${names[i]}의 자리끼리 빼요.` }); br = 0; }
+    if (x < y) {
+      // 0이 아랫자리에 하나를 내준 자리(x = −1)는 앞 단계에서 이미 9가 됨 · 아니면 위 자리에서 하나를 가져옴
+      const up = Array.from({ length: len(a) - i - 1 }, (_, j) => dig(a, i + 1 + j));
+      out.push({ c: 'SUB', p: { a: x + 10, b: y }, why: x < 0 ? `${placeOf(i)}${P(placeOf(i), '은', '는')} 10에서 하나를 내주어 9예요.` : borrowWhy(i, x, y, up, { lent: !!br }) });
+      br = 1;
+    } else { if (x >= 0 && !(x === 0 && y === 0)) out.push({ c: 'SUB', p: { a: x, b: y }, why: br ? `${placeOf(i)}${P(placeOf(i), '은', '는')} 하나 줄어 ${x}${P(x, '이에요', '예요')}.` : `${placeOf(i)}끼리 빼요.` }); br = 0; }
   }
   return out.filter((s) => s.p.a >= s.p.b && !(s.p.a === 0));
 }
@@ -205,11 +232,14 @@ function mulParts(a, b) {
   if (Bb <= 9 && A % 100 === 0 && A < 1000) return [{ c: 'MUL', p: m(A / 100, Bb, sw), why: `${A}${P(A, '은', '는')} ${A / 100}의 100배예요. ${ms(A / 100, Bb, sw)}부터 해요. 그다음 100배예요.` }];
   if (Bb <= 9) {
     // 일의 자리부터 자리마다 곱해서 더한다 (교과서 세로셈 순서)
+    //  글: 첫 단계에 '47 = 40 + 7이라서 자리마다 따로 곱해 더해요' · 몇십 · 몇백 단계는 '40은 4의 10배라서 4 × 6의 10배예요'(답 수는 말하지 않음)
     const parts = [];
     for (let i = 0; i < len(A); i++) { const d = dig(A, i); if (d) parts.push(d * 10 ** i); }
-    const steps = parts.map((x) => ({ c: 'MUL', p: m(x, Bb, sw), why: `${ms(x, Bb, sw)}${P(sw ? x : Bb, '을', '를')} 해요.` }));
-    if (parts.length === 2) steps.push({ c: 'ADD', p: { a: parts[1] * Bb, b: parts[0] * Bb }, why: '두 곱을 더해요.' });
-    if (parts.length === 3) { steps.push({ c: 'ADD', p: { a: parts[1] * Bb, b: parts[0] * Bb }, why: '일의 자리 곱과 십의 자리 곱을 더해요.' }, { c: 'ADD', p: { a: parts[2] * Bb, b: (parts[0] + parts[1]) * Bb }, why: '그 합에 백의 자리 곱을 더해요.' }); }
+    const expr = sw ? `${Bb} × ${A}` : `${A} × ${Bb}`, split = `${A} = ${[...parts].reverse().join(' + ')}`;
+    const tail = (x) => { const k = String(x).length - 1, d = x / 10 ** k, t = 10 ** k; return k && d > 1 ? ` ${x}${P(x, '은', '는')} ${d}의 ${t}배라서 ${ms(d, Bb, sw)}의 ${t}배예요.` : ''; };
+    const steps = parts.map((x, j) => ({ c: 'MUL', p: m(x, Bb, sw), why: parts.length > 1 && !j ? `${split}${P(parts[0], '이라서', '라서')} 자리마다 따로 곱해 더해요. 먼저 ${ms(x, Bb, sw)}${P(sw ? x : Bb, '을', '를')} 해요.` : `${ms(x, Bb, sw)}${P(sw ? x : Bb, '을', '를')} 해요.${tail(x)}` }));
+    if (parts.length === 2) steps.push({ c: 'ADD', p: { a: parts[1] * Bb, b: parts[0] * Bb }, why: `두 곱을 더하면 ${expr}의 답이 나와요.` });
+    if (parts.length === 3) { steps.push({ c: 'ADD', p: { a: parts[1] * Bb, b: parts[0] * Bb }, why: `${PLN[String(parts[0]).length - 1]}의 자리 곱과 ${PLN[String(parts[1]).length - 1]}의 자리 곱을 더해요.` }, { c: 'ADD', p: { a: parts[2] * Bb, b: (parts[0] + parts[1]) * Bb }, why: `그 합에 백의 자리 곱을 더하면 ${expr}의 답이 나와요.` }); }
     return steps;
   }
   if (b % 10 === 0 && b < 100) return [{ c: 'MUL', p: { a, b: b / 10 }, why: `${a} × ${b / 10}부터 해요. 그다음 10배예요.` }];
@@ -217,30 +247,32 @@ function mulParts(a, b) {
   if (b < 100) {
     const o = ones(b), t = tens(b) * 10;
     const st = [];
-    if (o) st.push({ c: 'MUL', p: { a, b: o }, why: `${a} × ${o}(일의 자리)를 해요.` });
-    st.push({ c: 'MUL', p: { a, b: t }, why: `${a} × ${t}(몇십)을 해요.` });
-    if (o) st.push({ c: 'ADD', p: { a: a * t, b: a * o }, why: '두 부분 곱을 더해요.' });
+    if (o) st.push({ c: 'MUL', p: { a, b: o }, why: `${b} = ${t} + ${o}${P(o, '이라서', '라서')} ${a}에 ${o}${P(o, '과', '와')} ${t}${P(t, '을', '를')} 따로 곱해 더해요. 먼저 ${a} × ${o}${P(o, '을', '를')} 해요.` });
+    st.push({ c: 'MUL', p: { a, b: t }, why: `${a} × ${t}${P(t, '을', '를')} 해요. ${a} × ${t / 10}의 10배예요.` });
+    if (o) st.push({ c: 'ADD', p: { a: a * t, b: a * o }, why: `두 곱을 더하면 ${a} × ${b}의 답이 나와요.` });
     return st;
   }
   return [];
 }
 function divParts(a, b) {
   const q = Math.floor(a / b), r = a % b;
-  if (b <= 9 && q <= 9) return r ? [{ c: 'MUL', p: { a: b, b: q }, why: `${b}단에서 ${a}보다 크지 않은 가장 큰 곱을 찾아요.` }, { c: 'SUB', p: { a, b: b * q }, why: '남는 수를 구해요.' }] : [{ c: 'MUL', p: { a: b, b: q }, why: `${b}의 단에서 곱이 ${a}인 것을 찾아요.` }];
+  if (b <= 9 && q <= 9) return r ? [{ c: 'MUL', p: { a: b, b: q }, why: `${b}단에서 ${a}보다 크지 않은 가장 큰 곱을 찾아요.` }, { c: 'SUB', p: { a, b: b * q }, why: `${a}에서 그 곱을 빼면 나머지예요.` }] : [{ c: 'MUL', p: { a: b, b: q }, why: `${b}의 단에서 곱이 ${a}인 것을 찾아요.` }];
   if (b <= 9) {
     // 높은 자리부터 나눈다 — 자리마다 한 단계(몫의 숫자 하나) · 맨 앞자리가 나누는 수보다 작으면 다음 자리와 합쳐서
     //   중간 · 끝 자리가 나누는 수보다 작으면 '이 자리 몫은 0' 단계(422 ÷ 6 → 42 ÷ 6 · 2 ÷ 6 = 0 … 2 / 215 ÷ 2 → 2 ÷ 2 · 1 ÷ 2 = 0 … 1 · 15 ÷ 2)
     //   예전에는 이 자리를 건너뛰어 단계만 따라 하면 몫의 0이 빠졌음(215 ÷ 2 → 17 … 1 · 혹평 11-01) · 자리 수만큼만 나오므로 자르지 않음
-    const out = [], s = String(a), PL = ['일', '십', '백', '천', '만', '십만'];
+    //  글(11-05): 앞자리에서 남은 수는 '남은 십 1개는 낱개 10개예요'처럼 자리 이름으로 바꿔 말함(이어 쓰기라는 절차 말만 X)
+    const out = [], s = String(a), PL = PLN, UW = ['낱개', '십', '백', '천', '만', '십만'];
     let rem = 0, started = false;
     for (let i = 0; i < s.length; i++) {
-      const k = s.length - 1 - i, d = Number(s[i]), cur = rem * 10 + d, last = k === 0, at = `${PL[k]}의 자리: `;
+      const k = s.length - 1 - i, d = Number(s[i]), cur = rem * 10 + d, last = k === 0, at = `${PL[k]}의 자리`, by = RO(b);
       if (!started && cur < b && !last) { rem = cur; continue; }
+      const join = `${UW[k + 1]} ${rem}개는 ${UW[k]} ${rem * 10}개라서 ${at} ${d}${P(d, '과', '와')} 합치면 ${cur}, ${cur} ÷ ${J(b, '을', '를')} 해요.`;
       let why;
-      if (!started && i > 0) why = `${at}${PL[k + 1]}의 자리 ${J(rem, '은', '는')} ${b}보다 작아서 다음 자리와 합쳐 ${cur} ÷ ${J(b, '을', '를')} 해요.`;
-      else if (cur < b) why = cur === 0 ? `${at}0이라서 이 자리 몫은 0이에요.${last ? '' : ' 다음 자리로 넘어가요.'}` : `${at}${J(cur, '은', '는')} ${b}보다 작아서 이 자리 몫은 0이에요. ${last ? `${J(cur, '이', '가')} 나머지예요.` : `${J(cur, '을', '를')} 다음 자리로 내려요.`}`;
-      else if (rem) why = `${at}남은 ${J(rem, '과', '와')} ${J(d, '을', '를')} 이어 쓰면 ${cur}${P(cur, '이에요', '예요')}. ${cur} ÷ ${J(b, '을', '를')} 해요.`;
-      else why = `${at}${cur} ÷ ${J(b, '을', '를')} 해요.`;
+      if (!started && i > 0) why = `${PL[k + 1]}의 자리 ${J(rem, '은', '는')} ${by} 나눌 수 없어요. ${join}`;
+      else if (cur < b) why = cur === 0 ? `${at}${P(at, '은', '는')} 0이라서 이 자리 몫은 0이에요.${last ? '' : ' 다음 자리로 넘어가요.'}` : `${at} ${J(cur, '은', '는')} ${b}보다 작아서 이 자리 몫은 0이에요. ${last ? `${J(cur, '이', '가')} 나머지예요.` : `${UW[k]} ${cur}개는 다음 자리로 내려요.`}`;
+      else if (rem) why = `앞에서 남은 ${join}`;
+      else why = `${at} ${J(cur, '을', '를')} ${by} 나눠요.`;
       out.push({ c: 'DIV', p: { a: cur, b }, why });
       started = true;
       rem = cur % b;

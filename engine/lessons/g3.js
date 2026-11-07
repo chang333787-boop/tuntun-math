@@ -84,8 +84,8 @@ function divSplit(a, b, self) {
   const out = [{ c: 'DIV', p: { a: a1, b }, why: `${J(a, '을', '를')} ${J(a1, '과', '와')} ${RO(a2)} 갈라 ${a1} ÷ ${b}부터 해요.${rest}` }];
   if (a2 >= b) {
     if (divKind(a2, b) === self) out.push(...byTable(a2));
-    else out.push({ c: 'DIV', p: { a: a2, b }, why: `남은 ${a2} ÷ ${J(b, '을', '를')} 해요.` });
-    out.push({ c: 'ADD', p: { a: qt, b: q2 }, why: '두 몫을 더해요.' });
+    else out.push({ c: 'DIV', p: { a: a2, b }, why: `${J(a1, '을', '를')} 나누고 남은 ${J(a2, '을', '를')} ${RO(b)} 나눠요.` });
+    out.push({ c: 'ADD', p: { a: qt, b: q2 }, why: `두 몫을 더하면 ${a} ÷ ${b}의 몫이에요.` });
   }
   return out;
 }
@@ -586,9 +586,9 @@ export default {
       steps: (p) => {
         const s = Math.min(p.a, p.b), t = Math.max(p.a, p.b), tt = t - ones(t), o = ones(t);
         return [
-          { c: 'MUL', p: { a: s, b: tt }, why: `${s} × ${J(tt, '을', '를')} 해요.` },
+          { c: 'MUL', p: { a: s, b: tt }, why: `${t} = ${tt} + ${J(o, '이라서', '라서')} ${s} × ${J(tt, '과', '와')} ${s} × ${J(o, '을', '를')} 따로 구해 더해요. 먼저 ${s} × ${J(tt, '을', '를')} 해요.` },
           { c: 'MUL', p: { a: s, b: o }, why: `${s} × ${J(o, '을', '를')} 해요.` },
-          { c: 'ADD', p: { a: s * tt, b: s * o }, why: '두 곱을 더해요.' },
+          { c: 'ADD', p: { a: s * tt, b: s * o }, why: `두 곱을 더하면 ${p.a} × ${p.b}의 답이 나와요.` },
         ];
       },
       hint: '4 × 23은 4 × 20과 4 × 3을 따로 구해서 더해요. 80 + 12 = 92예요.',
