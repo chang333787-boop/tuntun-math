@@ -123,7 +123,10 @@ export function summaryOf(K) {
   if ((K.rush || 0) > (K.rushSeen || 0)) { K.rushLog = [...(K.rushLog || []), ...Array.from({ length: Math.min(20, K.rush - (K.rushSeen || 0)) }, () => now)].slice(-40); K.rushSeen = K.rush; }
   const rush14 = (K.rushLog || []).filter((t) => now - t < 14 * DAY).length;
   const prep = K.lastPrep && K.lastPrep.unit ? { u: K.lastPrep.unit, why: K.lastPrep.why || '', t: K.lastPrep.t || 0 } : null;
-  return { t: now, last, mis, L, sw14, rush14, prep, start: rep.start.map((s) => s.c), below: rep.below.map((b) => b.c), under: rep.under.map((u) => u.c), sw: cal.sureWrong, cal: { n: cal.n, m: cal.match }, fixed: K.fixed, due, help: K.help || {}, rush: K.rush || 0, jog: (K.jog || []).slice(-14), tools: K.tools || {}, story: storySum(K), wk: weeksOf(K.recs).slice(-12).map((w) => [w.wk, w.ok, w.n, w.term]), mx: Object.fromEntries(Object.entries(K.mx || {}).filter(([c]) => c !== '_jog' && c !== '_tools').map(([c, x]) => [c, x.tier || 0])) };
+  /* 선생님이 낸 점검지(ck · 기록 id = <점검 id>_<번째> · 푼 문항 수)와 보충(gv · 기록 id = 과제 id · [맞힘, 문제 수, 때]) — 반 화면 '다 푼 아이' · '보충 결과' */
+  const ck = {}, gv = {};
+  for (const [id, x] of Object.entries(K.recs)) { if (!okRec(x)) continue; if (x.s.kind === 'ck') { const cid = String(id).split('_')[0]; ck[cid] = (ck[cid] || 0) + x.s.it.length; } else if (x.s.kind === 'gv') gv[id] = [x.s.it.filter((i) => x.r.it[i[0]] && x.r.it[i[0]].s === 'ok').length, x.s.it.length, Math.round(x.s.made)]; }
+  return { t: now, last, mis, L, sw14, rush14, prep, start: rep.start.map((s) => s.c), below: rep.below.map((b) => b.c), under: rep.under.map((u) => u.c), sw: cal.sureWrong, cal: { n: cal.n, m: cal.match }, fixed: K.fixed, due, help: K.help || {}, rush: K.rush || 0, jog: (K.jog || []).slice(-14), tools: K.tools || {}, ck, gv, story: storySum(K), wk: weeksOf(K.recs).slice(-12).map((w) => [w.wk, w.ok, w.n, w.term]), mx: Object.fromEntries(Object.entries(K.mx || {}).filter(([c]) => c !== '_jog' && c !== '_tools').map(([c, x]) => [c, x.tier || 0])) };
 }
 export function pushSummary(me, K) { db.queuePut(`${base(me)}/st`, db.enc(summaryOf(K))); }
 
