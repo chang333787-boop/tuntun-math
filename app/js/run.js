@@ -11,7 +11,7 @@ import * as KS from './kidstore.js';
 import { draw, okFlash } from './item.js';
 import { ladder } from './hint.js';
 import { target, wantOf, isFact, lastReady } from './stage.js';
-import { esc, rand } from './local.js';
+import { esc, rand, lsGet, lsSet, lsDel } from './local.js';
 import { go, meOf } from './kid.js';
 import { tile, art } from './icons.js';
 
@@ -56,19 +56,21 @@ export function weekHTML(K, now = Date.now()) {
 export function runView(root) {
   const me = meOf(); if (!me) return go('#/join');
   const K = KS.load(me);
-  const rep0 = KS.reportOf(K), plan = runPlan(K, Date.now(), rep0);
+  const RK = `tt.run.${me.C}.${me.no}`, S0 = lsGet(RK, null), resume = S0 && S0.d === today() && Array.isArray(S0.plan) && S0.sh && Array.isArray(S0.sh.items) && S0.i > 0 && S0.i < S0.sh.items.length ? S0 : null;   /* 오늘 하던 판(이어서) */
+  const rep0 = KS.reportOf(K), plan = resume ? resume.plan : runPlan(K, Date.now(), rep0);
   if (!plan.length) {
     root.innerHTML = `<div class="card msg act-run"><p class="eyebrow">${tile('daily', 22)}매일 연습</p>${say('think', plan.later ? '오늘 점검에서 푼 문제는 <b>내일부터</b> 매일 연습에 나와요.' : '아직 매일 연습할 문제가 없어요.<br><b>점검</b>에서 맞힌 문제와 <b>배우기</b>로 고친 것이 며칠 뒤 여기 다시 나와요.', 104)}<div class="acts"><a class="btn pri" href="#/me">처음 화면으로</a></div></div>`;
     return;
   }
-  const sh = makeSheet({ kind: 'run', words: false, id: rand(6), lessons: plan.map((c) => { const want = wantOf(rep0, K.minds, c); return want ? { c, n: 2, want, trapN: 1 } : { c, n: 2 }; }), mixed: true });   // 보였던 생각이 있으면 둘 중 하나는 함정 짝
-  sh.items = sh.items.filter((it) => it.ch !== 'END'); sh.chapters = sh.chapters.filter((ch) => ch.key !== 'END');
-  for (let i = sh.items.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [sh.items[i], sh.items[j]] = [sh.items[j], sh.items[i]]; }   // 섞어서 [D-10]
-  const R = { done: {}, it: {} }, ms = {};
-  let fixd = 0;
-  let i = 0;
+  const sh = resume ? resume.sh : makeSheet({ kind: 'run', words: false, id: rand(6), lessons: plan.map((c) => { const want = wantOf(rep0, K.minds, c); return want ? { c, n: 2, want, trapN: 1 } : { c, n: 2 }; }), mixed: true });   // 보였던 생각이 있으면 둘 중 하나는 함정 짝
+  if (!resume) { sh.items = sh.items.filter((it) => it.ch !== 'END'); sh.chapters = sh.chapters.filter((ch) => ch.key !== 'END');
+  for (let i = sh.items.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [sh.items[i], sh.items[j]] = [sh.items[j], sh.items[i]]; } }   // 섞어서 [D-10]
+  const R = resume ? resume.R : { done: {}, it: {} }, ms = resume ? resume.ms : {};
+  let fixd = resume ? resume.fixd || 0 : 0;
+  let i = resume ? resume.i : 0;
+  const keep = () => lsSet(RK, { d: today(), plan, sh, R, ms, i, fixd, bl: budget.left });
   KS.setNow(me, { mode: 'run' });
-  const budget = { left: 2 };   /* 한 판에 '한 단계씩'은 두 번까지(매일 연습은 짧게 · 조사 R) */
+  const budget = { left: resume && Number.isFinite(resume.bl) ? resume.bl : 2 };   /* 한 판에 '한 단계씩'은 두 번까지(매일 연습은 짧게 · 조사 R) */
   const one = () => {
     if (i >= sh.items.length) return fin();
     const it = sh.items[i];
@@ -76,13 +78,14 @@ export function runView(root) {
       let ok = false;
       if (a.idk) R.it[it.k] = { s: 'q' };
       else { try { ok = !!itemOf(it.c, it.p).check(a.vals, a.raws).ok; } catch (e) { ok = false; } R.it[it.k] = ok ? { s: 'ok' } : { s: 'x', a: a.raws }; }
-      ms[it.k] = t; i++;
+      ms[it.k] = t; i++; keep();
       if (ok) return okFlash(root, one);
       /* 틀리면 넘어가지 않고 떠올리기 → 한 단계씩 → 처음 문제 다시(hint.js · 판정 · 내일 다시는 첫 답으로) */
-      ladder(root, { it: itemOf(it.c, it.p), c: it.c, raws: a.idk ? null : a.raws, tag: '매일 연습', act: 'daily', dots: [i - 1, sh.items.length], budget, again: '이 꼴은 내일 매일 연습에 다시 나와요.', onEnd: (r) => { KS.ladLog(me, K, r.how); if (r.how === 'recall' || r.how === 'steps') { KS.selfFix(me, K, r.how); fixd++; } one(); } });
+      ladder(root, { it: itemOf(it.c, it.p), c: it.c, raws: a.idk ? null : a.raws, tag: '매일 연습', act: 'daily', dots: [i - 1, sh.items.length], budget, again: '이 꼴은 내일 매일 연습에 다시 나와요.', onEnd: (r) => { KS.ladLog(me, K, r.how); if (r.how === 'recall' || r.how === 'steps') { KS.selfFix(me, K, r.how); fixd++; } keep(); one(); } });
     } });
   };
   const fin = () => {
+    lsDel(RK);
     sh.chapters.forEach((ch) => (R.done[ch.key] = true));
     KS.addSheet(me, K, sh, R, {}, ms);
     const now = Date.now(), up = [], again = [];
@@ -108,5 +111,6 @@ export function runView(root) {
       <div class="acts"><a class="btn pri big" href="#/me">처음 화면으로</a></div></div>`;
   };
   root.innerHTML = `<div class="card msg act-run"><p class="eyebrow">${tile('daily', 22)}매일 연습</p>${sayArt('daily', `<b>매일 연습</b> — 섞은 ${sh.items.length}문제, 3~5분이면 돼요.<br>아는 것도 며칠 안 풀면 잊어요. 날마다 조금씩 꺼내 풀면 오래 남아요.`, 104)}<p>이번 주 연습한 날 ${weekHTML(K)}</p><div class="acts"><button class="pri big" id="s">시작</button><a class="btn" href="#/me">처음 화면으로</a></div></div>`;
+  if (resume) return one();   /* 이어서 — 시작 화면 없이 그 문제부터 */
   root.querySelector('#s').addEventListener('click', one);
 }

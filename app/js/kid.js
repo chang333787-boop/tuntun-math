@@ -110,7 +110,9 @@ export function todoOf(K, rep) {
     .forEach((c) => out.push({ kind: 'fix', c, pri: false, title: `다시 연습 — ${plank(c)}`, sub: '거의 되는데 가끔 틀려요. 한 번 더 배우면 단단해져요', href: `#/fix/${c}` }));
   const due = Object.entries(K.rv || {}).filter(([, x]) => x.n < KS.REVIEW_DAYS.length && x.due <= now).map(([c]) => c);
   const ran = (K.jog || []).includes(td), rp = runPlan(K, now, rep);
-  if (rp.length && (!ran || due.length)) out.push({ kind: 'run', pri: !out.length, title: `섞어서 ${rp.length * 2}문제`, sub: `3~5분${due.length ? ' · 다시 볼 문제 포함' : ''}`, href: '#/run' });
+  const rr = me0 ? lsGet(`tt.run.${me0.C}.${me0.no}`) : null, rOn = rr && rr.d === td && rr.sh && Array.isArray(rr.sh.items) && rr.i > 0 && rr.i < rr.sh.items.length;
+  if (rOn) out.push({ kind: 'run', pri: !out.length, resume: true, title: '매일 연습 — 이어서', sub: `${rr.i + 1}번째 문제부터 이어서 풀어요(모두 ${rr.sh.items.length}문제)`, href: '#/run' });
+  else if (rp.length && (!ran || due.length)) out.push({ kind: 'run', pri: !out.length, title: `섞어서 ${rp.length * 2}문제`, sub: `3~5분${due.length ? ' · 다시 볼 문제 포함' : ''}`, href: '#/run' });
   // 이어서 찾기 — 지난번에 18문제를 다 써서 멈췄거나, 지난 시간에 '선생님과 같이'로 멈춘 판(지난 기록 14일과 함께 이어 감)
   if (lp && unitById[lp.unit] && (lp.why === 'budget' || lp.why === 'teacher') && today(lp.t) !== td && !out.some((x) => x.kind === 'prep'))   /* '이어서'는 날이 바뀐 뒤에만(방금 '다음 시간에'라고 해 놓고 바로 '지금 시작'이던 것 · 11-07 사용감 점검) */ out.push({ kind: 'prep', unit: lp.unit, pri: !out.length, title: '오늘 단원 점검 이어서', sub: `${unitLabel(lp.unit)} — 지난번에 멈춘 곳부터 · 약 ${mins((tasks.find((x) => x.unit === lp.unit) || {}).len)}분`, href: `#/prep/${lp.unit}` });
   return out;
@@ -161,7 +163,8 @@ export async function homeView(root) {
   /* 수업 중에 오늘 단원 점검을 끝냈고(찾은 것 없이) 선생님이 준 것 · 같이 볼 것이 없으면 = 이제 선생님 수업 시간(끝 화면 말과 맞춤 · 11-07) */
   const lpN = K.lastPrep, classRest = !doneOne && !!(ct && Date.now() - ct.t < 3 * 3600e3 && lpN && lpN.unit === ct.unit && lpN.t >= ct.t && lpN.why !== 'found' && lpN.why !== 'teacher') && !prac.some((x) => x.kind === 'help' || x.kind === 'give');
   const firstDay = !Object.keys(K.recs || {}).length, hasHelp = prac.some((x) => x.kind === 'help');
-  const nowNo = doneOne || classRest ? 0 : classPrep ? 1 : prac.some((x) => x.kind === 'help' || x.kind === 'give') ? 2 : chk.some((x) => x.kind === 'check') ? 1 : prac.length ? 2 : chk.length ? 1 : daily.length ? 3 : 0;
+  const resN = [chk, prac, daily].findIndex((l) => l[0] && l[0].resume);   /* 하던 것이 있으면 그 카드가 주황 단추(수업 중 선생님이 연 점검만 그보다 앞 · 11-07 '다시 들어와도 이어서') */
+  const nowNo = doneOne || classRest ? 0 : classPrep ? 1 : resN >= 0 ? resN + 1 : prac.some((x) => x.kind === 'help' || x.kind === 'give') ? 2 : chk.some((x) => x.kind === 'check') ? 1 : prac.length ? 2 : chk.length ? 1 : daily.length ? 3 : 0;
   const lists = [chk, prac, daily];
   const head = doneOne ? say('cheer', '하나 배웠어요! 이제 <b>선생님 수업</b>으로 가요. 남은 것은 다음 시간에 해요.', 88)
     : classRest ? say('cheer', '오늘 단원 점검을 끝냈어요. 지금은 <b>선생님 수업 시간</b>이에요. 남은 것은 다음 시간에 해요.', 88)
