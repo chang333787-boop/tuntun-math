@@ -123,11 +123,11 @@ export function todoOf(K, rep) {
 const CARDS = [
   { k: 'chk', no: 1, t: '점검', what: '내가 어디까지 아는지 알아봐요', none: '지금 할 점검이 없어요' },
   { k: 'prac', no: 2, t: '배울 것', what: '모르는 것을 배우고 연습해요', none: '지금 배울 것이 없어요' },
-  { k: 'daily', no: 3, t: '매일 연습', what: '아는 것을 잊지 않게 날마다 조금씩 풀어요', none: '점검에서 맞힌 문제와 배운 것이 며칠 뒤 여기 다시 나와요' },
+  { k: 'daily', no: 3, t: '매일 연습', what: '아는 것을 잊지 않게 날마다 조금씩 풀어요', none: '지금 할 연습이 없어요 — 점검에서 맞힌 문제와 배운 것이 며칠 뒤 여기 다시 나와요' },
 ];
 function helpItem(t) {
-  return `<li class="c3-help"><details><summary><b>${esc(t.title)}</b><span>${esc(t.sub)}</span></summary>
-    <div class="helpbox"><p>선생님이 오시면 같이 풀어 볼 문제예요. 같이 본 <b>뒤에</b> 옆 단추로 확인 3문제를 풀어요.</p>${t.cs.length ? `<ul>${t.cs.map((c) => `<li><b>${esc(plank(c))}</b> <a class="btn mini teal" href="#/fix/${encodeURIComponent(c)}/check">선생님과 같이 본 뒤에 — 확인 3문제</a></li>`).join('')}</ul>` : ''}<p class="small muted">어려운 문제가 있는 건 괜찮아요. 같이 하면 하나씩 풀 수 있어요. ${t.wait ? '선생님을 기다리는 동안 아래 것을 먼저 해도 돼요.' : ''}</p></div></details></li>`;
+  return `<li class="c3-help"><details open><summary><b>${esc(t.title)}</b><span>${esc(t.sub)}</span></summary>
+    <div class="helpbox"><p>선생님이 오시면 같이 풀어 볼 문제예요. 같이 본 <b>다음에</b> 아래 단추를 눌러 확인 3문제를 풀어요.</p>${t.cs.length ? `<ul class="hb-list">${t.cs.map((c) => `<li><span>선생님과 볼 문제: <b>${esc(plank(c))}</b></span> <a class="btn mini teal" href="#/fix/${encodeURIComponent(c)}/check">선생님과 같이 본 뒤에 — 확인 3문제</a></li>`).join('')}</ul>` : ''}<p class="small muted">어려운 문제가 있는 건 괜찮아요. 같이 하면 하나씩 풀 수 있어요. ${t.wait ? '선생님을 기다리는 동안 아래 것을 먼저 해도 돼요.' : ''}</p></div></details></li>`;
 }
 function cardHTML(c, list, now, extra = '') {
   const first = list[0], go1 = first && first.href ? first : list.find((x) => x.href);
