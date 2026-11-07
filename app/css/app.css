@@ -285,6 +285,7 @@ div.cmpc{box-shadow:none}
 .klist li>b{font-size:16px}.klist li>.btn{margin-left:auto}
 .fb-acts{display:flex;gap:10px;flex-wrap:wrap}.fb-acts button{flex:1 1 auto}.fb-steps{margin:12px 0 4px}
 @media (max-width:1000px){.cards3,.mine-row{grid-template-columns:minmax(0,1fr)}.c3-h h2{font-size:26px}}
+@media (max-width:700px){.stab th.lack,.stab td.lack{position:static}.stab th.sk{min-width:150px}.tv-h .btn{min-height:44px}}
 .todo{display:flex;flex-direction:column;gap:14px}
 .todo .item{display:flex;align-items:center;gap:16px;width:100%;padding:16px 18px;border:2px solid var(--line2);border-left:6px solid var(--a,var(--line2));border-radius:18px;background:var(--surface);color:var(--ink);text-decoration:none;box-shadow:0 4px 0 var(--line2);text-align:left;font-weight:400;transition:transform var(--press),box-shadow var(--press),border-color var(--press)}
 .todo a.item:active,.todo .item.press,.todo details.item>summary:active{transform:translateY(3px)}

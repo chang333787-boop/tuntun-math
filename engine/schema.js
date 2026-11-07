@@ -19,15 +19,15 @@ import { P } from './concepts/kit.js';
 //  FAMILY.kid = 처음 고르는 큰 갈래 카드 — 이것도 상황 말로(연산 이름 X)
 export const TYPES = {
   change: { fam: 'as', kid: '더해지거나 덜어지는 이야기', short: '변화', say: '처음 수에서 무엇이 생기거나 없어져서 수가 바뀌어요.' },
-  combine: { fam: 'as', kid: '부분과 전체 이야기', short: '부분과 전체', say: '몇 부분이 모여 전체가 돼요.' },
-  compare: { fam: 'as', kid: '두 양을 견주는 이야기', short: '비교', say: '두 양 가운데 어느 쪽이 얼마나 더 많은지 봐요.' },
+  combine: { fam: 'as', kid: '여러 부분이 모여 전체가 되는 이야기', short: '부분과 전체', say: '몇 부분이 모여 전체가 돼요.' },
+  compare: { fam: 'as', kid: '두 수를 견주는 이야기', short: '비교', say: '두 수 가운데 어느 쪽이 얼마나 더 많은지 봐요.' },
   groups: { fam: 'md', kid: '같은 수씩 묶는 이야기', short: '같은 묶음', say: '같은 수씩 든 묶음이 여러 개 있어요.' },
   times: { fam: 'md', kid: '몇 배 이야기', short: '몇 배', say: '한 양이 다른 양의 몇 배인지 견줘요.' },
   share: { fam: 'md', kid: '똑같이 나누는 이야기', short: '똑같이 나누기', say: '전체를 똑같이 나누어 한 몫을 봐요.' },
   pack: { fam: 'md', kid: '몇씩 덜어 내는 이야기', short: '몇씩 덜어 내기', say: '전체에서 같은 수씩 덜어 내어 몇 번인지 봐요.' },
 };
 export const FAMILY = {
-  as: { kid: '늘고 줄고 모이고 견주는 이야기', types: ['change', 'combine', 'compare'], ask: '수가 생기거나 없어졌나요? 부분이 모여 전체가 되나요? 두 양을 견주나요?' },
+  as: { kid: '생기거나 없어지거나, 합치거나 견주는 이야기', types: ['change', 'combine', 'compare'], ask: '수가 생기거나 없어졌나요? 부분이 모여 전체가 되나요? 두 양을 견주나요?' },
   md: { kid: '같은 수씩 묶거나 나누는 이야기', types: ['groups', 'times', 'share', 'pack'], ask: '같은 수씩 든 묶음이 여럿인가요? 몇 배인가요? 똑같이 나누나요? 같은 수씩 덜어 내나요?' },
 };
 // words.js kind → 유형(모든 kind를 덮음 — 시험이 확인)

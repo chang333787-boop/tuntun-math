@@ -164,7 +164,7 @@ function chooser(root, me, K) {
   const rep = KS.reportOf(K), seed = (Math.random() * 2 ** 31) >>> 0, S = lsGet(skey(me));
   const log = storyLog(K), fam = (f) => pickLessons(rep.L, f, seed + f.length);
   const known = familiarTypes(log).map((t) => TYPES[t].kid);
-  root.innerHTML = `<div class="card msg act-story"><p class="eyebrow">${tile('story', 22)}이야기 다리</p>${say('point', '문장제를 <b>걸음 넷</b>으로 나눠 풀어요.<br>무슨 이야기인지 → 막대 틀 → 식 → 답.', 104)}
+  root.innerHTML = `<div class="card msg act-story"><p class="eyebrow">${tile('story', 22)}이야기 문제</p>${say('point', '문장제를 <b>걸음 넷</b>으로 나눠 풀어요.<br>무슨 이야기인지 → 막대 틀 → 식 → 답.', 104)}
     ${fresh(S) ? `<div class="acts" style="margin-top:0;margin-bottom:18px"><a class="btn pri big" href="#/story/${encodeURIComponent(S.cs.join(','))}">이어서 하기 (${S.i + 1}번째 이야기부터)</a></div>` : ''}
     <div class="grid2">${['as', 'md'].map((f) => `<a class="big-pick sb-fam" href="#/story/${encodeURIComponent(fam(f).cs.join(','))}">${tile('story', 28)}<b>${esc(FAMILY[f].kid)}</b><span>${FAMILY[f].types.map((t) => esc(TYPES[t].kid)).join(' · ')}</span></a>`).join('')}</div>
     ${known.length ? `<p class="small">익숙해진 이야기 — <b>${known.map(esc).join(', ')}</b>: 묻는 자리가 같으면 바로 식부터 해요.</p>` : '<p class="small muted">한 판에 이야기 여섯 개 · 같은 이야기를 두 번 이어서 잘 읽으면 다음엔 걸음을 줄여요.</p>'}
@@ -195,7 +195,7 @@ export function storyView(root, arg) {
   // 화면 틀 — 위: 걸음 칩 · 진행 / 넓으면 왼쪽: 이야기 글(+ ref 참고 틀 · 묻는 것) · 오른쪽: 튼튼이 말 · 고르기 · 틀 · 식(docs/ui.md 2차)
   const shell = (step, pose, bub, body = '', mode = 'plain', ref = '') => {
     const chips = STEPS.map((t, i) => `<li class="${st.skip && i < 2 ? 'skip' : i < step ? 'done' : i === step ? 'now' : ''}"><i>${st.skip && i < 2 ? '–' : i < step ? '✓' : i + 1}</i>${t}</li>`).join('');
-    root.innerHTML = `<div class="card sb"><div class="sb-head">${tagHTML('이야기 다리', 'story')}<ol class="sb-steps" aria-label="걸음">${chips}</ol>${progHTML([S.i, S.items.length])}</div>
+    root.innerHTML = `<div class="card sb"><div class="sb-head">${tagHTML('이야기 문제', 'story')}<ol class="sb-steps" aria-label="걸음">${chips}</ol>${progHTML([S.i, S.items.length])}</div>
       <div class="sb-grid"><div class="sb-left"><div class="sb-story">${storyHTML(pr.s.story, mode)}</div>${ref}</div>
       <div class="sb-right">${say(pose, bub)}<div id="b">${body}</div></div></div></div>`;
     stopSpeak(); speakButton(root.querySelector('.sb-story'), () => { const m = root.querySelector('.sb-say'); if (m) m.textContent = '이 기기엔 한국어 목소리가 없어요'; });
@@ -379,14 +379,14 @@ export function storyView(root, arg) {
     /* 걸음마다 — 바로(첫 번에) · 다시(다시 보고) · 건너뜀(익숙해서) */
     const rows = STEPS.map((nm, j) => { const xs = rs.map((x) => (j < 3 ? x.s[j] : x.s[3] === 1 && x.s[4] === 1 ? 1 : 0)); return { nm, j, a: xs.filter((x) => x === 1).length, b: xs.filter((x) => x === 0).length, c: xs.filter((x) => x == null).length }; });
     const cnt = (w, k) => (k ? `${w} ${k}개` : '');
-    root.innerHTML = `<div class="card msg act-story"><p class="eyebrow">${tile('story', 22)}이야기 다리</p>${say(hard.length || word ? 'think' : 'cheer', `이야기 ${n}개를 걸음으로 나눠 풀었어요.<br>${tip}`, 104)}
+    root.innerHTML = `<div class="card msg act-story"><p class="eyebrow">${tile('story', 22)}이야기 문제</p>${say(hard.length || word ? 'think' : 'cheer', `이야기 ${n}개를 걸음으로 나눠 풀었어요.<br>${tip}`, 104)}
       <p class="small">걸음마다 돌아봐요 <span class="muted">— 바로 = 첫 번에 · 다시 = 다시 보고 · 건너뜀 = 익숙해서</span></p>
       <ul class="sb-recap">${rows.map((x) => `<li class="${x.b ? 'again' : x.a ? 'ok' : 'skip'}"><span>${x.j + 1}. ${x.nm}</span><b>${[cnt('바로', x.a), cnt('다시', x.b), cnt('건너뜀', x.c)].filter(Boolean).join(' · ')}</b></li>`).join('')}</ul>
       ${known.length ? `<p class="small">익숙해진 이야기 — <b>${known.map(esc).join(', ')}</b>: 묻는 자리가 같으면 다음엔 바로 식부터 해요.</p>` : ''}
       <div class="acts"><a class="btn pri big" href="#/story/${encodeURIComponent(S.cs.join(','))}?${Date.now()}">한 판 더</a><a class="btn big" href="#/story">다른 이야기</a><a class="btn big" href="#/me">처음 화면으로</a></div></div>`;
   }
   if (S.i === 0 && !Object.keys(S.res).length) {
-    root.innerHTML = `<div class="card msg act-story"><p class="eyebrow">${tile('story', 22)}이야기 다리</p>${say('point', `이야기 ${S.items.length}개를 풀어요. 문제마다 <b>걸음 넷</b>이에요.<br>① 무슨 이야기? ② 막대 틀 ③ 식 ④ 계산 · 답`, 104)}<div class="acts"><button class="pri big" id="s">시작</button><a class="btn" href="#/story">다른 이야기</a></div></div>`;
+    root.innerHTML = `<div class="card msg act-story"><p class="eyebrow">${tile('story', 22)}이야기 문제</p>${say('point', `이야기 ${S.items.length}개를 풀어요. 문제마다 <b>걸음 넷</b>이에요.<br>① 무슨 이야기? ② 막대 틀 ③ 식 ④ 계산 · 답`, 104)}<div class="acts"><button class="pri big" id="s">시작</button><a class="btn" href="#/story">다른 이야기</a></div></div>`;
     root.querySelector('#s').addEventListener('click', start);
   } else start();
 }
