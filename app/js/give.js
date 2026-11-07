@@ -32,7 +32,7 @@ export function exampleOfSkill(sk) { try { const [e] = examplesOf(SKILL[sk]); re
 export function giveTasks(K) {
   const me = meOf(), S = me ? lsGet(`tt.gv.${me.C}.${me.no}`) : null;   /* 하다가 나간 보충은 '이어서'로 맨 앞에(11-07 '다시 들어와도 이어서') */
   return Object.entries(K.inbox || {}).filter(([id, x]) => x && x.kind === 'give' && SKILL[x.sk] && !(K.recs || {})[id]).sort((a, b) => (a[1].t || 0) - (b[1].t || 0))
-    .map(([id, x]) => { const ex = exampleOfSkill(x.sk), n = Number(x.n) || 10, on = S && S.id === id && S.i > 0; return { kind: 'give', id, t: x.t, resume: !!on, title: on ? '선생님이 준 문제 — 이어서' : `선생님이 준 문제 ${n}개`, sub: on ? `${Math.min(S.i + 1, n)}번째 문제부터 이어서 풀어요(모두 ${n}문제)` : ex ? `${ex} 같은 문제` : '선생님이 고른 문제', href: `#/give/${id}` }; })
+    .map(([id, x]) => { const ex = exampleOfSkill(x.sk), n = Number(x.n) || 10, on = S && S.id === id && S.i > 0; return { kind: 'give', id, t: x.t, resume: !!on, title: on ? '선생님이 준 문제 — 이어서' : `선생님이 준 문제 ${n}개`, sub: on ? `${Math.min(S.i + 1, n)}번째 문제부터 이어서 풀어요(모두 ${n}문제)` : `${Date.now() - (Number(x.t) || 0) < 15 * 60e3 ? '방금 왔어요 · ' : ''}${ex ? `${ex} 같은 문제` : '선생님이 고른 문제'}`, href: `#/give/${id}` }; })   /* 15분 안에 온 것은 '방금 왔어요'(처음 화면이 30초마다 받아도 새로 온 줄 모르던 것) */
     .sort((a, b) => (b.resume ? 1 : 0) - (a.resume ? 1 : 0));
 }
 
