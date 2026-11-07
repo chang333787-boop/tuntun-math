@@ -7,6 +7,7 @@
 //     pre   긴 줄: 옛 단원의 차시 id 배열 또는 (p) => 배열
 //     steps (p) => [{ c: 차시 id 또는 가족 id, p, why }] — 같은 숫자로 쪼갠 단계 (가족 id면 is(p)로 차시를 찾는다)
 import { CONCEPTS as BASE, SEC, HINT } from '../concepts/index.js';
+import { extraSteps } from '../hints/index.js';
 import { CATALOG, UNITS, SKIPPED, unitById } from './catalog.js';
 import { blankCount } from '../tokens.js';
 import { rng } from '../math.js';
@@ -104,8 +105,10 @@ export function makeItem(cid, p) {
 export function genItem(cid, seed) { const r = rng(seed); return makeItem(cid, byId[cid].gen(r)); }
 export function stepsOf(cid, p) {
   const c = byId[cid];
-  if (!c || !c.stepsRaw) return [];
-  return c.stepsRaw(p).filter(Boolean).map((s) => ({ ...s, ...resolve(s.c, s.p) })).filter((s) => s.c && byId[s.c]);
+  const raw = c && (c.stepsRaw || extraSteps(cid));   /* 차시 정의에 단계가 없으면 engine/hints 단계(교사 11-07 '단계별로') */
+  if (!raw) return [];
+  let xs = []; try { xs = raw(p) || []; } catch (e) { return []; }
+  return xs.filter(Boolean).map((s) => ({ ...s, ...resolve(s.c, s.p) })).filter((s) => s.c && byId[s.c]);
 }
 export function preOf(cid, p) {
   const c = byId[cid];

@@ -1,5 +1,5 @@
 {
- "v": "dfb87dbfbdf6",
+ "v": "0fa069f719ac",
  "files": [
   "css/app.css",
   "js/back.js",
@@ -45,6 +45,9 @@
   "../engine/engine.js",
   "../engine/errors.js",
   "../engine/fluency.js",
+  "../engine/hints/index.js",
+  "../engine/hints/mdf.js",
+  "../engine/hints/na.js",
   "../engine/lessons/catalog.js",
   "../engine/lessons/g1.js",
   "../engine/lessons/g2.js",
