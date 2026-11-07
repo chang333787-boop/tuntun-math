@@ -8,8 +8,8 @@ import { makeSheet, itemOf, lessonName } from '../../paper/js/gen.js';
 import { mascot } from '../../paper/js/mascot.js';
 import * as KS from './kidstore.js';
 import { draw, staticHTML, ansSay } from './item.js';
-import { lineOf, weekTerm, weekPlan, weekChart, weekTrend, doneThisWeek } from './weekcore.js';
-import { esc, rand } from './local.js';
+import { lineOf, weekTerm, weekPlan, weekChart, weekTrend, doneThisWeek, weekKey } from './weekcore.js';
+import { esc, rand, lsGet, lsSet, lsDel } from './local.js';
 import { go, meOf } from './kid.js';
 import { exampleOf } from './fix.js';
 import { tile } from './icons.js';
@@ -24,17 +24,19 @@ export function weekView(root) {
     root.innerHTML = `<div class="card msg act-week">${EB}${say('cheer', '이번 주 점검은 벌써 했어요. 다음 주에 또 해요!')}${weekChart(lineOf(K.recs, term))}<div class="acts"><a class="btn big" href="#/me">처음 화면으로</a></div></div>`;
     return;
   }
-  const plan = weekPlan(K, rep, term);
+  const WK = `tt.week.${me.C}.${me.no}`, W0 = lsGet(WK, null), resume = W0 && W0.wk === weekKey() && W0.sh && Array.isArray(W0.sh.items) && W0.i > 0 && W0.i < W0.sh.items.length ? W0 : null;   /* 이번 주 하던 판(이어서) */
+  const plan = resume ? W0.sh.items.map((x) => x.c) : weekPlan(K, rep, term);
   if (plan.length < 4) {
     root.innerHTML = `<div class="card msg act-week">${EB}${say('think', '아직 점검할 문제가 적어요. 오늘 단원 점검이나 배우기를 하고 나서 해요.')}<div class="acts"><a class="btn big" href="#/me">처음 화면으로</a></div></div>`;
     return;
   }
-  const sh = makeSheet({ kind: 'week', words: false, id: rand(6), lessons: plan.map((c) => ({ c, n: 1 })), mixed: true });
-  sh.unit = term;   /* 'T4-2' — 단원 id가 아님(홈이 단원 준비 여부를 unit으로 봄) */
+  const sh = resume ? resume.sh : makeSheet({ kind: 'week', words: false, id: rand(6), lessons: plan.map((c) => ({ c, n: 1 })), mixed: true });
+  if (!resume) { sh.unit = term;   /* 'T4-2' — 단원 id가 아님(홈이 단원 준비 여부를 unit으로 봄) */
   sh.items = sh.items.filter((it) => it.ch !== 'END'); sh.chapters = sh.chapters.filter((ch) => ch.key !== 'END');
-  for (let i = sh.items.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [sh.items[i], sh.items[j]] = [sh.items[j], sh.items[i]]; }
-  const R = { done: {}, it: {} }, ms = {};
-  let i = 0, fast = 0, pauses = 0;
+  for (let i = sh.items.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [sh.items[i], sh.items[j]] = [sh.items[j], sh.items[i]]; } }
+  const R = resume ? resume.R : { done: {}, it: {} }, ms = resume ? resume.ms : {};
+  let i = resume ? resume.i : 0, fast = 0, pauses = resume ? resume.pauses || 0 : 0;
+  const keep = () => lsSet(WK, { wk: weekKey(), sh, R, ms, i, pauses });
   KS.setNow(me, { mode: 'week' });
   const one = () => {
     if (i >= sh.items.length) return fin();
@@ -43,7 +45,7 @@ export function weekView(root) {
       let ok = false;
       if (a.idk) R.it[it.k] = { s: 'q' };
       else { try { ok = !!itemOf(it.c, it.p).check(a.vals, a.raws).ok; } catch (e) { ok = false; } R.it[it.k] = ok ? { s: 'ok' } : { s: 'x', a: a.raws }; }
-      ms[it.k] = t; i++;
+      ms[it.k] = t; i++; keep();
       fast = !ok && !a.idk && t < 2000 ? fast + 1 : a.idk ? fast : 0;   /* 몰라서 넘어감은 찍기가 아님(준비 다리와 같게 — 세지도 끊지도 않음) */
       if (fast < 3) return one();
       fast = 0; pauses++; K.rush = (K.rush || 0) + 1;
@@ -52,6 +54,7 @@ export function weekView(root) {
     } });
   };
   const fin = () => {
+    lsDel(WK);
     sh.chapters.forEach((ch) => (R.done[ch.key] = true));
     if (pauses >= 2) R.rush = pauses;   /* 두 번 멈춘 점검은 선에 넣지 않음(weekcore weeksOf) */
     KS.addSheet(me, K, sh, R, {}, ms);
@@ -69,5 +72,6 @@ export function weekView(root) {
     root.innerHTML = `<div class="card msg msg2 act-week">${EB}${head}<div class="split"><div><h3>주마다 맞힌 수 <small class="muted">(나하고만 비교해요)</small></h3>${weekChart(ws)}</div><div>${list}</div></div><div class="acts"><a class="btn pri big" href="#/me">처음 화면으로</a></div></div>`;   /* 넓으면 왼쪽 주마다 맞힌 수 · 오른쪽 다시 볼 문제 */
   };
   root.innerHTML = `<div class="card msg act-week">${EB}${say('hi', `<b>이번 주 점검</b> — 이번 학기 문제와 앞에서 배운 문제를 섞은 ${plan.length}문제, 3~5분이면 돼요.<br>아직 안 배운 문제도 섞여 있어요. 모르면 '못 풀겠어요 · 넘어가기'를 눌러도 괜찮아요. 학기 끝으로 갈수록 더 많이 맞혀요.`)}${(() => { const ws = lineOf(K.recs, term); return ws.length ? `<h3>주마다 맞힌 수</h3>${weekChart(ws)}` : ''; })()}<div class="acts"><button class="pri big" id="s">시작</button><a class="btn" href="#/me">처음 화면으로</a></div></div>`;
+  if (resume) return one();   /* 이어서 — 시작 화면 없이 그 문제부터 */
   root.querySelector('#s').addEventListener('click', one);
 }

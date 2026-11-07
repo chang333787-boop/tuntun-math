@@ -152,7 +152,9 @@ export async function homeView(root) {
   const ct = classTask(K);
   // 카드 셋에 나눠 담기 — ① 점검(오늘 단원 점검 · 선생님 점검지 · 이번 주 점검) ② 배울 것(선생님과 같이 · 선생님이 준 문제 · 배우기) ③ 매일 연습
   const chk = [...todo.filter((x) => x.kind === 'prep'), ...checkTasks(K).map((x) => ({ ...x, kind: 'check' }))];
-  if (wp.length >= 4 && Object.keys(K.recs || {}).length) chk.push({ kind: 'week', title: '이번 주 점검', sub: `섞은 문제 ${wp.length}개 · 3~5분 · 주마다 한 번`, href: '#/week' });
+  const me1 = meOf(), wr = me1 ? lsGet(`tt.week.${me1.C}.${me1.no}`) : null, wOn = wr && wr.wk === weekKey() && wr.sh && Array.isArray(wr.sh.items) && wr.i > 0 && wr.i < wr.sh.items.length;
+  if (wOn) chk.unshift({ kind: 'week', resume: true, title: '이번 주 점검 — 이어서', sub: `${wr.i + 1}번째 문제부터 이어서 풀어요(모두 ${wr.sh.items.length}문제)`, href: '#/week' });
+  else if (wp.length >= 4 && Object.keys(K.recs || {}).length) chk.push({ kind: 'week', title: '이번 주 점검', sub: `섞은 문제 ${wp.length}개 · 3~5분 · 주마다 한 번`, href: '#/week' });
   const fixR = todo.find((x) => x.kind === 'fix' && x.resume), gvs = giveTasks(K);
   const prac = [...todo.filter((x) => x.kind === 'help'), ...(fixR ? [fixR] : []), ...gvs, ...todo.filter((x) => (x.kind === 'fix' || x.kind === 'retry') && x !== fixR && !(fixR && x.c === fixR.c))];   /* 이어서 할 배우기 → 선생님이 준 문제(이어서가 앞) → 배우기 */
   const daily = todo.filter((x) => x.kind === 'run');
