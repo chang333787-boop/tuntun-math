@@ -372,6 +372,9 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   const repS = { L: { '1-2-6:4': { c: '1-2-6:4', st: 'shaky' } }, start: [] }, sk2 = T9.nextOf({ C: 'ZZ', no: '3', rep: repS }).href.match(/sk=([^&]+)/)[1];
   const sh2 = T9.nextOf({ C: 'ZZ', no: '3', rep: repS, inbox: { gvS: { kind: 'give', sk: sk2 } } });
   ok(/푸는 중/.test(sh2.t) && !sh2.a, `가끔 틀림도 같은 기능 보충이 열려 있으면 기다림 — ${sh2.t}`);
+  const tp = T9.nextOf({ C: 'ZZ', no: '3', rep: { L: { '1-2-6:4': { c: '1-2-6:4', st: 'stuck' } }, start: [] }, st: { prep: { why: 'teacher', t: 100 }, L: { '1-2-6:4': 'stuck' }, start: [], fixed: {} } });
+  const tf = T9.nextOf({ C: 'ZZ', no: '3', rep: { L: { '1-2-6:4': { c: '1-2-6:4', st: 'shaky' } }, start: [] }, st: { prep: { why: 'teacher', t: 100 }, L: { '1-2-6:4': 'shaky' }, start: [], fixed: { '1-2-6:4': 200 } } });
+  ok(/선생님과 같이/.test(tp.t) && !/선생님과 같이/.test(tf.t), `일찍 멈춘 점검(여기서부터 비었음)도 '선생님과 같이' · 막힌 칸을 고친 뒤엔 내림 — ${tp.t} / ${tf.t}`);
   const g2 = T9.nextOf({ C: 'ZZ', no: '3', rep, st: { help: { '1-2-6:4': 50 }, gv: { gvA: [2, 10, 10], gvB: [9, 10, 90] } }, inbox: { gvA: { kind: 'give', sk }, gvB: { kind: 'give', sk } }, recs: { gvA: 1, gvB: 1 } });
   ok(/9\/10 맞혔어요/.test(g2.t), `같은 기능 보충이 여럿이면 가장 최근 결과(보충 A → 배우기 못 넘음 → 보충 B 9/10) — ${g2.t}`);
   const f = T9.nextOf({ C: 'ZZ', no: '3', rep, now: { mode: 'fix', c: '1-2-6:4', t: Date.now() - 9 * 60e3, ask: Date.now() - 9 * 60e3 } });
