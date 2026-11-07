@@ -359,6 +359,12 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   ok(/푸는 중/.test(b.t) && !b.href, `보낸 보충을 푸는 중이면 기다림 — ${b.t}`);
   const c2 = T9.nextOf({ C: 'ZZ', no: '3', rep, st: { gv: { gvZZ1: [3, 10, 1] } }, inbox: { gvZZ1: { kind: 'give', sk } }, recs: { gvZZ1: 1 } });
   ok(/선생님과 같이 10분/.test(c2.t) && /\/g\//.test(c2.href), `보충 절반 못 맞힘 → 선생님과 10분 카드 — ${c2.t}`);
+  const st0 = { help: { '1-2-6:4': Date.now() } }, d = T9.nextOf({ C: 'ZZ', no: '3', rep, st: st0 });
+  ok(/배우기를 해 봤지만/.test(d.t) && /\/g\/1-2-6/.test(d.href), `배우기를 못 넘은 차시 → 또 보충보다 10분 카드 — ${d.t}`);
+  const e = T9.nextOf({ C: 'ZZ', no: '3', rep, st: { help: { '1-2-6:4': 5 }, gv: { gvZZ1: [9, 10, 9] } }, inbox: { gvZZ1: { kind: 'give', sk } }, recs: { gvZZ1: 1 } });
+  ok(!/배우기를 해 봤지만/.test(e.t), `배우기 뒤에 보충을 풀었으면 그 결과를 따름 — ${e.t}`);
+  const f = T9.nextOf({ C: 'ZZ', no: '3', rep, now: { mode: 'fix', c: '1-2-6:4', t: Date.now() - 9 * 60e3, ask: Date.now() - 9 * 60e3 } });
+  ok(/선생님을 기다려요/.test(f.t) && /\/g\//.test(f.href), `배우기에서 막혀 손 든 아이(9분 전) → 맨 먼저 — ${f.t}`);
 }
 console.log(fail ? `FAIL ${fail}` : 'PASS');
 process.exitCode = fail ? 1 : 0;

@@ -425,6 +425,7 @@ export function fixView(root, c) {
     const ex = plank(c);
     const endCard = (top, body) => { root.innerHTML = `<div class="card msg act-fix"><p class="eyebrow">${tile('fix', 22)}배우기</p>${top}${body}</div>`; };
     if (F.help) {   // 혼자에서 세 번씩 두 번 내리 틀림 — 확인 문제 없이 선생님과(혹평 4)
+      KS.setNow(me, { mode: 'fix', c, ask: Date.now() });   /* 선생님 '지금 우리 반'에 '선생님을 기다려요'(15분 · 11-07) */
       endCard(say('think', `오늘은 여기까지 해요. 이 문제는 <b>선생님과 같이</b> 풀어요.<br>손을 들고 선생님께 이 화면을 보여 주세요.`, 104),
         `<div class="panel"><p class="small muted">선생님과 같이 볼 문제</p><p><b>${esc(ex)}</b></p></div><div class="acts"><a class="btn big" href="#/me">처음 화면으로</a></div>`);
       return;
