@@ -228,7 +228,7 @@ export function classView(root, C) {
       <div class="acts sub"><button id="re" class="btn">새로 보기</button><a class="btn" href="#/t/c/${C}/cards">아이 카드 인쇄</a><a class="btn" href="#/t/c/${C}/names">이름 적기</a><a class="btn" href="#/t/guide">한 장 안내</a></div>
       <p class="qmsg tight" id="msg"></p></div>
     <div class="cards3">
-      ${card3('week', 1, '점검 내기', '아이들이 어디까지 아는지 알아봐요 — 오늘 단원 점검 · 종이와 같은 점검지 · 이번 주 점검', checkCard(C, K, data) || (K.today ? `<p class="small">지금 열린 단원: <b>${esc(unitLabel(K.today.unit))}</b></p>` : '<p class="c3-none">아직 낸 점검이 없어요</p>'), `#/t/c/${C}/check`, '점검 내기', 'clip')}
+      ${card3('week', 1, '점검 내기', '아이들이 어디까지 아는지 알아봐요 — 오늘 단원 점검 · 종이와 같은 점검지 · 이번 주 점검', checkCard(C, K, data || {}) || (K.today ? `<p class="small">지금 열린 단원: <b>${esc(unitLabel(K.today.unit))}</b></p>` : '<p class="c3-none">아직 낸 점검이 없어요</p>'), `#/t/c/${C}/check`, '점검 내기', 'clip')}
       ${card3('drill', 2, '반 표', '누가 무엇이 부족한지 한눈에 봐요 — 줄은 기능 · 칸은 아이', tableCard(C, K, data), `#/t/c/${C}/table`, '반 표 보기', 'table')}
       ${card3('fix', 3, '보충 주기', '부족한 아이에게 그 기능 문제를 보내요 — 아이 화면 또는 종이(같은 문제)', gvSent ? `<p class="small">아이들이 푼 보충 <b>${gvSent}개</b></p>` : '<p class="c3-none">아직 보낸 보충이 없어요</p>', `#/t/c/${C}/give`, '보충 주기', 'send')}
     </div>
