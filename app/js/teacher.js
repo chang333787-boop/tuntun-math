@@ -221,7 +221,7 @@ const STR = { 상: '근거 강함', 중: '근거 보통', 하: '근거 약함(�
 export function misCard(m, tag = '', label = '') {
   return `<details class="mis"><summary>${label ? esc(label) : `<b>${esc(m.title)}</b>`}${tag ? ` <span class="pill">${esc(tag)}</span>` : ''}${label ? '' : `<span class="sum-p">${esc(m.plain || m.think)}</span>`}</summary>
     <dl><dt>아이 생각</dt><dd>${esc(m.think)}</dd><dt>이렇게 틀려요</dt><dd>${esc(m.shows)}</dd>${m.plain ? '' : `<dt>왜 그럴까요</dt><dd>${esc(whyOf(m))}</dd>`}
-    ${m.ask ? `<dt>이렇게 물어요</dt><dd>“${esc(m.ask)}”</dd>` : ''}<dt>도와주는 법</dt><dd>${esc(easy(m.fix))}</dd><dt>알아보는 문제</dt><dd>${esc(easy(m.probe))}</dd>${m.has === 'no' ? '<dt>앱</dt><dd>아직 앱 문제로 잡지 못해요. 수업에서 직접 물어봐 주세요.</dd>' : ''}<dt>근거</dt><dd class="small muted">${esc(STR[m.str] || '')} · docs/research ${esc(m.refs)}</dd></dl></details>`;
+    ${m.ask ? `<dt>이렇게 물어요</dt><dd>“${esc(m.ask)}”</dd>` : ''}<dt>도와주는 법</dt><dd>${esc(easy(m.fix))}</dd><dt>알아보는 문제</dt><dd>${esc(easy(m.probe))}</dd>${m.has === 'no' ? '<dt>앱</dt><dd>아직 앱 문제로 잡지 못해요. 수업에서 직접 물어봐 주세요.</dd>' : ''}<dt>근거</dt><dd class="small muted">${esc(STR[m.str] || '')} · <a href="https://github.com/chang333787-boop/tuntun-math/tree/main/docs/research" target="_blank" rel="noopener">연구 자료</a> ${esc(m.refs)}</dd></dl></details>`;
 }
 const CELL = { ok: ['c-ok', '✓'], pass: ['c-pass', '✓'], near: ['c-near', '○'], shaky: ['c-shaky', '△'], stuck: ['c-stuck', '✕'], need: ['c-need', '?'], none: ['c-none', '·'] };
 // 표 읽는 법(반 화면 · 한 장 안내) — 칸 색 그대로
@@ -535,7 +535,7 @@ export function mindCardView(root, C, id) {
     ${stepBox(4, '마무리', 2, `${askP('이 방법은 언제는 맞고, 언제는 안 맞을까? 한 줄로 말해 볼까?')}<p class="note"><b>더 도와줄 때</b> ${esc(easy(m.fix))}</p>`)}
     </ol>
     ${m.has === 'no' ? '<p class="warn small">이 생각은 아직 앱 문제로 잡지 못해요. 수업에서 직접 물어봐 주세요.</p>' : ''}
-    <details class="refs"><summary>근거</summary><p>docs/research ${esc(m.refs)} · 근거 강도 ${esc(m.str)}</p></details></div>`;
+    <details class="refs"><summary>근거</summary><p><a href="https://github.com/chang333787-boop/tuntun-math/tree/main/docs/research" target="_blank" rel="noopener">연구 자료</a> ${esc(m.refs)} · ${esc(STR[m.str] || '')}</p></details></div>`;
 }
 
 // 기록 내려받기(CSV 둘) — 시범 운영 효과 재기용(docs/pilot.md) · 번호만(이름 X · 이름은 이 기기에만 있음)
