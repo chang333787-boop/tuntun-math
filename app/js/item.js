@@ -12,7 +12,7 @@ import { mascot } from '../../paper/js/mascot.js';
 import { esc } from './local.js';
 import { icon, ACT } from './icons.js';
 
-export const CONF = [[2, '자신 있어요'], [1, '조금 헷갈려요'], [0, '잘 모르겠어요']];
+export const CONF = [[2, '자신 있어요'], [1, '조금 헷갈려요'], [0, '자신 없어요']];   /* '잘 모르겠어요'는 '못 풀겠어요 · 넘어가기'와 뜻이 겹쳐 답을 안 쓰고 누르기 쉬움(처음 보는 눈 11-07) */
 // 진행 — 카드 오른쪽 위 같은 자리 · dots = [지금까지 푼 수, 모두] · 12개까지 칸 막대 · 넘으면 긴 막대(준비 다리는 판 전체 · 많아야 18 · 24 · 36) · 새로 찬 만큼만 200ms
 export function progHTML([i, n]) {
   if (!n || n < 0) return `<span class="qprog" role="img" aria-label="${i + 1}번째 문제"><span class="cnt">문제 <b>${i + 1}</b>${n < 0 ? ` <small>· ${-n}문제까지</small>` : ''}</span></span>`;   /* n < 0 = 많아야 |n|문제(일찍 끝날 수 있음) */   /* 끝이 정해지지 않은 판(오늘 단원 점검 — 찾으면 일찍 끝남)은 분모 없이(11-07 '1 / 18인데 12에서 끝남') */

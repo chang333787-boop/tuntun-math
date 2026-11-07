@@ -140,7 +140,7 @@ export default [
           },
         };
       }
-      return nums([`분모를 ${RO(L)} 통분해 보세요.`, { br: 1 }, fx(p.n1, p.d1), ' → ', { f: [B(0), L] }, { br: 1 }, fx(p.n2, p.d2), ' → ', { f: [B(1), L] }], [p.n1 * L / p.d1, p.n2 * L / p.d2], {   /* 두 분수를 줄을 나눠(좁은 말풍선에서 '2/5'와 '→ 4/10'이 갈라지던 것 · 11-07) */
+      return nums([`분모를 ${RO(L)} 통분해요.`, { br: 1 }, fx(p.n1, p.d1), ' → ', { f: [B(0), L] }, { br: 1 }, fx(p.n2, p.d2), ' → ', { f: [B(1), L] }], [p.n1 * L / p.d1, p.n2 * L / p.d2], {   /* 두 분수를 줄을 나눠(좁은 말풍선에서 '2/5'와 '→ 4/10'이 갈라지던 것 · 11-07) */
         bugs: [
           { test: (v) => v[0] === p.n1 && v[1] === p.n2, name: '분모만 바꿈', to: 'F7' },
           { test: (v) => v[0] === p.n1 + L - p.d1 || v[1] === p.n2 + L - p.d2, name: '분모·분자에 같은 수를 더함 (덧셈으로 지키기)', to: 'F7' },
@@ -190,7 +190,7 @@ export default [
     steps: (p) => {
       const L = lcm(p.d1, p.d2);
       return [
-        { c: 'F9', p: { v: 'given', n1: p.n1, d1: p.d1, n2: p.n2, d2: p.d2 }, why: '먼저 통분해요.' },
+        { c: 'F9', p: { v: 'given', n1: p.n1, d1: p.d1, n2: p.n2, d2: p.d2 }, why: '분모가 달라서 먼저 통분해요 — 분모와 분자에 같은 수를 곱해 분모를 같게 만들어요.' },
         { c: 'F6', p: { op: p.op, a: p.n1 * L / p.d1, b: p.n2 * L / p.d2, d: L }, why: '분모가 같은 분수의 계산이 돼요.' },
       ];
     },
@@ -324,7 +324,7 @@ export default [
     steps: (p) => {
       const L = lcm(p.d1, p.d2), N1 = p.n1 * L / p.d1, N2 = p.n2 * L / p.d2;
       return [
-        { c: 'F9', p: { v: 'given', n1: p.n1, d1: p.d1, n2: p.n2, d2: p.d2 }, why: '먼저 통분해요.' },
+        { c: 'F9', p: { v: 'given', n1: p.n1, d1: p.d1, n2: p.n2, d2: p.d2 }, why: '분모가 달라서 먼저 통분해요 — 분모와 분자에 같은 수를 곱해 분모를 같게 만들어요.' },
         { c: 'F18', p: { a: N1, b: N2, d: L }, why: '분모가 같은 분수끼리의 나눗셈이 돼요.' },
       ];
     },

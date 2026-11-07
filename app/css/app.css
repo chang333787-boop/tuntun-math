@@ -172,7 +172,7 @@ button:focus-visible,.btn:focus-visible,a:focus-visible,summary:focus-visible,.b
 .choices button{flex:1 1 140px;min-height:76px;border-radius:16px;font-size:clamp(24px,3.2cqi,32px);padding:8px 18px;font-weight:600}
 .choices button .math{font-size:inherit}
 .choices button.gone:disabled{background:transparent;border-style:dashed;border-color:var(--line2);text-decoration:line-through;color:var(--off-ink)}
-.choices.static button:disabled{background:var(--surface);border-color:var(--line2);color:var(--ink);cursor:default}
+.choices.static button:disabled{background:var(--panel);border-color:var(--line2);border-style:dashed;color:var(--ink);cursor:default;box-shadow:none;transform:none}   /* 시범의 보기는 누르는 단추로 보이지 않게(처음 보는 눈 11-07) */
 .choices.static button.right{border-color:var(--ok);background:var(--ok-t)}
 .choices.static button.right::after{content:'✓';margin-left:8px;font-size:.8em;color:var(--ok-ink);font-weight:800}
 .qgrid .qmsg{min-height:0;margin:0}

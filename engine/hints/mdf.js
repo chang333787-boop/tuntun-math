@@ -358,7 +358,7 @@ const HINTS_MDF = {
     },
     steps: (p) => {
       const K = Math.max(...p.xs.map((x) => x[1])), c = K === 3 ? '4-2-3:4' : '4-2-3:2', u = UNIT[K];
-      return p.xs.map(([m, k], i) => st(c, { v: 'units', n: m * 10 ** (K - k) }, `${eun(dd(m, k))} ${ga(u)} 몇 개인지 세어요.`, `${ORD[i]} 수가 몇 개인지 세기`));
+      return p.xs.map(([m, k], i) => st(c, { v: 'units', n: m * 10 ** (K - k) }, k < K ? `${eun(dd(m, k))} 끝에 0을 붙인 ${(m / 10 ** k).toFixed(K)}${P(0, '과', '와')} 같아요. ${ga(u)} 몇 개인지 세어요.` : `${eun(dd(m, k))} ${ga(u)} 몇 개인지 세어요.`, `${ORD[i]} 수가 몇 개인지 세기`));   /* 자리 수가 적은 수는 0을 붙여 맞춘 뒤(7.29 → 7.290) 세기 — 처음 보는 눈 11-07 */
     },
   },
   '4-2-3:7': {
