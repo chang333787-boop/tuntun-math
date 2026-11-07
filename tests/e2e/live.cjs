@@ -91,10 +91,13 @@ const UNIT = '2-2-2', GAP = '2-1-6:3';
   const gsent = (await pg.textContent('#msg')).trim().slice(0, 30);
   await pg.goto(BASE + '#/me'); await w(400); if (await pg.$('#y')) { await pg.click('#y'); } await w(2500);
   const gcard = await pg.evaluate(() => { const a = document.querySelector('.c3 a[href^="#/give/"]'); return a ? a.getAttribute('href') : null; });
-  let gdone = null;
+  let gdone = null, lad = null;
   if (gcard) {
     await pg.goto(BASE + gcard); await w(1200); await pg.click('#s'); await w(300);
-    for (let i = 0; i < 6; i++) { const q = await pg.$('.qcard .blank'); if (!q) break; const t = await pg.textContent('.qcard .math'); const m = t.match(/(\d+)\s*[−-]\s*(\d+)/); await q.fill(m ? String(Number(m[1]) - Number(m[2])) : '0'); await pg.click('#ok'); await w(250); const nx = await pg.$('.fb button.pri'); if (nx) { await nx.click(); await w(200); } }
+    for (let i = 0; i < 8; i++) { const q = await pg.$('.qcard .blank'); if (!q) break; const t = await pg.textContent('.qcard .math'); const m = t.match(/(\d+)\s*[−-]\s*(\d+)/); await q.fill(i === 0 ? '0' : m ? String(Number(m[1]) - Number(m[2])) : '0'); await pg.click('#ok'); await w(300);
+      if (i === 0) lad = await pg.evaluate(() => { const c = document.querySelector('.hl-cue-t'); return { cue: c ? c.textContent.trim() : null, steps: !!document.querySelector('#hs') }; });   /* 첫 문제는 일부러 틀림 → 도움 사다리 떠올리기 */
+      if (i === 1) lad.fixed = ((await pg.textContent('#view')) || '').includes('스스로 고쳤어요');
+      const nx = await pg.$('.fb button.pri'); if (nx) { await nx.click(); await w(200); } }
     gdone = (await pg.textContent('#view')).replace(/\s+/g, ' ').trim().slice(0, 50);
   }
   await w(3000);
@@ -128,6 +131,6 @@ const UNIT = '2-2-2', GAP = '2-1-6:3';
   const scard = { title: (await pg.textContent('h2')).trim().slice(0, 30), frames: (await pg.$$('.sbf svg')).length };
   await pg.goto(BASE + '#/t/letter'); await w(800);
   const letter = (await pg.textContent('h2')).trim();
-  console.log(JSON.stringify({ C, opened, story, scard, letter, todo: todo.replace(/\s+/g, ' ').slice(0, 90), items: n, end: end.trim(), drill, back, weekTodo, week, head, cards, row1, strip, wkPanel, give: { gsent, gcard, gdone, gres }, paper: { psel, pmsg, kid2, moved2, moved1 }, ai, errs }, null, 1));
+  console.log(JSON.stringify({ C, opened, story, scard, letter, todo: todo.replace(/\s+/g, ' ').slice(0, 90), items: n, end: end.trim(), drill, back, weekTodo, week, head, cards, row1, strip, wkPanel, give: { gsent, gcard, gdone, gres, lad }, paper: { psel, pmsg, kid2, moved2, moved1 }, ai, errs }, null, 1));
   await b.close();
 })().catch((e) => { console.error('ERR', e.message); process.exit(1); });
