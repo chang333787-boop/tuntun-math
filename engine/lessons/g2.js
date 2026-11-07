@@ -5,7 +5,7 @@ import { nums, pick, B, J, P } from '../concepts/kit.js';
 import { groups } from '../tokens.js';
 import NUM from '../concepts/num.js';
 import MULC from '../concepts/mul.js';
-import { isKind, addKind, subKind, danOf, ones, tens, makeBy } from './ops.js';
+import { isKind, addKind, subKind, danOf, ones, tens, makeBy, borrowWhy } from './ops.js';
 import { until, sino, JW, PJ, anyOf, choose, addBugs } from './g1.js';
 
 const BASE = Object.fromEntries([...NUM, ...MULC].map((c) => [c.id, c]));
@@ -362,7 +362,7 @@ export default {
       make: carryAddMake, is: isKind('ADD', '2-1-3:2'), prev: null, pre: ['1-2-6:2', '1-2-2:2'],
       steps: (p) => {
         const big = Math.max(p.a, p.b), small = Math.min(p.a, p.b), t = big - ones(big), s1 = ones(big) + small;
-        return [{ c: 'ADD', p: { a: ones(big), b: small }, why: '일의 자리끼리 더해요.' }, { c: 'ADD', p: { a: t, b: s1 }, why: `${t}에 ${J(s1, '을', '를')} 더해요.` }];
+        return [{ c: 'ADD', p: { a: ones(big), b: small }, why: '일의 자리끼리 더해요.' }, { c: 'ADD', p: { a: t, b: s1 }, why: `일의 자리 합 ${J(s1, '은', '는')} 10과 ${J(s1 - 10, '이에요', '예요')}. ${t}에 ${J(s1, '을', '를')} 더해요.` }];
       },
       hint: '일의 자리끼리 더해 10이거나 10보다 크면 십의 자리로 1을 올려요. 27 + 5 → 7 + 5 = 12, 20 + 12 = 32!',
       tip: '수 모형으로 일 모형 10개를 십 모형 1개로 바꾸는 장면을 보여 줘요. 27 + 5는 7 + 5 = 12에서 10을 십의 자리로 올려 32가 돼요.',
@@ -387,8 +387,8 @@ export default {
       gen: (r) => until(r, (r) => ({ a: r.int(20, 98), b: r.int(2, 9) }), (p) => subKind(p.a, p.b) === '2-1-3:5'),
       make: borrowSubMake, is: isKind('SUB', '2-1-3:5'), prev: null, pre: ['1-2-6:4', '1-2-2:4'],
       steps: (p) => [
-        { c: 'SUB', p: { a: 10 + ones(p.a), b: p.b }, why: `십 하나를 낱개 10으로 풀어 ${10 + ones(p.a)} − ${J(p.b, '을', '를')} 해요.` },
-        { c: 'N4', p: { v: 'bundle', t: tens(p.a) - 1, o: 10 + ones(p.a) - p.b }, why: `십의 자리는 하나 줄어 ${J(tens(p.a) - 1, '이에요', '예요')}. 남은 낱개와 합쳐요.` },
+        { c: 'SUB', p: { a: 10 + ones(p.a), b: p.b }, why: borrowWhy(0, ones(p.a), p.b, [tens(p.a)]) },
+        { c: 'N4', p: { v: 'bundle', t: tens(p.a) - 1, o: 10 + ones(p.a) - p.b }, why: `십의 자리는 하나 줄어 ${J(tens(p.a) - 1, '이에요', '예요')}. 10개씩 묶음 ${tens(p.a) - 1}개와 남은 낱개를 합쳐요.` },
       ],
       hint: '일의 자리에서 뺄 수 없으면 십의 자리에서 10을 받아내려요. 32 − 5 → 12 − 5 = 7, 십의 자리는 2 → 27!',
       tip: '수 모형에서 십 모형 하나를 일 모형 10개로 바꿔 놓고 빼게 해요. 바꾼 십 모형만큼 십의 자리가 하나 줄어든다는 것을 꼭 보여 줘요.',

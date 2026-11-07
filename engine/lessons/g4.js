@@ -4,7 +4,7 @@
 //   대분수 g4_FMIX · 소수 g4_DEC3P·g4_DECAS — 자연수 계산은 ops.js(MUL·DIV), 기존 개념 F6·R0·DEC2·DEC3·DEC4를 다시 씀
 import { nums, frac, mixed, pick, fx, fb, B, J, P, RO, F } from '../concepts/kit.js';
 import { near } from '../math.js';
-import { isKind, addKind, subKind, mulKind, divKind, danOf, ones, OPSBY } from './ops.js';
+import { isKind, addKind, subKind, mulKind, divKind, danOf, ones, OPSBY, borrowWhy, carryLead } from './ops.js';
 import NUM, { addNoCarry, subSmallFromLarge } from '../concepts/num.js';
 import FRAC from '../concepts/frac.js';
 import DEC from '../concepts/dec.js';
@@ -563,22 +563,26 @@ function decCols(p) {
     const [m, k] = p.ka < p.kb ? [p.a, p.ka] : [p.b, p.kb], s = fmtD(m, k), s0 = (m / 10 ** k).toFixed(2);
     out.push({ c: 'DEC2', p: { v: 'units', n: m * 10 }, why: `${s}${PK(s, '을', '를')} ${s0}으로 보면 소수점을 맞출 수 있어요.` });   // 조사 고정: s0 은 끝이 0(영)
   }
-  const L = Math.max(lenOf(A), lenOf(Bm));
+  const L = Math.max(lenOf(A), lenOf(Bm)), nm = (k) => names[k] || '윗자리', val = (k) => String(Number((10 ** (k - K)).toFixed(K)));
   if (p.op === '+') {
-    let c = 0;
+    let c = 0, prev = 0;
     for (let i = 0; i < L; i++) {
-      const x = dig(A, i), y = dig(Bm, i), nm = names[i] || '윗자리';
-      if (c && (x === 0 || y === 0)) { if (x + y) out.push({ c: 'ADD', p: { a: x + y, b: 1 }, why: `${nm}: 받아올린 1을 더해요.` }); }
-      else if (c) out.push({ c: 'ADD3', p: { a: x, b: y, c: 1 }, why: `${nm}: 받아올린 1까지 더해요.` });
-      else if (x && y) out.push({ c: 'ADD', p: { a: x, b: y }, why: `${nm}끼리 더해요.` });
-      c = x + y + c >= 10 ? 1 : 0;
+      const x = dig(A, i), y = dig(Bm, i), lead = c ? `${carryLead(nm(i - 1), nm(i), prev)} ` : '';
+      if (c && (x === 0 || y === 0)) { if (x + y) out.push({ c: 'ADD', p: { a: x + y, b: 1 }, why: `${lead}${nm(i)}${P(nm(i), '은', '는')} ${x + y}에 올린 1을 더해요.` }); }
+      else if (c) out.push({ c: 'ADD3', p: { a: x, b: y, c: 1 }, why: `${lead}${nm(i)}${P(nm(i), '은', '는')} ${x} + ${y}에 올린 1까지 더해요.` });
+      else if (x && y) out.push({ c: 'ADD', p: { a: x, b: y }, why: `${nm(i)}끼리 더해요.` });
+      prev = x + y + c;
+      c = prev >= 10 ? 1 : 0;
     }
   } else {
     let br = 0;
     for (let i = 0; i < lenOf(A); i++) {
-      const x = dig(A, i) - br, y = dig(Bm, i), nm = names[i] || '윗자리';
-      if (x < y) { out.push({ c: 'SUB', p: { a: x + 10, b: y }, why: `${nm}: 윗자리에서 10을 받아내려 ${x + 10} − ${y}${P(y, '을', '를')} 해요.` }); br = 1; continue; }
-      if (y || br) { if (x > 0 || y > 0) out.push({ c: 'SUB', p: { a: x, b: y }, why: br ? `${nm}: 아랫자리에 10을 내려 주어 ${x}${P(x, '이', '가')} 남아요. ${x}에서 ${y}${P(y, '을', '를')} 빼요.` : `${nm}끼리 빼요.` }); }
+      const x = dig(A, i) - br, y = dig(Bm, i);
+      if (x < y) {
+        const up = Array.from({ length: lenOf(A) - i - 1 }, (_, j) => dig(A, i + 1 + j));
+        out.push({ c: 'SUB', p: { a: x + 10, b: y }, why: x < 0 ? `${nm(i)}${P(nm(i), '은', '는')} 10에서 하나를 내주어 9예요.` : borrowWhy(i, x, y, up, { lent: !!br, nm, val }) }); br = 1; continue;
+      }
+      if (y || br) { if (x > 0 || y > 0) out.push({ c: 'SUB', p: { a: x, b: y }, why: br ? `${nm(i)}${P(nm(i), '은', '는')} 하나 줄어 ${x}${P(x, '이에요', '예요')}.` : `${nm(i)}끼리 빼요.` }); }
       br = 0;
     }
   }

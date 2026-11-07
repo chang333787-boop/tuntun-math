@@ -280,8 +280,38 @@ button.pk:active,button.pk.press{box-shadow:0 1px 0 var(--line2)}
 .sb-steps li.now{color:var(--ink);border-color:var(--teal);background:var(--teal-t);font-weight:700}.sb-steps li.now i{background:var(--teal);border-color:var(--teal);color:#fff}
 .sb-steps li.done{color:var(--ok-ink);border-color:#A9D3B6}.sb-steps li.done i{background:var(--ok-t);border-color:var(--ok)}
 .sb-steps li.skip{text-decoration:line-through;opacity:.6}
-.fx-steps{margin:0 0 18px}
+.fx-steps{margin:0 0 12px}
 .fx .qcard{margin-top:0}
+/* 시범(11-05) — 위 문제 · 가운데 세로셈(또는 단계 식) · 옆 모형 · 아래 튼튼이 말 + 단추(판 폭 전체 · 오른쪽이 비지 않게) */
+.fxs{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;grid-template-areas:"q q" "mid side" "say say";gap:12px 28px;min-height:0}
+.fxs.one{grid-template-columns:minmax(0,1fr);grid-template-areas:"q" "mid" "say"}
+.fxs.nomid{grid-template-areas:"q side" "q side" "say say"}
+.fxs.nomid.one{grid-template-rows:minmax(0,1fr) auto;grid-template-areas:"q" "say"}
+.fxs-q{grid-area:q;display:flex;flex-direction:column;gap:14px;min-width:0}
+.fxs-q>.math{font-size:clamp(30px,3.4vw,44px)}
+.fxs.nomid>.fxs-q{justify-content:center;align-items:center;text-align:center}.fxs.nomid>.fxs-q>.math{font-size:clamp(34px,4.6vw,56px)}
+.fxs.nomid>.fxs-q>.choices{width:100%;max-width:760px}
+.fxs-mid{grid-area:mid;display:flex;align-items:center;justify-content:center;min-width:0;min-height:0}
+.fxs-side{grid-area:side;display:flex;align-items:center;justify-content:center;min-width:0;min-height:0}
+.fxs-side>.model{width:fit-content;max-width:100%;padding:12px 16px 8px}.fxs-side>.model p{max-width:340px}.fxs-side>.model svg{max-height:240px;display:block;margin:0 auto}
+.fxs-say{grid-area:say;display:flex;align-items:center;gap:20px;background:var(--panel);border-radius:18px;padding:12px 18px}
+.fxs-say>.say{flex:1;margin:0;min-width:0}
+.fxs-say .bub{font-size:19px;flex:1;padding:10px 16px}.fxs-say .bub p{margin:0}.fxs-say .bub p+p{margin-top:6px}
+.fxs-say .fxe{display:flex;align-items:center;gap:6px 18px;flex-wrap:wrap}.fxs-say .fxe>.math{font-size:30px;margin:0}.fxs-say .fxa .math{font-size:1.2em}
+.fxs-say>.qact{flex:none;margin:0}.fxs-say>.qact .pri{min-width:240px}
+.steps.eq{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,360px));justify-content:center;gap:12px;width:100%;counter-reset:st}
+.steps.eq li{display:flex;align-items:center;gap:10px;counter-increment:st;padding:12px 16px}.steps.eq li .math{font-size:clamp(24px,2.8vw,34px)}
+.steps.eq li::before{content:counter(st);flex:none;width:28px;height:28px;border-radius:50%;border:1.5px solid var(--line2);display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--mute)}
+.steps.eq li.now::before{border-color:var(--teal);background:var(--teal);color:#fff}
+/* 세로셈 — 자리마다 한 칸(같은 폭 숫자) · 위 줄은 바뀐 값 · 받아올린 1 · 지금 자리는 옅은 청록 띠 · 빗금은 바뀌기 전 숫자 */
+.vcol{border-collapse:separate;border-spacing:0;font-size:clamp(42px,4.6vw,64px);font-variant-numeric:tabular-nums;line-height:1.12;margin:0 auto;font-weight:500}
+.vcol td{width:.8em;text-align:center;padding:0 .08em;position:relative}
+.vcol td.op{width:.9em;color:var(--mute)}
+.vcol .mk td{font-size:.44em;height:1.3em;vertical-align:bottom;color:var(--pri-ink);font-weight:800;line-height:1.2}
+.vcol .ans td{border-top:3px solid var(--ink);padding-top:.04em}
+.vcol td.now{background:var(--teal-t)}
+.vcol .mk td.now{border-radius:12px 12px 0 0}.vcol .ans td.now{border-radius:0 0 12px 12px}
+.vcol td.x::after{content:'';position:absolute;left:16%;right:16%;top:50%;border-top:3px solid var(--stuck);transform:rotate(-58deg)}
 
 /* ── 스테이지 ── */
 .stage-top{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px 28px;align-items:center;margin:0 0 20px}
@@ -464,6 +494,12 @@ body.tv main{max-width:none}body.tv .ctab table{font-size:18px}body.tv .ctab td,
   .qcard{padding:18px 16px;border-radius:20px}
   #view>.qcard,#view>.card.fx{min-height:0}
   .card.fx{padding:16px}
+  .fxs,.fxs.one,.fxs.nomid,.fxs.nomid.one{grid-template-columns:minmax(0,1fr);grid-template-rows:none;grid-template-areas:"q" "mid" "say" "side"}
+  .fxs.nomid,.fxs.nomid.one{grid-template-areas:"q" "say" "side"}
+  .fxs-say{flex-direction:column;align-items:stretch;gap:12px;padding:12px}
+  .fxs-say>.qact .pri{width:100%;min-width:0}
+  .fxs-say .fxe>.math{font-size:26px}
+  .fxs-side>.model svg{max-height:200px}
   .todo .item,.todo details.item>summary{gap:12px;padding:14px}.todo details.item{padding:0}
   .todo .item.now,.todo details.item.now>summary{padding:16px}
   .todo .item .ico{width:42px;height:42px;border-radius:12px}.todo .item.now .ico{width:48px;height:48px}

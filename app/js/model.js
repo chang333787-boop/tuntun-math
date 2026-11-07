@@ -1,6 +1,7 @@
 // 자릿값 모형 — 받아올림 · 받아내림을 '묶음 바꾸기'로 먼저 보여 줌(모형 → 그림 → 식 [B-R2][B-R5][B-R13])
 //  비례가 맞게(낱개 10개 = 십 막대 하나 길이 · 십 막대 10개 = 백 판 하나) · 밋밋한 선화(장식 없음 [B-R28]) · 흑백에서도 보임
 import { readExpr } from '../../engine/errors.js';
+import { toText } from '../../engine/tokens.js';
 const U = 12, INK = '#3b2a1e', FILL = '#f1e2cc';
 const cube = (x, y) => `<rect x="${x}" y="${y}" width="${U}" height="${U}" fill="${FILL}" stroke="${INK}" stroke-width="1"/>`;
 const rod = (x, y) => `<rect x="${x}" y="${y}" width="${U}" height="${U * 10}" fill="${FILL}" stroke="${INK}" stroke-width="1.2"/>${Array.from({ length: 9 }, (_, i) => `<path d="M${x} ${y + U * (i + 1)} h${U}" stroke="${INK}" stroke-width=".5"/>`).join('')}`;
@@ -51,3 +52,68 @@ export function modelHTML(it) {
     <text x="0" y="${y3 + 14}" font-size="15" fill="${INK}">낱개 ${oa}개에서 ${ob}개를 뺄 수 없어요</text>${rod(70, y3 + 30)}<path d="M${70 + U + 8} ${y3 + 30 + U * 5} h20" stroke="${INK}" stroke-width="2"/><path d="M${70 + U + 28} ${y3 + 30 + U * 5} l-7 -5 v10z" fill="${INK}"/>${cubes}</svg>`;
   return `<div class="model"><p><b>모형으로 먼저 봐요.</b> 낱개가 모자라면 <b>십 막대 1개를 낱개 10개</b>로 바꿔요 — 이게 받아내림이에요.</p>${svg}</div>`;
 }
+
+// ── 세로셈(11-05 교사 '풀이 화면 배치' · '받아내려 말만으로는 모름') — 덧셈 · 뺄셈 두 자리 ~ 네 자리를 시범 단계와 함께
+//  지금 단계의 자리에 옅은 청록 띠 · 받아내림은 바뀐 자리 숫자에 빗금 + 위에 지금 값(36 − 28 → 십의 자리 3에 빗금 · 위에 2 / 일의 자리 6에 빗금 · 위에 16)
+//  받아올림은 다음 자리 위에 작은 1 · 맨 앞자리의 0은 쓰지 않음(교과서 그대로)
+//  colPlan = 자리마다 { i, sa · sb(뺄셈 단계 식의 두 수) · tot(덧셈 자리 합) · put:[{ at, v }] 답 줄 · mk:[{ at, v, x }] 위 줄 } — ops.js addColumns · subColumns와 같은 계산
+const dg = (n, k) => Math.floor(n / 10 ** k) % 10, ln = (n) => String(n).length;
+function colPlan(a, b, op) {
+  const out = [];
+  if (op === '+') {
+    const L = Math.max(ln(a), ln(b));
+    let c = 0;
+    for (let i = 0; i < L; i++) {
+      const s = dg(a, i) + dg(b, i) + c, put = [{ at: i, v: s % 10 }], mk = [];
+      if (s >= 10) { if (i === L - 1) put.push({ at: L, v: 1 }); else mk.push({ at: i + 1, v: 1 }); }
+      out.push({ i, tot: s, put, mk });
+      c = s >= 10 ? 1 : 0;
+    }
+    return out;
+  }
+  const cur = Array.from({ length: ln(a) }, (_, k) => dg(a, k));
+  for (let i = 0; i < cur.length; i++) {
+    const y = dg(b, i), mk = [];
+    if (cur[i] < y) {
+      let k = i + 1;
+      while (cur[k] === 0) k++;
+      cur[k]--; mk.push({ at: k, v: cur[k], x: true });
+      for (let j = i + 1; j < k; j++) { cur[j] = 9; mk.push({ at: j, v: 9, x: true }); }
+      cur[i] += 10; mk.push({ at: i, v: cur[i], x: true });
+    }
+    out.push({ i, sa: cur[i], sb: y, put: [{ at: i, v: cur[i] - y }], mk });
+  }
+  return out;
+}
+const fits = (e, p, op) => !!p && (op === '−' ? p.fam === 'SUB' && p.a === e.sa && p.b === e.sb : (p.fam === 'ADD' || p.fam === 'ADD3') && p.a + p.b + (p.c || 0) === e.tot);
+// 시범 문제와 단계 → 세로셈 계획 · 단계마다 자리 번호(못 찾으면 -1 — 마지막 '합치기' 단계만 허용: 27 + 5의 '20 + 12' · 32 − 5의 '10개씩 묶음')
+//  10을 만들어 빼는 십몇 − 몇(16 − 8 → 10 − 2)처럼 첫 단계가 자리 계산이 아니면 세로셈을 쓰지 않음(단계 식 목록으로)
+export function colOf(it, steps) {
+  let X = null; try { X = readExpr(it); } catch (e) { X = null; }
+  if (!X || X.st !== 'W' || !(X.op === '+' || X.op === '−') || !steps || !steps.length) return null;
+  const a = X.A.i, b = X.B.i;
+  if (![a, b].every(Number.isInteger) || a < 0 || b < 0 || Math.max(a, b) < 10 || Math.max(a, b) > 9999 || (X.op === '−' && a < b)) return null;
+  const plan = colPlan(a, b, X.op), at = [];
+  let j = 0;
+  for (const s of steps) { let f = -1; for (let k = j; k < plan.length; k++) if (fits(plan[k], s.p, X.op)) { f = k; break; } at.push(f); if (f >= 0) j = f + 1; }
+  if (at.slice(0, -1).some((x) => x < 0) || at[0] < 0) return null;
+  return { a, b, op: X.op, plan, at, ans: X.op === '+' ? a + b : a - b };
+}
+// k = 보인 단계 수(0 = 처음 · 단계 수 = 끝) → { html, lead0: 지금 자리 답이 맨 앞 0이라 쓰지 않음 }
+export function colView(C, k) {
+  const n = C.at.length, cur = k ? C.at[Math.min(k, n) - 1] : -1, upto = !k ? -1 : k >= n || cur < 0 ? C.plan.length - 1 : cur;
+  const W = Math.max(ln(C.a), ln(C.b), ln(C.ans)), mk = {}, put = {};
+  for (let q = 0; q <= upto; q++) { C.plan[q].mk.forEach((m) => (mk[m.at] = m)); C.plan[q].put.forEach((m) => (put[m.at] = m.v)); }
+  const now = cur, lead0 = now >= 0 && put[now] === 0 && now >= ln(C.ans);
+  const cell = (pos, inner, cls = '') => `<td class="${[cls, pos === now ? 'now' : ''].filter(Boolean).join(' ')}">${inner}</td>`;
+  const row = (f) => Array.from({ length: W }, (_, j) => f(W - 1 - j)).join('');
+  const html = `<table class="vcol" role="img" aria-label="${C.a} ${C.op === '+' ? '더하기' : '빼기'} ${C.b} 세로셈"><tbody>
+    <tr class="mk"><td class="op"></td>${row((p) => cell(p, mk[p] ? String(mk[p].v) : ''))}</tr>
+    <tr><td class="op"></td>${row((p) => cell(p, p < ln(C.a) ? String(dg(C.a, p)) : '', mk[p] && mk[p].x ? 'x' : ''))}</tr>
+    <tr><td class="op">${C.op}</td>${row((p) => cell(p, p < ln(C.b) ? String(dg(C.b, p)) : ''))}</tr>
+    <tr class="ans"><td class="op"></td>${row((p) => cell(p, put[p] != null && (p < ln(C.ans) || (C.ans === 0 && p === 0)) ? String(put[p]) : ''))}</tr>
+  </tbody></table>`;
+  return { html, lead0 };
+}
+// 답 보기가 그림인가 — 시범 끝 말풍선에 그림을 다시 넣지 않고 '✓ 표시한 보기'로 가리킴(kid.js fixView)
+export const picAns = (it) => !!(it && it.choices) && toText(it.choices[Number(it.sol[0])] || []).includes('[그림]');

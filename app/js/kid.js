@@ -11,7 +11,7 @@ import * as KS from './kidstore.js';
 import { draw, stepHTML, staticHTML, ansSay, rushGuard, rushPause, fbSlot } from './item.js';
 import { P, RO } from '../../engine/concepts/kit.js';
 import { bridgeSVG, KIND, plankSVG } from './bridge.js';
-import { modelHTML } from './model.js';
+import { modelHTML, colOf, colView, picAns } from './model.js';
 import { grantAccurate, nextGoal, target, TIER, isFact } from './stage.js';
 import { lsGet, lsSet, lsDel, esc, rand } from './local.js';
 import { flush, get as dbGet, dec } from './db.js';
@@ -286,27 +286,31 @@ export function fixView(root, c) {
   const shell = (top, main, side = '') => { root.innerHTML = `<div class="card fx">${bar()}<div id="b"><div class="qcard still"><div class="qgrid"><div class="qmain">${main}</div><div class="qside"><div class="qlead">${top}</div>${side}</div></div></div></div></div>`; return root.querySelector('#b'); };
   const slot = () => { root.innerHTML = `<div class="card fx">${bar()}<div id="b"><div id="slot"></div></div></div>`; return root.querySelector('#slot'); };
   const nextAct = (label, id = 'n') => `<div class="qact"><button class="pri big" id="${id}">${label}</button></div>`;
-  const tsay = (xs) => (xs.length ? `<div class="tsay">${xs.map((x) => `<p>${esc(x)}</p>`).join('')}</div>` : '');
-  // 시범 — 단계가 있으면 단계마다 · 없으면 그 문제 숫자로 말하며 빈칸을 하나씩(보기는 답 보기에 표시)
+  // 시범(11-05 교사 '배치가 어색' — 세 칸 · 오른쪽 아래가 빔) — 위: 문제 · 가운데: 세로셈(덧셈 · 뺄셈 자리 계산) 또는 단계 식 · 옆: 모형 · 아래: 튼튼이 말 한 단계 + [다음]
+  //  세로셈은 지금 단계의 자리에 띠 · 바뀐 숫자에 빗금 + 지금 값(model.js colView) · 단계가 없는 칸은 위: 문제(+ 보기) · 아래: 그 문제 숫자로 한 말
+  //  좁으면 문제 → 세로셈 → 말 + 단추 → 모형 차례로 한 줄(단추가 늘 손 닿는 자리에)
+  const stage = ({ top, mid = '', side = '', pose = 'point', talk, act }) => {
+    const cls = ['fxs', mid ? '' : 'nomid', side ? '' : 'one'].filter(Boolean).join(' ');
+    root.innerHTML = `<div class="card fx">${bar()}<div id="b"><div class="${cls}"><div class="fxs-q">${top}</div>${mid ? `<div class="fxs-mid">${mid}</div>` : ''}${side ? `<div class="fxs-side">${side}</div>` : ''}<div class="fxs-say">${say(pose, talk, 64)}${act}</div></div></div></div>`;
+    const b = root.querySelector('#b'); b.querySelector('#n').addEventListener('click', () => { showNext(F); route(); }); return b;
+  };
   function show() {
-    const n = showLen(F), done = F.si >= n, has = F.steps.length > 0;
+    const n = showLen(F), done = F.si >= n, has = F.steps.length > 0, md = modelHTML(F.ex);
+    const fin = done ? `<p class="fxa">${picAns(F.ex) ? '그래서 답은 ✓ 표시한 보기예요.' : ansSay(F.ex, '그래서 답은')}</p>` : '';
     if (has) {
-      const md = modelHTML(F.ex);   /* 모형이 있으면 모형 · 단계를 나란히(넓을 때) — 1366×768 한 화면에 */
-      const b = shell(head('point', '튼튼이가 먼저 풀어 볼게요. 한 단계씩 생각을 말할게요.'),
-        `${staticHTML(F.ex.prompt, done ? F.ex.sol : null)}<div class="demo${md ? ' with-model' : ''}">${md}
-          <ol class="steps">${F.steps.slice(0, F.si).map((st, i) => stepHTML(st, { cls: i === F.si - 1 ? 'now' : '' })).join('')}</ol></div>`,
-        `${done ? `<p class="fb ok">${ansSay(F.ex, '그래서 답은')}</p>` : ''}${nextAct(done ? '이제 같이 풀어요' : '다음 단계')}`);
-      b.querySelector('#n').addEventListener('click', () => { showNext(F); route(); });
+      const C = colOf(F.ex, F.steps), st = F.si ? F.steps[F.si - 1] : null, v = C ? colView(C, F.si) : null;
+      const mid = v ? v.html : F.si ? `<ol class="steps eq">${F.steps.slice(0, F.si).map((x, i) => stepHTML(x, { cls: i === F.si - 1 ? 'now' : '', why: false })).join('')}</ol>` : '';
+      const talk = st ? `<p>${esc(st.why).replace(/(\d) ([+−×÷=]) (?=\d)/g, '$1\u00a0$2\u00a0')}</p>${v ? `<p class="fxe">${staticHTML(st.prompt, st.sol)}${v.lead0 ? '<span class="small">맨 앞자리의 0은 쓰지 않아요.</span>' : ''}${done ? `<span class="fxa">${ansSay(F.ex, '그래서 답은')}</span>` : ''}</p>` : fin}`
+        : `<p>튼튼이가 먼저 풀어 볼게요. ${C ? '일의 자리부터 한 자리씩 계산해요.' : '한 단계씩 풀면서 생각을 말할게요.'}</p>`;
+      stage({ top: staticHTML(F.ex.prompt, done ? F.ex.sol : null), mid, side: md, talk, act: nextAct(done ? '이제 같이 풀어요' : F.si ? '다음 단계' : '첫 단계 보기') });
       return;
     }
     const nb = F.ex.choices ? 0 : blankCount(F.ex.prompt);
-    const vals = F.ex.choices ? null : F.ex.sol.map((v, i) => (i < F.si ? v : null));
+    const vals = F.ex.choices ? null : F.ex.sol.map((x, i) => (i < F.si ? x : null));
     const say1 = F.si ? [...showTalk(F), ...(nb >= 2 ? Array.from({ length: F.si }, (_, i) => blankTalk(F.ex, i)).filter(Boolean) : [])] : [];
     const choices = F.ex.choices ? `<div class="choices static">${F.ex.choices.map((ch, k) => `<button type="button" disabled class="${done && String(k) === String(F.ex.sol[0]) ? 'right' : ''}">${staticHTML(ch, null)}</button>`).join('')}</div>` : '';
-    const b = shell(head('point', '튼튼이가 먼저 풀어 볼게요. 생각을 말하면서 풀게요.'),
-      `${staticHTML(F.ex.prompt, vals)}${choices}${modelHTML(F.ex)}`,
-      `${tsay(say1)}${done ? `<p class="fb ok">${ansSay(F.ex, '그래서 답은')}</p>` : ''}${nextAct(done ? '이제 같이 풀어요' : F.si ? '다음' : '튼튼이 생각 보기')}`);
-    b.querySelector('#n').addEventListener('click', () => { showNext(F); route(); });
+    const talk = say1.length ? `${say1.map((x) => `<p>${esc(x)}</p>`).join('')}${fin}` : done ? fin : '<p>튼튼이가 먼저 풀어 볼게요. 생각을 말하면서 풀게요.</p>';
+    stage({ top: `${staticHTML(F.ex.prompt, vals)}${choices}`, side: md, talk, act: nextAct(done ? '이제 같이 풀어요' : F.si ? '다음' : '튼튼이 생각 보기') });
   }
   // 함께 — 단계 빈칸을 아이가(단계 있는 칸) · 튼튼이가 일부를 해 주고 아이는 한 곳만(단계 없는 칸)
   function together() {
@@ -393,17 +397,17 @@ export function fixView(root, c) {
     else { K.help = K.help || {}; K.help[c] = now; K.helpWhy = { ...(K.helpWhy || {}), [c]: F.help ? 'solo' : 'check' }; }   /* 'solo' = 혼자에서 세 번씩 두 번 내리 틀려 확인 없이 끝 · 'check' = 확인 3문제를 못 넘음(메인이 요약에 넣을 값) */
     KS.save(me, K); KS.setReview(me, K); KS.pushSummary(me, K); KS.setNow(me, { mode: 'home' });
     const ex = plank(c);
-    const endCard = (top, body) => { root.innerHTML = `<div class="card msg act-fix"><p class="eyebrow">${tile('fix', 22)}판자 고치기</p>${top}${body}</div>`; };
+    const endCard = (top, body) => { root.innerHTML = `<div class="card msg act-fix"><p class="eyebrow">${tile('fix', 22)}배우기</p>${top}${body}</div>`; };
     if (F.help) {   // 혼자에서 세 번씩 두 번 내리 틀림 — 확인 문제 없이 선생님과(혹평 4)
-      endCard(say('think', `오늘은 여기까지 해요. 이 판자는 <b>선생님과 같이</b> 놓아요.<br>손을 들고 선생님께 이 화면을 보여 주세요.`, 104),
-        `<div class="panel"><p class="small muted">선생님과 같이 볼 문제</p><p><b>${esc(ex)}</b></p><p class="small">어려운 판자가 있는 건 괜찮아요. 같이 하면 하나씩 놓을 수 있어요.</p></div><div class="acts"><a class="btn big" href="#/me">내 수 다리로</a></div>`);
+      endCard(say('think', `오늘은 여기까지 해요. 이 문제는 <b>선생님과 같이</b> 풀어요.<br>손을 들고 선생님께 이 화면을 보여 주세요.`, 104),
+        `<div class="panel"><p class="small muted">선생님과 같이 볼 문제</p><p><b>${esc(ex)}</b></p></div><div class="acts"><a class="btn big" href="#/me">처음 화면으로</a></div>`);
       return;
     }
-    const was = before && before.tot ? `처음엔 ${before.ok}/${before.tot} → 지금 ${okN}/${F.check.items.length}` : `${okN}/${F.check.items.length}`;
+    const was = before && before.tot ? ` 처음엔 ${before.tot}문제 중 ${before.ok}개 맞혔어요.` : '';
     const retry = F.passed && K.back && K.back.root === c && !K.back.solved;
-    const top = F.passed ? say('cheer', `판자를 고쳤어요! <b>${esc(ex)}</b> — ${was}.<br>${inClass ? '이제 <b>선생님 수업</b>으로 가요. 남은 판자는 다음 시간에 해요.' : '1일 · 3일 · 7일 뒤에 다시 보면 오래 튼튼해요.'}`, 104)
-      : say('think', `아직 조금 흔들려요(${okN}/${F.check.items.length}). 괜찮아요 — 선생님과 함께 한 번 더 봐요.${inClass ? '<br>지금은 선생님 수업으로 가요.' : ''}`, 104);
-    endCard(top, `<div class="acts">${retry ? `<a class="btn pri big" href="#/retry">처음 문제 다시 풀기 — ${esc(K.back.text)}</a>` : `<a class="btn ${inClass ? '' : 'pri '}big" href="#/me">내 수 다리로</a>`}${F.passed && !inClass ? `<a class="btn big" href="#/drill/${c}">이어서 다듬기</a>` : ''}</div>`);
+    const top = F.passed ? say('cheer', `<b>${esc(ex)}</b> — 확인 ${F.check.items.length}문제를 모두 맞혔어요.${was}<br>${inClass ? '이제 <b>선생님 수업</b>으로 가요. 남은 것은 다음 시간에 해요.' : '며칠 뒤 매일 연습에 한 번 더 나와요.'}`, 104)
+      : say('think', `확인 ${F.check.items.length}문제 중 ${okN}개 맞혔어요. 선생님과 같이 한 번 더 봐요.${inClass ? '<br>지금은 선생님 수업으로 가요.' : ''}`, 104);
+    endCard(top, `<div class="acts">${retry ? `<a class="btn pri big" href="#/retry">처음 문제 다시 풀기 — ${esc(K.back.text)}</a>` : `<a class="btn ${inClass ? '' : 'pri '}big" href="#/me">처음 화면으로</a>`}${F.passed && !inClass ? `<a class="btn big" href="#/drill/${c}">이어서 다듬기</a>` : ''}</div>`);
   }
   // 비교하기 — 함께 풀기 뒤, 혼자 풀기 전에 한 번(맞는 풀이 · 친구 같은 틀린 풀이 · 어디서 어긋났나)
   function compare(X) {

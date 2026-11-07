@@ -98,8 +98,8 @@ export function rushPause(root, onGo) {
   b.addEventListener('click', onGo);
 }
 
-// 단계 하나(이미 푼 모습) — 쪼갠 풀이 보기용
-export const stepHTML = (st, { vals = null, marks = null, cls = '' } = {}) => `<li class="${cls}"><span class="why">${esc(st.why)}</span><span class="math">${toHTML(st.prompt, { static: true, vals: vals || st.sol, marks })}</span></li>`;
+// 단계 하나(이미 푼 모습) — 쪼갠 풀이 보기용 · why: false = 식만(고치기 시범 — 글은 튼튼이 말풍선에)
+export const stepHTML = (st, { vals = null, marks = null, cls = '', why = true } = {}) => `<li class="${cls}">${why ? `<span class="why">${esc(st.why)}</span>` : ''}<span class="math">${toHTML(st.prompt, { static: true, vals: vals || st.sol, marks })}</span></li>`;
 export const staticHTML = (prompt, vals, marks) => `<span class="math">${toHTML(prompt, { static: true, vals, marks })}</span>`;
 
 // 답 보여 주기 — 고르기 문항의 sol은 보기 번호라서 보기 글로 바꿔 보인다('답 0'이 아니라 '답 8.21')
