@@ -125,6 +125,7 @@ const CARDS = [
   { k: 'prac', no: 2, t: '배울 것', what: '모르는 것을 배우고 연습해요', none: '지금 배울 것이 없어요' },
   { k: 'daily', no: 3, t: '매일 연습', what: '아는 것을 잊지 않게 날마다 조금씩 풀어요', none: '지금 할 연습이 없어요 — 점검에서 맞힌 문제와 배운 것이 며칠 뒤 여기 다시 나와요' },
 ];
+let helpAsk = 0;
 function helpItem(t) {
   return `<li class="c3-help"><details open><summary><b>${esc(t.title)}</b><span>${esc(t.sub)}</span></summary>
     <div class="helpbox"><p>선생님이 오시면 같이 풀어 볼 문제예요. 같이 본 <b>다음에</b> 아래 단추를 눌러 확인 3문제를 풀어요.</p>${t.cs.length ? `<ul class="hb-list">${t.cs.map((c) => `<li><span>선생님과 볼 문제: <b>${esc(plank(c))}</b></span> <a class="btn mini teal" href="#/fix/${encodeURIComponent(c)}/check">선생님과 같이 본 뒤에 — 확인 3문제</a></li>`).join('')}</ul>` : ''}<p class="small muted">어려운 문제가 있는 건 괜찮아요. 같이 하면 하나씩 풀 수 있어요. ${t.wait ? '선생님을 기다리는 동안 아래 것을 먼저 해도 돼요.' : ''}</p></div></details></li>`;
@@ -167,6 +168,7 @@ export async function homeView(root) {
   const firstDay = !Object.keys(K.recs || {}).length, hasHelp = prac.some((x) => x.kind === 'help');
   const resN = [chk, prac, daily].findIndex((l) => l[0] && l[0].resume);   /* 하던 것이 있으면 그 카드가 주황 단추(수업 중 선생님이 연 점검만 그보다 앞 · 11-07 '다시 들어와도 이어서') */
   const nowNo = doneOne || classRest ? 0 : classPrep ? 1 : resN >= 0 ? resN + 1 : prac.some((x) => x.kind === 'help' || x.kind === 'give') ? 2 : chk.some((x) => x.kind === 'check') ? 1 : prac.length ? 2 : chk.length ? 1 : daily.length ? 3 : 0;
+  if (hasHelp && nowNo === 2 && prac[0].kind === 'help' && Date.now() - helpAsk > 10 * 60e3 && Date.now() - KS.lastAsk() > 15 * 60e3) { helpAsk = Date.now(); KS.setNow(me, { mode: 'home', c: prac[0].cs[0] || '', ask: helpAsk }); }   /* 처음 화면 '선생님과 같이 봐요'가 지금 할 것 = 손 든 아이 → 선생님 반 화면 맨 위(10분마다 한 번만 · 다른 것을 시작하면 풀림) */
   const lists = [chk, prac, daily];
   const head = doneOne ? say('cheer', '하나 배웠어요! 이제 <b>선생님 수업</b>으로 가요. 남은 것은 다음 시간에 해요.', 88)
     : classRest ? say('cheer', '오늘 단원 점검을 끝냈어요. 지금은 <b>선생님 수업 시간</b>이에요. 남은 것은 다음 시간에 해요.', 88)

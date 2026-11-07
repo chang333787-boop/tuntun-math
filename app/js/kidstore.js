@@ -71,6 +71,7 @@ export function mxOut(K, max = 56000) {
 export function pushMastery(me, K) { db.queuePut(`${base(me)}/mx`, mxOut(K)); }
 export function setReview(me, K) { save(me, K); db.queuePut(`${base(me)}/rv`, db.enc(K.rv)); }   // 규칙에 rv 칸 있음
 let lastNow = { mode: 'home' };
+export const lastAsk = () => Number(lastNow && lastNow.ask) || 0;   /* 방금 손 든 때(배우기 · 점검 끝 화면) — 처음 화면이 덮어쓰지 않게 */
 export function setNow(me, now) { lastNow = now; db.put(`${base(me)}/now`, db.enc({ ...now, t: Date.now() })).catch(() => {}); }
 
 // 모든 기록 → 종이와 같은 판정
