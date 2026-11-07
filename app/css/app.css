@@ -138,6 +138,7 @@ button:focus-visible,.btn:focus-visible,a:focus-visible,summary:focus-visible,.b
 .cmp-go{margin-top:auto;padding:4px 12px;border-radius:999px;background:var(--panel);font-weight:700;font-size:14px}div.cmpc .cmp-go{display:none}.cmpc .math{white-space:nowrap}   /* 비교 카드 = 누르는 것 · 식 한 줄 */
 .tcard.hide-ans .ans{visibility:hidden}@media print{.tcard.hide-ans .ans{visibility:visible}}   /* 10분 카드 답은 화면에선 가림 */
 .kq-key.hid svg{filter:blur(6px);opacity:.35}@media print{.kq-key.hid svg{filter:none;opacity:1}}   /* 선생님 열쇠 QR은 '열쇠 보기' 전엔 흐리게 · 인쇄엔 또렷이 */
+.nx-soft{margin-top:8px}.nx-soft>summary{cursor:pointer;padding:6px 2px}   /* 가끔 틀리는 아이는 접어 둠 */
 .nx-grp{margin:6px 0 10px;padding:8px 12px;border-radius:12px;background:var(--teal-t);line-height:2.1}.nx-grp .btn{margin-left:8px}   /* 같은 보충 묶어 보내기 */
 .nx-list{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}.nx-list li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:#fff}.nx-no{font-weight:800;min-width:46px}.nx-t{flex:1 1 300px}   /* 반 화면 '아이마다 다음 할 것' */
 .next-box{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;border:2px solid var(--teal);background:var(--teal-t);border-radius:14px;padding:12px 16px;margin:4px 0 14px}.next-box .nb-k{font-weight:800;color:var(--teal-d);font-size:15px}.next-box .nb-v{flex:1 1 320px;font-size:16px}   /* 아이 자세히 '다음 할 것'(nextOf) */
