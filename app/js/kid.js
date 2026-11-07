@@ -6,7 +6,7 @@ import { LES, itemOf } from '../../paper/js/gen.js';
 import { mascot } from '../../paper/js/mascot.js';
 import { blankCount } from '../../engine/tokens.js';
 import { prepPlan, newPrep, current, answer, summary, asked, LEN, PREP } from './prep.js';
-import { FIX, newFix, showNext, showLen, showTalk, blankTalk, factTalk, togetherStep, answerItem, afterReStep, checkItem, answerCheck, compareOf, stepsOf, exampleOf, mergeTip } from './fix.js';
+import { FIX, jumpTo, newFix, showNext, showLen, showTalk, blankTalk, factTalk, togetherStep, answerItem, afterReStep, checkItem, answerCheck, compareOf, stepsOf, exampleOf, mergeTip } from './fix.js';
 import * as KS from './kidstore.js';
 import { draw, stepHTML, staticHTML, ansSay, rushGuard, rushPause, fbSlot } from './item.js';
 import { P, RO } from '../../engine/concepts/kit.js';
@@ -273,7 +273,10 @@ export function fixView(root, c) {
   if (!byId[c]) return go('#/me');
   const K = KS.load(me);
   const before = KS.reportOf(K).L[c];
-  const F = newFix({ c, id: rand(6) });
+  const FK = `tt.fx.${me.C}.${me.no}`, fx0 = lsGet(FK, null);
+  const resume = fx0 && fx0.c === c && Date.now() - fx0.t < 3 * 3600e3 && ['together', 'solo', 'check'].includes(fx0.phase) ? fx0 : null;
+  const F = newFix({ c, id: resume ? resume.id : rand(6) });
+  if (resume) jumpTo(F, resume.phase);   /* 3시간 안에 다시 오면 나갔던 걸음부터 */
   const ct0 = classTask(K), inClass = !!(ct0 && Date.now() - ct0.t < 3 * 3600e3);   /* 수업 중(연 뒤 3시간)만 — 저녁 집에서는 보통 끝 화면(회귀 10-31) */
   KS.setNow(me, { mode: 'fix', c });
   const head = (pose, t) => say(pose, t, 64);
@@ -441,6 +444,7 @@ export function fixView(root, c) {
   }
   const prefer = before && before.why ? [...before.why.sure, ...before.why.maybe].map((h) => h.id) : [];
   function route() {
+    if (F.phase === 'done') lsDel(FK); else lsSet(FK, { c, id: F.id, phase: F.phase, t: Date.now() });   /* 지금 걸음 적어 두기(이어서 하기) */
     if (F.phase === 'solo' && !F.compared && F.solo.n === 0 && !F.reStep) { F.compared = true; const X = compareOf(c, { prefer }); if (X) return compare(X); }
     ({ show, together, solo, check, done })[F.phase]();
   }

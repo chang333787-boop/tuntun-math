@@ -175,6 +175,12 @@ export function showNext(F) {
   else { F.phase = 'together'; startItem(F); }
   return F;
 }
+// 이어서 하기 — 도중에 나갔다 오면 그 걸음부터(시범을 또 보지 않게 · 11-07 사용감 점검 '배우기 도중 나가면 처음부터') · 같은 id면 시범 문제가 같음
+export function jumpTo(F, phase) {
+  if (phase === 'together' || phase === 'solo') { F.si = showLen(F); F.phase = phase; startItem(F); }
+  else if (phase === 'check') toCheck(F);
+  return F;
+}
 function startItem(F) {
   F.cur = example(F, nextR(F));
   F.curSteps = stepsOf(F.cur);
