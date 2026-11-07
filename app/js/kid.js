@@ -100,7 +100,7 @@ export function todoOf(K, rep) {
     const cs = [...new Set([...helpFix, ...(prepHelp || lost ? [...rep.start.map((s) => s.c).filter((c) => !plan || plan.below.includes(c)).sort(byGrade), ...stuck] : [])])].slice(0, 3);
     out.push({ kind: 'help', cs, wait: rep.start.some((s) => !helpFix.includes(s.c)), pri: !out.length, title: '선생님과 같이 봐요', sub: '손을 들고 선생님께 이 화면을 보여 주세요' });
   }
-  if (K.back && K.back.root && byId[K.back.root] && !(K.fixed && K.fixed[K.back.root] > K.back.t)) out.push({ kind: 'fix', c: K.back.root, pri: !out.length, title: `배우기 — ${plank(K.back.root)}`, sub: `'${K.back.text}'에서 거꾸로 따라가 찾은 곳이에요`, href: `#/fix/${K.back.root}` });
+  if (K.back && K.back.root && byId[K.back.root] && !(K.fixed && K.fixed[K.back.root] > K.back.t)) out.push({ kind: 'fix', c: K.back.root, pri: !out.length, title: `배우기 — ${K.back.root === K.back.c ? `${K.back.text} 같은 문제` : plank(K.back.root)}`, sub: K.back.root === K.back.c ? '쪼갠 단계는 다 알아요 — 이어서 한 번에 푸는 연습이에요' : `'${K.back.text}'에서 거꾸로 따라가 찾은 곳이에요`, href: `#/fix/${K.back.root}` });
   else if (K.back && K.back.root && !K.back.solved && K.fixed && K.fixed[K.back.root]) out.push({ kind: 'retry', pri: !out.length, title: `처음 문제 다시 풀기 — ${K.back.text}`, sub: '막혔던 곳을 배웠어요. 이제 풀릴 거예요', href: '#/retry' });
   /* 배우기를 통과한 칸은 통과한 뒤에 다시 틀린 적이 있을 때만 다시 올림 — 확인 넷 중 셋으로 통과해도 판정은 '가끔 틀림'이라 곧바로 같은 배우기가 뜨던 것(코덱스 11-07) */
   const relearn = (c) => !(K.fixed && K.fixed[c]) || missAfter(K, c, K.fixed[c]);
