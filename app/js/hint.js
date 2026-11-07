@@ -31,7 +31,7 @@ export function cueFor(c, p) {
 // 풀이 순서(교사 11-07 '알고리즘적 사고 — 아이한테 알고리즘이란 말은 안 하지만 단계적으로 하나씩') — 아이 말로는 '풀이 순서'
 //  names = 숫자 없는 단계 이름(engine/hints plan) · 없으면 단계 글에서 숫자를 ○로 가림(아직 안 한 단계의 숫자 = 앞 단계 답이 샘)
 export const planNames = (c, p, steps) => planOf(c, p, steps.length);
-export function planHTML(steps, names, cur, shown = new Set(), lastLabel = '처음 문제의 답 쓰기') {
+export function planHTML(steps, names, cur, shown = new Set(), lastLabel = '전체 문제의 답 쓰기') {
   const nm = (i) => (names ? names[i] : i <= cur ? steps[i].why : String(steps[i].why).replace(/\d+(?:\.\d+)?/g, '○'));   /* 이름이 있으면 늘 짧은 이름(지금 단계 글은 말풍선에 — 같은 글 두 번 X · 11-07) */
   const li = (cls, mark, t) => `<li class="${cls}"><i>${mark}</i><span>${esc(t)}</span></li>`;
   return `<div class="plan"><p class="plan-h">풀이 순서</p><ol>${steps.map((s, i) => li(i < cur ? (shown.has(i) ? 'done shown' : 'done') : i === cur ? 'now' : 'yet', i < cur ? '✓' : String(i + 1), nm(i))).join('')}${li(cur >= steps.length ? 'now' : 'yet', String(steps.length + 1), lastLabel)}</ol></div>`;
@@ -39,7 +39,7 @@ export function planHTML(steps, names, cur, shown = new Set(), lastLabel = '처�
 
 // 단계 풀 때 왼쪽 위 — 처음 문제(작게) · 세로셈(덧셈 · 뺄셈 두 자리 넘으면) · 그림 · 채운 단계(맞음 ✓ · 답을 본 단계는 옅게 · 방금 채운 줄만 살짝 나타남 fresh)
 //  배우기 '같이 풀기'도 같은 모양(kid.js)
-export function stepCtx(it, steps, upto, { shown = new Set(), C = null, label = '처음 문제', head = true, pic = '', fresh = -1, lag = null } = {}) {
+export function stepCtx(it, steps, upto, { shown = new Set(), C = null, label = '전체 문제', head = true, pic = '', fresh = -1, lag = null } = {}) {
   const list = upto ? `<ol class="hl-steps">${steps.slice(0, upto).map((s, i) => `<li class="${shown.has(i) ? 'shown' : 'ok'}${i === fresh ? ' nw' : ''}"><span class="hl-n">${i + 1}</span><span class="why">${esc(s.why)}</span>${staticHTML(s.prompt, s.sol)}</li>`).join('')}</ol>` : '';
   return `<div class="hl-ctx${C ? ' with-col' : ''}">${head ? `<span class="hl-k">${esc(label)}</span>${staticHTML(it.prompt, null)}` : ''}${C && pic ? `<div class="hl-cp"><div class="hl-col">${colView(C, upto, lag).html}</div>${pic}</div>` : C ? `<div class="hl-col">${colView(C, upto, lag).html}</div>` : pic}${list}</div>`;
 }

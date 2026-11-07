@@ -12,10 +12,10 @@ import DECS from '../concepts/dec.js';
 import RATIO from '../concepts/ratio.js';
 /* 가분수 N/D(약분해서) → 대분수 단계 · W = 앞에서 따로 구한 자연수(더해서 처음 답) · 나누어떨어지거나 진분수면 단계 없음 */
 const toMixStep = (N, D, W) => { const g = gcd(N, D), n = N / g, d = D / g;
-  if (n % d === 0) return W ? { c: 'ADD', p: { a: W, b: n / d }, why: '두 결과를 더하면 처음 문제의 답이에요.' } : null;
+  if (n % d === 0) return W ? { c: 'ADD', p: { a: W, b: n / d }, why: '두 결과를 더하면 이 문제의 답이에요.' } : null;
   if (n <= d) return null;
   const red = g > 1 ? `${N}/${D}${P(N, '을', '를')} 약분하면 ${n}/${d}${P(n, '이에요', '예요')}. ` : '';   /* 분수 조사는 분자로(6분의 25를) */
-  return { c: '3-2-4:6', p: { v: 'toMix', w: Math.floor(n / d), n: n % d, d }, why: W ? `${red}${n}/${d}${P(n, '을', '를')} 대분수로 바꾸고, 자연수 부분에 ${W}${P(W, '을', '를')} 더하면 처음 문제의 답이에요.` : `${red}${n}/${d}${P(n, '을', '를')} 대분수로 바꾸면 처음 문제의 답이에요.` }; };
+  return { c: '3-2-4:6', p: { v: 'toMix', w: Math.floor(n / d), n: n % d, d }, why: W ? `${red}${n}/${d}${P(n, '을', '를')} 대분수로 바꾸고, 자연수 부분에 ${W}${P(W, '을', '를')} 더하면 이 문제의 답이에요.` : `${red}${n}/${d}${P(n, '을', '를')} 대분수로 바꾸면 이 문제의 답이에요.` }; };
 
 const CF = Object.fromEntries([...FRAC, ...DECS, ...RATIO].map((c) => [c.id, c]));
 // 조건에 맞는 params가 나올 때까지 다시 뽑기 (무한 반복 방지)

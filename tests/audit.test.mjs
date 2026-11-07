@@ -95,7 +95,7 @@ for (const c of ['1-2-2:2', '1-2-2:4']) { const x = share(gens(c, 3000), (p) => 
 // ⑬ 가분수 · 대분수 비교에 가분수끼리만인 문항 없음
 { const x = share(gens('3-2-4:7', 3000), (p) => p.ms.every((m) => !m)); ok(x === 0, `⑬ 3-2-4:7 가분수끼리 ${pct(x)}`); }
 // ⑭ 자연수 × 대분수(자연수 부분 1) — 단계 말에 자연수 부분 1을 곱한 것
-{ const ps = gens('5-2-2:5', 2000).filter((p) => Math.floor(p.n / p.d) === 1), bad = ps.filter((p) => { const st = stepsOf('5-2-2:5', p); return st.length > 2 || !st[0].why.includes('자연수 부분 1에') || (st.length === 2 && !/처음 문제의 답/.test(st[1].why)); });   /* 11-07: 끝에 두 결과 더하기 · 대분수로 바꾸기 단계가 붙을 수 있음 */ ok(ps.length && !bad.length, `⑭ 5-2-2:5 자연수 부분 1 ${ps.length}개 — 말이 빠진 것 ${bad.length}`); }
+{ const ps = gens('5-2-2:5', 2000).filter((p) => Math.floor(p.n / p.d) === 1), bad = ps.filter((p) => { const st = stepsOf('5-2-2:5', p); return st.length > 2 || !st[0].why.includes('자연수 부분 1에') || (st.length === 2 && !/이 문제의 답/.test(st[1].why)); });   /* 11-07: 끝에 두 결과 더하기 · 대분수로 바꾸기 단계가 붙을 수 있음 */ ok(ps.length && !bad.length, `⑭ 5-2-2:5 자연수 부분 1 ${ps.length}개 — 말이 빠진 것 ${bad.length}`); }
 // ⑮ 백분율 — 약분할 수 있으면(최대공약수 > 1) 약분 단계(5-1-4:4)가 백분율 단계 앞에
 { const g = (a, b) => (b ? g(b, a % b) : a), ps = gens('6-1-4:7', 600), bad = ps.filter((p) => { const base = p.c === 'sale' ? p.x - p.y : p.y, st = stepsOf('6-1-4:7', p), i = st.findIndex((s) => s.c === '5-1-4:4'), j = st.findIndex((s) => s.c === '6-1-4:6'); return j < 0 || (g(base, p.x) > 1 ? i < 0 || i > j : i >= 0); }); ok(!bad.length, `⑮ 6-1-4:7 600개 — 약분 단계가 없거나 뒤인 것 ${bad.length}`); }
 // ⑯ 작은 수 맥락 — 반 · 옆 반에 30 아래 수 X · 도서관 책은 100권부터
