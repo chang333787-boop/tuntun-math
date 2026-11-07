@@ -53,6 +53,7 @@ const ROUTES = [
   [/^#\/join/, () => joinView(root)],
   [/^#\/me$/, () => homeView(root)],
   [/^#\/prep\/([\d-]+)$/, (m) => prepView(root, m[1])],
+  [/^#\/fix\/([\w:.%-]+)\/check$/, (m) => fixView(root, decodeURIComponent(m[1]), { check: true })],   /* 선생님과 같이 본 뒤 — 확인 3문제부터(선생님과 같이 봐요 카드) */
   [/^#\/fix\/([\w:.%-]+)$/, (m) => fixView(root, decodeURIComponent(m[1]))],   /* %3A(encodeURIComponent한 :)도 — 보충 끝 · 이번 주 점검 '배우기' 단추가 처음 화면으로 가던 것(11-07 사용감 점검) */
   [/^#\/review$/, () => reviewView(root)],
   [/^#\/stages$/, () => stagesView(root)],

@@ -127,7 +127,7 @@ const CARDS = [
 ];
 function helpItem(t) {
   return `<li class="c3-help"><details><summary><b>${esc(t.title)}</b><span>${esc(t.sub)}</span></summary>
-    <div class="helpbox"><p>선생님이 오시면 같이 풀어 볼 문제예요.</p>${t.cs.length ? `<ul>${t.cs.map((c) => `<li><b>${esc(plank(c))}</b></li>`).join('')}</ul>` : ''}<p class="small muted">어려운 문제가 있는 건 괜찮아요. 같이 하면 하나씩 풀 수 있어요. ${t.wait ? '선생님을 기다리는 동안 아래 것을 먼저 해도 돼요.' : '선생님이 오실 때까지 이 화면을 켜 두어요.'}</p></div></details></li>`;
+    <div class="helpbox"><p>선생님이 오시면 같이 풀어 볼 문제예요.</p>${t.cs.length ? `<ul>${t.cs.map((c) => `<li><b>${esc(plank(c))}</b> <a class="btn mini teal" href="#/fix/${encodeURIComponent(c)}/check">선생님과 본 뒤 — 확인 3문제</a></li>`).join('')}</ul>` : ''}<p class="small muted">어려운 문제가 있는 건 괜찮아요. 같이 하면 하나씩 풀 수 있어요. ${t.wait ? '선생님을 기다리는 동안 아래 것을 먼저 해도 돼요.' : '선생님이 오실 때까지 이 화면을 켜 두어요.'}</p></div></details></li>`;
 }
 function cardHTML(c, list, now, extra = '') {
   const first = list[0], go1 = first && first.href ? first : list.find((x) => x.href);
@@ -170,7 +170,7 @@ export async function homeView(root) {
   const lists = [chk, prac, daily];
   const head = doneOne ? say('cheer', '하나 배웠어요! 이제 <b>선생님 수업</b>으로 가요. 남은 것은 다음 시간에 해요.', 88)
     : classRest ? say('cheer', '오늘 단원 점검을 끝냈어요. 지금은 <b>선생님 수업 시간</b>이에요. 남은 것은 다음 시간에 해요.', 88)
-    : hasHelp ? sayArt('hand', '<b>선생님과 같이</b> 볼 것이 있어요. 손을 들고 선생님께 알려요.<br>기다리는 동안 주황 단추로 다른 것을 해도 돼요.', 88)
+    : hasHelp ? sayArt('hand', `<b>선생님과 같이</b> 볼 것이 있어요. 손을 들고 선생님께 알려요.<br>${nowNo && lists[nowNo - 1].some((x) => x.href) ? '기다리는 동안 주황 단추로 다른 것을 해도 돼요.' : '선생님이 오실 때까지 이 화면을 켜 두어요.'}`, 88)   /* 주황 단추가 없을 때 '주황 단추로'라고 하지 않게 */
     : nowNo && lists[nowNo - 1][0] && lists[nowNo - 1][0].resume ? say('point', '하던 것이 있어요. <b>이어서 하기</b>를 눌러요.', 88)
     : nowNo ? say('point', `오늘은 <b>${CARDS[nowNo - 1].t}</b>부터 해요. 주황 단추를 눌러요.`, 88)
     : firstDay ? sayArt('wait', '반가워요! 선생님이 점검을 열면 <b>점검</b> 카드에 나와요.<br>기다리는 동안 아래 <b>이야기 문제 풀기</b>를 해 봐도 돼요.', 88)
@@ -287,7 +287,7 @@ export function prepView(root, unit) {
 // ── 판자 고치기 ──
 //  시범 → 함께 → 혼자 → 확인(fix.js) · 단계가 없는 칸도 '함께'가 있음(튼튼이가 일부를 해 줌) · 칭찬은 실제로 한 것만 · 틀리면 다음에 할 한 가지
 //  선생님이 단원을 연 수업 중이면 판자 하나 고친 뒤 '이제 선생님 수업으로'(혹평 13)
-export function fixView(root, c) {
+export function fixView(root, c, opt = {}) {
   const me = meOf(); if (!me) return go('#/join');
   if (!byId[c]) return go('#/me');
   const K = KS.load(me);
@@ -296,6 +296,7 @@ export function fixView(root, c) {
   const resume = fx0 && fx0.c === c && Date.now() - fx0.t < 3 * 3600e3 && ['together', 'solo', 'check'].includes(fx0.phase) ? fx0 : null;
   const F = newFix({ c, id: resume ? resume.id : rand(6) });
   if (resume) jumpTo(F, resume.phase);   /* 3시간 안에 다시 오면 나갔던 걸음부터 */
+  else if (opt.check) jumpTo(F, 'check');   /* 선생님과 같이 본 뒤 — 시범 · 같이 · 혼자 없이 확인 3문제부터 */
   const ct0 = classTask(K), inClass = !!(ct0 && Date.now() - ct0.t < 3 * 3600e3);   /* 수업 중(연 뒤 3시간)만 — 저녁 집에서는 보통 끝 화면(회귀 10-31) */
   KS.setNow(me, { mode: 'fix', c });
   const head = (pose, t) => say(pose, t, 64);

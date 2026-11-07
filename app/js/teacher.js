@@ -461,18 +461,18 @@ export function groupCardView(root, C, c, no = null) {
     ${intro('같은 칸을 배워야 하는 아이 2~4명과 10분 동안 할 활동이에요. 차례대로 진행하고, 선생님 말은 그대로 읽어도 돼요. 문제는 열 때마다 새 숫자로 바뀌어요.', 'no-print')}
     <div class="acts no-print"><button class="pri" onclick="print()">인쇄</button><a class="btn" href="#/t/c/${C}">반 화면으로</a></div>
     <dl class="lead"><dt>오늘 목표</dt><dd>${esc(LES(c).kid)}</dd>${hintOf(c) ? `<dt>핵심</dt><dd>${esc(hintOf(c))}</dd>` : ''}</dl>
-    ${no ? `<div class="kidw" id="kidw"><p class="small muted">${esc(nm(K, no))}의 답을 불러오는 중…</p></div>` : ''}
+    ${no ? `<div class="kidw" id="kidw" data-k="${esc(`${c}|${no}`)}"><p class="small muted">${esc(nm(K, no))}의 답을 불러오는 중…</p></div>` : ''}
     <ol class="plan">
     ${stepBox(1, '선생님이 먼저 풀어 보이기', 2, `${askP('선생님이 먼저 풀어 볼게. 머릿속 생각을 말로 할 테니 잘 들어 봐.')}${ex ? `<div class="qline">${staticHTML(ex.prompt, null)}<span class="ans">답 ${ansHTML(ex)}</span></div>${modelHTML(ex)}${steps.length ? `<ol class="steps">${steps.map((s) => stepHTML(s)).join('')}</ol>` : ''}` : ''}<p class="note">모형이 있으면 모형으로 먼저(낱개 10개 → 십 막대 1개로 바꾸기), 그다음 그림, 그다음 식으로 보여 줘요.</p>`)}
     ${stepBox(2, '함께 풀기', 3, `${askP('첫 단계는 뭐부터 할까? 말해 주면 선생님이 받아 적을게.')}${qGrid(together)}`)}
     ${stepBox(3, '혼자 풀기', 3, `${askP('이번엔 혼자 풀어 봐. 막히면 어느 단계에서 막혔는지 짚어 줘.')}${qGrid(solo)}<p class="note">틀리면 바로 그 단계로 돌아가 같이 고쳐요.</p>`)}
-    ${stepBox(4, '마무리', 2, `${askP('어느 단계가 가장 어려웠어? 한 가지씩 말해 볼까?')}<p class="note">그다음 아이마다 앱에서 <b>배우기</b>의 확인 3문제를 풀게 하면 기록이 남아요.</p>`)}
+    ${stepBox(4, '마무리', 2, `${askP('어느 단계가 가장 어려웠어? 한 가지씩 말해 볼까?')}<p class="note">그다음 아이마다 앱 처음 화면의 <b>선생님과 같이 봐요</b>를 펼쳐 <b>선생님과 본 뒤 — 확인 3문제</b>를 누르게 하면 기록이 남아요(같이 볼 것이 없는 아이는 그 칸의 <b>배우기</b>).</p>`)}
     </ol>
     ${ms.length ? `<h3>알아 두기 — 이 칸에서 자주 보이는 틀린 생각</h3>${cmp}<div class="misrow">${ms.slice(0, 3).map((m) => misCard(m)).join('')}</div>` : ''}
     <p class="small muted foot">이 묶음은 앱의 제안이에요. 경계에 있는 아이는 선생님이 보고 넣거나 빼 주세요.</p></div>`;
   if (no) (async () => {   /* 아이 하나로 열었을 때(다음 할 것 · 선생님을 기다려요) — 그 아이가 이 칸에서 틀린 최근 답 셋 */
     let raw = null; try { raw = await db.get(`k/${C}/${no}/${K.pins[no]}/r`); } catch (e) { raw = null; }
-    const box = root.querySelector('#kidw'); if (!box) return;
+    const box = root.querySelector('#kidw'); if (!box || box.dataset.k !== `${c}|${no}`) return;   /* 그새 다른 카드를 열었으면 쓰지 않음 */
     const KK = { recs: {}, rv: {}, fixed: {} }; for (const [id, v] of Object.entries(raw || {})) { const o = db.dec(v); if (o) KK.recs[id] = o; }
     const x = KS.reportOf(KK).L[c], ws = x ? wrongOf(x, 3) : [];
     box.innerHTML = ws.length ? `<h3>이 아이가 이 칸에서 쓴 답 <small>${esc(nm(K, no))} · 최근 ${ws.length}개</small></h3><ul class="kw">${ws.map((w) => `<li><span class="kw-q">${esc(w.q)}</span><span>낸 답 <b>${esc(w.mine)}</b></span><span class="muted">바른 답 ${esc(w.right)}</span>${w.fit.length ? `<span class="pill">짐작: ${esc(w.fit[0])}</span>` : ''}</li>`).join('')}</ul>${askP('이 문제를 어떻게 풀었는지 말해 볼래? 처음 한 일부터.')}`
