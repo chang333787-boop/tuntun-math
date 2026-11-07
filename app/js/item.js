@@ -15,6 +15,7 @@ import { icon, ACT } from './icons.js';
 export const CONF = [[2, '자신 있어요'], [1, '조금 헷갈려요'], [0, '잘 모르겠어요']];
 // 진행 — 카드 오른쪽 위 같은 자리 · dots = [지금까지 푼 수, 모두] · 12개까지 칸 막대 · 넘으면 긴 막대(준비 다리는 판 전체 · 많아야 18 · 24 · 36) · 새로 찬 만큼만 200ms
 export function progHTML([i, n]) {
+  if (!n) return `<span class="qprog" role="img" aria-label="${i + 1}번째 문제"><span class="cnt">문제 <b>${i + 1}</b></span></span>`;   /* 끝이 정해지지 않은 판(오늘 단원 점검 — 찾으면 일찍 끝남)은 분모 없이(11-07 '1 / 18인데 12에서 끝남') */
   const k = Math.min(i + 1, n), lab = `${n}문제 가운데 ${k}번째`, pc = (x) => Math.round((Math.max(0, Math.min(x, n)) / n) * 100);
   const show = n > 12 ? `<span class="pbar"><i style="width:${pc(i)}%;--p0:${pc(i - 1)}%"></i></span>` : `<span class="pseg">${Array.from({ length: n }, (_, j) => `<i class="${j < i ? 'on' : ''}${j === i - 1 ? ' nw' : ''}"></i>`).join('')}</span>`;
   return `<span class="qprog" role="img" aria-label="${lab}">${show}<span class="cnt"><b>${k}</b> / ${n}</span></span>`;
@@ -40,7 +41,7 @@ export function draw(root, { prompt, choices = null, tag = '', act = '', dots = 
       ${say && say.length ? `<div class="tsay">${say.map((x) => `<p>${esc(x)}</p>`).join('')}</div>` : ''}
       ${choices ? `<div class="choices">${choices.map((ch, k) => `<button type="button" data-k="${k}"${gone.has(k) ? ' class="gone" aria-label="튼튼이가 지운 보기"' : ''}><span class="math">${toHTML(ch, { static: true })}</span></button>`).join('')}</div>` : ''}
       <div class="qmsg" id="msg" role="alert"></div>
-      ${conf ? `<div class="conf"><p>${choices ? '보기를 골랐으면 — 얼마나 자신 있어요?' : '다 풀었으면 — 얼마나 자신 있어요?'}</p><div class="row">${CONF.map(([v, t]) => `<button type="button" class="cfs" data-cf="${v}">${t}</button>`).join('')}</div></div>` : ''}
+      ${conf ? `<div class="conf"><p>${choices ? '보기를 골랐으면 아래 하나를 눌러 내요 — 얼마나 자신 있어요?' : '다 풀었으면 아래 하나를 눌러 내요 — 얼마나 자신 있어요?'}</p><div class="row">${CONF.map(([v, t]) => `<button type="button" class="cfs" data-cf="${v}">${t}</button>`).join('')}</div></div>` : ''}
       <div class="qact">
         ${choices || conf ? '' : '<button class="pri big" id="ok">다 풀었어요</button>'}
         ${idk ? '<button id="idk">몰라서 넘어갈래요</button>' : ''}
@@ -84,6 +85,7 @@ export function draw(root, { prompt, choices = null, tag = '', act = '', dots = 
     if (b.disabled) return;
     if (!conf) return done({ vals: [Number(b.dataset.k)], raws: [b.dataset.k] });
     pick = Number(b.dataset.k); root.querySelectorAll('[data-k]').forEach((x) => x.classList.toggle('on', x === b)); msg.textContent = '';
+    const cr = root.querySelector('.conf'); if (cr) cr.classList.add('ready');   /* 보기를 고르면 '이제 이걸 눌러 내요'가 보이게 */
   }));
   const ik = root.querySelector('#idk');
   if (ik) ik.addEventListener('click', () => onAnswer({ idk: true }, 0, Math.round(performance.now() - t0)));
@@ -92,12 +94,18 @@ export function draw(root, { prompt, choices = null, tag = '', act = '', dots = 
 
 // 찍기 멈춤 — 2초 안에 틀린 답이 세 번 이어지면 잠깐 멈춤 · 찍기는 학습 저하와 가장 세게 묶인다 [A-R29]
 //  '넘어가기'는 솔직한 모름이라 세지 않음(찍은 오답만) · 준비 다리 · 다듬기에서 같이 씀(선생님 화면의 K.rush는 부르는 쪽이 셈)
+// 맞았을 때 잠깐 ✓ — 맞혀도 아무 말이 없으면 틀릴 때만 화면이 말을 거는 꼴(벌 받는 느낌 · '맞은 거야 넘어간 거야?' — 11-07 사용감 점검) · 0.6초 뒤 저절로 다음
+export function okFlash(root, then, ms = 650) {
+  root.querySelectorAll('.qcard input, .qcard .qact button, .qcard .choices button, .qcard .conf button').forEach((x) => (x.disabled = true));
+  const box = document.createElement('div'); box.className = 'fb ok flash'; box.textContent = '맞았어요!';
+  fbSlot(root).appendChild(box); setTimeout(then, ms);
+}
 export function rushGuard() {
   let n = 0;
   return (ms, a, ok) => { n = a.idk ? n : ms < 2000 && !ok ? n + 1 : 0; if (n >= 3) { n = 0; return true; } return false; };
 }
 export function rushPause(root, onGo) {
-  root.innerHTML = `<div class="card msg"><div class="say">${mascot('think', 104)}<div class="bub">잠깐! 조금 빨라요. 문제를 <b>끝까지 읽고</b> 풀어요.<br>모르면 넘어가도 괜찮아요 — 찍지만 않으면 돼요.</div></div><div class="acts"><button class="pri big" id="r" disabled>다시 해 볼게요</button></div></div>`;
+  root.innerHTML = `<div class="card msg"><div class="say">${mascot('think', 104)}<div class="bub">잠깐! 조금 빨라요. 문제를 <b>끝까지 읽고</b> 풀어요.<br>모르는 문제는 '몰라서 넘어갈래요'를 눌러도 괜찮아요.</div></div><div class="acts"><button class="pri big" id="r" disabled>다시 해 볼게요</button></div></div>`;
   const b = root.querySelector('#r'); setTimeout(() => { b.disabled = false; b.focus(); }, 3000);
   b.addEventListener('click', onGo);
 }
@@ -112,5 +120,5 @@ const ansPlain = (it) => (it.choices ? toText(it.choices[Number(it.sol[0])] || [
 export const ansHTML = (it) => (it.choices ? toHTML(it.choices[Number(it.sol[0])] || [], { static: true }) : esc((it.sol || []).join(', ')));
 export function ansSay(it, lead = '답은') {
   const t = ansPlain(it).trim(), word = /[가-힣]$/.test(t);
-  return `${lead} <b>${word ? `‘${ansHTML(it)}’` : ansHTML(it)}</b>${P(word ? '요' : t, '이에요', '예요')}.`;
+  return `${lead} <b>${word ? `‘${ansHTML(it)}’` : ansHTML(it)}</b>${P(t, '이에요', '예요')}.`;   /* 글 답도 받침대로('서른이에요' · '아흔이에요') */
 }

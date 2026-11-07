@@ -280,14 +280,14 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   ok(mx[c].tier === 3 && g.gained.join() === '오래', `3일 뒤 그대로 정확하면 오래(느려도) — 얻은 표 ${g.gained.join()}`);
   ok(G5.tiersOf(c).join() === '1,3' && G5.tiersOf('2-2-2:4').join() === '1,2,3', '표 칸: 정확 · 오래 / 정확 · 빠르게 · 오래');
 }
-// ㉒ 구보는 방금 준비 다리에서 맞힌 판자를 맨 앞에 내지 않음 — 마지막으로 푼 때에 모든 기록 시각
+// ㉒ 매일 연습은 오늘 이미 푼 칸을 내지 않음(11-07 · 예전엔 뒤로만) — 마지막으로 푼 때에 모든 기록 시각
 {
   const RN = await import('../js/run.js'), G6 = await import('../../paper/js/gen.js'), KS6 = await import('../js/kidstore.js');
   const now = Date.now(), day = 864e5;
   const mk = (c, made) => { const sh = G6.makeSheet({ kind: 'prep', words: false, id: 'R' + made, lessons: [{ c, n: 3 }], mixed: true }); sh.items = sh.items.filter((x) => x.ch !== 'END'); sh.chapters = sh.chapters.filter((x) => x.key !== 'END'); sh.made = made; return { s: KS6.pack(sh), r: { done: Object.fromEntries(sh.chapters.map((x) => [x.key, true])), it: Object.fromEntries(sh.items.map((x) => [x.k, { s: 'ok' }])) }, cf: {}, ms: {} }; };
   const K = { recs: { a: mk('2-2-2:4', now - 60000), b: mk('2-2-2:3', now - 5 * day) }, rv: {}, fixed: {}, mx: { '2-2-2:4': { tier: 1, runs: [] }, '2-2-2:3': { tier: 1, runs: [] } } };
   const plan = RN.runPlan(K, now);
-  ok(plan[0] === '2-2-2:3' && plan.indexOf('2-2-2:4') > 0, `방금 푼 판자는 뒤로 — ${plan.join(' · ')}`);
+  ok(plan[0] === '2-2-2:3' && !plan.includes('2-2-2:4'), `오늘 이미 푼 칸은 매일 연습에서 뺌(11-07) — ${plan.join(' · ')}`);
 }
 // ㉓ 판자 부르기 = 예시 문제 — 그림 없음 · 짧음 · 같은 칸은 늘 같은 예
 {

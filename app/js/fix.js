@@ -243,7 +243,16 @@ export function answerCheck(F, a, { conf = null, ms = 0 } = {}) {
   if (conf != null) F.conf[it.k] = conf;
   if (ms) F.ms[it.k] = ms;
   F.ci++;
-  if (F.ci >= F.check.items.length) { F.check.chapters.forEach((ch) => (F.R.done[ch.key] = true)); F.phase = 'done'; F.passed = Object.values(F.R.it).filter((x) => x.s === 'ok').length === F.check.items.length; }
+  if (F.ci >= F.check.items.length) {
+    const okN = Object.values(F.R.it).filter((x) => x.s === 'ok').length, n = F.check.items.length;
+    /* 확인 2/3이면 새 숫자 한 문제 더 — 맞히면 통과(한 문제 실수로 '선생님과 같이'가 너무 쉽게 붙던 것 · 11-07 사용감 점검 [A-R19]) */
+    if (!F.extra && n === FIX.check && okN === n - 1) {
+      const more = makeSheet({ kind: 'fix-check', words: false, id: `${F.id}-c2`, lessons: [{ c: F.c, n: 1 }], mixed: true });
+      const it2 = more.items.find((x) => x.ch !== 'END');
+      if (it2) { F.extra = 1; it2.k = Math.max(...F.check.items.map((x) => x.k)) + 1; it2.ch = F.check.items[0].ch; F.check.items.push(it2); const chp = F.check.chapters.find((c) => c.key === it2.ch); if (chp) chp.ks.push(it2.k); return { ok }; }
+    }
+    F.check.chapters.forEach((ch) => (F.R.done[ch.key] = true)); F.phase = 'done'; F.passed = okN === n || (!!F.extra && okN === n - 1);
+  }
   return { ok };
 }
 // 혼자 단계에서 다시 볼 때 쓰는 현재 문제 · 시범 문제

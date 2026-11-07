@@ -8,7 +8,7 @@ import { formOf, itemOf } from '../../paper/js/gen.js';
 import { toText } from '../../engine/tokens.js';
 import { mascot } from '../../paper/js/mascot.js';
 import * as KS from './kidstore.js';
-import { draw } from './item.js';
+import { draw, okFlash } from './item.js';
 import { ladder } from './hint.js';
 import { lsGet, lsSet, lsDel, esc } from './local.js';
 import { go, meOf } from './kid.js';
@@ -61,20 +61,20 @@ export function giveView(root, id) {
       if (a.idk) S.R.it[it.k] = { s: 'q' };
       else { try { ok = !!itemOf(it.c, it.p).check(a.vals, a.raws).ok; } catch (e) { ok = false; } S.R.it[it.k] = ok ? { s: 'ok' } : { s: 'x', a: a.raws }; }
       S.ms[it.k] = Math.max(0, Math.round(t || 0)); S.i++; keep();
-      if (ok) return one();
+      if (ok) return okFlash(root, one);
       /* 틀리면 넘어가지 않고 떠올리기 → 한 단계씩 → 처음 문제 다시(hint.js · 기록은 첫 답 그대로) */
-      ladder(root, { it: itemOf(it.c, it.p), c: it.c, raws: a.idk ? null : a.raws, tag: '선생님이 준 문제', act: 'give', dots: [S.i - 1, sh.items.length], budget, onEnd: (r) => { KS.ladLog(me, K, r.how); if (r.how === 'recall' || r.how === 'steps') KS.selfFix(me, K, r.how); one(); } });
+      ladder(root, { it: itemOf(it.c, it.p), c: it.c, raws: a.idk ? null : a.raws, tag: '선생님이 준 문제', act: 'give', dots: [S.i - 1, sh.items.length], budget, onEnd: (r) => { KS.ladLog(me, K, r.how); if (r.how === 'recall' || r.how === 'steps') { KS.selfFix(me, K, r.how); S.fixd = (S.fixd || 0) + 1; keep(); } one(); } });
     } });
   };
   const fin = () => {
     sh.chapters.forEach((ch) => (S.R.done[ch.key] = true));
     KS.addSheet(me, K, sh, S.R, {}, S.ms);
-    lsDel(SK); KS.setNow(me, { mode: 'home' });
+    const fixd = S.fixd || 0; lsDel(SK); KS.setNow(me, { mode: 'home' });
     const ok = sh.items.filter((x) => S.R.it[x.k] && S.R.it[x.k].s === 'ok').length, n = sh.items.length;
     /* 많이 틀렸으면 가장 많이 틀린 꼴을 튼튼이와 차근차근(배우기 — 시범 → 같이 → 혼자) */
     const miss = {}; sh.items.forEach((x) => { if (!(S.R.it[x.k] && S.R.it[x.k].s === 'ok')) miss[x.c] = (miss[x.c] || 0) + 1; });
     const worst = Object.entries(miss).sort((a, b) => b[1] - a[1])[0], learn = worst && n - ok >= 3 ? worst[0] : null;
-    head(`${say(ok === n ? 'cheer' : 'think', `선생님이 준 문제를 다 풀었어요. <b>${n}문제 중 ${ok}개</b> 맞혔어요.${learn ? '<br>틀린 문제가 여럿이에요. 튼튼이와 차근차근 배워 봐요.' : ''}`, 104)}
+    head(`${say(ok === n ? 'cheer' : 'think', `선생님이 준 문제를 다 풀었어요. 처음에 <b>${n}문제 중 ${ok}개</b>를 혼자 맞혔어요.${fixd ? ` 틀린 것 가운데 <b>${fixd}개</b>는 도움을 받아 고쳤어요.` : ''}${learn ? '<br>틀린 문제가 여럿이에요. 튼튼이와 차근차근 배워 봐요.' : ''}`, 104)}
       <div class="acts">${learn ? `<a class="btn pri big" href="#/fix/${encodeURIComponent(learn)}">튼튼이와 배우기</a><a class="btn big" href="#/me">처음 화면으로</a>` : '<a class="btn pri big" href="#/me">처음 화면으로</a>'}</div>`);
   };
   if (S.i > 0) return one();

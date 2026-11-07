@@ -17,7 +17,7 @@ export function stopSpeak() { if (hasSpeech()) speechSynthesis.cancel(); }
 // 단추 하나를 붙임 · 다시 누르면 멈춤 · 반환 = 단추(없으면 null)
 export function speakButton(box, onNoVoice = null) {
   if (!hasSpeech()) return null;
-  const b = document.createElement('button'); b.type = 'button'; b.className = 'sb-say'; b.innerHTML = SAY; b.setAttribute('aria-label', '이야기를 소리로 읽어 주기');
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'sb-say'; b.innerHTML = SAY; b.setAttribute('aria-label', '소리로 읽어 주기');
   b.addEventListener('click', () => {
     if (speechSynthesis.speaking) { stopSpeak(); b.innerHTML = SAY; return; }
     const v = koVoice();

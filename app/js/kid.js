@@ -6,7 +6,7 @@ import { LES, itemOf } from '../../paper/js/gen.js';
 import { mascot } from '../../paper/js/mascot.js';
 import { blankCount } from '../../engine/tokens.js';
 import { prepPlan, newPrep, current, answer, summary, asked, LEN, PREP } from './prep.js';
-import { newFix, showNext, showLen, showTalk, blankTalk, factTalk, togetherStep, answerItem, afterReStep, checkItem, answerCheck, compareOf, stepsOf, exampleOf, mergeTip } from './fix.js';
+import { FIX, newFix, showNext, showLen, showTalk, blankTalk, factTalk, togetherStep, answerItem, afterReStep, checkItem, answerCheck, compareOf, stepsOf, exampleOf, mergeTip } from './fix.js';
 import * as KS from './kidstore.js';
 import { draw, stepHTML, staticHTML, ansSay, rushGuard, rushPause, fbSlot } from './item.js';
 import { P, RO } from '../../engine/concepts/kit.js';
@@ -98,9 +98,9 @@ export function todoOf(K, rep) {
     .forEach((c) => out.push({ kind: 'fix', c, pri: false, title: `다시 연습 — ${plank(c)}`, sub: '거의 되는데 가끔 틀려요. 한 번 더 배우면 단단해져요', href: `#/fix/${c}` }));
   const due = Object.entries(K.rv || {}).filter(([, x]) => x.n < KS.REVIEW_DAYS.length && x.due <= now).map(([c]) => c);
   const ran = (K.jog || []).includes(td), rp = runPlan(K);
-  if (rp.length && (!ran || due.length)) out.push({ kind: 'run', pri: !out.length, title: '매일 연습', sub: `섞어서 ${rp.length * 2}문제 · 3~5분${due.length ? ' · 다시 볼 문제 포함' : ''}`, href: '#/run' });
+  if (rp.length && (!ran || due.length)) out.push({ kind: 'run', pri: !out.length, title: `섞어서 ${rp.length * 2}문제`, sub: `3~5분${due.length ? ' · 다시 볼 문제 포함' : ''}`, href: '#/run' });
   // 이어서 찾기 — 지난번에 18문제를 다 써서 멈췄거나, 지난 시간에 '선생님과 같이'로 멈춘 판(지난 기록 14일과 함께 이어 감)
-  if (lp && unitById[lp.unit] && (lp.why === 'budget' || (lp.why === 'teacher' && today(lp.t) !== td)) && !out.some((x) => x.kind === 'prep')) out.push({ kind: 'prep', unit: lp.unit, pri: !out.length, title: '오늘 단원 점검 이어서', sub: `${unitLabel(lp.unit)} — 지난번에 멈춘 곳부터 · 약 ${mins((tasks.find((x) => x.unit === lp.unit) || {}).len)}분`, href: `#/prep/${lp.unit}` });
+  if (lp && unitById[lp.unit] && (lp.why === 'budget' || lp.why === 'teacher') && today(lp.t) !== td && !out.some((x) => x.kind === 'prep'))   /* '이어서'는 날이 바뀐 뒤에만(방금 '다음 시간에'라고 해 놓고 바로 '지금 시작'이던 것 · 11-07 사용감 점검) */ out.push({ kind: 'prep', unit: lp.unit, pri: !out.length, title: '오늘 단원 점검 이어서', sub: `${unitLabel(lp.unit)} — 지난번에 멈춘 곳부터 · 약 ${mins((tasks.find((x) => x.unit === lp.unit) || {}).len)}분`, href: `#/prep/${lp.unit}` });
   return out;
 }
 // ── 처음 화면(홈) — 카드 셋: ① 점검 · ② 연습할 것 · ③ 매일 연습(docs/what.md · 교사 11-07 '로그인하면 카드 셋으로 뭘 할지 명확히') ──
@@ -123,7 +123,7 @@ function cardHTML(c, list, now, extra = '') {
     <p class="c3-what">${c.what}</p>
     ${list.length ? `<ul class="c3-list">${items}</ul>${list.length > 3 ? `<p class="small muted">그 밖에 ${list.length - 3}개 더 있어요</p>` : ''}` : `<p class="c3-none">${c.none}</p>`}
     ${extra}
-    ${go1 && now ? `<a class="btn big c3-go pri" href="${go1.href}">지금 시작${icon('arrow', 22)}</a>` : ''}</section>`;   /* 단추는 지금 할 카드에만(다른 카드도 단추가 있으면 '2번부터'와 1번 단추가 다툼 · 11-07 처음 쓰는 아이 점검) — 다른 카드는 줄을 눌러 시작 */
+    ${go1 && now ? `<a class="btn big c3-go pri" href="${go1.href}">${first && first.kind === 'help' ? '기다리는 동안 다른 것 하기' : '지금 시작'}${icon('arrow', 22)}</a>` : ''}</section>`;   /* 단추는 지금 할 카드에만(다른 카드도 단추가 있으면 '2번부터'와 1번 단추가 다툼 · 11-07 처음 쓰는 아이 점검) — 다른 카드는 줄을 눌러 시작 */
 }
 export async function homeView(root) {
   const me = meOf(); if (!me) return go('#/join');
@@ -138,18 +138,24 @@ export async function homeView(root) {
   const ct = classTask(K);
   // 카드 셋에 나눠 담기 — ① 점검(오늘 단원 점검 · 선생님 점검지 · 이번 주 점검) ② 연습할 것(선생님과 같이 · 선생님이 준 문제 · 배우기) ③ 매일 연습
   const chk = [...todo.filter((x) => x.kind === 'prep'), ...checkTasks(K).map((x) => ({ ...x, kind: 'check' }))];
-  if (wp.length >= 4) chk.push({ kind: 'week', title: '이번 주 점검', sub: `섞은 문제 ${wp.length}개 · 3~5분 · 주마다 한 번`, href: '#/week' });
+  if (wp.length >= 4 && Object.keys(K.recs || {}).length) chk.push({ kind: 'week', title: '이번 주 점검', sub: `섞은 문제 ${wp.length}개 · 3~5분 · 주마다 한 번`, href: '#/week' });
   const prac = [...todo.filter((x) => x.kind === 'help'), ...giveTasks(K), ...todo.filter((x) => x.kind === 'fix' || x.kind === 'retry')];
   const daily = todo.filter((x) => x.kind === 'run');
   const ran = (K.jog || []).includes(today());
   const doneOne = ct && Date.now() - ct.t < 3 * 3600e3 && Object.values(K.fixed || {}).some((t) => t >= ct.t) && !chk.some((x) => x.kind === 'prep') && !prac.some((x) => x.kind === 'help');   // 이번 수업에 하나 배움 → 이제 선생님 수업으로(혹평 13) · 점검 · 선생님과 같이가 남았거나 수업 뒤(3시간)면 그대로(회귀 10-31)
   // 지금 할 카드 하나 — 오늘 수업 점검 → 선생님과 같이 → 선생님이 준 문제 → 점검지 → 배우기 → 이번 주 점검 → 매일 연습
   const classPrep = chk.some((x) => x.kind === 'prep' && ct && x.unit === ct.unit);
-  const nowNo = doneOne ? 0 : classPrep ? 1 : prac.some((x) => x.kind === 'help' || x.kind === 'give') ? 2 : chk.some((x) => x.kind === 'check') ? 1 : prac.length ? 2 : chk.length ? 1 : daily.length ? 3 : 0;
+  /* 수업 중에 오늘 단원 점검을 끝냈고(찾은 것 없이) 선생님이 준 것 · 같이 볼 것이 없으면 = 이제 선생님 수업 시간(끝 화면 말과 맞춤 · 11-07) */
+  const lpN = K.lastPrep, classRest = !doneOne && !!(ct && Date.now() - ct.t < 3 * 3600e3 && lpN && lpN.unit === ct.unit && lpN.t >= ct.t && lpN.why !== 'found' && lpN.why !== 'teacher') && !prac.some((x) => x.kind === 'help' || x.kind === 'give');
+  const firstDay = !Object.keys(K.recs || {}).length, hasHelp = prac.some((x) => x.kind === 'help');
+  const nowNo = doneOne || classRest ? 0 : classPrep ? 1 : prac.some((x) => x.kind === 'help' || x.kind === 'give') ? 2 : chk.some((x) => x.kind === 'check') ? 1 : prac.length ? 2 : chk.length ? 1 : daily.length ? 3 : 0;
   const lists = [chk, prac, daily];
   const head = doneOne ? say('cheer', '하나 배웠어요! 이제 <b>선생님 수업</b>으로 가요. 남은 것은 다음 시간에 해요.', 88)
+    : classRest ? say('cheer', '오늘 단원 점검을 끝냈어요. 지금은 <b>선생님 수업 시간</b>이에요. 남은 것은 다음 시간에 해요.', 88)
+    : hasHelp ? say('think', '<b>선생님과 같이</b> 볼 것이 있어요. 손을 들고 선생님께 알려요.<br>기다리는 동안 주황 단추로 다른 것을 해도 돼요.', 88)
     : nowNo ? say('point', `오늘은 <b>${CARDS[nowNo - 1].t}</b>부터 해요. 주황 단추를 눌러요.`, 88)
-    : say('cheer', `오늘 할 것을 다 했어요!${ran ? '' : ' 매일 연습할 문제가 생기면 3번에 나와요.'}`, 88);
+    : firstDay ? say('hi', '반가워요! 선생님이 점검을 열면 <b>점검</b> 카드에 나와요.<br>기다리는 동안 아래 <b>이야기 문제 풀기</b>를 해 봐도 돼요.', 88)
+    : say('cheer', `오늘 할 것을 다 했어요! 더 하고 싶으면 <a class="btn mini" href="#/story">이야기 문제에 도전</a>해 봐요.`, 88);
   // 내 기록 — 나하고만 견줌 · 사실만(점검 맞힌 수 · 연습한 날 · 배워서 고친 것)
   const ws = lineOf(K.recs, weekTerm(K)), wl = ws[ws.length - 1], wb = ws[ws.length - 2];
   const fixedN = Object.keys(K.fixed || {}).length, cal = KS.calOf(K);
@@ -159,13 +165,13 @@ export async function homeView(root) {
   const tok = rand(4); root.dataset.home = tok;
   root.innerHTML = `<div class="home3">
     <div class="home3-top">${head}${ok ? '' : '<p class="warn small">서버에 닿지 않아 이 기기에 저장된 것만 보여요. 푼 것은 이 기기에 모았다가 나중에 보내요.</p>'}</div>
-    <div class="cards3">${CARDS.map((c, i) => cardHTML(c, lists[i], nowNo === c.no, c.k === 'daily' ? `<p class="c3-days">이번 주 연습한 날 ${weekHTML(K)}</p>${!lists[i].length && ran ? '<p class="c3-done">오늘 매일 연습을 했어요</p>' : ''}` : '')).join('')}</div>
+    <div class="cards3">${CARDS.map((c, i) => cardHTML(c.k === 'daily' && ran && !lists[i].length ? { ...c, none: '오늘 매일 연습을 했어요. 내일 또 해요.' } : c, lists[i], nowNo === c.no, c.k === 'daily' ? `<p class="c3-days">이번 주 연습한 날 ${weekHTML(K)}</p>` : '')).join('')}</div>
     <section class="mine" aria-label="내 기록"><h2 class="sec">내 기록 <small>나하고만 비교해요</small></h2>
       <div class="mine-row">
         <div class="mine-c"><span class="k">이번 주 점검 맞힌 수</span><span class="v">${weekLine}</span></div>
         <div class="mine-c"><span class="k">튼튼이와 배워서 고친 것</span><span class="v">${fixedN}개</span>${fixedN ? `<details class="more"><summary>보기</summary><p class="small">${names(Object.keys(K.fixed))}</p></details>` : ''}</div>
         <div class="mine-c"><span class="k">이번 주 틀린 뒤 스스로 고친 문제</span><span class="v">${selfWk}개${selfLast != null ? ` <small>(지난주 ${selfLast}개)</small>` : ''}</span></div>
-        <div class="mine-c"><span class="k">내 자신감이 맞은 정도</span><span class="v">${cal.n ? `${Math.round(cal.match * 100)}% <small>(${cal.n}문제)</small>` : '<small>아직 없어요</small>'}</span></div>
+        <div class="mine-c"><span class="k">내 자신감이 맞은 문제</span><span class="v">${cal.n ? `${Math.round(cal.match * cal.n)}문제 <small>(${cal.n}문제 중)</small>` : '<small>아직 없어요</small>'}</span></div>
       </div>
       <p class="mine-links small"><a href="#/story">이야기 문제 풀기</a><a href="#/back">막힌 문제 직접 넣어 보기</a></p>
       <p class="out-row small"><button class="link" id="out">다른 사람이 쓸게요(내 번호에서 나가기)</button></p></section>
@@ -210,7 +216,7 @@ export function prepView(root, unit) {
     if (!it) return finished();
     const sh = S.sheets.find((x) => x.id === S.at.sheet);
     if (Date.now() - lastNow > 5000) { lastNow = Date.now(); KS.setNow(me, { mode: 'prep', unit, n: asked(S) }); }
-    draw(root, { prompt: it.snap.prompt, choices: it.snap.choices, tag: '오늘 단원 점검', act: 'chk', dots: [asked(S), S.budget || PREP.budget], onAnswer: (a, cf, ms) => {
+    draw(root, { prompt: it.snap.prompt, choices: it.snap.choices, tag: '오늘 단원 점검', act: 'chk', dots: [asked(S), 0], onAnswer: (a, cf, ms) => {
       const r = answer(S, a, { conf: cf, ms }); store();
       if (rush(ms, a, r && r.ok) && current(S)) { K.rush = (K.rush || 0) + 1; KS.save(me, K); return rushPause(root, step); }
       step();
@@ -230,6 +236,8 @@ export function prepView(root, unit) {
     lsDel(SK);
     const ct = classTask(K), inClass = !!(ct && ct.unit === unit && Date.now() - ct.t < 3 * 3600e3);
     const cal = sum.cal, sw = cal.sureWrong.length, swFix = cal.sureWrong.some((x) => sum.fix.includes(x.c));
+    const okAll = S.sheets.reduce((n, sh) => n + Object.values(S.res[sh.id].me.it).filter((r) => r && r.s === 'ok').length, 0), askedN = asked(S);
+    const okLine = askedN ? `<p class="okline">${askedN}문제 중 <b>${okAll}개</b> 맞혔어요.</p>` : '';   /* 끝 화면에 결과 한 줄(사실만 · 11-07) */
     const calLine = cal.sure ? `<p>'자신 있어요'라고 한 문제 ${cal.sure}개 가운데 ${sw ? `<b>${sw}개</b>는 틀렸어요 — ${swFix ? '그 문제를 배울 때 꼭 다시 봐요.' : "다음엔 '자신 있어요'를 고르기 전에 한 번 더 살펴봐요."}` : '모두 맞았어요. 내 짐작을 믿어도 돼요.'}</p>` : '';
     const fix = sum.fix.slice().sort(byGrade), stuck = Object.values(sum.rep.L).filter((x) => x.st === 'stuck' && S.plan.below.includes(x.c)).map((x) => x.c).sort(byGrade);
     let head, acts;
@@ -249,7 +257,7 @@ export function prepView(root, unit) {
       head = say('cheer', `<b>${esc(unitLabel(unit))}</b>에 꼭 필요한 것을 다 알고 있어요! ${inClass ? '이제 선생님 수업으로 가요.' : ''}`);
       acts = '<div class="acts"><a class="btn big" href="#/me">처음 화면으로</a></div>';
     }
-    root.innerHTML = `<div class="card msg act-prep"><p class="eyebrow">${tile('chk', 22)}오늘 단원 점검</p>${head}${S.why === 'teacher' ? '' : calLine}${acts}</div>`;
+    root.innerHTML = `<div class="card msg act-prep"><p class="eyebrow">${tile('chk', 22)}오늘 단원 점검</p>${head}${S.why === 'teacher' ? '' : okLine + calLine}${acts}</div>`;
   };
   if (!asked(S) && !S.done) {
     root.innerHTML = `<div class="card msg act-prep"><p class="eyebrow">${tile('chk', 22)}오늘 단원 점검</p>${say('point', `<b>${esc(unitLabel(unit))}</b> 배우기 전에, 꼭 필요한 앞 문제를 알고 있는지 볼게요(${S.prior ? '지난번에 멈춘 곳부터 · ' : ''}약 ${mins(S.budget)}분).<br>답을 쓰고, <b>얼마나 자신 있는지</b> 단추를 눌러 내요. 모르면 넘어가도 돼요.`, 104)}<div class="acts"><button class="pri big" id="s">시작</button></div></div>`;
@@ -381,7 +389,7 @@ export function fixView(root, c) {
   function check() {
     const it = checkItem(F);
     if (!it) return done();
-    draw(slot(), { lead: head('point', '마지막! 새 숫자 3문제를 <b>도움 없이</b> 풀어요. 답을 쓰고 자신 있는 만큼 단추를 눌러요.'), prompt: it.snap.prompt, choices: it.snap.choices, tag: '확인', act: 'fix', dots: [F.ci, F.check.items.length], onAnswer: (a, cf, ms) => { answerCheck(F, a, { conf: cf, ms }); route(); } });
+    draw(slot(), { lead: head('point', F.extra && F.ci >= FIX.check ? '거의 다 됐어요! <b>한 문제만 더</b> — 새 숫자예요. 맞히면 통과해요.' : '마지막! 새 숫자 3문제를 <b>도움 없이</b> 풀어요. 답을 쓰고 자신 있는 만큼 단추를 눌러요.'), prompt: it.snap.prompt, choices: it.snap.choices, tag: '확인', act: 'fix', dots: [F.ci, F.check.items.length], onAnswer: (a, cf, ms) => { answerCheck(F, a, { conf: cf, ms }); route(); } });
   }
   function done() {
     const now = Date.now();
@@ -399,7 +407,7 @@ export function fixView(root, c) {
     }
     const was = before && before.tot ? ` 처음엔 ${before.tot}문제 중 ${before.ok}개 맞혔어요.` : '';
     const retry = F.passed && K.back && K.back.root === c && !K.back.solved;
-    const top = F.passed ? say('cheer', `<b>${esc(ex)}</b> — 확인 ${F.check.items.length}문제를 모두 맞혔어요.${was}<br>${inClass ? '이제 <b>선생님 수업</b>으로 가요. 남은 것은 다음 시간에 해요.' : '며칠 뒤 매일 연습에 한 번 더 나와요.'}`, 104)
+    const top = F.passed ? say('cheer', `<b>${esc(ex)}</b> — ${F.extra ? `확인 ${F.check.items.length}문제 중 ${okN}개를 맞혀 통과했어요.` : `확인 ${F.check.items.length}문제를 모두 맞혔어요.`}${was}<br>${inClass ? '이제 <b>선생님 수업</b>으로 가요. 남은 것은 다음 시간에 해요.' : '며칠 뒤 매일 연습에 한 번 더 나와요.'}`, 104)
       : say('think', `확인 ${F.check.items.length}문제 중 ${okN}개 맞혔어요. 선생님과 같이 한 번 더 봐요.${inClass ? '<br>지금은 선생님 수업으로 가요.' : ''}`, 104);
     endCard(top, `<div class="acts">${retry ? `<a class="btn pri big" href="#/retry">처음 문제 다시 풀기 — ${esc(K.back.text)}</a>` : `<a class="btn ${inClass ? '' : 'pri '}big" href="#/me">처음 화면으로</a>`}</div>`);
   }
@@ -426,7 +434,7 @@ export function fixView(root, c) {
         const ok = X.reasons[Number(btn.dataset.i)] === X.right;
         const st = stepsOf({ c: X.it.c, p: X.it.p });
         if (T) KS.learnTool(me, K, T.tool);
-        shell(head(ok ? 'cheer' : 'point', `${ok ? '맞아요! ' : '아쉬워요. '}틀린 친구는 <b>${esc(X.right)}</b>. 그래서 ${esc(w2)}${P(w2, '이', '가')} 나왔어요.${T ? `<br>${icon('search', 18)} <b>${esc(T.name)}</b> 도구를 내 도구함에 넣었어요. 내 답도 이렇게 확인해요.` : ''}`), st.length ? `<p class="small muted">바르게 풀면 이렇게 이어져요</p><ol class="steps">${st.map((x) => stepHTML(x)).join('')}</ol>` : cmpStatic(), nextAct('이제 혼자 풀어요', 'n2'));
+        shell(head(ok ? 'cheer' : 'point', `${ok ? '맞아요! ' : '아쉬워요. '}틀린 친구는 <b>${esc(X.right)}</b>. 그래서 ${esc(w2)}${P(w2, '이', '가')} 나왔어요.${T ? `<br>${icon('search', 18)} <b>${esc(T.name)}</b> — 내 답도 이렇게 확인해 봐요.` : ''}`), st.length ? `<p class="small muted">바르게 풀면 이렇게 이어져요</p><ol class="steps">${st.map((x) => stepHTML(x)).join('')}</ol>` : cmpStatic(), nextAct('이제 혼자 풀어요', 'n2'));
         root.querySelector('#n2').addEventListener('click', route);
       }));
     }

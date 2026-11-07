@@ -8,7 +8,7 @@ import { byId, gradeIdx } from '../../engine/lessons/index.js';
 import { makeSheet, itemOf, LES } from '../../paper/js/gen.js';
 import { mascot } from '../../paper/js/mascot.js';
 import * as KS from './kidstore.js';
-import { draw } from './item.js';
+import { draw, okFlash } from './item.js';
 import { ladder } from './hint.js';
 import { target, wantOf, isFact, lastReady } from './stage.js';
 import { esc, rand } from './local.js';
@@ -34,7 +34,8 @@ const lastOf = (K, c, seen = {}) => Math.max((K.rv && K.rv[c] && K.rv[c].t) || 0
 export function runPlan(K, now = Date.now()) {
   const due = Object.entries(K.rv || {}).filter(([c, x]) => byId[c] && x.n < KS.REVIEW_DAYS.length && x.due <= now).map(([c]) => c);
   const pool = new Set([...Object.keys(K.mx || {}).filter((c) => (K.mx[c].tier || 0) >= 1), ...Object.keys(K.fixed || {})].filter((c) => byId[c] && !due.includes(c)));
-  const seen = seenAt(K), last = (c) => lastOf(K, c, seen);
+  const seen = seenAt(K), last = (c) => lastOf(K, c, seen), d0 = new Date(now); d0.setHours(0, 0, 0, 0);
+  for (const c of [...pool]) if ((seen[c] || 0) >= d0.getTime()) pool.delete(c);   /* 오늘 이미 푼 칸은 빼기(방금 점검에서 맞힌 꼴을 또 — 잘하는 아이가 쉬운 것을 세 번 풀던 것 · 11-07 [D-6][D-8]) · 다시 볼 날이 된 칸은 그대로 */
   const stale = [...pool].filter((c) => now - last(c) >= 2 * DAY).sort((a, b) => last(a) - last(b));
   const fresh = [...pool].filter((c) => !stale.includes(c)).sort((a, b) => last(a) - last(b));
   return [...due, ...stale, ...fresh].slice(0, 5);
@@ -59,6 +60,7 @@ export function runView(root) {
   sh.items = sh.items.filter((it) => it.ch !== 'END'); sh.chapters = sh.chapters.filter((ch) => ch.key !== 'END');
   for (let i = sh.items.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [sh.items[i], sh.items[j]] = [sh.items[j], sh.items[i]]; }   // 섞어서 [D-10]
   const R = { done: {}, it: {} }, ms = {};
+  let fixd = 0;
   let i = 0;
   KS.setNow(me, { mode: 'run' });
   const budget = { left: 2 };   /* 한 판에 '한 단계씩'은 두 번까지(매일 연습은 짧게 · 조사 R) */
@@ -70,9 +72,9 @@ export function runView(root) {
       if (a.idk) R.it[it.k] = { s: 'q' };
       else { try { ok = !!itemOf(it.c, it.p).check(a.vals, a.raws).ok; } catch (e) { ok = false; } R.it[it.k] = ok ? { s: 'ok' } : { s: 'x', a: a.raws }; }
       ms[it.k] = t; i++;
-      if (ok) return one();
+      if (ok) return okFlash(root, one);
       /* 틀리면 넘어가지 않고 떠올리기 → 한 단계씩 → 처음 문제 다시(hint.js · 판정 · 내일 다시는 첫 답으로) */
-      ladder(root, { it: itemOf(it.c, it.p), c: it.c, raws: a.idk ? null : a.raws, tag: '매일 연습', act: 'daily', dots: [i - 1, sh.items.length], budget, onEnd: (r) => { KS.ladLog(me, K, r.how); if (r.how === 'recall' || r.how === 'steps') KS.selfFix(me, K, r.how); one(); } });
+      ladder(root, { it: itemOf(it.c, it.p), c: it.c, raws: a.idk ? null : a.raws, tag: '매일 연습', act: 'daily', dots: [i - 1, sh.items.length], budget, again: '이 꼴은 내일 매일 연습에 다시 나와요.', onEnd: (r) => { KS.ladLog(me, K, r.how); if (r.how === 'recall' || r.how === 'steps') { KS.selfFix(me, K, r.how); fixd++; } one(); } });
     } });
   };
   const fin = () => {
@@ -96,7 +98,7 @@ export function runView(root) {
     const d = today(now); K.jog = [...new Set([...(K.jog || []), d])].slice(-60);
     KS.save(me, K); KS.setReview(me, K); KS.pushMastery(me, K); KS.pushSummary(me, K); KS.setNow(me, { mode: 'home' });
     const okN = Object.values(R.it).filter((x) => x.s === 'ok').length;
-    root.innerHTML = `<div class="card msg act-run"><p class="eyebrow">${tile('daily', 22)}매일 연습</p>${say(again.length ? 'think' : 'cheer', `오늘 매일 연습 끝! ${sh.items.length}문제 중 <b>${okN}개</b> 맞혔어요.${again.length ? `<br>틀린 문제와 같은 꼴은 내일 한 번 더 나와요.` : ''}`, 104)}
+    root.innerHTML = `<div class="card msg act-run"><p class="eyebrow">${tile('daily', 22)}매일 연습</p>${say(again.length ? 'think' : 'cheer', `오늘 매일 연습 끝! 처음에 ${sh.items.length}문제 중 <b>${okN}개</b>를 혼자 맞혔어요.${fixd ? ` 틀린 것 가운데 <b>${fixd}개</b>는 도움을 받아 고쳤어요.` : ''}${again.length ? `<br>틀린 문제와 같은 꼴은 내일 한 번 더 나와요.` : ''}`, 104)}
       <p>이번 주 연습한 날 ${weekHTML(K, now)}</p>
       <div class="acts"><a class="btn pri big" href="#/me">처음 화면으로</a></div></div>`;
   };

@@ -15,6 +15,7 @@ import { stepsOf } from './fix.js';
 import { colOf, colView, tenFrameHTML, modelHTML } from './model.js';
 import { esc } from './local.js';
 import { mascot } from '../../paper/js/mascot.js';
+import { speakButton } from './speak.js';
 
 const RUSH = 2000;
 const sameAns = (it, a) => { try { return !!it.check(a.vals, a.raws).ok; } catch (e) { return false; } };
@@ -29,7 +30,7 @@ export function cueFor(c, p) {
 //  names = 숫자 없는 단계 이름(engine/hints plan) · 없으면 단계 글에서 숫자를 ○로 가림(아직 안 한 단계의 숫자 = 앞 단계 답이 샘)
 export const planNames = (c, p, steps) => planOf(c, p, steps.length);
 export function planHTML(steps, names, cur, shown = new Set()) {
-  const nm = (i) => (i === cur ? steps[i].why : names ? names[i] : i < cur ? steps[i].why : String(steps[i].why).replace(/\d+(?:\.\d+)?/g, '○'));   /* 지금 단계는 그 문제 숫자 그대로 */
+  const nm = (i) => (names ? names[i] : i <= cur ? steps[i].why : String(steps[i].why).replace(/\d+(?:\.\d+)?/g, '○'));   /* 이름이 있으면 늘 짧은 이름(지금 단계 글은 말풍선에 — 같은 글 두 번 X · 11-07) */
   const li = (cls, mark, t) => `<li class="${cls}"><i>${mark}</i><span>${esc(t)}</span></li>`;
   return `<div class="plan"><p class="plan-h">풀이 순서</p><ol>${steps.map((s, i) => li(i < cur ? (shown.has(i) ? 'done shown' : 'done') : i === cur ? 'now' : 'yet', i < cur ? '✓' : String(i + 1), nm(i))).join('')}${li(cur >= steps.length ? 'now' : 'yet', String(steps.length + 1), '처음 문제의 답 쓰기')}</ol></div>`;
 }
@@ -43,8 +44,9 @@ export function stepCtx(it, steps, upto, { shown = new Set(), C = null, label = 
 export const colFor = (it, steps) => { try { return colOf(it, steps); } catch (e) { return null; } };
 
 /* root = 문제 카드 자리 · it = 엔진 문항(makeItem · itemOf) · raws = 아이가 쓴 답(넘어감이면 null)
-   budget = { left } 한 판에 '한 단계씩'을 열 수 있는 수(없으면 끝없이) · onEnd({ how: 'recall' | 'pick' | 'steps' | 'shown' }) */
-export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', dots = null, budget = null, onEnd }) {
+   budget = { left } 한 판에 '한 단계씩'을 열 수 있는 수(없으면 끝없이) · again = 답을 보여 줄 때 덧붙일 사실 한 줄(매일 연습 '내일 다시 나와요' — 지킬 수 있는 말만)
+   onEnd({ how: 'recall' | 'pick' | 'steps' | 'shown' }) */
+export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', dots = null, budget = null, again: againLine = '', onEnd }) {
   const steps = (() => { try { return stepsOf({ c, p: it.p }) || []; } catch (e) { return []; } })();
   const cue = cueFor(c, it.p);
   const C = colFor(it, steps);   /* 두 자리 넘는 덧셈 · 뺄셈 = 세로셈에 채운 자리까지 표시(model.js — 배우기 시범과 같은 그림) */
@@ -60,16 +62,17 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
     return i >= last || tries ? tf : '';
   };
   const lock = () => root.querySelectorAll('.qcard input, .qcard .qact button, .qcard .choices button').forEach((x) => (x.disabled = true));
-  const finish = (ok, how, msg) => {
-    const box = document.createElement('div'); box.className = `fb ${ok ? 'ok' : 'no'}`;
+  const finish = (ok, how, msg, calm = false) => {
+    const box = document.createElement('div'); box.className = `fb ${ok ? 'ok' : calm ? 'see' : 'no'}`;   /* calm = 도움을 다 쓴 뒤 '같이 봐요'(빨간 ✕ X) */
     lock(); box.innerHTML = msg;
     const b = document.createElement('button'); b.type = 'button'; b.className = 'pri'; b.textContent = '다음'; box.appendChild(b);
     fbSlot(root).appendChild(box); b.focus();
     b.addEventListener('click', () => onEnd && onEnd({ how }));
   };
+  /* 같이 봐요 — 답 + 풀이 순서(이름이 있으면)를 평서문으로 · 물음 X · 지킬 수 있는 말만(again) */
+  const seeIt = () => finish(false, 'shown', `<b>같이 봐요.</b> ${ansSay(it)}${names ? `<br><span class="small">풀이 순서: ${names.map(esc).join(' → ')}</span>` : ''}${againLine ? `<br><span class="small">${esc(againLine)}</span>` : ''}`, true);
   const toSteps = () => {
-    if (!steps.length) return finish(false, 'shown', `${ansSay(it)} 이 꼴은 다음에 또 나와요.`);
-    if (budget && budget.left <= 0) return finish(false, 'shown', `${ansSay(it)}${cue ? ` <span class="small">${esc(cue)}</span>` : ''} 이 꼴은 내일 다시 나와요.`);   /* 한 판에 여는 수를 넘으면 답과 생각 한 줄 · 내일 다시(조사 R — 단계 풀이는 푸는 문제 수를 줄임) */
+    if (!steps.length || (budget && budget.left <= 0)) return seeIt();   /* 단계가 없거나 한 판에 여는 수를 넘음(조사 R — 단계 풀이는 푸는 문제 수를 줄임) */
     if (budget) budget.left--;
     step(0, 0, new Set(), false);
   };
@@ -77,14 +80,17 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
   function recall(nudge = '') {
     const ch = it.choices || null, picked = ch && raws ? [Number(raws[0])] : [];
     if (ch && ch.length <= 2) return toSteps();
+    if (!raws) return toSteps();   /* '몰라서 넘어갈래요' = 떠올리기 없이 바로 단계로(모른다는 아이에게 '떠올려 봐요' X · 11-07 사용감 점검) */
+    const canStep = steps.length && !(budget && budget.left <= 0);
     draw(root, { ...base, prompt: it.prompt, choices: ch, hide: picked,
-      lead: head('cue', `<span class="hl-was">${raws ? `내 답 <b>${esc(mine(it, raws))}</b> — 아직 아니에요. ` : ''}${nudge || '생각을 떠올려 다시 풀어 봐요.'}</span>${cue ? `<span class="hl-cue-t">${esc(cue)}</span>` : ''}<span class="hl-ans">이 생각으로 <b>처음 문제의 답</b>을 써요.</span>`, 'think', steps.length && !(budget && budget.left <= 0) ? '<button type="button" class="hl-go" id="hs">모르겠어요 — 한 단계씩 같이 풀기</button>' : ''),
+      lead: head('cue', `<span class="hl-was">내 답 <b>${esc(mine(it, raws))}</b> — 아직 아니에요. ${nudge || '생각을 떠올려 다시 풀어 봐요.'}</span>${cue ? `<span class="hl-cue-t">${esc(cue)}</span>` : ''}<span class="hl-ans">이 생각으로 <b>처음 문제의 답</b>을 써요.</span>`, 'think', `<button type="button" class="hl-go" id="hs">${canStep ? '모르겠어요 — 한 단계씩 같이 풀기' : '모르겠어요 — 같이 보기'}</button>`),   /* 늘 나가는 길 하나(아무 수나 써야 빠져나가던 것 · 11-07) */
       onAnswer: (a, cf, t) => {
         if (sameAns(it, a)) return finish(true, ch ? 'pick' : 'recall', ch ? '맞았어요!' : '맞았어요! 생각을 떠올려서 스스로 고쳤어요.');
         if (t < RUSH && !ch) return recall('조금 빨라요. 끝까지 읽고 다시 풀어 봐요.');
         toSteps();
       } });
     const hs = root.querySelector('#hs'); if (hs) hs.addEventListener('click', toSteps);
+    talk();
   }
   // ② 한 단계씩 — tries = 이 단계에서 틀린 수 · shown = 답을 보여 준 단계 · fresh = 방금 앞 단계를 마치고 들어옴
   function step(i, tries, shown, fresh = true) {
@@ -106,6 +112,7 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
         fbSlot(root).appendChild(box); b.focus();
         b.addEventListener('click', () => step(i + 1, 0, shown, true));
       } });
+    talk();
   }
   // ③ 처음 문제 다시 — 채운 단계(방금 채운 줄만 나타남) · 옮긴 그림을 옆에 두고
   function again(shown, nudge = '') {
@@ -115,8 +122,11 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
       onAnswer: (a, cf, t) => {
         if (sameAns(it, a)) return finish(true, 'steps', `맞았어요! 풀이 순서대로 하나씩 풀었어요.${names ? `<br><span class="small">${names.map(esc).join(' → ')}</span>` : ''}`);   /* 순서를 한 번 더 짚음 */
         if (t < RUSH && !it.choices) return again(shown, '조금 빨라요. 단계를 보고 천천히 써 봐요.');
-        finish(false, 'shown', `${ansSay(it)} 이 꼴은 다음에 또 나와요.`);
+        finish(false, 'shown', `${ansSay(it)}${againLine ? ` ${esc(againLine)}` : ''}`);
       } });
+    talk();
   }
+  /* 튼튼이 말 읽어 주기(글 읽기가 느린 아이 · speak.js — 한국어 목소리가 있을 때만 단추가 생김) */
+  function talk() { const bub = root.querySelector('.hl .bub'); if (bub && !bub.querySelector('.sb-say')) speakButton(bub); }
   recall();
 }
