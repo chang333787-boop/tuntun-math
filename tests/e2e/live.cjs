@@ -94,7 +94,7 @@ const UNIT = '2-2-2', GAP = '2-1-6:3';
   let gdone = null, lad = null;
   if (gcard) {
     await pg.goto(BASE + gcard); await w(1200); await pg.click('#s'); await w(300);
-    for (let i = 0; i < 8; i++) { const q = await pg.$('.qcard .blank'); if (!q) break; const t = await pg.textContent('.qcard .math'); const m = t.match(/(\d+)\s*[−-]\s*(\d+)/); await q.fill(i === 0 ? '0' : m ? String(Number(m[1]) - Number(m[2])) : '0'); await pg.click('#ok'); await w(300);
+    for (let i = 0; i < 8; i++) { const q = await pg.$('.qcard .blank'); if (!q) break; const t = await pg.textContent('.qcard .math'); const m = t.match(/(\d+)\s*[−-]\s*(\d+)/); await q.fill(i === 0 ? '0' : m ? String(Number(m[1]) - Number(m[2])) : '0'); await pg.click('#ok'); await w(900);   /* 맞으면 0.65초 '맞았어요!' 뒤 다음 문제 */
       if (i === 0) lad = await pg.evaluate(() => { const c = document.querySelector('.hl-cue-t'); return { cue: c ? c.textContent.trim() : null, steps: !!document.querySelector('#hs') }; });   /* 첫 문제는 일부러 틀림 → 도움 사다리 떠올리기 */
       if (i === 1) lad.fixed = ((await pg.textContent('#view')) || '').includes('스스로 고쳤어요');
       const nx = await pg.$('.fb button.pri'); if (nx) { await nx.click(); await w(200); } }
