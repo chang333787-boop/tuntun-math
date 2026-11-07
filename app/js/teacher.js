@@ -104,7 +104,7 @@ export function guideView(root) {
     <h3>반 표 읽기</h3><div class="legend2"><span><i class="c-root">✕</i>부족 — 여기서부터</span><span><i class="c-stuck">✕</i>부족</span><span><i class="c-shaky">△</i>가끔 틀림</span><span><i class="c-ok">○</i>됨</span><span><i class="c-none"></i>아직 안 풂</span></div>
     <ul class="easy"><li><b>먼저 봐 줄 아이</b> — 막힌 칸이 많거나, 배우고도 가끔 틀리거나, 이번 주 점검 맞힌 수가 줄거나, '자신 있었는데 틀린' 문제가 많거나, 2초 안에 찍은 아이예요. 앱보다 선생님이 먼저 봐 주세요.</li>
     <li><b>더 보기</b>(반 화면 아래) — 같은 생각으로 틀린 아이끼리 · 같은 차시를 배울 아이끼리 묶음과 <b>10분 카드</b>(인쇄용 소집단 안내) · 이야기 문제가 어디서 끊기나 · 기록 내려받기.</li>
-    <li><b>아이 자세히</b> — 틀린 생각은 짐작이에요. <b>한 번 보임</b>은 한 문제에서만, <b>여러 번 보임</b>은 서로 다른 두 문제 이상에서 같은 틀린 방법이 나온 거예요. 아이 화면엔 원인 이름이 나오지 않아요.</li></ul>
+    <li><b>아이 자세히</b> — 틀린 생각은 짐작이에요. <b>한 번 보인 답</b>은 한 문제에서만, <b>여러 번 보인 답</b>은 서로 다른 두 문제 이상에서 같은 틀린 방법이 나온 거예요. 아래 카드는 그 까닭과 도와주는 법이에요. 아이 화면엔 원인 이름이 나오지 않아요.</li></ul>
     <h3>첫 시범 15분 — 아이 2~3명으로 먼저(진짜 크롬북)</h3><ol class="easy"><li><b>5분 전</b> — 카드 2~3장 · 크롬북 2~3대 · <b>점검 내기</b>에서 점검지(사전) 또는 오늘 단원 점검을 열어 둬요.</li>
     <li><b>아이에게 할 말은 한마디만</b> — "카드 보고 들어가서 주황 단추만 따라가 봐. 막히면 손 들어." 미리 설명하지 않아야 처음 쓰는 모습 그대로 보여요.</li>
     <li><b>볼 것(체크)</b> — □ 혼자 들어갔나 □ 첫 문제까지 혼자 갔나 □ 답을 쓰고 자신감 단추를 바로 눌렀나(답만 쓰고 멈춰 있지 않았나) □ 틀렸을 때 '모르겠어요 — 한 단계씩'을 썼나 □ 받아올림 · 받아내림 문제에서 막대 · 낱개가 움직이는 그림이 끊기지 않았나 □ 받아내림 도움 첫 단계(12 − 5 같은 식)에서 막혔나 □ 지루해하거나 어려워한 곳 □ 손 든 곳(화면 맨 위 이름)</li>
@@ -372,14 +372,14 @@ export async function kidDetailView(root, C, no) {
   let notes = []; try { const v = db.dec(await db.get(`tc/${C}/${K.T}/notes/${no}`)); if (Array.isArray(v)) notes = v.filter((m) => m && Number.isFinite(m.t) && (NOTE_K[m.k] || typeof m.x === 'string')).slice(-20); } catch (e) { notes = []; }
   const myNote = lsGet(`tt.note.${C}.${no}`, {});   /* 덧붙인 글은 이 기기에만(서버엔 고른 칩만 — 이름 · 상담 내용이 서버로 가지 않게 · 혹평 10-31) */
   const rep = KS.reportOf(KK), cal = KS.calOf(KK);
-  const why = (c) => { const x = rep.L[c]; if (!x || !x.why) return ''; const a = x.why.sure.map((h) => `<span class="pill strong">여러 번 보임: ${esc(bugName(h.id))} (${h.ev.length}문제)</span>`), b = x.why.maybe.map((h) => `<span class="pill">한 번 보임: ${esc(bugName(h.id))}</span>`); return [...a, ...b].join(' '); };
+  const why = (c) => { const x = rep.L[c]; if (!x || !x.why) return ''; const a = x.why.sure.map((h) => `<span class="pill strong">여러 번 보인 답: ${esc(bugName(h.id))} (${h.ev.length}문제)</span>`), b = x.why.maybe.map((h) => `<span class="pill">한 번 보인 답: ${esc(bugName(h.id))}</span>`); return [...a, ...b].join(' '); };
   // 시간 — 맞힌 문제의 한 문제 가운데값(모든 기록 · 준비 다리 · 확인 · 다시 보기 · 다듬기)
   const msOf = {}; for (const x of Object.values(KK.recs)) { if (!KS.okRec(x)) continue; for (const [k, c] of x.s.it) { const r = x.r.it[k], t = x.ms ? Number(x.ms[k]) : 0; if (r && r.s === 'ok' && t > 0) (msOf[c] = msOf[c] || []).push(t); } }
   const medOf = (c) => { const a = (msOf[c] || []).slice().sort((p, q) => p - q); return a.length ? a[Math.floor(a.length / 2)] : null; };
   const mxK = obj(raw && raw.mx ? db.dec(raw.mx) : null);
   const tm = (c) => { const m = medOf(c), t = mxK[c] ? Number(mxK[c].tier) || 0 : 0; return `${m ? ` <span class="small muted">한 문제 ${(m / 1000).toFixed(1)}초${byId[c] ? `(기준 ${byId[c].sec}초)` : ''}</span>` : ''}${t ? ` <span class="pill">${['', '정확하게 됨', '빠르게도 됨', '며칠 뒤에도 됨'][Math.min(t, 3)]}</span>` : ''}`; };
   const cards = (c) => { const x = rep.L[c]; if (!x) return ''; const seen = new Set(), out = []; const add = (m, tag) => { if (!seen.has(m.id)) { seen.add(m.id); out.push(misCard(m, tag)); } };
-    if (x.why) { x.why.sure.forEach((h) => misFor({ bug: h.id, lesson: c }).forEach((m) => add(m, '여러 번 보임'))); x.why.maybe.forEach((h) => misFor({ bug: h.id, lesson: c }).forEach((m) => add(m, '한 번 보임'))); }
+    if (x.why) { x.why.sure.forEach((h) => misFor({ bug: h.id, lesson: c }).forEach((m) => add(m, '위 답의 까닭'))); x.why.maybe.forEach((h) => misFor({ bug: h.id, lesson: c }).forEach((m) => add(m, '위 답의 까닭(짐작)'))); }   /* 알약 = 아이가 한 일 · 카드 = 그 까닭(같은 것을 두 이름으로 두 번 '보임'이라 하던 것 · 처음 보는 눈 11-07) */
     if (!out.length && (x.st === 'stuck' || x.st === 'shaky')) misFor({ lesson: c }).slice(0, 2).forEach((m) => add(m, '이 차시에서 자주 보임'));
     return out.length ? `<div class="misrow">${out.join('')}</div>` : ''; };
   const line = (c, extra = '') => `<li class="lrow"><div class="lr-h"><b>${esc(lessonName(c))}</b> <span class="muted small">${esc(gl(LES(c).g))}</span>${rep.L[c] ? ` <span class="pill">맞힘 ${rep.L[c].ok}/${rep.L[c].tot}</span>` : ''}${tm(c)} ${why(c)}</div>${extra ? `<p class="lr-x">${extra}</p>` : ''}${cards(c)}</li>`;
@@ -415,7 +415,7 @@ export async function kidDetailView(root, C, no) {
       <div class="acts"><button id="aicp">복사</button><span class="small muted" id="aimsg"></span></div>
       <div class="ai-go" id="aigo"></div></details>
     </div></div>
-    <p class="small muted foot">틀린 생각은 짐작이에요. '한 번 보임'은 한 문제에서만, '여러 번 보임'은 서로 다른 두 문제 이상에서 같은 틀린 방법이 나온 거예요. 아이 화면엔 원인 이름이 나오지 않아요.</p></div>`;
+    <p class="small muted foot">틀린 생각은 짐작이에요. '한 번 보인 답'은 한 문제에서만, '여러 번 보인 답'은 서로 다른 두 문제 이상에서 같은 틀린 방법이 나온 거예요. 그 아래 카드는 그 답이 나오는 까닭과 도와주는 법이에요. 아이 화면엔 원인 이름이 나오지 않아요.</p></div>`;
   root.querySelector('#ksheet').addEventListener('click', () => kidSheet({ C, rep, st, cal, who: nm(K, no) }));
   /* 바로 묻기(선생님 키 · 이 기기에만 · ai.js) — 지난 답은 이 기기에 남겨 두고 다시 묻기 전까지 보여 줌 */
   const aigo = root.querySelector('#aigo'), RK = `tt.ai.res.${C}.${no}`, PK = `tt.ai.photo.${C}.${no}`, WL = wrongList(rep);
