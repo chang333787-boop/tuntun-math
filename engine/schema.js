@@ -185,8 +185,8 @@ export function whyOf(sc) {
     case 'rate×': return '1 m의 무게(한 묶음)와 길이(묶음 수)를 알아요. 전체 무게를 물으니 <b class="q">?</b>는 <b>전체</b> 자리예요.';
     case 'times×': return '기준과 몇 배인지 알아요. 비교하는 양을 물으니 <b class="q">?</b>는 <b>비교하는 양</b> 자리예요.';
     case 'of×': return '전체와 몇 분의 몇인지 알아요. 그만큼이 얼마인지 물으니 <b class="q">?</b>는 <b>비교하는 양</b> 자리예요.';
-    case 'timesB÷': return '큰 양이 기준의 몇 배인지 알아요. 기준을 물으니 <b class="q">?</b>는 <b>기준</b>(짧은 막대) 자리예요.';
-    case 'timesM÷': return '두 양을 다 알아요. 몇 배인지 물으니 <b class="q">?</b>는 <b>몇 배</b> 자리예요.';
+    case 'timesB÷': return '큰 수가 기준의 몇 배인지 알아요. 기준을 물으니 <b class="q">?</b>는 <b>기준</b>(짧은 막대) 자리예요.';
+    case 'timesM÷': return '두 수를 다 알아요. 몇 배인지 물으니 <b class="q">?</b>는 <b>몇 배</b> 자리예요.';
     case 'share÷': return '전체와 몇으로 나누는지 알아요. 한 몫을 물으니 <b class="q">?</b>는 <b>한 몫</b> 자리예요.';
     case 'shareR÷': return '전체와 몇으로 나누는지 알아요. 한 몫과 남는 것을 물으니 <b class="q">?</b>는 <b>한 몫</b>과 남는 자리예요.';
     case 'pack÷': return '전체와 한 번에 덜어 내는 수를 알아요. 몇 번(몇 묶음)인지 물으니 <b class="q">?</b>는 <b>묶음 수</b> 자리예요.';
