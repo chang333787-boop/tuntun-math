@@ -8,6 +8,7 @@ import { cueOf } from '../../engine/hints/index.js';
 import { toText } from '../../engine/tokens.js';
 import { draw, staticHTML, ansSay, fbSlot } from './item.js';
 import { stepsOf } from './fix.js';
+import { colOf, colView } from './model.js';
 import { esc } from './local.js';
 import { mascot } from '../../paper/js/mascot.js';
 
@@ -16,14 +17,21 @@ const mine = (it, raws) => (!raws ? '넘어감' : it.choices ? toText(it.choices
 // 떠올리기 말 — 엔진 hints가 먼저 · 없으면 차시의 아이용 한 줄(hint · 다른 숫자 예라 답이 새지 않음)
 export function cueFor(c, p) { const x = cueOf(c, p); if (x) return x; const L = byId[c]; return L && L.hint ? String(L.hint) : ''; }
 
+// 단계 풀 때 왼쪽 위 — 처음 문제(작게) · 세로셈(덧셈 · 뺄셈 두 자리 넘으면) · 채운 단계(맞음 ✓ · 답을 본 단계는 옅게) · 배우기 '같이 풀기'도 같은 모양(kid.js)
+export function stepCtx(it, steps, upto, { shown = new Set(), C = null, label = '처음 문제', head = true } = {}) {
+  const list = upto ? `<ol class="hl-steps">${steps.slice(0, upto).map((s, i) => `<li class="${shown.has(i) ? 'shown' : 'ok'}"><span class="hl-n">${i + 1}</span><span class="why">${esc(s.why)}</span>${staticHTML(s.prompt, s.sol)}</li>`).join('')}</ol>` : '';
+  return `<div class="hl-ctx${C ? ' with-col' : ''}">${head ? `<span class="hl-k">${esc(label)}</span>${staticHTML(it.prompt, null)}` : ''}${C ? `<div class="hl-col">${colView(C, upto).html}</div>` : ''}${list}</div>`;
+}
+export const colFor = (it, steps) => { try { return colOf(it, steps); } catch (e) { return null; } };
+
 /* root = 문제 카드 자리 · it = 엔진 문항(makeItem · itemOf) · raws = 아이가 쓴 답(넘어감이면 null) · onEnd({ how: 'recall' | 'steps' | 'shown' }) */
 export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', dots = null, onEnd }) {
   const steps = (() => { try { return stepsOf({ c, p: it.p }) || []; } catch (e) { return []; } })();
   const cue = cueFor(c, it.p);
+  const C = colFor(it, steps);   /* 두 자리 넘는 덧셈 · 뺄셈 = 세로셈에 채운 자리까지 표시(model.js — 배우기 시범과 같은 그림) */
   const base = { tag, act, dots, conf: false, idk: false };
   const head = (k, html, pose = 'think', after = '') => `<div class="hl hl-${k}"><div class="say">${mascot(pose, 60)}<div class="bub">${html}</div></div>${after}</div>`;
-  const doneList = (upto, shown = new Set()) => (upto ? `<ol class="hl-steps">${steps.slice(0, upto).map((s, i) => `<li class="${shown.has(i) ? 'shown' : 'ok'}"><span class="hl-n">${i + 1}</span><span class="why">${esc(s.why)}</span>${staticHTML(s.prompt, s.sol)}</li>`).join('')}</ol>` : '');
-  const ctx = (upto, shown) => `<div class="hl-ctx"><span class="hl-k">처음 문제</span>${staticHTML(it.prompt, null)}${doneList(upto, shown)}</div>`;
+  const ctx = (upto, shown) => stepCtx(it, steps, upto, { shown, C });
   const finish = (ok, how, msg) => {
     const box = document.createElement('div'); box.className = `fb ${ok ? 'ok' : 'no'}`;
     root.querySelectorAll('.qcard input, .qcard .qact button, .qcard .choices button').forEach((x) => (x.disabled = true));
@@ -65,7 +73,7 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
   }
   // ③ 처음 문제 다시 — 채운 단계를 옆에 두고
   function again(shown) {
-    draw(root, { ...base, prompt: it.prompt, choices: it.choices || null, extra: `<div class="hl-ctx">${doneList(steps.length, shown)}</div>`,
+    draw(root, { ...base, prompt: it.prompt, choices: it.choices || null, extra: stepCtx(it, steps, steps.length, { shown, C, head: false }),
       lead: head('again', '<span class="hl-k">마지막</span><span class="hl-why">단계를 다 했어요. 이제 처음 문제의 답을 써요.</span>', 'point'),
       onAnswer: (a) => (sameAns(it, a) ? finish(true, 'steps', '맞았어요! 단계를 따라 풀었어요.') : finish(false, 'shown', `${ansSay(it)} 이 꼴은 다음에 또 나와요.`)) });
   }

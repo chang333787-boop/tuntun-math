@@ -20,7 +20,7 @@ import { lineOf, weekTerm, weekPlan, doneThisWeek } from './weekcore.js';
 import { makeItem as mkItem } from '../../engine/lessons/index.js';
 import { icon, tile, ACT } from './icons.js';
 import { giveTasks } from './give.js';
-import { ladder } from './hint.js';
+import { ladder, stepCtx, colFor } from './hint.js';
 import { checkTasks } from './check.js';
 
 export const go = (h) => { location.hash = h; };
@@ -303,10 +303,11 @@ export function fixView(root, c) {
     if (F.assist) return assist();
     const st = F.curSteps[F.si];
     if (!st) {   // 단계 다 함 → 원래 문제
-      draw(slot(), { lead: head('think', '단계를 다 했어요. 이제 처음 문제의 답을 써요.'), prompt: F.cur.prompt, choices: F.cur.choices, conf: false, idk: false, extra: `<ol class="steps">${F.curSteps.map((s) => stepHTML(s)).join('')}</ol>`, onAnswer: (a) => { const it0 = F.cur; const r = answerItem(F, a.vals, a.raws); feedback({ ...r, it0, how: 'steps' }, route); } });
+      draw(slot(), { lead: head('think', '단계를 다 했어요. 이제 처음 문제의 답을 써요.'), prompt: F.cur.prompt, choices: F.cur.choices, conf: false, idk: false, extra: stepCtx(F.cur, F.curSteps, F.curSteps.length, { C: colFor(F.cur, F.curSteps), head: false }), onAnswer: (a) => { const it0 = F.cur; const r = answerItem(F, a.vals, a.raws); feedback({ ...r, it0, how: 'steps' }, route); } });
       return;
     }
-    draw(slot(), { lead: head('point', '이번엔 같이 풀어요. 단계마다 빈칸을 채워요.'), extra: `<div class="ctx">${staticHTML(F.cur.prompt, null)}${F.si ? `<ol class="steps">${F.curSteps.slice(0, F.si).map((s) => stepHTML(s)).join('')}</ol>` : ''}</div><p class="stepwhy"><b>${esc(st.why)}</b></p>`, prompt: st.prompt, conf: false, idk: false, onAnswer: (a) => { const r = togetherStep(F, a.vals); if (r.ok) together(); else feedback({ ok: false, msg: `${ansSay({ sol: r.sol }, '이 단계의 답은')} ${esc(r.why)}` }, together); } });
+    /* 왼쪽 위 = 같이 풀 문제 · 세로셈 · 채운 단계(도움 사다리와 같은 모양 hint.js stepCtx) · 오른쪽 튼튼이 말 = 몇 단계 · 할 일 */
+    draw(slot(), { lead: head('point', `<span class="hl-k">${F.si + 1} / ${F.curSteps.length}단계</span> 이번엔 같이 풀어요. <b>${esc(st.why)}</b>`), extra: stepCtx(F.cur, F.curSteps, F.si, { C: colFor(F.cur, F.curSteps), label: '같이 풀 문제' }), prompt: st.prompt, conf: false, idk: false, onAnswer: (a) => { const r = togetherStep(F, a.vals); if (r.ok) together(); else feedback({ ok: false, msg: `${ansSay({ sol: r.sol }, '이 단계의 답은')} ${esc(r.why)}` }, together); } });
   }
   function assist() {
     const A = F.assist;
