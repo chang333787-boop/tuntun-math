@@ -357,6 +357,8 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   ok(/부족한 것/.test(a.t) && /give\?sk=/.test(a.href) && /who=3/.test(a.href), `막힌 차시 중 가장 아래 → 보충 주기 — ${a.t}`);
   const sk = a.href.match(/sk=([^&]+)/)[1], b = T9.nextOf({ C: 'ZZ', no: '3', rep, inbox: { gvZZ1: { kind: 'give', sk } } });
   ok(/푸는 중/.test(b.t) && !b.href, `보낸 보충을 푸는 중이면 기다림 — ${b.t}`);
+  const c2 = T9.nextOf({ C: 'ZZ', no: '3', rep, st: { gv: { gvZZ1: [3, 10, 1] } }, inbox: { gvZZ1: { kind: 'give', sk } }, recs: { gvZZ1: 1 } });
+  ok(/선생님과 같이 10분/.test(c2.t) && /\/g\//.test(c2.href), `보충 절반 못 맞힘 → 선생님과 10분 카드 — ${c2.t}`);
 }
 console.log(fail ? `FAIL ${fail}` : 'PASS');
 process.exitCode = fail ? 1 : 0;

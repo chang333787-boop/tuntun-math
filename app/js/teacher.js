@@ -343,6 +343,7 @@ export function nextOf({ C, no, rep, st, inbox = {}, now = null, recs = {} }) {
     const sk = skillsOf(start)[0], lead = (rep.start || []).some((x) => x.c === start) ? '여기서부터 배울 것' : '부족한 것';
     if (sk && open.some(([, x]) => x.sk === sk.id)) return { t: `보낸 보충 <b>${esc(sk.name)}</b>${P(sk.name.replace(/\s*\([^)]*\)\s*$/, '') || sk.name, '을', '를')} 아직 푸는 중이에요 — 다 풀면 '보낸 보충'에 결과가 떠요.` };
     const g = sk && done.map(([id, x]) => ({ x, r: st && st.gv && st.gv[id] })).find((y) => y.x.sk === sk.id && y.r);
+    if (g && g.r[0] / g.r[1] < 0.5) return { t: `<b>${esc(sk.name)}</b> 보충에서 ${g.r[0]}/${g.r[1]} — 혼자 연습으로는 아직 어려워요. 선생님과 같이 10분 봐 주세요.`, a: '10분 카드 보기', href: `#/t/c/${C}/g/${encodeURIComponent(start)}` };   /* 보충 절반 못 맞힘 → 또 보충보다 선생님 먼저 [A-R27] */
     if (g && g.r[0] / g.r[1] >= 0.8) return { t: `<b>${esc(sk.name)}</b> 보충에서 ${g.r[0]}/${g.r[1]} 맞혔어요. 며칠 뒤 매일 연습에서 저절로 다시 확인해요 — 따로 할 것 없어요.` };
     if (sk) return { t: `${lead}: <b>${esc(sk.name)}</b>${g ? ` (지난 보충 ${g.r[0]}/${g.r[1]})` : ''}`, a: '이 아이에게 보충 주기', href: `#/t/c/${C}/give?sk=${sk.id}&who=${no}` };
   }
