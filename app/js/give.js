@@ -77,8 +77,9 @@ export function giveView(root, id) {
     /* 많이 틀렸으면 가장 많이 틀린 꼴을 튼튼이와 차근차근(배우기 — 시범 → 같이 → 혼자) */
     const miss = {}; sh.items.forEach((x) => { if (!(S.R.it[x.k] && S.R.it[x.k].s === 'ok')) miss[x.c] = (miss[x.c] || 0) + 1; });
     const worst = Object.entries(miss).sort((a, b) => b[1] - a[1])[0], learn = worst && n - ok >= 3 ? worst[0] : null;
-    head(`${say(ok === n ? 'cheer' : 'think', `선생님이 준 문제를 다 풀었어요. 처음에 <b>${n}문제 중 ${ok}개</b>를 혼자 맞혔어요.${fixd ? ` 틀린 것 가운데 <b>${fixd}개</b>는 도움을 받아 고쳤어요.` : ''}${learn ? '<br>틀린 문제가 여럿이에요. 튼튼이와 차근차근 배워 봐요.' : ''}`, 104)}
-      <div class="acts">${learn ? `<a class="btn pri big" href="#/fix/${encodeURIComponent(learn)}">튼튼이와 배우기</a><a class="btn big" href="#/me">처음 화면으로</a>` : '<a class="btn pri big" href="#/me">처음 화면으로</a>'}</div>`);
+    const more = giveTasks(K);   /* 선생님이 준 문제가 더 남았으면 바로 다음 것으로(처음 화면을 거치지 않게) */
+    head(`${say(ok === n ? 'cheer' : 'think', `선생님이 준 문제를 다 풀었어요. 처음에 <b>${n}문제 중 ${ok}개</b>를 혼자 맞혔어요.${fixd ? ` 틀린 것 가운데 <b>${fixd}개</b>는 도움을 받아 고쳤어요.` : ''}${learn ? '<br>틀린 문제가 여럿이에요. 튼튼이와 차근차근 배워 봐요.' : more.length ? "<br>선생님이 준 문제가 <b>더 있어요</b>." : ''}`, 104)}
+      <div class="acts">${learn ? `<a class="btn pri big" href="#/fix/${encodeURIComponent(learn)}">튼튼이와 배우기</a><a class="btn big" href="#/me">처음 화면으로</a>` : more.length ? `<a class="btn pri big" href="${more[0].href}">다음 선생님 문제 풀기</a><a class="btn big" href="#/me">처음 화면으로</a>` : '<a class="btn pri big" href="#/me">처음 화면으로</a>'}</div>`);
   };
   if (S.i > 0) return one();
   head(`<div class="say">${art('prac', 104, 'say-art')}<div class="bub">선생님이 골라 준 문제예요. 모두 <b>${sh.items.length}문제</b>.${sh.note ? `<br>${esc(sh.note)}` : ''}<br>틀리면 튼튼이가 한 단계씩 같이 풀어 줘요.</div></div><div class="acts"><button class="pri big" id="s">시작</button><a class="btn big" href="#/me">처음 화면으로</a></div>`);

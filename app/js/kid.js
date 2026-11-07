@@ -432,9 +432,10 @@ export function fixView(root, c) {
     }
     const was = before && before.tot ? ` 처음엔 ${before.tot}문제 중 ${before.ok}개 맞혔어요.` : '';
     const retry = F.passed && K.back && K.back.root === c && !K.back.solved;
+    const nx = F.passed && !inClass && !retry ? todoOf(K, KS.reportOf(K)).find((x) => x.kind === 'fix' && x.c !== c && x.href) : null;   /* 통과 뒤 배울 것이 더 있으면 바로 그것으로(처음 화면을 거치지 않게) */
     const top = F.passed ? say('cheer', `<b>${esc(ex)}</b> — ${F.extra ? `확인 ${F.check.items.length}문제 중 ${okN}개를 맞혀 통과했어요.` : `확인 ${F.check.items.length}문제를 모두 맞혔어요.`}${was}<br>${inClass ? '이제 <b>선생님 수업</b>으로 가요. 남은 것은 다음 시간에 해요.' : '며칠 뒤 매일 연습에 한 번 더 나와요.'}`, 104)
       : say('think', `확인 ${F.check.items.length}문제 중 ${okN}개 맞혔어요. 선생님과 같이 한 번 더 봐요.${inClass ? '<br>지금은 선생님 수업으로 가요.' : ''}`, 104);
-    endCard(top, `<div class="acts">${retry ? `<a class="btn pri big" href="#/retry">처음 문제 다시 풀기 — ${esc(K.back.text)}</a>` : `<a class="btn ${inClass ? '' : 'pri '}big" href="#/me">처음 화면으로</a>`}</div>`);
+    endCard(top, `<div class="acts">${retry ? `<a class="btn pri big" href="#/retry">처음 문제 다시 풀기 — ${esc(K.back.text)}</a>` : nx ? `<a class="btn pri big" href="${nx.href}">다음 배울 것 — ${esc(plank(nx.c))}</a><a class="btn big" href="#/me">처음 화면으로</a>` : `<a class="btn ${inClass ? '' : 'pri '}big" href="#/me">처음 화면으로</a>`}</div>`);
   }
   // 비교하기 — 함께 풀기 뒤, 혼자 풀기 전에 한 번(맞는 풀이 · 친구 같은 틀린 풀이 · 어디서 어긋났나)
   function compare(X) {
