@@ -14,7 +14,7 @@ import { mascot } from '../../paper/js/mascot.js';
 import { P } from '../../engine/concepts/kit.js';
 import { TYPES, FAMILY, ROLES, show, implied, whyOf, cueOf, isCue, cueWhy, rereadOf, splitStory, famOfLesson, familiar, familiarTypes } from '../../engine/schema.js';
 import * as KS from './kidstore.js';
-import { draw, staticHTML, ansSay, progHTML, tagHTML, fbSlot } from './item.js';
+import { draw, staticHTML, ansSay, progHTML, tagHTML, fbSlot, waitBtn } from './item.js';
 import { toolBox } from './tools.js';
 import { lsGet, lsSet, lsDel, esc, rand } from './local.js';
 import { planOf, probOf, pickLessons, sheetOf, resultOf, storyLog } from './storylog.js';
@@ -207,7 +207,7 @@ export function storyView(root, arg) {
     if (rush < 3) return false;
     rush = 0; K.rush = (K.rush || 0) + 1; KS.save(me, K);
     root.innerHTML = `<div class="card msg">${say('think', '잠깐! 조금 빨라요. 이야기를 <b>끝까지 읽고</b> 골라요.', 104)}<div class="acts"><button class="pri big" id="r" disabled>다시 해 볼게요</button></div></div>`;
-    const b = root.querySelector('#r'); setTimeout(() => { b.disabled = false; b.focus(); }, 3000);
+    const b = root.querySelector('#r'); waitBtn(b);
     b.addEventListener('click', then);
     return true;
   };
@@ -225,7 +225,7 @@ export function storyView(root, arg) {
   function stepType(lead, again = false, wrong = null) {
     const types = FAMILY[famOfLesson(byId[pr.c])].types;
     const bub = again ? `문장을 나눠 읽어 봐요. 아는 것과 <b>묻는 것</b>은 무엇인가요?<br><span class="small">${esc(FAMILY[famOfLesson(byId[pr.c])].ask)}</span>` : `${lead}어떤 이야기일까요? 알맞은 카드를 골라요.`;
-    const b = shell(0, again ? 'think' : 'point', bub, `<div class="sb-types">${types.map((t) => `<button type="button" class="sb-ty" data-t="${t}"${t === wrong ? ' disabled' : ''}>${iconSVG(t)}<span><b>${esc(TYPES[t].kid)}</b><small>${esc(TYPES[t].say)}</small></span></button>`).join('')}</div>`, again ? 'split' : 'plain');
+    const b = shell(0, again ? 'think' : 'point', bub, `<div class="sb-types">${types.map((t) => `<button type="button" class="sb-ty${t === wrong ? ' no' : ''}" data-t="${t}"${t === wrong ? ' disabled' : ''}>${iconSVG(t)}<span><b>${esc(TYPES[t].kid)}</b><small>${esc(TYPES[t].say)}</small>${t === wrong ? '<em class="sb-x">✕ 고른 카드 — 아니에요</em>' : ''}</span></button>`).join('')}</div>`, again ? 'split' : 'plain');
     const t0 = performance.now();
     b.querySelectorAll('.sb-ty').forEach((btn) => btn.addEventListener('click', () => {
       const t = btn.dataset.t, ok = t === pr.sc.type, nm = TYPES[pr.sc.type].kid;
@@ -233,7 +233,7 @@ export function storyView(root, arg) {
       if (ok) { if (st.s[0] == null) st.s[0] = again ? 0 : 1; return stepFrame(`맞아요! <b>${esc(nm)}</b>${ye(nm)}. `); }
       st.s[0] = 0;
       if (!again) return stepType('', true, t);
-      const b2 = shell(0, 'point', `이 이야기는 <b>${esc(nm)}</b>${ye(nm)}.<br>${esc(TYPES[pr.sc.type].say)}`, '', 'split');
+      const b2 = shell(0, 'point', `아직 아니에요. 이 이야기는 <b>${esc(nm)}</b>${ye(nm)}.<br>${esc(TYPES[pr.sc.type].say)}`, '', 'split');
       next(b2, '막대 그림 보기', () => stepFrame(''));
     }));
   }
@@ -301,13 +301,13 @@ export function storyView(root, arg) {
     const b = shell(3, 'point', one ? '고른 식을 계산해요.<br>계산한 수에 단위를 붙이면 답이에요.' : '고른 식을 계산해요.', '<div id="slot"></div>');
     draw(b.querySelector('#slot'), { prompt: calc.prompt, conf: false, idk: false, onAnswer: (a) => {
       let ok = false; try { ok = !!calc.check(a.vals, a.raws).ok; } catch (e) { ok = false; }
-      st.s[3] = ok ? 1 : 0;
-      if (one) st.s[4] = st.s[3];
+      if (!pr.ct) { st.s[3] = ok ? 1 : 0; if (one) st.s[4] = st.s[3]; }   /* 걸음 기록은 첫 번에 맞혔나 */
       if (ok && !one) return stepAns(true);
       const card = b.querySelector('.qcard'), box = document.createElement('div');
       card.querySelectorAll('.qact button, input.blank').forEach((x) => (x.disabled = true));
       fbSlot(b).appendChild(box);
       if (ok) { box.className = 'fb ok'; box.innerHTML = `<p class="sb-okmsg">맞아요.</p>${ansLine()}`; return finish(box); }
+      if (!pr.ct) { pr.ct = 1; box.className = 'fb no'; box.innerHTML = '계산이 맞지 않아요. 고른 식을 <b>한 번 더</b> 계산해 봐요.'; return next(box, '다시 계산하기', stepCalc); }   /* 처음 틀리면 다시 계산 — 바로 '답 보기'로 가 고칠 길이 없던 것(처음 보는 눈 11-08) */
       box.className = 'fb no'; box.innerHTML = '계산이 달라요.';
       let T0 = null; try { T0 = toolBox(box, { it: calc, vals: a.vals, c: pr.c, onSelfFix: (t) => KS.selfFix(me, K, t) }); } catch (e) { T0 = null; }
       if (!T0) box.innerHTML += ` 바르게 계산하면 ${staticHTML(calc.prompt, calc.sol)}`;

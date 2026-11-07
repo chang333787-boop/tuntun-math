@@ -114,9 +114,11 @@ export function rushGuard() {
   let n = 0;
   return (ms, a, ok) => { n = a.idk ? n : ms < 2000 && !ok ? n + 1 : 0; if (n >= 3) { n = 0; return true; } return false; };
 }
+/* 멈춤 단추 — 남은 초를 단추에 보이고(꺼진 단추로만 보여 눌러도 안 되는 줄 알던 것 · 처음 보는 눈 11-08) 다 되면 켬 */
+export function waitBtn(b, sec = 3) { const lab = b.textContent; let k = sec; b.disabled = true; b.textContent = `${lab} (${k})`; const iv = setInterval(() => { k--; if (k > 0) { b.textContent = `${lab} (${k})`; return; } clearInterval(iv); b.textContent = lab; b.disabled = false; b.focus(); }, 1000); }
 export function rushPause(root, onGo) {
   root.innerHTML = `<div class="card msg"><div class="say">${mascot('think', 104)}<div class="bub">잠깐! 조금 빨라요. 문제를 <b>끝까지 읽고</b> 풀어요.<br>모르는 문제는 '못 풀겠어요 · 넘어가기'를 눌러도 괜찮아요.</div></div><div class="acts"><button class="pri big" id="r" disabled>다시 해 볼게요</button></div></div>`;
-  const b = root.querySelector('#r'); setTimeout(() => { b.disabled = false; b.focus(); }, 3000);
+  const b = root.querySelector('#r'); waitBtn(b);
   b.addEventListener('click', onGo);
 }
 
