@@ -618,7 +618,7 @@ function decMulCue(p) {
   if (p.ad && p.bd) return `${p.a} × ${eul(p.b)} 먼저 해 볼까요? 두 수의 소수점 아래 자리 수를 더한 만큼 곱의 소수점을 찍어요.`;
   const [dx, n, k, other] = p.ad ? [A, p.a, p.ad, p.b] : [Bv, p.b, p.bd, p.a];
   const ex = p.ad ? `${n} × ${other}` : `${other} × ${n}`;
-  return safe([p.a * p.b / 10 ** (p.ad + p.bd)], [Number(A), Number(Bv)], `${eun(dx)} ${ga(U[k])} ${n}개예요. ${ex}${P(p.ad ? other : n, '을', '를')} 하면 곱은 ${ga(U[k])} 몇 개일까요?`,
+  return safe([p.a * p.b / 10 ** (p.ad + p.bd)], [Number(A), Number(Bv)], `${eun(dx)} ${ga(U[k])} ${n}개예요. ${ex}${P(p.ad ? other : n, '을', '를')} 하면 곱은 ${ga(U[k])} 몇 개일까요? ${ga(U[k])} 그만큼이면 얼마인지 소수로 써요.`,
     `소수점을 떼고 ${ex}${P(p.ad ? other : n, '을', '를')} 먼저 해 볼까요? 곱의 소수점은 소수점 아래 자리 수만큼 옮겨요.`);
 }
 // 소수 ÷ 자연수 — 소수점을 떼고 자연수의 나눗셈 · 몫도 같은 만큼 작게(차시 단계와 같은 꼴)
