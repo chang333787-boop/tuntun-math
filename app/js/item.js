@@ -17,7 +17,7 @@ export const CONF = [[2, '자신 있어요'], [1, '조금 헷갈려요'], [0, '�
 export function progHTML([i, n]) {
   if (!n || n < 0) return `<span class="qprog" role="img" aria-label="${i + 1}번째 문제"><span class="cnt">문제 <b>${i + 1}</b>${n < 0 ? ` <small>· ${-n}문제까지</small>` : ''}</span></span>`;   /* n < 0 = 많아야 |n|문제(일찍 끝날 수 있음) */   /* 끝이 정해지지 않은 판(오늘 단원 점검 — 찾으면 일찍 끝남)은 분모 없이(11-07 '1 / 18인데 12에서 끝남') */
   const k = Math.min(i + 1, n), lab = `${n}문제 가운데 ${k}번째`, pc = (x) => Math.round((Math.max(0, Math.min(x, n)) / n) * 100);
-  const show = n > 12 ? `<span class="pbar"><i style="width:${pc(i)}%;--p0:${pc(i - 1)}%"></i></span>` : `<span class="pseg">${Array.from({ length: n }, (_, j) => `<i class="${j < i ? 'on' : ''}${j === i - 1 ? ' nw' : ''}"></i>`).join('')}</span>`;
+  const show = n > 12 ? `<span class="pbar"><i style="width:${pc(i)}%;--p0:${pc(i - 1)}%"></i></span>` : `<span class="pseg">${Array.from({ length: n }, (_, j) => `<i class="${j < i ? 'on' : j === i ? 'cur' : ''}${j === i - 1 ? ' nw' : ''}"></i>`).join('')}</span>`;
   return `<span class="qprog" role="img" aria-label="${lab}">${show}<span class="cnt"><b>${k}</b> / ${n}</span></span>`;
 }
 // 꼬리표(활동 이름) — 활동 색 + 아이콘
