@@ -20,6 +20,7 @@ import { lineOf, weekTerm, weekPlan, doneThisWeek, weekKey } from './weekcore.js
 import { makeItem as mkItem } from '../../engine/lessons/index.js';
 import { icon, tile, ACT, art } from './icons.js';
 import { giveTasks } from './give.js';
+import { cueOf } from '../../engine/hints/index.js';
 import { ladder, stepCtx, colFor, planHTML, planNames } from './hint.js';
 import { checkTasks } from './check.js';
 import { speakButton } from './speak.js';
@@ -348,7 +349,7 @@ export function fixView(root, c, opt = {}) {
       return;
     }
     /* 왼쪽 위 = 같이 풀 문제 · 세로셈 · 채운 단계(도움 사다리와 같은 모양 hint.js stepCtx) · 오른쪽 튼튼이 말 = 몇 단계 · 할 일 */
-    draw(slot(), { lead: head('point', `<span class="hl-k">${F.si + 1}단계</span> 이번엔 같이 풀어요. <b>${esc(st.why)}</b>`) + planHTML(F.curSteps, planNames(F.cur.c || c, F.cur.p, F.curSteps), F.si), extra: stepCtx(F.cur, F.curSteps, F.si, { C: colFor(F.cur, F.curSteps), label: '같이 풀 문제', fresh: F.si - 1 }), prompt: st.prompt, conf: false, idk: false, onAnswer: (a) => { const r = togetherStep(F, a.vals); if (r.ok) together(); else if (r.retry) feedback({ ok: false, msg: '아직 아니에요. 위 튼튼이 말을 다시 읽고 <b>한 번 더</b> 써 봐요.', label: '다시 써 보기' }, together); else feedback({ ok: false, msg: `${ansSay({ sol: r.sol }, '이 단계의 답은')} ${esc(r.why)}` }, together); }, okLabel: F.si + 1 < F.curSteps.length ? '이 단계 다 했어요' : '다 풀었어요' });
+    draw(slot(), { lead: head('point', `<span class="hl-k">${F.si + 1}단계</span> 이번엔 같이 풀어요. <b>${esc(st.why)}</b>${(() => { if (!F.tw) return ''; let t = ''; try { t = cueOf(st.c, st.p) || factTalk({ c: st.c, p: st.p, prompt: st.prompt, sol: st.sol }, false); } catch (e) { t = ''; } return t ? `<br><span class="small">도움: ${esc(t)}</span>` : ''; })()}`)   /* 다시 쓸 때는 그 단계 차시의 첫 도움말을 한 줄 더(답 숫자 X — 엄격 시험 · 같은 말만 다시 보이던 것) */ + planHTML(F.curSteps, planNames(F.cur.c || c, F.cur.p, F.curSteps), F.si), extra: stepCtx(F.cur, F.curSteps, F.si, { C: colFor(F.cur, F.curSteps), label: '같이 풀 문제', fresh: F.si - 1 }), prompt: st.prompt, conf: false, idk: false, onAnswer: (a) => { const r = togetherStep(F, a.vals); if (r.ok) together(); else if (r.retry) feedback({ ok: false, msg: '아직 아니에요. 위 튼튼이 말을 다시 읽고 <b>한 번 더</b> 써 봐요.', label: '다시 써 보기' }, together); else feedback({ ok: false, msg: `${ansSay({ sol: r.sol }, '이 단계의 답은')} ${esc(r.why)}` }, together); }, okLabel: F.si + 1 < F.curSteps.length ? '이 단계 다 했어요' : '다 풀었어요' });
   }
   function assist() {
     const A = F.assist;
