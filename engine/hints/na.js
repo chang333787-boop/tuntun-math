@@ -342,7 +342,14 @@ function roundCue(p) {
   return `${xs}에서 ${pl} 아래를 가려 보세요. 버림은 가린 부분을 모두 0으로 바꾸는 것이에요.`;
 }
 function roundSteps(p) {
-  if (p.v !== 'val' || p.dp) return [];
+  if (p.v !== 'val') return [];
+  if (p.dp) {   /* 소수 올림 · 버림(11-07 '단계 없음'이던 꼴) — 1.504 → 1.504 − 0.004 = 1.5 → 1.5 + 0.01 = 1.51 · 반올림 소수는 그대로 */
+    if (p.m === 'half' || p.pk >= 0 || p.dp + p.pk < 1) return [];
+    const u = 10 ** (p.dp + p.pk), below = p.xi % u, floor = p.xi - below, pl = { '-1': '소수 첫째 자리', '-2': '소수 둘째 자리' }[p.pk];
+    if (!below || !pl) return [];
+    const cutD = { c: 'g4_DECAS', p: { op: '-', a: p.xi, ka: p.dp, b: below, kb: p.dp }, why: `${pl} 아래 숫자를 떼어 내요.`, n: '아래 자리 떼어 내기' };
+    return p.m === 'down' ? [cutD] : [cutD, { c: 'g4_DECAS', p: { op: '+', a: floor, ka: p.dp, b: u, kb: p.dp }, why: `${pl} 숫자를 하나 올려요.`, n: '그 자리 숫자 하나 올리기' }];
+  }
   const n = p.xi, u = 10 ** p.pk, below = n % u, floor = n - below, pl = RPL[p.pk];
   if (!below) return [];
   const cut = { c: 'SUB', p: { a: n, b: below }, why: `${pl} 아래를 떼어 내 0으로 만들어요.`, n: '아래 자리 떼어 내기' };
