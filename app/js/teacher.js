@@ -19,8 +19,8 @@ import { MIS, misFor, misById, WHY, wantFor, WANT } from '../../engine/mis.js';
 import { TOOLS, CARD_TOOL } from './tools.js';
 import { KIDSAY } from './fix.js';
 import { weeksOf, weekChart, weekTrend, weekKey, lastLine } from './weekcore.js';
-import { packetOf, promptOf } from './copilot.js';
-import { aiKey, setAiKey, keyTail, askClaude } from './ai.js';
+import { packetOf, promptOf, wrongList, photoPromptOf } from './copilot.js';
+import { aiKey, setAiKey, keyTail, askClaude, shrinkPhoto } from './ai.js';
 import { qrSVG } from './qr.js';
 import { TYPES } from '../../engine/schema.js';
 import { planOf, probOf, EASY as STORY_EASY } from './storylog.js';
@@ -381,12 +381,21 @@ export async function kidDetailView(root, C, no) {
     <p class="small muted foot">틀린 생각은 짐작이에요. '한 번 보임'은 한 문제에서만, '여러 번 보임'은 서로 다른 두 문제 이상에서 같은 틀린 방법이 나온 거예요. 아이 화면엔 원인 이름이 나오지 않아요.</p></div>`;
   root.querySelector('#ksheet').addEventListener('click', () => kidSheet({ C, rep, st, cal, who: nm(K, no) }));
   /* 바로 묻기(선생님 키 · 이 기기에만 · ai.js) — 지난 답은 이 기기에 남겨 두고 다시 묻기 전까지 보여 줌 */
-  const aigo = root.querySelector('#aigo'), RK = `tt.ai.res.${C}.${no}`;
+  const aigo = root.querySelector('#aigo'), RK = `tt.ai.res.${C}.${no}`, PK = `tt.ai.photo.${C}.${no}`, WL = wrongList(rep);
+  /* 풀이 사진 읽기 — 틀린 문제 하나 + 종이 풀이 사진 → 처음 어긋난 단계 · 발문(사진은 저장 X · 답 글만 이 기기에) */
+  const photoBox = (busy) => { if (!WL.length) return ''; const lp = lsGet(PK, null);
+    return `<div class="ai-ph"><p class="small"><b>풀이 사진으로 묻기</b> — 틀린 문제를 고르고 그 문제의 종이 풀이를 찍어 올리면, 풀이를 단계마다 읽고 처음 어긋난 곳을 짚어 줘요. <b>풀이 부분만</b> 찍어요(얼굴 · 이름 X). 사진은 어디에도 저장하지 않아요.</p>
+      <div class="acts"><select id="aiw" class="sel" style="flex:1 1 300px">${WL.map((w, i) => `<option value="${i}">${esc(w.q)} — 아이 답 ${esc(w.mine)}</option>`).join('')}</select><label class="btn">${busy ? '읽는 중…' : '사진 고르기 · 찍기'}<input type="file" id="aip" accept="image/*" capture="environment" hidden${busy ? ' disabled' : ''}></label></div>
+      ${lp && lp.text ? `<div class="ai-res">${esc(lp.q ? `[${lp.q}]\n` : '')}${esc(lp.text)}</div><p class="small muted">${esc(new Date(lp.t).toLocaleString('ko-KR'))} · AI가 사진을 잘못 읽을 수 있어요. 선생님이 풀이와 대 보고 써요.</p>` : ''}</div>`; };
   const aiRender = (busy = false, err = '') => { if (!aigo) return; const k = aiKey(), last = lsGet(RK, null);
     aigo.innerHTML = !k ? `<p class="small"><b>바로 묻기</b>(골라서) — Claude API 키를 넣으면 복사하지 않고 이 화면에서 바로 진단을 받아요. 키는 <b>이 기기에만</b> 저장되고 아이 기기 · 서버로 가지 않아요. 한 번 묻는 데 몇십~백 원쯤(선생님 크레딧).</p><div class="acts"><input id="aik" type="password" autocomplete="off" placeholder="sk-ant-…" class="sel" style="flex:1 1 260px"><button id="aiks">키 저장</button></div>`
-      : `<div class="acts"><button class="pri" id="aiask"${busy ? ' disabled' : ''}>${busy ? '묻는 중… (20초쯤)' : last ? 'AI 진단 다시 받기' : 'AI 진단 받기'}</button><span class="small muted">키 ${esc(keyTail(k))} 저장됨 · <button type="button" class="link" id="aikx">키 지우기</button></span></div>${err ? `<p class="qmsg">${esc(err)}</p>` : ''}${last && last.text ? `<div class="ai-res">${esc(last.text)}</div><p class="small muted">${esc(new Date(last.t).toLocaleString('ko-KR'))} · AI 답은 짐작이에요. 아이나 가정에 전하기 전에 선생님이 확인해요.</p>` : ''}`;
+      : `<div class="acts"><button class="pri" id="aiask"${busy ? ' disabled' : ''}>${busy ? '묻는 중… (20초쯤)' : last ? 'AI 진단 다시 받기' : 'AI 진단 받기'}</button><span class="small muted">키 ${esc(keyTail(k))} 저장됨 · <button type="button" class="link" id="aikx">키 지우기</button></span></div>${err ? `<p class="qmsg">${esc(err)}</p>` : ''}${last && last.text ? `<div class="ai-res">${esc(last.text)}</div><p class="small muted">${esc(new Date(last.t).toLocaleString('ko-KR'))} · AI 답은 짐작이에요. 아이나 가정에 전하기 전에 선생님이 확인해요.</p>` : ''}${photoBox(busy)}`;
     const ks = aigo.querySelector('#aiks'); if (ks) ks.addEventListener('click', () => { setAiKey(aigo.querySelector('#aik').value); aiRender(); });
     const kx = aigo.querySelector('#aikx'); if (kx) kx.addEventListener('click', () => { setAiKey(''); aiRender(); });
+    const ph = aigo.querySelector('#aip'); if (ph) ph.addEventListener('change', async () => { const f = ph.files && ph.files[0]; if (!f) return; const w = WL[Number(aigo.querySelector('#aiw').value) || 0]; aiRender(true);
+      let img; try { img = await shrinkPhoto(f); } catch (e) { return aiRender(false, '사진을 읽지 못했어요. 다른 사진으로 해 보세요.'); }
+      const r = await askClaude(photoPromptOf(no, w, String(K.g || '')[0] || ''), img); img = null;
+      if (r.text) { lsSet(PK, { t: Date.now(), q: w.q, text: r.text }); aiRender(); } else aiRender(false, r.refusal ? 'AI가 이 사진에는 답하지 않았어요.' : r.error); });
     const go = aigo.querySelector('#aiask'); if (go) go.addEventListener('click', async () => { aiRender(true); const r = await askClaude(root.querySelector('#aiq').value);
       if (r.text) { lsSet(RK, { t: Date.now(), text: r.cut ? `${r.text}\n\n(답이 길어 여기서 끊겼어요.)` : r.text }); aiRender(); } else aiRender(false, r.refusal ? 'AI가 이 질문에는 답하지 않았어요. 위 글을 복사해 붙여 넣는 방식으로 해 보세요.' : r.error); }); };
   aiRender();

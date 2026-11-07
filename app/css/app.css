@@ -128,7 +128,7 @@ button:focus-visible,.btn:focus-visible,a:focus-visible,summary:focus-visible,.b
 .card.fx .qcard>.qgrid{flex:1}
 /* 진행 — 오른쪽 위 같은 자리 · 칸 막대(12칸까지) 또는 긴 막대 + 숫자 · 새로 찬 칸만 200ms */
 .qprog{margin-left:auto;display:inline-flex;align-items:center;gap:10px}.qprog .cnt small{font-size:14px}.qmsg.soft{color:var(--teal-d)}
-.ai-go{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}.ai-res{white-space:pre-wrap;background:var(--panel);border-radius:12px;padding:12px 14px;margin-top:8px;font-size:15px;line-height:1.6}   /* 아이 자세히 바로 묻기(ai.js) */
+.ai-ph{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)}.ai-go{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}.ai-res{white-space:pre-wrap;background:var(--panel);border-radius:12px;padding:12px 14px;margin-top:8px;font-size:15px;line-height:1.6}   /* 아이 자세히 바로 묻기(ai.js) */
 .give-go{position:sticky;bottom:0;z-index:4;background:var(--surface);margin:12px -8px 0;padding:12px 8px;border-top:1px solid var(--line);align-items:center}.give-sum{font-size:16px;color:var(--ink)}   /* 보충 주기: 보내기 단추가 화면 바닥에 붙음 · 누구에게 몇 문제인지 옆에(650px 크롬북에서 스크롤해야 보이던 것 · 11-07) */
 .conf.wake{outline:3px solid var(--teal);outline-offset:4px;border-radius:12px}#ok.wake{outline:3px solid var(--teal);outline-offset:3px}   /* 답만 쓰고 멈췄을 때 내는 단추 자리(item.js armIdle) */
 .pseg{display:inline-flex;gap:4px}.pseg i{width:16px;height:10px;border-radius:999px;background:var(--line)}.pseg i.on{background:var(--wood2)}

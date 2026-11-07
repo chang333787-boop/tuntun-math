@@ -27,6 +27,8 @@
 
 - **다른 프로그램과 무엇이 다른가** — [compare.md](compare.md)(11-07 · 똑똑! 수학탐험대 · 국가기초학력지원포털 · 클래스팅 AI · 칸아카데미 · 매쓰플랫과 7축 · 출처 붙임 · 앞 학년 진단만으로는 차별점이 아님 → 같은 이름으로 잇는 흐름 · 처음 문제로 돌아가는 도움 · 틀린 생각은 선생님에게만)
 
+- **AI 진단(M4)** — 아이 자세히 'AI에게 물어보기': [AI 진단 받기] · 풀이 사진으로 묻기(선생님 키 · 이 기기에만 · app/js/ai.js · 가짜 API로만 확인 — 진짜 키는 선생님이 처음 쓸 때)
+
 ## 확인하는 법
 - `set -o pipefail; npm run check`(커밋 조건) · `npm test`(엔진 · hints 엄격)
 - 배포 주소 한 바퀴: `PW=<playwright 폴더> node tests/e2e/live.cjs <주소>` — 시험 반 ZZ를 만들고 끝나면 `npx firebase-tools database:remove /cown/ZZ… /tc/ZZ… /k/ZZ… --project tuntun-math-2026 -f`로 지움(지웠는지 `/cown --shallow`로 확인) · 진짜 반(시험용 SAMPLE 포함)은 건드리지 않음

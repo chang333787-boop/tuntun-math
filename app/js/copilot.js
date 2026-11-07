@@ -20,6 +20,27 @@ function wrongOf(x, n = 3) {
   })).filter((w) => w.q);
 }
 
+// 풀이 사진으로 물을 틀린 문항(최근 것부터 · 차시마다 둘까지)
+export function wrongList(rep, n = 8) {
+  return Object.values(rep.L || {}).flatMap((x) => wrongOf(x, 2).map((w) => ({ ...w, 칸: nameOf(x.c) }))).slice(-n).reverse();
+}
+export function photoPromptOf(no, w, grade = '') {
+  return `초등 수학 담임을 돕는 조수로 답해 주세요. 사진은 우리 반 ${no}번 아이(이름 X)가 종이에 쓴 풀이예요.
+
+[문제] ${w.q}
+[아이가 낸 답] ${w.mine}
+[바른 답] ${w.right}
+[엔진이 아이 답으로 짐작한 틀린 방법] ${w.fit && w.fit.length ? w.fit.join(' · ') : '없음'}
+
+[부탁]
+1. 사진에서 아이 풀이를 단계마다 그대로 옮겨 적어 주세요. 읽기 어려운 곳은 '읽기 어려움'이라고 써요.
+2. 처음으로 어긋난 단계 하나와 그 까닭 — 엔진 짐작과 같으면 같다고, 다르면 왜인지.
+3. 그 단계에서 선생님이 아이에게 할 발문 2개 — ${grade ? `${grade}학년` : '그 학년'} 눈높이 · 답을 바로 주지 않고 아이가 자기 방법을 말하게.
+4. 확신(높음 · 중간 · 낮음)과, 사진으로 알 수 없는 것은 '모름'.
+
+[쓰지 말 것] 이름 · 얼굴 · 글씨체로 아이 추측 · 진단명이나 낙인 · 긴 서론. 짧게, 번호 매겨서.`;
+}
+
 // 아이 하나 → 근거 꾸러미 · rep = kidReport · st = 요약(normSt) · extra = { unit, weeks, trend, story, fixed, rv }
 export function packetOf(rep, st = null, extra = {}) {
   const L = rep.L;

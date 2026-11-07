@@ -12,8 +12,17 @@ export const setAiKey = (k) => { const v = String(k || '').trim(); if (v) lsSet(
 export const keyTail = (k = aiKey()) => (k ? `…${k.slice(-4)}` : '');
 
 let sdk = null;
+// 사진 → 긴 변 1600px JPEG base64(보내는 크기 · 값 줄이기) · 이 함수 밖으로는 저장하지 않음
+export function shrinkPhoto(file, max = 1600) {
+  return new Promise((ok, no) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => { const k = Math.min(1, max / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url); ok({ type: 'image/jpeg', data: c.toDataURL('image/jpeg', 0.85).split(',')[1] }); };
+    img.onerror = () => { URL.revokeObjectURL(url); no(new Error('사진을 읽지 못했어요')); };
+    img.src = url;
+  });
+}
 // 묻기 → { text } · { refusal: true } · 실패는 { error: '선생님이 읽을 한 줄' }
-export async function askClaude(prompt) {
+export async function askClaude(prompt, image = null) {   /* image = { data: base64, type: 'image/jpeg' } — 풀이 사진(저장하지 않음) */
   const apiKey = aiKey();
   if (!apiKey) return { error: '키를 먼저 넣어 주세요.' };
   try { sdk = sdk || (await import(SDK)); } catch (e) { return { error: 'AI 도구를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.' }; }
@@ -26,7 +35,7 @@ export async function askClaude(prompt) {
       betas: ['server-side-fallback-2026-07-01'],
       fallbacks: 'default',
       output_config: { effort: 'medium' },
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{ role: 'user', content: image ? [{ type: 'image', source: { type: 'base64', media_type: image.type, data: image.data } }, { type: 'text', text: prompt }] : prompt }],
     });
     if (res.stop_reason === 'refusal') return { refusal: true };
     const text = res.content.filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim();
