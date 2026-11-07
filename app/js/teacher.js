@@ -61,9 +61,9 @@ export function teacherHome(root) {
   root.innerHTML = `<div class="card"><h2>선생님 처음 화면</h2>
     ${say('hi', '반을 만들면 아이마다 <b>아이 카드</b>(반 코드 · 번호 · 핀)가 나와요.<br>아이 이름은 이 기기에만 두고 서버에 보내지 않아요.')}
     ${list.length ? `<table class="list"><tr><th>반 코드</th><th>학기</th><th>아이</th><th></th></tr>${list.map(([C, x]) => `<tr><td><b class="code">${esc(C)}</b></td><td>${esc(gl(x.g))}</td><td>${x.n}명</td><td style="text-align:right"><a class="btn teal" href="#/t/c/${C}">반 열기</a></td></tr>`).join('')}</table>` : '<p class="muted">이 기기에서 연 반이 아직 없어요. 처음이면 <b>새 반 만들기</b>부터 하세요.</p>'}
-    <div class="acts"><a class="btn pri" href="#/t/new">새 반 만들기</a><a class="btn" href="#/t/open">다른 기기에서 만든 반 열기</a></div><div class="acts sub"><a class="btn" href="#/t/guide">한 장 안내(인쇄용)</a><a class="btn" href="#/t/letter">가정 안내문(인쇄용)</a><a class="btn" href="../paper/" target="_blank" rel="noopener" title="인쇄해서 푸는 진단 · 점검 — 채점 결과는 반 화면의 '종이 결과 가져오기'로">종이 점검(인쇄용)</a><a class="btn" href="#/t/sheet" title="기능 이름으로 골라 한 아이에게 그 칸만 연습시키는 종이">맞춤 연습지(인쇄용)</a></div></div>
+    <div class="acts"><a class="btn pri" href="#/t/new">새 반 만들기</a><a class="btn" href="#/t/open">다른 기기에서 만든 반 열기</a></div><div class="acts sub"><span class="small muted">인쇄할 것</span><a class="btn" href="#/t/guide">한 장 안내</a><a class="btn" href="#/t/letter">가정 안내문</a><a class="btn" href="../paper/" target="_blank" rel="noopener" title="인쇄해서 푸는 진단 · 점검 — 채점 결과는 반 화면의 '종이 결과 가져오기'로">종이 점검지</a><a class="btn" href="#/t/sheet" title="기능 이름으로 골라 한 아이에게 그 칸만 연습시키는 종이">맞춤 연습지</a></div></div>
     <div class="tgrid2"><div class="card"><h2>반 정보 백업</h2>
-    ${intro(`반 코드 · 선생님 열쇠 · 핀 · 아이 이름은 <b>이 기기에만</b> 있어요. 브라우저 기록을 지우거나 기기를 바꾸기 전에 내려받아 두세요. 이름이 들어 있으니 학교 기기에만 두세요.`)}
+    ${intro(`반 코드 · 선생님 열쇠 · 핀 · 아이 이름은 <b>이 기기에만</b> 있어요. 브라우저 기록을 지우거나 기기를 바꾸기 전에 <b>[백업 내려받기]</b>로 받아 두세요(반을 만들면 단추가 생겨요). 받아 둔 파일은 [백업 불러오기]로 넣어요. 이름이 들어 있으니 학교 기기에만 두세요.`)}
     <div class="acts">${list.length ? '<button id="bk">백업 내려받기</button>' : ''}<label class="btn">백업 불러오기<input type="file" id="rs" accept="application/json" hidden></label></div><p class="qmsg tight" id="bmsg"></p></div>
     <div class="card"><h2>이 앱이 하는 일</h2>
     <p>아이마다 빠진 앞 학년 셈을 <b>찾고</b>, 그 아이에게 <b>그것만 주고</b>, 아이는 <b>매일 조금씩</b> 풀어 메워요.</p>
@@ -167,7 +167,7 @@ export function cardsView(root, C) {
       <div class="acts no-print"><button type="button" class="mini" id="kcopy">다른 기기에서 열 링크 복사</button><span class="small muted" id="kmsg"></span></div></div>
     <div class="cards">${Array.from({ length: K.n }, (_, i) => i + 1).map((no) => `<div class="kcard"><div style="display:flex;gap:8px;align-items:center">${mascot('hi', 40)}<b>튼튼 수 다리</b></div>
       <p style="margin:6px 0 0">반 코드 <span class="code">${esc(C)}</span></p><p style="margin:0">번호 <span class="no">${no}</span> · 핀 <span class="code">${esc(K.pins[no] || '')}</span></p>
-      <div class="kq">${qrSVG(`${url}#/join?c=${C}&n=${no}`, { px: 96 })}<p class="small muted">크롬북 카메라로 비추면 반 코드 · 번호가 채워져요. 핀만 쳐요.</p></div>
+      <div class="kq">${qrSVG(`${url}#/join?c=${C}&n=${no}`, { px: 96 })}<p class="small muted">크롬북 카메라로 QR을 찍으면 반 코드 · 번호가 써져요. 핀 네 자리만 쓰세요.</p></div>
       <p class="small muted" style="margin:4px 0 0;word-break:break-all">${esc(url)}</p><p class="small" style="margin:6px 0 0">이름: ____________</p></div>`).join('')}</div>`;
   const kt = root.querySelector('.tkey'), ks = root.querySelector('#kshow');
   ks.addEventListener('click', () => { const on = ks.textContent === '열쇠 보기'; kt.textContent = on ? K.T : '●'.repeat(8); ks.textContent = on ? '가리기' : '열쇠 보기'; });

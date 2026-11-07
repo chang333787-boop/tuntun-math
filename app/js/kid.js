@@ -176,8 +176,8 @@ export async function homeView(root) {
     <section class="mine" aria-label="내 기록"><h2 class="sec">내 기록 <small>나하고만 비교해요</small></h2>
       <div class="mine-row">
         <div class="mine-c"><span class="k">이번 주 점검 맞힌 수</span><span class="v">${weekLine}</span></div>
-        <div class="mine-c"><span class="k">튼튼이와 배워서 고친 것</span><span class="v">${fixedN}개</span>${fixedN ? `<details class="more"><summary>보기</summary><p class="small">${names(Object.keys(K.fixed))}</p></details>` : ''}</div>
-        <div class="mine-c"><span class="k">이번 주 틀린 뒤 스스로 고친 문제</span><span class="v">${selfWk}개${selfLast != null ? ` <small>(지난주 ${selfLast}개)</small>` : ''}</span></div>
+        <div class="mine-c"><span class="k">배우기로 고친 것</span><span class="v">${fixedN}개</span>${fixedN ? `<details class="more"><summary>보기</summary><p class="small">${names(Object.keys(K.fixed))}</p></details>` : ''}</div>
+        <div class="mine-c"><span class="k">이번 주 틀리고 나서 다시 풀어 맞힌 문제</span><span class="v">${selfWk}개${selfLast != null ? ` <small>(지난주 ${selfLast}개)</small>` : ''}</span></div>
         <div class="mine-c"><span class="k">'자신 있어요' 하고 맞힌 문제</span><span class="v">${cal.n ? `${Math.round(cal.match * cal.n)}문제 <small>(${cal.n}문제 중)</small>` : '<small>아직 없어요</small>'}</span></div>
       </div>
       <p class="mine-links small"><a href="#/story">이야기 문제 풀기</a><a href="#/back">막힌 문제 직접 넣어 보기</a></p>

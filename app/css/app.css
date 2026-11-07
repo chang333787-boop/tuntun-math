@@ -235,6 +235,7 @@ div.cmpc{box-shadow:none}
 .c3-help>details>summary::-webkit-details-marker{display:none}
 .c3-help>details>summary{border-color:var(--sun);background:#FDF6E3}
 .c3-list b{font-size:18px;line-height:1.35;font-weight:700}.c3-list span{font-size:14.5px;color:var(--mute);line-height:1.45}
+.c3-list>li>a{position:relative;padding-right:34px}.c3-list>li>a::after{content:'';position:absolute;right:14px;top:50%;width:9px;height:9px;border-top:2.5px solid currentColor;border-right:2.5px solid currentColor;transform:translateY(-50%) rotate(45deg);opacity:.5}   /* 줄을 눌러 시작한다는 표시(단추는 지금 할 카드에만 · 11-07 '1개인데 시작이 없음') */
 .c3-help .helpbox{margin:8px 0 0}
 .c3-none{margin:6px 0 0;color:var(--off-ink);font-size:16px;line-height:1.5}
 .c3-body{flex:1 1 auto;min-width:0}
