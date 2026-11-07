@@ -301,7 +301,7 @@ export function fixView(root, c, opt = {}) {
   const before = KS.reportOf(K).L[c];
   const FK = `tt.fx.${me.C}.${me.no}`, fx0 = lsGet(FK, null);
   const resume = fx0 && fx0.c === c && Date.now() - fx0.t < 3 * 3600e3 && ['together', 'solo', 'check'].includes(fx0.phase) ? fx0 : null;
-  const F = newFix({ c, id: resume ? resume.id : rand(6) });
+  const F = newFix({ c, id: resume ? resume.id : rand(6), like: K.back && K.back.c === c && K.back.root === c && !K.back.solved ? K.back.p : null });   /* 거꾸로 찾기에서 '합쳐 풀기'로 온 배우기 — 처음 문제 꼴(가운데 0)로 시범 · 같이 풀기(306 − 158을 배우고도 또 막히던 것 · 11-08 처음 보는 눈) */
   if (resume) jumpTo(F, resume.phase);   /* 3시간 안에 다시 오면 나갔던 걸음부터 */
   else if (opt.check) jumpTo(F, 'check');   /* 선생님과 같이 본 뒤 — 시범 · 같이 · 혼자 없이 확인 3문제부터 */
   const ct0 = classTask(K), inClass = !!(ct0 && Date.now() - ct0.t < 3 * 3600e3);   /* 수업 중(연 뒤 3시간)만 — 저녁 집에서는 보통 끝 화면(회귀 10-31) */

@@ -17,9 +17,9 @@ import { P } from '../../engine/concepts/kit.js';
 export const FIX = { soloNeed: 3, soloMax: 6, check: 3, miss: 3 };   // 혼자 셋 맞히면 확인 · 여섯 문제까지 · 세 번 내리 틀리면 함께로(한 번) → 또 세 번이면 선생님과
 const hash = (s) => [...String(s)].reduce((h, ch) => (Math.imul(h, 31) + ch.charCodeAt(0)) >>> 0, 7);
 
-export function newFix({ c, id }) {
+export function newFix({ c, id, like = null }) {   /* like = 거꾸로 찾기 처음 문제의 수(그 꼴을 시범 · 같이 풀기에 먼저) */
   const r = rng(hash(id + c));
-  const F = { v: 1, c, id, seq: 0, phase: 'show', solo: { n: 0, ok: 0, run: 0, log: [] }, back: 0, help: false, R: { done: {}, it: {} }, conf: {}, ms: {}, used: [] };
+  const F = { v: 1, c, id, like: like && typeof like === 'object' ? like : null, seq: 0, phase: 'show', solo: { n: 0, ok: 0, run: 0, log: [] }, back: 0, help: false, R: { done: {}, it: {} }, conf: {}, ms: {}, used: [] };
   F.ex = example(F, r);
   F.steps = stepsOf(F.ex);
   F.si = 0;
@@ -27,15 +27,18 @@ export function newFix({ c, id }) {
 }
 // 단계가 둘 이상 나오는 숫자를 고름(쪼갤 게 없으면 그냥)
 //  시범은 보통 꼴로 — 답의 맨 앞자리가 0이 되거나(93 − 89 = 4) 자리가 하나 늘어나는(95 + 7 = 102) 덧셈 · 뺄셈은 배울 것이 둘이라 피함(11-07 처음 보는 눈)
+/* 처음 문제와 닮은 꼴 — 맨 끝 자리를 뺀 자리 가운데 0이 있는 곳이 같음(306 − 158 ↔ 705 − 268 · 처음 문제에 0이 없으면 따지지 않음) */
+const zpat = (n) => (Number.isInteger(n) ? String(n).slice(0, -1).replace(/[1-9]/g, 'x') : '');
+const likeOf = (p, lk) => !!(lk && p && /0/.test(zpat(lk.a)) && String(p.a).length === String(lk.a).length && zpat(p.a) === zpat(lk.a));
 const odd = (it) => { const m = toText(it.prompt).match(/^(\d+) ([+−]) (\d+) = □$/); return !!m && String(it.sol[0]).length !== Math.max(m[1].length, m[3].length); };
 function example(F, r) {
   const used = new Set(F.used);
   let best = null;
-  for (let k = 0; k < 20; k++) {
+  for (let k = 0; k < (F.like ? 60 : 20); k++) {
     const [it] = pickItems(F.c, 1, r, used); if (!it) break;
-    const st = stepsOf(it), sc = Math.min(st.length, 2) * 2 - (odd(it) ? 1 : 0);
+    const st = stepsOf(it), dup = new Set(st.map((s) => toText(s.prompt))).size < st.length, sc = Math.min(st.length, 2) * 2 - (odd(it) ? 1 : 0) - (dup ? 2 : 0) + (likeOf(it.p, F.like) ? 3 : 0);   /* 단계 식이 겹치면(754 − 355 → 14 − 5 두 번) 넘어가지 않은 것처럼 보임 · 11-08 처음 보는 눈 */
     if (!best || sc > best.sc) best = { it, st, sc };
-    if (sc >= 4) break;
+    if (sc >= (F.like && /0/.test(zpat(F.like.a)) ? 7 : 4)) break;
   }
   const it = best ? best.it : itemOf(F.c, byId[F.c].gen(r));
   F.used.push(JSON.stringify([it.prompt, it.choices || null]));
