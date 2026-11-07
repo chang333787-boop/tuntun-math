@@ -314,11 +314,12 @@ function showable(prompt, v) {
   return v.every((x) => x == null || Number.isFinite(Number(x)));
 }
 // prefer = 이 아이에게 보인 원인 id들(먼저 씀) · 없으면 이 칸에서 가려낼 수 있는 틀린 방법 아무거나
-export function compareOf(c, { prefer = [], seed = Date.now() } = {}) {
+export function compareOf(c, { prefer = [], seed = Date.now(), like = null } = {}) {   /* like = 거꾸로 찾기 처음 문제 꼴(앞 열둘은 그 꼴만) */
   const r = rng(hash(`${seed}:cmp:${c}`)), used = new Set();
   let best = null;
   for (let k = 0; k < 24 && !(best && best.mine); k++) {
     const [it] = pickItems(c, 1, r, used); if (!it || it.choices) continue;
+    if (like && /0/.test(zpat(like.a)) && k < 12 && !likeOf(it.p, like)) continue;
     let ids = []; try { ids = testable(it).filter((id) => KIDSAY[id]); } catch (e) { ids = []; }
     if (!ids.length) continue;
     const preds = {}, wp = {}; for (const id of ids) { let v = null; try { v = __predict(it, id); } catch (e) { v = null; } if (!v || JSON.stringify(v) === JSON.stringify(it.sol)) continue; if (showable(it.prompt, v)) preds[id] = v; else { const alt = plainFrac(it.prompt, v); if (alt && showable(alt, v)) { preds[id] = v; wp[id] = alt; } } }   /* 자연수 0 대분수는 그냥 분수로(5-1-5:3 비교하기가 사라지던 것) */
