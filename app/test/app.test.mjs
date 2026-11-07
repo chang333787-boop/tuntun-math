@@ -397,6 +397,7 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   const bk = { x: '306-158', c: '3-1-1:7', p: { a: 306, b: 158, fam: 'SUB' }, r: '3-1-1:7', t: Date.now() - 5000, s: 0 };
   const f0 = globalThis.fetch; globalThis.fetch = async (url) => ({ ok: true, status: 200, json: async () => (/\/st\.json/.test(url) ? dbb.enc({ bk }) : /ZZBK\/7\/0000\.json/.test(url) ? { st: dbb.enc({ bk }) } : null) });
   const r = await KSb.pull({ C: 'ZZBK', no: '7', pin: '0000' }); globalThis.fetch = f0;
+  { const f1 = globalThis.fetch; globalThis.fetch = async (url) => ({ ok: true, status: 200, json: async () => (/ZZBK\/7\/0000\.json/.test(url) ? { st: dbb.enc({ bk: { ...bk, s: Date.now() } }) } : null) }); const r2 = await KSb.pull({ C: 'ZZBK', no: '7', pin: '0000' }); globalThis.fetch = f1; ok(r2.K.back && r2.K.back.solved > 0, '같은 찾기를 다른 기기에서 다시 풀어 끝냄 → 이 기기도 풀었음으로(코덱스 r12)'); }
   ok(r.K.back && r.K.back.text === '306-158' && r.K.back.p && r.K.back.p.a === 306 && KSb.summaryOf(r.K).bk && KSb.summaryOf(r.K).bk.x === '306-158', `다른 기기 — 거꾸로 찾기 되살림 · 요약에 그대로 — ${JSON.stringify(r.K.back)}`);
 }
 console.log(fail ? `FAIL ${fail}` : 'PASS');

@@ -78,7 +78,7 @@ function run(root, me, K, S, SK) {
     let miss = 0; for (let i = S.log.length - 1; i >= 0 && !S.log[i].ok; i--) miss++;
     if (miss >= 6) return done(true);   /* 여섯 번 내리 틀림 — 수 세기까지 끝없이 내려가지 않고 선생님과(11-08 처음 보는 눈 2차) */
     const last = S.log[S.log.length - 1], lastIt = last && !last.ok && last.role !== 'problem' && last.role !== 'step' ? (() => { try { return makeItem(last.c, last.p); } catch (e) { return null; } })() : null;   /* 새 숫자 확인 문제는 틀리면 답을 보임(처음 문제 · 쪼갠 단계는 처음 문제 답이 되므로 X) */
-    const pre = !last || S.verifying ? '' : last.ok ? '맞혔어요. ' : last.idk ? '괜찮아요. ' : lastIt ? `아직이에요 — ${staticHTML(lastIt.prompt, lastIt.sol)}. ` : '아직이에요. ';   /* 틀렸다는 말 없이 다음 문제로 바뀌던 것(11-08 처음 보는 눈) */
+    const pre = !last || S.verifying ? '' : last.ok ? '맞혔어요. ' : last.idk ? '괜찮아요. ' : lastIt ? (lastIt.choices ? `아직이에요. ${ansSay(lastIt)} ` : `아직이에요 — ${staticHTML(lastIt.prompt, lastIt.sol)}. `) : '아직이에요. ';   /* 보기 문항은 고른 답을 말로(질문만 다시 보이던 것 · 코덱스 r12) */   /* 틀렸다는 말 없이 다음 문제로 바뀌던 것(11-08 처음 보는 눈) */
     const top = pre + (q.role === 'problem' ? (S.log.length ? '처음 문제와 닮은 문제를 새 숫자로 한 번 더 풀어요. 한 번만으로는 정말 아는지 알 수 없어요.' : '먼저 처음 문제를 풀어 봐요. 모르면 넘어가도 괜찮아요.')
       : q.role === 'step' ? `같은 숫자로 <b>쪼개</b> 볼게요(${q.of}단계 중 ${q.n}단계) — ${esc(q.why || '')}`
       : S.verifying ? '맞혔어요! 새 숫자로 몇 개 더 풀어서 정말 아는지 봐요.'
