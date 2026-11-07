@@ -45,6 +45,7 @@ export async function pull(me) {
   if (st0 && typeof st0 === 'object') {
     const p = st0.prep; if (p && typeof p.u === 'string' && Number(p.t) > ((K.lastPrep && K.lastPrep.t) || 0)) K.lastPrep = { unit: p.u, why: String(p.why || ''), t: Number(p.t) };
     if (st0.fixed && typeof st0.fixed === 'object') { K.fixed = K.fixed || {}; for (const [c, t] of Object.entries(st0.fixed)) if (Number(t) > (K.fixed[c] || 0)) K.fixed[c] = Number(t); }
+    if (Array.isArray(st0.lad)) { K.lad = K.lad || {}; for (const v of st0.lad) { if (!Array.isArray(v) || typeof v[0] !== 'string') continue; const a = (K.lad[v[0]] = K.lad[v[0]] || {}); ['r', 's', 'x', 'p'].forEach((k, i) => { const n = Number(v[i + 1]) || 0; if (n > (a[k] || 0)) a[k] = n; }); } }   /* 새 기기에서 빈 기록으로 덮어쓰던 것(코덱스 11-07) — 주마다 칸별 큰 값 */
     if (st0.help && typeof st0.help === 'object') { K.help = K.help || {}; for (const [c, n] of Object.entries(st0.help)) if (Number(n) > (K.help[c] || 0)) K.help[c] = Number(n); }
   }   /* 선생님이 뺀 종이 기록(번호를 잘못 골랐을 때) — 종이 기록은 서버가 정본 */
   if (srv && srv.rv) { const rv = db.dec(srv.rv); if (rv) for (const [c, x] of Object.entries(rv)) if (!K.rv[c] || (x.t || 0) > (K.rv[c].t || 0)) K.rv[c] = x; }

@@ -10,7 +10,7 @@ import { FIX, jumpTo, newFix, showNext, showLen, showTalk, blankTalk, factTalk, 
 import * as KS from './kidstore.js';
 import { draw, stepHTML, staticHTML, ansSay, rushGuard, rushPause, fbSlot } from './item.js';
 import { P, RO } from '../../engine/concepts/kit.js';
-import { modelHTML, colOf, colView, picAns, tenFrameHTML } from './model.js';
+import { colOf, colView, picAns, tenFrameHTML, regroupHTML, rgLag } from './model.js';
 import { grantAccurate } from './stage.js';
 import { lsGet, lsSet, lsDel, esc, rand } from './local.js';
 import { flush, get as dbGet, dec } from './db.js';
@@ -71,6 +71,9 @@ export function joinView(root) {
   });
 }
 
+// t 뒤에 만든 기록에서 그 칸을 틀리거나 넘어간 적이 있나(푼 문항만)
+const missAfter = (K, c, t) => Object.values(K.recs || {}).some((x) => x && x.s && x.s.made > t && Array.isArray(x.s.it) && x.r && x.r.it && x.s.it.some((i) => Array.isArray(i) && i[1] === c && x.r.it[i[0]] && x.r.it[i[0]].s !== 'ok'));
+
 // ── 오늘 할 일 고르기(홈과 같은 규칙) ──
 //  준비했나 = 마지막 준비 다리(K.lastPrep · 문제 0개로 끝난 판도 '했음')가 선생님이 연 뒤 · 다른 기기에서 했으면 그 단원 기록이 연 뒤(혹평 5)
 //  가장 약한 아이가 사라지지 않게 — 준비 다리가 '선생님과 같이'로 멈췄거나 · 막힌 칸이 셋 넘는데 고칠 판자가 비었거나 · 판자 고치기가 선생님과로 끝났으면 맨 위에 '선생님과 같이 봐요'(혹평 2)
@@ -92,13 +95,15 @@ export function todoOf(K, rep) {
   }
   if (K.back && K.back.root && byId[K.back.root] && !(K.fixed && K.fixed[K.back.root] > K.back.t)) out.push({ kind: 'fix', c: K.back.root, pri: !out.length, title: `배우기 — ${plank(K.back.root)}`, sub: `'${K.back.text}'에서 거꾸로 따라가 찾은 곳이에요`, href: `#/fix/${K.back.root}` });
   else if (K.back && K.back.root && !K.back.solved && K.fixed && K.fixed[K.back.root]) out.push({ kind: 'retry', pri: !out.length, title: `처음 문제 다시 풀기 — ${K.back.text}`, sub: '막혔던 곳을 배웠어요. 이제 풀릴 거예요', href: '#/retry' });
-  const fixes = rep.start.map((s) => s.c).sort(byGrade).filter((c) => !(K.back && K.back.root === c && !(K.fixed && K.fixed[c] > K.back.t)) && !helpFix.includes(c));
-  const shakyFixed = Object.keys(K.fixed || {}).filter((c) => rep.L[c] && (rep.L[c].st === 'shaky' || rep.L[c].st === 'stuck') && !fixes.includes(c) && !helpFix.includes(c));
+  /* 배우기를 통과한 칸은 통과한 뒤에 다시 틀린 적이 있을 때만 다시 올림 — 확인 넷 중 셋으로 통과해도 판정은 '가끔 틀림'이라 곧바로 같은 배우기가 뜨던 것(코덱스 11-07) */
+  const relearn = (c) => !(K.fixed && K.fixed[c]) || missAfter(K, c, K.fixed[c]);
+  const fixes = rep.start.map((s) => s.c).sort(byGrade).filter((c) => !(K.back && K.back.root === c && !(K.fixed && K.fixed[c] > K.back.t)) && !helpFix.includes(c) && relearn(c));
+  const shakyFixed = Object.keys(K.fixed || {}).filter((c) => rep.L[c] && (rep.L[c].st === 'shaky' || rep.L[c].st === 'stuck') && !fixes.includes(c) && !helpFix.includes(c) && relearn(c));
   [...fixes, ...shakyFixed].slice(0, 3).forEach((c, i) => out.push({ kind: 'fix', c, pri: !out.length && i === 0, title: `배우기 — ${plank(c)}`, sub: K.help && K.help[c] ? '지난번엔 조금 어려웠어요. 선생님과 함께 봐도 좋아요.' : '튼튼이가 먼저 풀어 보이고, 같이 풀고, 혼자 풀어요', href: `#/fix/${c}` }));
   Object.keys(K.firm || {}).filter((c) => byId[c] && rep.L[c] && rep.L[c].st === 'shaky' && !fixes.includes(c) && !shakyFixed.includes(c)).slice(0, 2)
     .forEach((c) => out.push({ kind: 'fix', c, pri: false, title: `다시 연습 — ${plank(c)}`, sub: '거의 되는데 가끔 틀려요. 한 번 더 배우면 단단해져요', href: `#/fix/${c}` }));
   const due = Object.entries(K.rv || {}).filter(([, x]) => x.n < KS.REVIEW_DAYS.length && x.due <= now).map(([c]) => c);
-  const ran = (K.jog || []).includes(td), rp = runPlan(K);
+  const ran = (K.jog || []).includes(td), rp = runPlan(K, now, rep);
   if (rp.length && (!ran || due.length)) out.push({ kind: 'run', pri: !out.length, title: `섞어서 ${rp.length * 2}문제`, sub: `3~5분${due.length ? ' · 다시 볼 문제 포함' : ''}`, href: '#/run' });
   // 이어서 찾기 — 지난번에 18문제를 다 써서 멈췄거나, 지난 시간에 '선생님과 같이'로 멈춘 판(지난 기록 14일과 함께 이어 감)
   if (lp && unitById[lp.unit] && (lp.why === 'budget' || lp.why === 'teacher') && today(lp.t) !== td && !out.some((x) => x.kind === 'prep'))   /* '이어서'는 날이 바뀐 뒤에만(방금 '다음 시간에'라고 해 놓고 바로 '지금 시작'이던 것 · 11-07 사용감 점검) */ out.push({ kind: 'prep', unit: lp.unit, pri: !out.length, title: '오늘 단원 점검 이어서', sub: `${unitLabel(lp.unit)} — 지난번에 멈춘 곳부터 · 약 ${mins((tasks.find((x) => x.unit === lp.unit) || {}).len)}분`, href: `#/prep/${lp.unit}` });
@@ -297,10 +302,10 @@ export function fixView(root, c) {
     const b = root.querySelector('#b'); b.querySelector('#n').addEventListener('click', () => { showNext(F); route(); }); return b;
   };
   function show() {
-    const n = showLen(F), done = F.si >= n, has = F.steps.length > 0, md = tenFrameHTML(F.ex, { moved: has && F.si >= F.steps.length - 1, anim: has && F.si === F.steps.length - 1 }) || modelHTML(F.ex);   /* 한 자리 10 만들기 · 10에서 빼기는 10칸 틀(둘째 단계에서 옮기는 모습 한 번) */
+    const n = showLen(F), done = F.si >= n, has = F.steps.length > 0, md = tenFrameHTML(F.ex, { moved: has && F.si >= F.steps.length - 1, anim: has && F.si === F.steps.length - 1 }) || regroupHTML(F.ex, { pre: F.si === 0, anim: F.si === 1 });   /* 한 자리 10 만들기 · 10에서 빼기는 10칸 틀(둘째 단계에서 옮기는 모습 한 번) · 받아올림 · 받아내림은 첫 단계에서 묶음 바꾸기 한 번(docs/motion.md ① ②) */
     const fin = done ? `<p class="fxa">${picAns(F.ex) ? '그래서 답은 ✓ 표시한 보기예요.' : ansSay(F.ex, '그래서 답은')}</p>` : '';
     if (has) {
-      const C = colOf(F.ex, F.steps), st = F.si ? F.steps[F.si - 1] : null, v = C ? colView(C, F.si) : null;
+      const C = colOf(F.ex, F.steps), st = F.si ? F.steps[F.si - 1] : null, v = C ? colView(C, F.si, F.si === 1 ? rgLag(F.ex) : null) : null;   /* 묶음 바꾸기와 같은 때에 빗금 · 위 숫자 */
       const mid = v ? v.html : F.si ? `<ol class="steps eq">${F.steps.slice(0, F.si).map((x, i) => stepHTML(x, { cls: i === F.si - 1 ? 'now' : '', why: false })).join('')}</ol>` : '';
       const talk = st ? `<p>${esc(st.why).replace(/(\d) ([+−×÷=]) (?=\d)/g, '$1\u00a0$2\u00a0')}</p>${v ? `<p class="fxe">${staticHTML(st.prompt, st.sol)}${v.lead0 ? '<span class="small">맨 앞자리의 0은 쓰지 않아요.</span>' : ''}${done ? `<span class="fxa">${ansSay(F.ex, '그래서 답은')}</span>` : ''}</p>` : fin}`
         : `<p>튼튼이가 먼저 풀어 볼게요. ${C ? '일의 자리부터 한 자리씩 계산해요.' : '한 단계씩 풀면서 생각을 말할게요.'}</p>`;

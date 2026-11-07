@@ -109,6 +109,8 @@ export function giveTView(root, C) {
   const K = cls(C); if (!K) { location.hash = '#/t'; return; }
   const q = qs(), nos = Array.from({ length: K.n }, (_, i) => String(i + 1));
   let sk = SKILL[q.get('sk')] ? q.get('sk') : null, n = 10, S = null, sent = [], alive = true, trap = true;
+  const seed = Math.floor(Math.random() * 1e9);   /* 이 화면에서 보내는 것과 '같은 문제 종이로'가 같은 씨앗(따로 뽑아 숫자가 달랐던 것 · 코덱스 11-07) */
+  const paperURL = (sk1, n1, seed1, want1) => `../paper/practice.html#${encodeURIComponent(JSON.stringify({ v: 2, seed: seed1, who: '', s: [secOf(SKILL[sk1], n1, { want: want1 || {} })] }))}`;
   let who = new Set((q.get('who') || '').split(',').filter((x) => nos.includes(x)));
   const exHTML = (s) => { let xs = []; try { xs = examplesOf(s); } catch (e) { xs = []; } return xs.map((e) => `<span class="gx">${staticHTML(e.it.prompt, null)}</span>`).join(''); };
   function render(msg = '') {
@@ -127,7 +129,7 @@ export function giveTView(root, C) {
       <div class="acts"><button class="pri big" id="send" ${who.size ? '' : 'disabled'}>${icon('send', 22)}아이 화면으로 보내기</button><button class="big" id="paper">같은 문제 종이로</button></div>
       <p class="small muted">아이 처음 화면의 <b>'연습할 것'</b> 카드에 '선생님이 준 문제'로 떠요(30초 안). 종이로 뽑아도 아이 화면과 같은 문제예요.</p>`;
     const sentHTML = sent.length ? `<div class="card"><h2>보낸 보충 <small>최근 ${Math.min(sent.length, 10)}개</small></h2><ul class="sent">${sent.slice(0, 10).map((x) => { const sx = SKILL[x.sk]; const res = (x.who || []).map((no) => { const g = S && S[no] && S[no].st && S[no].st.gv[x.id]; return g ? `<span class="pill ${g[0] / g[1] >= 0.8 ? 'okc' : ''}">${esc(nm(K, no))} ${g[0]}/${g[1]}</span>` : `<span class="pill muted">${esc(nm(K, no))} 아직</span>`; }).join(' ');
-      return `<li><b>${esc(sx ? sx.name : x.sk)}</b> <span class="small muted">${x.n}문제 · ${new Date(x.t).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}</span><div class="whys">${res}</div></li>`; }).join('')}</ul></div>` : '';
+      return `<li><b>${esc(sx ? sx.name : x.sk)}</b> <span class="small muted">${x.n}문제 · ${new Date(x.t).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}</span>${sx && Number.isFinite(Number(x.seed)) ? ` <a class="small" href="${esc(paperURL(x.sk, Number(x.n) || 10, Number(x.seed), x.want))}" target="_blank" rel="noopener">종이로</a>` : ''}<div class="whys">${res}</div></li>`; }).join('')}</ul></div>` : '';
     root.innerHTML = `<div class="card gview"><div class="tv-h"><h2>보충 주기 <small>${esc(C)}</small></h2><a class="btn" href="#/t/c/${C}">반 화면으로</a></div>
       ${intro('기능 하나를 골라 부족한 아이에게 그 문제만 보내요. 아이는 틀리면 그 자리에서 풀이를 보고, 다 풀면 결과가 반 표에 들어가요.')}
       ${pick}<p class="qmsg tight${msg ? ' ok' : ''}" id="msg">${esc(msg)}</p></div>${sentHTML}`;
@@ -137,13 +139,13 @@ export function giveTView(root, C) {
     root.querySelectorAll('[data-n]').forEach((b) => b.addEventListener('click', () => { n = Number(b.dataset.n); render(); }));
     const sb = root.querySelector('#send'); if (sb) sb.addEventListener('click', send);
     const tb = root.querySelector('#trap'); if (tb) tb.addEventListener('change', () => { trap = tb.checked; });
-    const pb = root.querySelector('#paper'); if (pb) pb.addEventListener('click', () => { const seed = Math.floor(Math.random() * 1e9); window.open(`../paper/practice.html#${encodeURIComponent(JSON.stringify({ v: 2, seed, who: '', s: [secOf(SKILL[sk], n, { want: wantNow() })] }))}`, '_blank', 'noopener'); });
+    const pb = root.querySelector('#paper'); if (pb) pb.addEventListener('click', () => window.open(paperURL(sk, n, seed, wantNow()), '_blank', 'noopener'));
   }
   const wantNow = () => { const s = SKILL[sk]; if (!s || !trap || !S) return {}; return wantOf(skillMinds(K, S, s), s); };
   async function send() {
     const s = SKILL[sk]; if (!s || !who.size) return;
     const m = root.querySelector('#msg'); m.textContent = '보내는 중…';
-    const t = Date.now(), id = `gv${dayKey(t)}${rand(4)}`, seed = Math.floor(Math.random() * 1e9), list = [...who].sort((a, b) => a - b);
+    const t = Date.now(), id = `gv${dayKey(t)}${rand(4)}`, list = [...who].sort((a, b) => a - b);
     const w = wantNow(), task = { kind: 'give', sk: s.id, n, seed, t, ...(Object.keys(w).length ? { want: w } : {}) }, up = {};
     for (const no of list) up[`k/${C}/${no}/${K.pins[no]}/in/${id}`] = db.enc(task);
     up[`tc/${C}/${K.T}/tasks/${id}`] = db.enc({ ...task, who: list });

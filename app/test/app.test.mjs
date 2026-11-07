@@ -295,5 +295,31 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   const xs = LX.NODES.filter((n) => LX.byId[n.id]).map((n) => [n.id, FX.exampleOf(n.id)]);
   ok(xs.filter(([, x]) => x).length >= 180 && xs.every(([, x]) => !x.includes('[그림]') && x.length <= 34) && xs.every(([c, x]) => FX.exampleOf(c) === x), `예시 문제가 있는 칸 ${xs.filter(([, x]) => x).length}/${xs.length} · 예: ${FX.exampleOf('1-2-4:5')}`);
 }
+// ㉔ 코덱스 11-07 — 점검지 · 보충만 푼 새 아이도 매일 연습이 생김(판정된 칸) · 오늘 푼 것뿐이면 '내일부터'(later)
+{
+  const RN = await import('../js/run.js'), G7 = await import('../../paper/js/gen.js'), KS7 = await import('../js/kidstore.js');
+  const now = Date.now(), day = 864e5;
+  const mk = (c, made) => { const sh = G7.makeSheet({ kind: 'prep', words: false, id: 'Q' + made, lessons: [{ c, n: 3 }], mixed: true }); sh.items = sh.items.filter((x) => x.ch !== 'END'); sh.chapters = sh.chapters.filter((x) => x.key !== 'END'); sh.made = made; return { s: KS7.pack(sh), r: { done: Object.fromEntries(sh.chapters.map((x) => [x.key, true])), it: Object.fromEntries(sh.items.map((x) => [x.k, { s: 'ok' }])) }, cf: {}, ms: {} }; };
+  const one = (x) => ({ [x.s.id]: x });   /* 기록 id = 묶음 id(addSheet와 같게 — 판정이 이 id로 결과를 찾음) */
+  const K = { recs: one(mk('2-2-2:3', now - 3 * day)), rv: {}, fixed: {}, mx: {} };
+  const p0 = RN.runPlan(K, now), p1 = RN.runPlan(K, now, KS7.reportOf(K));
+  ok(!p0.length && p1.includes('2-2-2:3'), `판정을 주면 점검에서 맞힌 칸이 매일 연습 후보 — 없이 ${p0.length} · 판정 ${p1.join(' · ')}`);
+  const K2 = { recs: one(mk('2-2-2:3', now - 60000)), rv: {}, fixed: {}, mx: {} }, p2 = RN.runPlan(K2, now, KS7.reportOf(K2));
+  ok(!p2.length && p2.later >= 1, `오늘 점검한 칸뿐이면 비고 later ${p2.later}(화면: '내일부터 나와요')`);
+}
+// ㉕ 묶음 바꾸기 움직임(model.js regroupHTML · docs/motion.md ① ②) — 문제 숫자 그대로 · 끝 모습 · 세로셈 표시가 같은 때에(lag)
+{
+  const MD = await import('../js/model.js'), G8 = await import('../../paper/js/gen.js'), RR = await import('../../engine/math.js'), FX8 = await import('../js/fix.js');
+  const find = (c) => { for (let k = 0; k < 40; k++) { const [x] = G8.pickItems(c, 1, RR.rng(500 + k), new Set()); if (x && MD.regroupHTML(x)) return x; } return null; };
+  const sub = find('2-1-3:7'), add = find('2-1-3:3');
+  const cnt = (h, cls) => (h.match(new RegExp(`class="${cls}"`, 'g')) || []).length;
+  const hs = MD.regroupHTML(sub), hp = MD.regroupHTML(sub, { pre: true }), ha = MD.regroupHTML(add, { anim: true });
+  ok(cnt(hs, 'c-new') === 10 && hs.includes('rg-re') && !hp.includes('rg-re') && hp.includes(' pre'), '뺄셈: 새 낱개 10개 · 끝 모습에 다시 보기 · 바꾸기 전엔 다시 보기 없음');
+  ok(cnt(ha, 'go') === 10 && cnt(ha, 'rod-new') === 1 && ha.includes(' anim'), '덧셈: 모여 십 막대가 되는 낱개 10개 · 새 십 막대 1개');
+  ok(!MD.regroupHTML({ prompt: ['3', '+', '4', '=', '□'], sol: [7] }) && MD.rgLag(sub).mk === 600 && MD.rgLag(add).put === 1300, '받아올림 · 받아내림이 없으면 그리지 않음 · 늦춤 시각');
+  const C = MD.colOf(sub, FX8.stepsOf({ c: sub.c, p: sub.p }));
+  const v1 = MD.colView(C, 1, MD.rgLag(sub)).html, v0 = MD.colView(C, 1).html;
+  ok(C && v1.includes('class="lag"') && v1.includes('x lag') && !v0.includes('lag'), '세로셈: 첫 단계의 빗금 · 위 숫자 · 답만 늦게 나타남(lag 없으면 그대로)');
+}
 console.log(fail ? `FAIL ${fail}` : 'PASS');
 process.exitCode = fail ? 1 : 0;

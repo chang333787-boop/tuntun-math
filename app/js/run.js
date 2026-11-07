@@ -31,15 +31,20 @@ export function seenAt(K) {
 }
 const lastOf = (K, c, seen = {}) => Math.max((K.rv && K.rv[c] && K.rv[c].t) || 0, ...(((K.mx || {})[c] || {}).runs || []).map((r) => r.t), (K.fixed || {})[c] || 0, seen[c] || 0);
 
-// 오늘 뛸 판자
-export function runPlan(K, now = Date.now()) {
+// 오늘 풀 칸 — rep(판정)을 주면 점검지 · 보충에서 판정된 칸(됨 · 거의 · 가끔 틀림)도 후보(점검지만 푼 새 아이는 매일 연습이 늘 비던 것 · 코덱스 11-07)
+//  돌려주는 배열의 later = 오늘 이미 풀어서 뺀 칸 수(오늘 점검한 아이에게 '내일부터 나와요'라고 말하려고)
+export function runPlan(K, now = Date.now(), rep = null) {
   const due = Object.entries(K.rv || {}).filter(([c, x]) => byId[c] && x.n < KS.REVIEW_DAYS.length && x.due <= now).map(([c]) => c);
-  const pool = new Set([...Object.keys(K.mx || {}).filter((c) => (K.mx[c].tier || 0) >= 1), ...Object.keys(K.fixed || {})].filter((c) => byId[c] && !due.includes(c)));
+  const judged = rep && rep.L ? Object.values(rep.L).filter((x) => x && (x.st === 'ok' || x.st === 'near' || x.st === 'shaky')).map((x) => x.c) : [];
+  const pool = new Set([...Object.keys(K.mx || {}).filter((c) => (K.mx[c].tier || 0) >= 1), ...Object.keys(K.fixed || {}), ...judged].filter((c) => byId[c] && !due.includes(c)));
+  const n0 = pool.size;
   const seen = seenAt(K), last = (c) => lastOf(K, c, seen), d0 = new Date(now); d0.setHours(0, 0, 0, 0);
   for (const c of [...pool]) if ((seen[c] || 0) >= d0.getTime()) pool.delete(c);   /* 오늘 이미 푼 칸은 빼기(방금 점검에서 맞힌 꼴을 또 — 잘하는 아이가 쉬운 것을 세 번 풀던 것 · 11-07 [D-6][D-8]) · 다시 볼 날이 된 칸은 그대로 */
   const stale = [...pool].filter((c) => now - last(c) >= 2 * DAY).sort((a, b) => last(a) - last(b));
   const fresh = [...pool].filter((c) => !stale.includes(c)).sort((a, b) => last(a) - last(b));
-  return [...due, ...stale, ...fresh].slice(0, 5);
+  const out = [...due, ...stale, ...fresh].slice(0, 5);
+  out.later = n0 - pool.size;
+  return out;
 }
 // 이번 주(월~일)에 뛴 날
 export function weekHTML(K, now = Date.now()) {
@@ -51,12 +56,11 @@ export function weekHTML(K, now = Date.now()) {
 export function runView(root) {
   const me = meOf(); if (!me) return go('#/join');
   const K = KS.load(me);
-  const plan = runPlan(K);
+  const rep0 = KS.reportOf(K), plan = runPlan(K, Date.now(), rep0);
   if (!plan.length) {
-    root.innerHTML = `<div class="card msg act-run"><p class="eyebrow">${tile('daily', 22)}매일 연습</p>${say('think', '아직 매일 연습할 문제가 없어요.<br><b>점검</b>에서 맞힌 것이나 튼튼이와 배운 것이 생기면, 그 문제로 날마다 조금씩 연습해요.', 104)}<div class="acts"><a class="btn pri" href="#/me">처음 화면으로</a></div></div>`;
+    root.innerHTML = `<div class="card msg act-run"><p class="eyebrow">${tile('daily', 22)}매일 연습</p>${say('think', plan.later ? '오늘 점검에서 푼 문제는 <b>내일부터</b> 매일 연습에 나와요.' : '아직 매일 연습할 문제가 없어요.<br><b>점검</b>에서 맞힌 것이나 튼튼이와 배운 것이 생기면, 그 문제로 날마다 조금씩 연습해요.', 104)}<div class="acts"><a class="btn pri" href="#/me">처음 화면으로</a></div></div>`;
     return;
   }
-  const rep0 = KS.reportOf(K);
   const sh = makeSheet({ kind: 'run', words: false, id: rand(6), lessons: plan.map((c) => { const want = wantOf(rep0, K.minds, c); return want ? { c, n: 2, want, trapN: 1 } : { c, n: 2 }; }), mixed: true });   // 보였던 생각이 있으면 둘 중 하나는 함정 짝
   sh.items = sh.items.filter((it) => it.ch !== 'END'); sh.chapters = sh.chapters.filter((ch) => ch.key !== 'END');
   for (let i = sh.items.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [sh.items[i], sh.items[j]] = [sh.items[j], sh.items[i]]; }   // 섞어서 [D-10]

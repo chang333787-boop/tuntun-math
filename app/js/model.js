@@ -2,6 +2,8 @@
 //  비례가 맞게(낱개 10개 = 십 막대 하나 길이 · 십 막대 10개 = 백 판 하나) · 밋밋한 선화(장식 없음 [B-R28]) · 흑백에서도 보임
 import { readExpr } from '../../engine/errors.js';
 import { toText } from '../../engine/tokens.js';
+import { P } from '../../engine/concepts/kit.js';
+import { esc } from './local.js';
 const U = 12, INK = '#3b2a1e', FILL = '#f1e2cc';
 const cube = (x, y) => `<rect x="${x}" y="${y}" width="${U}" height="${U}" fill="${FILL}" stroke="${INK}" stroke-width="1"/>`;
 const rod = (x, y) => `<rect x="${x}" y="${y}" width="${U}" height="${U * 10}" fill="${FILL}" stroke="${INK}" stroke-width="1.2"/>${Array.from({ length: 9 }, (_, i) => `<path d="M${x} ${y + U * (i + 1)} h${U}" stroke="${INK}" stroke-width=".5"/>`).join('')}`;
@@ -53,6 +55,74 @@ export function modelHTML(it) {
   return `<div class="model"><p><b>모형으로 먼저 봐요.</b> 낱개가 모자라면 <b>십 막대 1개를 낱개 10개</b>로 바꿔요 — 이게 받아내림이에요.</p>${svg}</div>`;
 }
 
+// ── 묶음 바꾸기 움직임(docs/motion.md ① 받아내림 · ② 받아올림 — '같은 양인데 모양만 바뀜'은 정지 그림 둘로는 잇기 어려움 [M-3])
+//  modelHTML과 같은 문제에서만(덧셈 낱개 합 ≥ 10 · 뺄셈 낱개 모자람 + 십의 자리 0 아님) · 문제 숫자 그대로 · 한 번 움직이고 끝 모습에서 멈춤 · [다시 보기]
+//  기본 = 바꾼 뒤 모습(끝 모습만 봐도 읽히게 — 옮겨 간 자리는 점선 · 새로 생긴 묶음은 청록) · pre = 바꾸기 전 · anim = 전 → 뒤 한 번(뺄셈 약 1.5초 · 덧셈 약 1.8초)
+//  움직이는 것은 <g>의 transform · opacity만(app.css .rg) · 동작 줄이기 설정이면 끝 모습 · 세로셈 숫자가 같은 때에 나타나게 rgLag(colView lag)
+const TINT = '#cfe6e3', TEAL = '#0E6F68', SP = U + 2;
+const rodT = (x, y) => rod(x, y).replace(`fill="${FILL}"`, `fill="${TINT}"`);
+const cubeT = (x, y) => cube(x, y).replace(`fill="${FILL}"`, `fill="${TINT}"`);
+const flatsW = (h) => (h > 2 ? U * 10 + 44 : h * (U * 10 + 6));
+function flats(h, x, y) {
+  if (h > 2) return flat(x, y) + `<text x="${x + U * 10 + 6}" y="${y + U * 5 + 6}" font-size="16" fill="${INK}">× ${h}</text>`;
+  return Array.from({ length: h }, (_, i) => flat(x + i * (U * 10 + 6), y)).join('');
+}
+const gp = (xo, y0, i) => ({ x: xo + (i % 5) * SP, y: y0 + U * 10 - (Math.floor(i / 5) + 1) * SP });   /* 낱개 자리(다섯씩 · 아래 줄부터) */
+const px = (o) => Object.entries(o).map(([k, v]) => `--${k}:${Math.round(v)}px`).join(';');
+const rgOf = (it) => {
+  let X = null; try { X = readExpr(it); } catch (e) { X = null; }
+  if (!X || X.st !== 'W' || !(X.op === '+' || X.op === '−')) return null;
+  const a = X.A.i, b = X.B.i;
+  if (!Number.isInteger(a) || !Number.isInteger(b) || a > 999 || b > 999 || a < 10 || b < 0) return null;
+  if (X.op === '+') return (a % 10) + (b % 10) >= 10 ? { a, b, op: '+' } : null;
+  return a % 10 < b % 10 && a >= b && Math.floor(a / 10) % 10 > 0 ? { a, b, op: '−' } : null;
+};
+/* 세로셈에서 이 움직임과 같은 때에 나타날 표시(ms) — 뺄셈: 막대가 낱개로 바뀌는 때 빗금 · 위 숫자, 낱개가 펼쳐진 뒤 답 · 덧셈: 십 막대가 생기는 때 올린 1과 답 */
+export const rgLag = (it) => { const R = rgOf(it); return !R ? null : R.op === '−' ? { mk: 600, put: 1450 } : { mk: 1300, put: 1300 }; };
+export function regroupHTML(it, { pre = false, anim = false } = {}) {
+  const R = rgOf(it); if (!R) return '';
+  const { a, b } = R, y0 = 4, x0 = 70;
+  const label = (t, y) => `<text x="0" y="${y + U * 5 + 6}" font-size="18" fill="${INK}" font-weight="700">${t}</text>`;
+  let svg = '', w = 0, h = 0, cap = '', aria = '';
+  if (R.op === '−') {
+    const H = Math.floor(a / 100), t = Math.floor(a / 10) % 10, o = a % 10, ob = b % 10;
+    const rs = x0 + flatsW(H), rx = rs + (t - 1) * (U + 3), xo = rs + t * (U + 3) + 4, xn = xo + (o ? 5 * SP + 8 : 0);
+    svg += label(String(a), y0) + flats(H, x0, y0);
+    for (let i = 0; i < t - 1; i++) svg += rod(rs + i * (U + 3), y0);
+    for (let i = 0; i < o; i++) { const p = gp(xo, y0, i); svg += cube(p.x, p.y); }
+    /* 옮겨 간 십 막대 자리(점선) + 낱개 쪽으로 가는 굽은 화살표 — 끝 모습에서 '어디서 왔나' */
+    const ex = xn + 2 * SP, ey = y0 + U * 10 - 2 * SP - 8;
+    svg += `<g class="ghost"><rect x="${rx}" y="${y0}" width="${U}" height="${U * 10}" fill="none" stroke="${INK}" stroke-width="1.2" stroke-dasharray="4 3" opacity=".55"/></g><g class="arr"><path d="M${rx + U / 2} ${y0 - 1}Q${(rx + ex) / 2} ${y0 - 26} ${ex} ${ey - 6}" fill="none" stroke="${TEAL}" stroke-width="2"/><path d="M${ex} ${ey}l-5 -9h10z" fill="${TEAL}"/></g>`;   /* 화살표는 움직임이 끝난 뒤에(움직이는 동안 낱개를 가로지르지 않게) */
+    svg += `<g class="rod-mv" style="${px({ dx: xn - rx })}">${rod(rx, y0)}<rect class="hi" x="${rx - 3}" y="${y0 - 3}" width="${U + 6}" height="${U * 10 + 6}" rx="3" fill="none" stroke="${TEAL}" stroke-width="2.5"/></g>`;
+    for (let k = 0; k < 10; k++) { const f = gp(xn, y0, k); svg += `<g class="c-new" style="${px({ sx: xn - f.x, sy: y0 + U * 10 - (k + 1) * U - f.y })};--k:${k}">${cubeT(f.x, f.y)}</g>`; }
+    w = xn + 5 * SP + 6; h = y0 + U * 10 + 6;
+    cap = pre ? (o ? `낱개 ${o}개에서 ${ob}개를 뺄 수 없어요.` : `낱개가 없어서 ${ob}개를 뺄 수 없어요.`) : `십 막대 1개를 낱개 10개로 바꿨어요. 이제 낱개 ${o + 10}개${t > 1 ? `, 십 막대 ${t - 1}개` : ''} — 수는 그대로 ${a}${P(String(a), '이에요', '예요')}.`;
+    aria = pre ? `${a} 모형 — 십 막대 ${t}개, 낱개 ${o}개` : `${a} 모형 — 십 막대 1개를 낱개 10개로 바꿔 낱개 ${o + 10}개${t > 1 ? `, 십 막대 ${t - 1}개` : ''}`;
+  } else {
+    const ha = Math.floor(a / 100), ta = Math.floor(a / 10) % 10, oa = a % 10, hb = Math.floor(b / 100), tb = Math.floor(b / 10) % 10, ob = b % 10, s = oa + ob;
+    const yB = y0 + U * 10 + 14, rs = x0 + Math.max(flatsW(ha), flatsW(hb)), slot = rs + ta * (U + 3), xo = rs + Math.max(ta + 1, tb) * (U + 3) + 4, xg = xo + 5 * SP + 8;
+    svg += label(String(a), y0) + flats(ha, x0, y0) + label(`+ ${b}`, yB) + flats(hb, x0, yB);
+    for (let i = 0; i < ta; i++) svg += rod(rs + i * (U + 3), y0);
+    for (let i = 0; i < tb; i++) svg += rod(rs + i * (U + 3), yB);
+    svg += `<g class="ghost b">${Array.from({ length: ob }, (_, j) => { const p = gp(xo, yB, j); return `<rect x="${p.x}" y="${p.y}" width="${U}" height="${U}" fill="none" stroke="${INK}" stroke-dasharray="3 2" opacity=".5"/>`; }).join('')}</g>`;
+    /* 낱개 s개 — 아래 s − 10개(처음 수의 낱개)는 그대로 · 나머지 10개(위 줄 + 더하는 수의 낱개 전부)가 모여 십 막대 1개 */
+    const go = (gi, from) => { const f = gp(xo, y0, gi), m = gi - (s - 10); return `<g class="go" style="${px({ x0: from.x - f.x, y0: from.y - f.y, x2: xg - f.x, y2: y0 + U * 10 - (m + 1) * U - f.y })}">${cube(f.x, f.y)}<rect class="hi" x="${f.x - 2}" y="${f.y - 2}" width="${U + 4}" height="${U + 4}" fill="none" stroke="${TEAL}" stroke-width="2"/></g>`; };
+    for (let i = 0; i < oa; i++) { const p = gp(xo, y0, i); svg += i < s - 10 ? cube(p.x, p.y) : go(i, p); }
+    for (let j = 0; j < ob; j++) svg += go(oa + j, gp(xo, yB, j));
+    svg += `<g class="rod-new" style="${px({ dx: xg - slot })}">${rodT(slot, y0)}</g>`;
+    w = xg + U + 6; h = yB + U * 10 + 6;
+    cap = pre ? `${a}${P(String(a).slice(-1), '과', '와')} ${b}${P(String(b).slice(-1), '을', '를')} 모형으로 나타냈어요.` : (s > 10 ? `낱개끼리 모으면 ${s}개 — 그중 10개를 십 막대 1개로 바꿨어요. 이제 낱개 ${s - 10}개예요.` : '낱개끼리 모으면 10개 — 십 막대 1개로 바꿨어요. 남은 낱개는 없어요.');
+    aria = pre ? `${a}${P(String(a).slice(-1), '과', '와')} ${b} 모형` : `${a} 더하기 ${b} 모형 — 낱개 ${s}개 중 10개를 십 막대 1개로 바꿔 낱개 ${s - 10}개`;
+  }
+  const re = pre ? '' : '<button type="button" class="rg-re">다시 보기</button>';
+  return `<div class="model rg${pre ? ' pre' : ''}${anim && !pre ? ' anim' : ''}"><p>${esc(cap)}</p><svg viewBox="0 0 ${w} ${h}" style="--w:${Math.min(w, 640)}px" role="img" aria-label="${esc(aria)}">${svg}</svg>${re}</div>`;
+}
+/* [다시 보기] — 끝 모습에서 처음부터 한 번 더(꼬리표를 뗐다 붙여 CSS 움직임을 다시 시작) */
+if (typeof document !== 'undefined') document.addEventListener('click', (e) => {
+  const f = e.target && e.target.closest ? e.target.closest('.rg-re') : null, g = f && f.closest('.rg'); if (!g) return;
+  g.classList.remove('anim'); void g.offsetWidth; g.classList.add('anim');
+});
+
 // ── 세로셈(11-05 교사 '풀이 화면 배치' · '받아내려 말만으로는 모름') — 덧셈 · 뺄셈 두 자리 ~ 네 자리를 시범 단계와 함께
 //  지금 단계의 자리에 옅은 청록 띠 · 받아내림은 바뀐 자리 숫자에 빗금 + 위에 지금 값(36 − 28 → 십의 자리 3에 빗금 · 위에 2 / 일의 자리 6에 빗금 · 위에 16)
 //  받아올림은 다음 자리 위에 작은 1 · 맨 앞자리의 0은 쓰지 않음(교과서 그대로)
@@ -100,18 +170,21 @@ export function colOf(it, steps) {
   return { a, b, op: X.op, plan, at, ans: X.op === '+' ? a + b : a - b };
 }
 // k = 보인 단계 수(0 = 처음 · 단계 수 = 끝) → { html, lead0: 지금 자리 답이 맨 앞 0이라 쓰지 않음 }
-export function colView(C, k) {
+//  lag = { mk, put }(ms · rgLag) — 이 단계에서 새로 생긴 빗금 · 위 숫자 · 답을 그만큼 늦게 나타냄(모형이 바뀌는 순간과 같은 때 [M-18])
+export function colView(C, k, lag = null) {
   const n = C.at.length, cur = k ? C.at[Math.min(k, n) - 1] : -1, upto = !k ? -1 : k >= n || cur < 0 ? C.plan.length - 1 : cur;
   const W = Math.max(ln(C.a), ln(C.b), ln(C.ans)), mk = {}, put = {};
   for (let q = 0; q <= upto; q++) { C.plan[q].mk.forEach((m) => (mk[m.at] = m)); C.plan[q].put.forEach((m) => (put[m.at] = m.v)); }
   const now = cur, lead0 = now >= 0 && put[now] === 0 && now >= ln(C.ans);
-  const cell = (pos, inner, cls = '') => `<td class="${[cls, pos === now ? 'now' : ''].filter(Boolean).join(' ')}">${inner}</td>`;
+  const LP = lag && cur >= 0 ? C.plan[cur] : null, lmk = new Set(LP ? LP.mk.map((m) => m.at) : []), lput = new Set(LP ? LP.put.map((m) => m.at) : []);
+  const lg = (on, inner, ms) => (on && inner ? `<span class="lag" style="--lag:${ms}ms">${inner}</span>` : inner);
+  const cell = (pos, inner, cls = '', st = '') => `<td class="${[cls, pos === now ? 'now' : ''].filter(Boolean).join(' ')}"${st ? ` style="${st}"` : ''}>${inner}</td>`;
   const row = (f) => Array.from({ length: W }, (_, j) => f(W - 1 - j)).join('');
   const html = `<table class="vcol" role="img" aria-label="${C.a} ${C.op === '+' ? '더하기' : '빼기'} ${C.b} 세로셈"><tbody>
-    <tr class="mk"><td class="op"></td>${row((p) => cell(p, mk[p] ? String(mk[p].v) : ''))}</tr>
-    <tr><td class="op"></td>${row((p) => cell(p, p < ln(C.a) ? String(dg(C.a, p)) : '', mk[p] && mk[p].x ? 'x' : ''))}</tr>
+    <tr class="mk"><td class="op"></td>${row((p) => cell(p, lg(lmk.has(p), mk[p] ? String(mk[p].v) : '', lag && lag.mk)))}</tr>
+    <tr><td class="op"></td>${row((p) => cell(p, p < ln(C.a) ? String(dg(C.a, p)) : '', mk[p] && mk[p].x ? (lmk.has(p) ? 'x lag' : 'x') : '', mk[p] && mk[p].x && lmk.has(p) ? `--lag:${lag.mk}ms` : ''))}</tr>
     <tr><td class="op">${C.op}</td>${row((p) => cell(p, p < ln(C.b) ? String(dg(C.b, p)) : ''))}</tr>
-    <tr class="ans"><td class="op"></td>${row((p) => cell(p, put[p] != null && (p < ln(C.ans) || (C.ans === 0 && p === 0)) ? String(put[p]) : ''))}</tr>
+    <tr class="ans"><td class="op"></td>${row((p) => cell(p, lg(lput.has(p), put[p] != null && (p < ln(C.ans) || (C.ans === 0 && p === 0)) ? String(put[p]) : '', lag && lag.put)))}</tr>
   </tbody></table>`;
   return { html, lead0 };
 }

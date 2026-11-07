@@ -98,7 +98,7 @@ export function draw(root, { prompt, choices = null, tag = '', act = '', dots = 
 export function okFlash(root, then, ms = 650) {
   root.querySelectorAll('.qcard input, .qcard .qact button, .qcard .choices button, .qcard .conf button').forEach((x) => (x.disabled = true));
   const box = document.createElement('div'); box.className = 'fb ok flash'; box.textContent = '맞았어요!';
-  fbSlot(root).appendChild(box); setTimeout(then, ms);
+  fbSlot(root).appendChild(box); setTimeout(() => { if (box.isConnected) then(); }, ms);   /* 0.6초 안에 '처음 화면'을 누르면 그 화면에 지난 활동의 다음 문제를 덮어 그리던 것(코덱스 11-07) */
 }
 export function rushGuard() {
   let n = 0;

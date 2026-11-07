@@ -10,9 +10,10 @@
 import { byId, makeItem } from '../../engine/lessons/index.js';
 import { cueOf, planOf } from '../../engine/hints/index.js';
 import { toText } from '../../engine/tokens.js';
+import { readExpr } from '../../engine/errors.js';
 import { draw, staticHTML, ansSay, fbSlot } from './item.js';
 import { stepsOf } from './fix.js';
-import { colOf, colView, tenFrameHTML, modelHTML } from './model.js';
+import { colOf, colView, tenFrameHTML, regroupHTML, rgLag } from './model.js';
 import { esc } from './local.js';
 import { P } from '../../engine/concepts/kit.js';
 import { mascot } from '../../paper/js/mascot.js';
@@ -38,9 +39,9 @@ export function planHTML(steps, names, cur, shown = new Set(), lastLabel = '처�
 
 // 단계 풀 때 왼쪽 위 — 처음 문제(작게) · 세로셈(덧셈 · 뺄셈 두 자리 넘으면) · 그림 · 채운 단계(맞음 ✓ · 답을 본 단계는 옅게 · 방금 채운 줄만 살짝 나타남 fresh)
 //  배우기 '같이 풀기'도 같은 모양(kid.js)
-export function stepCtx(it, steps, upto, { shown = new Set(), C = null, label = '처음 문제', head = true, pic = '', fresh = -1 } = {}) {
+export function stepCtx(it, steps, upto, { shown = new Set(), C = null, label = '처음 문제', head = true, pic = '', fresh = -1, lag = null } = {}) {
   const list = upto ? `<ol class="hl-steps">${steps.slice(0, upto).map((s, i) => `<li class="${shown.has(i) ? 'shown' : 'ok'}${i === fresh ? ' nw' : ''}"><span class="hl-n">${i + 1}</span><span class="why">${esc(s.why)}</span>${staticHTML(s.prompt, s.sol)}</li>`).join('')}</ol>` : '';
-  return `<div class="hl-ctx${C ? ' with-col' : ''}">${head ? `<span class="hl-k">${esc(label)}</span>${staticHTML(it.prompt, null)}` : ''}${C ? `<div class="hl-col">${colView(C, upto).html}</div>` : ''}${pic}${list}</div>`;
+  return `<div class="hl-ctx${C ? ' with-col' : ''}">${head ? `<span class="hl-k">${esc(label)}</span>${staticHTML(it.prompt, null)}` : ''}${C && pic ? `<div class="hl-cp"><div class="hl-col">${colView(C, upto, lag).html}</div>${pic}</div>` : C ? `<div class="hl-col">${colView(C, upto, lag).html}</div>` : pic}${list}</div>`;
 }
 export const colFor = (it, steps) => { try { return colOf(it, steps); } catch (e) { return null; } };
 
@@ -57,11 +58,18 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
   const pt = toText(it.prompt).replace(/\s*=\s*□.*$/, '').replace(/\s+/g, ' ').trim(), qName = pt && pt.length <= 16 && !/□/.test(pt) ? `${pt}의 답` : '처음 문제의 답';   /* '처음 문제'를 '1번 문제'로 읽던 것 — 짧은 식이면 식 그대로(11-07 처음 쓰는 아이) */
   const names = steps.length ? planNames(c, it.p, steps) : null;
   /* 그림 — 10칸 틀(한 자리 10 만들기 · 10에서 빼기): 마지막 단계는 옮긴 모습(방금 앞 단계를 마쳤으면 옮기는 모습 한 번) · 그 앞은 한 번 틀렸을 때만 처음 모습
-     자릿값 모형(두 자리 넘는 덧셈 · 뺄셈): 한 번 틀렸을 때만(세로셈은 늘 있음) */
+     묶음 바꾸기(받아올림 · 받아내림 — model.js regroupHTML · docs/motion.md ① ②): 움직임은 이 사다리에서 한 번만(seen) · 다시 보기 단추는 늘
+       뺄셈 첫 단계에서 한 번 틀리면 = 십 막대 하나가 낱개 10개로(이 단계 식 '12 − 7'의 12가 어디서 왔나 — 단계 답은 보이지 않음)
+       덧셈 첫 단계에서 한 번 틀리면 = 바꾸기 전 모습만(낱개를 세면 되는 단계라 모은 뒤 모습은 답이 됨)
+       첫 단계를 마치고 둘째 단계로 오면 = 아직 안 봤으면 방금 한 것의 뜻으로 한 번(세로셈 빗금 · 올린 1이 같은 때에 — lag) · 그 뒤는 틀렸을 때만 끝 모습 */
+  let seen = false;
+  const isSub = (() => { try { return readExpr(it).op === '−'; } catch (e) { return false; } })();
   const pic = (i, tries, fresh) => {
-    if (C) return tries ? `<div class="hl-pic">${modelHTML(it)}</div>` : '';
-    const tf = tenFrameHTML(it, { moved: i >= last, anim: i >= last && fresh });
-    return i >= last || tries ? tf : '';
+    if (tenFrameHTML(it)) { const tf = tenFrameHTML(it, { moved: i >= last, anim: i >= last && fresh }); return { html: i >= last || tries ? tf : '' }; }
+    const rg = (o) => { const h = regroupHTML(it, o); if (h && o.anim) seen = true; return { html: h ? `<div class="hl-pic">${h}</div>` : '', anim: !!(h && o.anim) }; };
+    if (i === 0) return tries ? (isSub ? rg({ anim: !seen }) : rg({ pre: true })) : { html: '' };
+    if (i === 1 && fresh && !seen) return rg({ anim: true });
+    return tries ? rg({}) : { html: '' };
   };
   const lock = () => root.querySelectorAll('.qcard input, .qcard .qact button, .qcard .choices button').forEach((x) => (x.disabled = true));
   const finish = (ok, how, msg, calm = false) => {
@@ -100,7 +108,7 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
     const s = steps[i];
     let sit = null; try { sit = makeItem(s.c, s.p); } catch (e) { sit = null; }
     draw(root, { ...base, prompt: s.prompt, choices: sit && sit.choices ? sit.choices : null,
-      extra: stepCtx(it, steps, i, { shown, C, pic: pic(i, tries, fresh && !tries), fresh: fresh && !tries ? i - 1 : -1 }),
+      extra: (() => { const pv = pic(i, tries, fresh && !tries); return stepCtx(it, steps, i, { shown, C, pic: pv.html, fresh: fresh && !tries ? i - 1 : -1, lag: pv.anim && i === 1 ? rgLag(it) : null }); })(),
       okLabel: '이 단계 내기',
       lead: head('step', `<span class="hl-k">${i + 1}단계</span><span class="hl-why">${esc(s.why)}</span>${tries === 1 ? '<span class="hl-re">아직 아니에요. 그림을 보고 한 번 더 해 봐요.</span>' : tries === -1 ? '<span class="hl-re">조금 빨라요. 천천히 다시 풀어 봐요.</span>' : ''}`, tries ? 'think' : 'point', planHTML(steps, names, i, shown, `${qName} 쓰기`)),
       onAnswer: (a, cf, t) => {
@@ -123,7 +131,7 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
       extra: stepCtx(it, steps, steps.length, { shown, C, head: false, pic: C ? '' : tenFrameHTML(it, { moved: true }), fresh: nudge ? -1 : last }),
       lead: head('again', `<span class="hl-k">마지막</span><span class="hl-why">단계를 다 했어요. 이제 <b>${esc(qName)}</b>${P(qName.slice(-1), '을', '를')} 써요.</span>${nudge ? `<span class="hl-re">${nudge}</span>` : ''}`, 'point', planHTML(steps, names, steps.length, shown, `${qName} 쓰기`)),
       onAnswer: (a, cf, t) => {
-        if (sameAns(it, a)) return finish(true, 'steps', `맞았어요! 풀이 순서대로 하나씩 풀었어요.${names ? `<br><span class="small">${names.map(esc).join(' → ')}</span>` : ''}`);   /* 순서를 한 번 더 짚음 */
+        if (sameAns(it, a)) return finish(true, shown.size ? 'shown' : 'steps', `맞았어요! 풀이 순서대로 하나씩 풀었어요.${names ? `<br><span class="small">${names.map(esc).join(' → ')}</span>` : ''}`);   /* 순서를 한 번 더 짚음 · 단계 답을 본 적이 있으면 맞혀도 '스스로 고침'으로 세지 않음(how 'shown' — 한 단계뿐이면 그 답이 곧 처음 문제의 답 · 코덱스 11-07) */
         if (t < RUSH && !it.choices) return again(shown, '조금 빨라요. 단계를 보고 천천히 써 봐요.');
         finish(false, 'shown', `${ansSay(it)}${againLine ? ` ${esc(againLine)}` : ''}`);
       } });
