@@ -1,5 +1,5 @@
 // 소수 (3~4학년) · 약수와 배수 (5학년)
-import { nums, pick, fx, B, P, J, tbl } from './kit.js';
+import { nums, pick, fx, B, P, J, RO, tbl } from './kit.js';
 import { near, fmt, divisors, gcd, lcm } from '../math.js';
 
 const d2 = (k) => fmt(k / 100), d1 = (k) => fmt(k / 10);
@@ -98,6 +98,7 @@ export default [
     //  is 문항: k = 정답이 놓일 자리(작은 수부터 0~3 · 시드로 정해짐) — k가 없는 옛 문항(10-31까지 저장된 p)은 예전 보기 그대로
     gen: (r) => { const v = r.chance(0.6) ? 'seq' : 'is', n = r.int(3, 9), s = r.int(0, 999); return v === 'is' ? { v, n, s, k: r.int(0, 3) } : { v, n, s }; },
     make: (p) => {
+      if (p.v === 'upto') return nums([`${p.n}의 배수를 작은 수부터: ${Array.from({ length: p.k - 1 }, (_, i) => p.n * (i + 1)).join(', ')}, `, B(0)], p.n * p.k);   /* 최소공배수 단계에서만(그 앞 배수들을 보이고 다음 배수 하나) */
       if (p.v === 'seq') return nums([`${p.n}의 배수를 작은 수부터: ${p.n}, ${p.n * 2}, `, B(0), ', ', B(1)], [p.n * 3, p.n * 4], { bugs: [{ test: (v) => v[0] === p.n * 2 + 1 || v[0] === p.n + 2, name: '배수를 1씩·2씩 늘림', to: 'M2' }] });
       const right = p.n * (3 + (p.s % 6));
       let ch;
@@ -139,9 +140,11 @@ export default [
         ],
       });
     },
-    steps: (p) => [
-      { c: 'G2', p: { v: 'seq', n: p.a }, why: `${p.a}의 배수를 늘어놓아요.` },
-      { c: 'G2', p: { v: 'seq', n: p.b }, why: `${p.b}의 배수를 늘어놓아요.` },
-    ],
+    steps: (p) => { const big = Math.max(p.a, p.b), sm = Math.min(p.a, p.b), L = lcm(p.a, p.b);
+      if (big === L) return [{ c: 'DIV', p: { a: big, b: sm }, why: `큰 수 ${big}${P(big, '이', '가')} ${RO(sm)} 나누어떨어지는지 봐요.` }];
+      return [
+        { c: 'G2', p: { v: 'upto', n: big, k: L / big }, why: `큰 수 ${big}의 배수를 차례로 써요. ${RO(sm)} 나누어떨어지는 첫 수를 찾아요.` },
+        { c: 'DIV', p: { a: L, b: sm }, why: `그 수가 ${RO(sm)} 나누어떨어지는지 확인해요.` },
+      ]; },   /* 두 수의 배수를 넷씩만 쓰면 최소공배수까지 못 가던 것(8과 5 → 40 · 11-07) */
   },
 ];
