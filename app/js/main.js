@@ -92,6 +92,7 @@ function route() {
   const h = location.hash || '#/';
   const kid = /^#\/(me|prep|fix|review|join|stages|drill|back|retry|run|story|week|give|check)/.test(h);
   document.body.classList.toggle('kid', kid);
+  document.body.classList.toggle('tch', /^#\/t(\/|$)/.test(h));   /* 선생님 화면 — 머리띠 말을 선생님 할 일로 */
   document.body.classList.toggle('wide', /^#\/t\/c\/\w+(\/table|\/give)?(\?.*)?$/.test(h));   /* 반 화면 · 반 표 · 보충 주기는 넓게(1440) */
   const me = meOf();
   { const tc = h.match(/^#\/t\/c\/(\w+)\/./);

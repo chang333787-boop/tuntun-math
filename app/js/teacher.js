@@ -57,6 +57,12 @@ const EASY = [[/\s*\(repair\)/g, ''], [/비표준 꼴/g, '답이 앞에 오는 �
 const easy = (s) => EASY.reduce((t, [a, b]) => t.replace(a, b), String(s || ''));
 const whyOf = (m) => m.plain || `${WHY[m.why[0]] || ''} — ${easy(m.why[1])}`;
 
+// 반 정보 백업 내려받기(반 코드 · 열쇠 · 핀 · 이 기기의 이름 · 메모) — 선생님 처음 화면 · 반을 만든 직후 카드 화면
+function backupDownload() {
+  const local = {}; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (/^tt\.(note|paper)\.[A-Z0-9]{6}(\.\d{1,3})?$/.test(k)) local[k] = lsGet(k, null); } } catch (e) { /* */ }   /* 이 기기에만 둔 것(지도 메모 글 · 종이 번호 맞춤)도 같이 */
+  const blob = new Blob([JSON.stringify({ kind: 'tuntun-teacher', v: 1, at: Date.now(), classes: tget().classes, local }, null, 1)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `튼튼수다리_반정보_${new Date().toISOString().slice(0, 10)}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
 export function teacherHome(root) {
   const T = tget(), list = Object.entries(T.classes);
   root.innerHTML = `<div class="card"><h2>선생님 처음 화면</h2>
@@ -73,11 +79,7 @@ export function teacherHome(root) {
     <li><b>보충 주기</b> — 부족한 아이에게 그 기능 문제를 보내요. 아이 화면 '배울 것'에 뜨고, 같은 문제를 종이로도 뽑을 수 있어요.</li>
     <li>아이 화면도 카드 셋이에요 — <b>점검 · 배울 것 · 매일 연습</b>. 틀리면 그 자리에서 튼튼이가 풀이를 보여 줘요</li></ol></div></div>`;
   const bk = root.querySelector('#bk');
-  if (bk) bk.addEventListener('click', () => {
-    const local = {}; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (/^tt\.(note|paper)\.[A-Z0-9]{6}(\.\d{1,3})?$/.test(k)) local[k] = lsGet(k, null); } } catch (e) { /* */ }   /* 이 기기에만 둔 것(지도 메모 글 · 종이 번호 맞춤)도 같이 */
-    const blob = new Blob([JSON.stringify({ kind: 'tuntun-teacher', v: 1, at: Date.now(), classes: tget().classes, local }, null, 1)], { type: 'application/json' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `튼튼수다리_반정보_${new Date().toISOString().slice(0, 10)}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-  });
+  if (bk) bk.addEventListener('click', backupDownload);
   root.querySelector('#rs').addEventListener('change', async (e) => {
     const f = e.target.files[0], msg = root.querySelector('#bmsg'); if (!f) return;
     try {
@@ -162,7 +164,8 @@ export function cardsView(root, C) {
   const url = appURL();
   root.innerHTML = `<div class="card no-print"><h2>카드 인쇄 <small>${esc(C)} · ${esc(gl(K.g))} · ${K.n}명</small></h2>
     <p>아이 카드를 잘라 나눠 주세요(이름은 카드에 손으로). <b>선생님 열쇠 카드</b>는 따로 보관해요 — 잃어버리면 이 반 기록을 다른 기기에서 열 수 없어요.</p>
-    <div class="acts"><button class="pri" onclick="print()">인쇄</button><a class="btn" href="#/t/c/${C}">반 화면으로</a></div></div>
+    <div class="acts"><button class="pri" onclick="print()">인쇄</button><button type="button" id="bk2">이 기기 백업 받기</button><a class="btn" href="#/t/c/${C}/check">다음: 점검 내기</a><a class="btn" href="#/t/c/${C}">반 화면으로</a></div>
+    <p class="small muted">학교 컴퓨터는 껐다 켜면 기록이 지워지기도 해요 — 반을 만든 날 <b>백업</b>을 받아 USB나 내 드라이브에 두세요.</p></div>
     <div class="card keycard" style="border:2px solid var(--ink)"><h2>선생님 열쇠 카드 <small>남에게 보이지 마세요 · 화면을 TV에 띄울 땐 가려 두세요</small></h2>
       <p>반 코드 <b style="font-size:22px;letter-spacing:.08em">${esc(C)}</b> · 선생님 열쇠 <code class="tkey" style="font-size:18px">${'●'.repeat(8)}</code> <button type="button" class="mini no-print" id="kshow">열쇠 보기</button></p>
       <div class="kq">${qrSVG(`${url}#/t/open?c=${C}&k=${K.T}`, { px: 96 })}<p class="small">다른 기기(집 · 다른 교실)에서는 이 QR을 비추거나 아래 링크를 열면 바로 이 반이 열려요. 손으로 칠 땐 ${esc(url)}#/t/open 에 반 코드와 열쇠(24자)를 써요.</p></div>
@@ -171,6 +174,7 @@ export function cardsView(root, C) {
       <p style="margin:6px 0 0">반 코드 <span class="code">${esc(C)}</span></p><p style="margin:0">번호 <span class="no">${no}</span> · 핀 <span class="code">${esc(K.pins[no] || '')}</span></p>
       <div class="kq">${qrSVG(`${url}#/join?c=${C}&n=${no}`, { px: 96 })}<p class="small muted">크롬북 카메라로 QR을 찍으면 반 코드 · 번호가 써져요. 핀 네 자리만 쓰세요.</p></div>
       <p class="small muted" style="margin:4px 0 0;word-break:break-all">${esc(url)}</p><p class="small" style="margin:6px 0 0">이름: ____________</p></div>`).join('')}</div>`;
+  root.querySelector('#bk2').addEventListener('click', backupDownload);
   const kt = root.querySelector('.tkey'), ks = root.querySelector('#kshow');
   ks.addEventListener('click', () => { const on = ks.textContent === '열쇠 보기'; kt.textContent = on ? K.T : '●'.repeat(8); ks.textContent = on ? '가리기' : '열쇠 보기'; });
   window.addEventListener('beforeprint', () => { kt.textContent = K.T; }, { once: true });   /* 인쇄한 열쇠 카드엔 열쇠가 보여야 함 */
@@ -294,10 +298,10 @@ export function classView(root, C) {
         ${today ? (() => `<div class="st-row${fin.length ? '' : ' zero'}"><span class="st-k">점검 끝 <b>${fin.length}</b></span><span class="st-v">${names(fin) || '<span class="muted">없음</span>'}${fin.length ? ' <span class="muted small">— 누가 무엇이 부족한지는 반 표에서</span>' : ''}</span></div>`)() : ''}
         <div class="st-row${g.in.length ? '' : ' zero'}"><span class="st-k">${today ? '아직 점검 전' : '들어온 적 있음'} <b>${g.in.length}</b></span><span class="st-v">${names(g.in) || '<span class="muted">없음</span>'}</span></div>
         <div class="st-row${g.out.length ? '' : ' zero'}"><span class="st-k">안 들어옴 <b>${g.out.length}</b></span><span class="st-v">${names(g.out) || '<span class="muted">없음</span>'}</span></div></div>`; })()}</div>
-    ${(() => { let items = rows.map((no) => { const x = S[no] || {}, st = x.st; if (!st) return null; const rep = { L: Object.fromEntries(Object.entries(st.L || {}).map(([c, v]) => [c, { c, st: v }])), start: (st.start || []).map((c) => ({ c })) }; const inbox = Object.fromEntries(Object.entries(tasks).filter(([, v]) => Array.isArray(v.who) && v.who.map(String).includes(no))), recs = Object.fromEntries(Object.keys((st && st.gv) || {}).map((id) => [id, 1])); return { no, nx: nextOf({ C, no, rep, st, inbox, now: x.now, recs, opened: !!(K.today && sameDay(K.today.t)) }) }; }).filter(Boolean); const waiting = items.filter((y) => !y.nx.a && /푸는 중/.test(y.nx.t)).map((y) => y.no), notYet = items.filter((y) => !y.nx.a && /점검을 풀지 않았어요/.test(y.nx.t)).map((y) => y.no); items = items.filter((y) => y.nx.a); if (!items.length && !waiting.length && !notYet.length) return ''; const rank = (t) => (/선생님을 기다려요/.test(t) ? -1 : /부족한 것|여기서부터|선생님과 같이/.test(t) ? 0 : /점검을 하지/.test(t) ? 1 : 2); items.sort((p, q) => rank(p.nx.t) - rank(q.nx.t));   /* 급한 아이부터 */
+    ${(() => { let items = rows.map((no) => { const x = S[no] || {}, st = x.st; if (!st) return null; const rep = { L: Object.fromEntries(Object.entries(st.L || {}).map(([c, v]) => [c, { c, st: v }])), start: (st.start || []).map((c) => ({ c })) }; const inbox = Object.fromEntries(Object.entries(tasks).filter(([, v]) => Array.isArray(v.who) && v.who.map(String).includes(no))), recs = Object.fromEntries(Object.keys((st && st.gv) || {}).map((id) => [id, 1])); return { no, nx: nextOf({ C, no, rep, st, inbox, now: x.now, recs, opened: !!(K.today && sameDay(K.today.t)) }) }; }).filter(Boolean); const waiting = items.filter((y) => !y.nx.a && /푸는 중/.test(y.nx.t)).map((y) => y.no), notYet = items.filter((y) => !y.nx.a && /점검을 풀지 않았어요/.test(y.nx.t)).map((y) => y.no), busy = items.filter((y) => !y.nx.a && /^지금 <b>/.test(y.nx.t)).map((y) => [y.no, (/<b>(.*?)<\/b>/.exec(y.nx.t) || [])[1] || '']);   /* 하는 중이라 할 일이 비어 목록에서 빠지던 아이(처음 보는 눈 11-07) */ items = items.filter((y) => y.nx.a); if (!items.length && !waiting.length && !notYet.length && !busy.length) return ''; const rank = (t) => (/선생님을 기다려요/.test(t) ? -1 : /부족한 것|여기서부터|선생님과 같이/.test(t) ? 0 : /점검을 하지/.test(t) ? 1 : 2); items.sort((p, q) => rank(p.nx.t) - rank(q.nx.t));   /* 급한 아이부터 */
       const bySk = {}; items.forEach(({ no, nx }) => { const m = /give\?sk=([^&]+)&who=/.exec(nx.href || ''); if (m && SKILL[m[1]] && /부족한 것|여기서부터/.test(nx.t)) (bySk[m[1]] = bySk[m[1]] || []).push(no); });   /* 가끔 틀림(더 다지기)은 묶지 않음 — '필요'와 '줘도 돼요'가 섞이지 않게 */
       const grp = Object.entries(bySk).filter(([, ns]) => ns.length >= 2).map(([sk, ns]) => [sk, ns.slice().sort((p, q) => p - q)]).map(([sk, ns]) => `<p class="nx-grp">다음 할 것이 같은 아이 <b>${ns.length}명</b> — <b>${esc(SKILL[sk].name)}</b> 보충: ${ns.map((no) => esc(nm(K, no))).join(' · ')} <a class="btn mini teal" href="#/t/c/${C}/give?sk=${sk}&who=${ns.join(',')}">${ns.length}명에게 한꺼번에 보내기</a></p>`).join('');   /* 아이마다 따로 누르지 않게 */
-      return `<details class="card nexts" open><summary><b>아이마다 다음 할 것</b> <span class="small muted">${items.length}명 · 번호를 누르면 자세히</span></summary>${waiting.length ? `<p class="small">보낸 보충 푸는 중: <b>${waiting.map((no) => esc(nm(K, no))).join(' · ')}</b> — 다 풀면 결과에 따라 이 목록에 다시 떠요.</p>` : ''}${notYet.length ? `<p class="small">오늘 단원 점검을 아직 안 푼 아이: <b>${notYet.map((no) => esc(nm(K, no))).join(' · ')}</b> — 아이 처음 화면 '점검' 카드에서 시작하라고 알려 주세요.</p>` : ''}${grp}<ul class="nx-list">${items.map(({ no, nx }) => `<li><a class="nx-no" href="#/t/c/${C}/k/${no}">${esc(nm(K, no))}</a><span class="nx-t">${nx.t}</span><a class="btn mini" href="${esc(nx.href)}">${esc(nx.a)}</a></li>`).join('')}</ul></details>`; })()}
+      return `<details class="card nexts" open><summary><b>아이마다 다음 할 것</b> <span class="small muted">${items.length}명 · 번호를 누르면 자세히</span></summary>${waiting.length ? `<p class="small">보낸 보충 푸는 중: <b>${waiting.map((no) => esc(nm(K, no))).join(' · ')}</b> — 다 풀면 결과에 따라 이 목록에 다시 떠요.</p>` : ''}${busy.length ? `<p class="small">지금 하는 중: ${busy.map(([no, m]) => `<b>${esc(nm(K, no))}</b>${m ? `(${esc(m)})` : ''}`).join(' · ')} — 끝나면 할 일이 이 목록에 떠요.</p>` : ''}${notYet.length ? `<p class="small">오늘 단원 점검을 아직 안 푼 아이: <b>${notYet.map((no) => esc(nm(K, no))).join(' · ')}</b> — 아이 처음 화면 '점검' 카드에서 시작하라고 알려 주세요.</p>` : ''}${grp}<ul class="nx-list">${items.map(({ no, nx }) => `<li><a class="nx-no" href="#/t/c/${C}/k/${no}">${esc(nm(K, no))}</a><span class="nx-t">${nx.t}</span><a class="btn mini" href="${esc(nx.href)}">${esc(nx.a)}</a></li>`).join('')}</ul></details>`; })()}
     <details class="card more-all"><summary><b>더 보기</b> <span class="small muted">틀린 뒤 스스로 고친 비율 · 같은 생각끼리 · 이야기 문제 · 이번 주 점검 맞힌 수 · 같은 칸을 배울 아이끼리 · 기록 내려받기 · 종이 결과</span></summary>
       <div class="acts sub"><button id="csv" class="btn" title="효과를 재거나 기록해 둘 때 — 번호만 들어가요(이름 X)">기록 내려받기(CSV)</button><a class="btn" href="#/t/c/${C}/paper" title="종이로 푼 점검 결과를 아이 기록에 넣어요">종이 결과 가져오기</a><a class="btn" href="#/t/sheet?c=${C}" title="기능 이름으로 골라 한 아이에게 그 칸만 연습시키는 종이">맞춤 연습지</a></div>
       ${ladCard(C, K, S)}
@@ -393,9 +397,10 @@ export async function kidDetailView(root, C, no) {
   const recs = Object.values(KK.recs).sort((a, b) => b.s.made - a.s.made);
   /* 부족한 기능 — 반 표와 같은 줄 고르기(차시마다 가장 좁은 기능) · 칩마다 [보충 주기](이 아이만 골라 둠) */
   const skIds = st ? [...new Set([...Object.keys(st.L), ...st.start].filter((c) => LES(c)).map((c) => (skillsOf(c)[0] || {}).id).filter(Boolean))] : [];
-  const skRows = skIds.map((id) => ({ s: SKILL[id], v: skillState(st, SKILL[id]) })).filter((x) => x.v === 'root' || x.v === 'bad' || x.v === 'shaky').sort((a, b) => ['root', 'bad', 'shaky'].indexOf(a.v) - ['root', 'bad', 'shaky'].indexOf(b.v));
+  const skRows = skIds.map((id) => ({ s: SKILL[id], v: skillState(st, SKILL[id]) })).filter((x) => x.v === 'root' || x.v === 'bad' || x.v === 'shaky').sort((a, b) => ['root', 'bad', 'shaky'].indexOf(a.v) - ['root', 'bad', 'shaky'].indexOf(b.v) || (a.s.g < b.s.g ? -1 : a.s.g > b.s.g ? 1 : 0));   /* 같은 표시끼리는 낮은 학년부터 */
+  const firstSk = skRows[0] && skRows[0].v !== 'shaky' ? skRows[0].s.id : null;   /* 맨 위 = 먼저 배울 곳(단추도 이 줄만 주황 · 처음 보는 눈 11-07) */
   const kmOf = (sk) => { const cs = new Set(sk.parts.map((x) => x.c)); return st && st.mis ? MIS.filter((m) => (st.mis[m.id] === 's' || st.mis[m.id] === 'm') && m.lessons.some((x) => cs.has(x))) : []; };   /* 이 기능에서 보인 틀린 생각 */
-  const lackHTML = `<div class="klack no-print"><h3>부족 · 가끔 틀림 <small>${skRows.length ? `기능 ${skRows.length}개 · ✕ 부족 · △ 가끔 틀림` : ''}</small></h3>${skRows.length ? `<ul class="klist">${skRows.map((x) => `<li class="${x.v === 'shaky' ? 'sh' : 'bad'}"><i>${x.v === 'shaky' ? '△' : '✕'}</i><b>${esc(x.s.name)}</b><span class="small muted">${esc(gText(x.s).replace(/(\d)-(\d)/g, '$1학년 $2학기'))}${x.v === 'root' ? ' · 먼저 배울 곳' : ''}</span>${kmOf(x.s).length ? `<span class="km">틀린 생각: ${kmOf(x.s).map((m) => esc(m.title)).join(', ')}</span>` : ''}<a class="btn teal mini" href="#/t/c/${C}/give?sk=${x.s.id}&who=${no}">${icon('send', 16)}보충 주기</a></li>`).join('')}</ul>` : '<p class="muted">부족하거나 가끔 틀리는 기능이 없어요.</p>'}</div>`;
+  const lackHTML = `<div class="klack no-print"><h3>부족 · 가끔 틀림 <small>${skRows.length ? `기능 ${skRows.length}개 · ✕ 부족 · △ 가끔 틀림` : ''}</small></h3>${skRows.length ? `<ul class="klist">${skRows.map((x) => `<li class="${x.v === 'shaky' ? 'sh' : 'bad'}"><i>${x.v === 'shaky' ? '△' : '✕'}</i><b>${esc(x.s.name)}</b><span class="small muted">${esc(gText(x.s).replace(/(\d)-(\d)/g, '$1학년 $2학기'))}${x.s.id === firstSk ? ' · <b>먼저 배울 곳</b>' : ''}</span>${kmOf(x.s).length ? `<span class="km">틀린 생각: ${kmOf(x.s).map((m) => esc(m.title)).join(', ')}</span>` : ''}<a class="btn ${x.s.id === firstSk ? 'pri' : 'teal'} mini" href="#/t/c/${C}/give?sk=${x.s.id}&who=${no}">${icon('send', 16)}${x.s.id === firstSk ? '여기부터 보충 주기' : '보충 주기'}</a></li>`).join('')}</ul>` : '<p class="muted">부족하거나 가끔 틀리는 기능이 없어요.</p>'}</div>`;
   const swList = Object.entries(cal.sureWrong);
   root.innerHTML = `<div class="card kd"><h2>${esc(nm(K, no))} <small>지금까지 푼 문제 ${recs.reduce((n, x) => n + x.s.it.length, 0)}개</small></h2>
     ${intro('이 아이가 푼 문제를 모아 본 화면이에요. 맨 위 <b>부족 · 가끔 틀림</b> 목록에서 바로 보충을 줄 수 있어요. 아래는 차시마다 자세히 — 카드를 누르면 어떤 생각으로 틀렸을지와 도와주는 법이 나와요.', 'no-print')}

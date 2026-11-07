@@ -15,6 +15,7 @@ import { staticHTML } from './item.js';
 import { unitLabel } from './kid.js';
 import { pullAll, nm } from './teacher.js';
 import { icon } from './icons.js';
+import { P } from '../../engine/concepts/kit.js';
 
 const cls = (C) => (lsGet('tt.t', { classes: {} }).classes || {})[C];
 const glOf = (s) => gText(s).replace(/(\d)-(\d)/g, '$1학년 $2학기');   /* '1-2 ~ 2-1' → '1학년 2학기 ~ 2학년 1학기'(11-07 처음 쓰는 선생님) */
@@ -58,18 +59,22 @@ export function skillRows(K, S, { unit = null } = {}) {
   const P = unit ? prepPlan(unit) : null, inUnit = P ? new Set([...P.pre, ...P.below]) : null;
   const ids = new Set();
   for (const no of nos) { const st = S[no] && S[no].st; if (!st) continue; for (const c of [...Object.keys(st.L), ...st.start]) { if (!LES(c) || (inUnit && !inUnit.has(c))) continue; const sk = skillsOf(c)[0]; if (sk) ids.add(sk.id); } }
-  return [...ids].map((id) => {
+  const rows = [...ids].map((id) => {
     const s = SKILL[id], cells = nos.map((no) => skillState(S[no] && S[no].st, s));
     const lack = nos.filter((no, i) => LACK(cells[i])), shaky = nos.filter((no, i) => cells[i] === 'shaky'), seen = cells.filter(Boolean).length;
     return { s, cells, lack, shaky, seen };
-  }).sort((a, b) => b.lack.length - a.lack.length || b.shaky.length - a.shaky.length || ORDER[a.s.id] - ORDER[b.s.id]);
+  });
+  /* 아이마다 가장 아래(낮은 학년)의 부족한 기능 — 더 아래가 빈 아이에게 위 기능 보충이 먼저 가지 않게(first = 이 기능부터인 아이 · later = 더 아래부터 · 처음 보는 눈 11-07) */
+  const low = {}; for (const r of rows) r.lack.forEach((no) => { const o = low[no]; if (!o || r.s.g < o.s.g || (r.s.g === o.s.g && ORDER[r.s.id] < ORDER[o.s.id])) low[no] = r; });
+  rows.forEach((r) => { r.first = r.lack.filter((no) => low[no] === r); r.later = r.lack.filter((no) => low[no] !== r).map((no) => [no, low[no].s]); });
+  return rows.sort((a, b) => b.lack.length - a.lack.length || b.shaky.length - a.shaky.length || ORDER[a.s.id] - ORDER[b.s.id]);
 }
 // 반 화면 카드 ②에 넣는 짧은 줄 — 부족한 아이가 많은 기능 셋
 export function tableCard(C, K, S) {
   if (!S) return '<p class="small muted">불러오는 중…</p>';
   const rows = skillRows(K, S).filter((r) => r.lack.length).slice(0, 3);
   if (!rows.length) return `<p class="c3-none">${Object.values(S).some((x) => x && x.st) ? '부족한 기능이 아직 없어요' : '아이들이 점검을 하면 여기에 떠요'}</p>`;
-  return `<ul class="c3-list t-lines">${rows.map((r) => `<li><a href="#/t/c/${C}/give?sk=${r.s.id}&who=${r.lack.join(',')}"><b>${esc(r.s.name)}</b><span>부족 ${r.lack.length}명 — ${r.lack.map((no) => esc(nm(K, no))).join(', ')}</span></a></li>`).join('')}</ul>`;
+  return `<ul class="c3-list t-lines">${rows.map((r) => `<li><a href="#/t/c/${C}/give?sk=${r.s.id}&who=${r.first.join(',')}"><b>${esc(r.s.name)}</b><span>부족 ${r.lack.length}명 — ${r.lack.map((no) => esc(nm(K, no))).join(', ')}</span></a></li>`).join('')}</ul>`;
 }
 
 // ── ② 반 표 ──
@@ -84,7 +89,7 @@ export function tableView(root, C) {
     const head = `<tr><th class="sk">기능</th>${nos.map((no) => `<th class="kn"><a href="#/t/c/${C}/k/${no}" title="${esc(nm(K, no))} 자세히">${no}${K.names && K.names[no] ? `<small>${esc(String(K.names[no]).slice(0, 3))}</small>` : ''}</a></th>`).join('')}<th class="lack">보충할 아이</th></tr>`;
     const row = (r) => { const md = S ? skillMinds(K, S, r.s).slice(0, 2) : [];
       return `<tr><th class="sk"><b>${esc(r.s.name)}</b><small>${esc(glOf(r.s))}</small>${md.length ? `<span class="sk-m">${md.map((x) => `<a href="#/t/c/${C}/m/${x.m.id}" title="${esc(x.m.plain || x.m.title)}">틀린 생각: ${esc(x.m.title)} <b>${x.rep.length + x.once.length}명</b></a>`).join('')}</span>` : ''}</th>${r.cells.map((v, i) => { const [c, t] = SIGN[v], km = S ? kidMinds(S[nos[i]] && S[nos[i]].st, r.s) : [], lab = `${nm(K, nos[i])} ${r.s.name} ${{ root: '부족(먼저 배울 곳)', bad: '부족', shaky: '가끔 틀림', ok: '됨', '': '아직 안 풂' }[v]}${km.length ? ` · 생각: ${km.map((m) => m.title).join(', ')}` : ''}`; return `<td class="${c}${km.length ? ' has-m' : ''}"><a href="#/t/c/${C}/k/${nos[i]}" title="${esc(lab)}" aria-label="${esc(lab)}">${t}</a></td>`; }).join('')}
-      <td class="lack"><div class="lk">${r.lack.length ? `<span>${r.lack.map((no) => esc(no)).join(' · ')}번</span><a class="btn teal mini" href="#/t/c/${C}/give?sk=${r.s.id}&who=${r.lack.join(',')}">${icon('send', 16)}보충 주기</a>` : r.shaky.length ? `<span class="muted">가끔 틀림 ${r.shaky.length}명</span><a class="btn mini" href="#/t/c/${C}/give?sk=${r.s.id}&who=${r.shaky.join(',')}">보충 주기</a>` : ''}</div></td></tr>`; };
+      <td class="lack"><div class="lk">${r.lack.length ? `<span>${r.lack.map((no) => esc(no)).join(' · ')}번</span><a class="btn teal mini" href="#/t/c/${C}/give?sk=${r.s.id}&who=${r.first.join(',')}">${icon('send', 16)}보충 주기</a>` : r.shaky.length ? `<span class="muted">가끔 틀림 ${r.shaky.length}명</span><a class="btn mini" href="#/t/c/${C}/give?sk=${r.s.id}&who=${r.shaky.join(',')}">보충 주기</a>` : ''}</div></td></tr>`; };
     root.innerHTML = `<div class="card tview">
       <div class="tv-h"><h2>반 표 <small>${esc(C)} · ${K.n}명 · 기능 × 아이</small></h2><a class="btn" href="#/t/c/${C}">반 화면으로</a></div>
       ${intro('가로줄 = <b>셈 기능</b> · 세로줄 = <b>아이 번호</b>. 줄 끝 <b>[보충 주기]</b>를 누르면 그 아이들에게 그 기능 문제가 바로 가요. <b>틀린 생각</b>은 아이가 쓴 틀린 답으로 짐작한 것이에요(주황 점 = 그 생각이 보인 아이).')}
@@ -118,13 +123,14 @@ export function giveTView(root, C) {
     const rows = S ? skillRows(K, S) : [], lackRows = rows.filter((r) => r.lack.length || r.shaky.length);
     const r0 = s ? rows.find((r) => r.s.id === s.id) : null;
     const pick = !s ? `<h3>어떤 기능을 줄까요?</h3>
-      ${!S ? '<p class="muted">불러오는 중…</p>' : lackRows.length ? `<p class="small muted">우리 반에서 부족하거나 가끔 틀리는 아이가 있는 기능이에요.</p><div class="gpick">${lackRows.slice(0, 12).map((r) => `<a class="gcard" href="#/t/c/${C}/give?sk=${r.s.id}&who=${(r.lack.length ? r.lack : r.shaky).join(',')}"><b>${esc(r.s.name)}</b><span class="gex">${exHTML(r.s)}</span><span class="small">${r.lack.length ? `부족 ${r.lack.length}명` : ''}${r.lack.length && r.shaky.length ? ' · ' : ''}${r.shaky.length ? `가끔 틀림 ${r.shaky.length}명` : ''}</span></a>`).join('')}</div>` : '<p class="muted">부족한 기능이 아직 없어요. 아래에서 직접 골라도 돼요.</p>'}
+      ${!S ? '<p class="muted">불러오는 중…</p>' : lackRows.length ? `<p class="small muted">우리 반에서 부족하거나 가끔 틀리는 아이가 있는 기능이에요.</p><div class="gpick">${lackRows.slice(0, 12).map((r) => `<a class="gcard" href="#/t/c/${C}/give?sk=${r.s.id}&who=${(r.lack.length ? r.first : r.shaky).join(',')}"><b>${esc(r.s.name)}</b><span class="gex">${exHTML(r.s)}</span><span class="small">${r.lack.length ? `부족 ${r.lack.length}명` : ''}${r.lack.length && r.shaky.length ? ' · ' : ''}${r.shaky.length ? `가끔 틀림 ${r.shaky.length}명` : ''}</span></a>`).join('')}</div>` : '<p class="muted">부족한 기능이 아직 없어요. 아래에서 직접 골라도 돼요.</p>'}
       <div class="row"><label for="sel">다른 기능</label><select id="sel" class="sel"><option value="">기능 고르기</option>${GROUPS.map((g) => `<optgroup label="${esc(g)}">${SKILLS.filter((x) => x.group === g).map((x) => `<option value="${x.id}">${esc(x.name)} (${esc(glOf(x))})</option>`).join('')}</optgroup>`).join('')}</select></div>`
       : `<div class="gsel"><div><span class="small muted">고른 기능</span><h3>${esc(s.name)} <small>${esc(glOf(s))}</small></h3><div class="gex">${exHTML(s)}</div></div><a class="btn mini" href="#/t/c/${C}/give">다른 기능</a></div>
       ${(() => { const md = S ? skillMinds(K, S, s) : [], wt = wantOf(md, s); return md.length ? `<div class="gmind"><h3>이 기능에서 보인 틀린 생각</h3><ul>${md.slice(0, 3).map((x) => `<li><b>${esc(x.m.title)}</b><span class="small">${esc(x.m.plain || '')}</span><span class="small muted">${x.rep.length ? `자주 보인 아이: ${x.rep.map((no) => esc(nm(K, no))).join(', ')}` : ''}${x.rep.length && x.once.length ? ' / ' : ''}${x.once.length ? `한 문제에서만: ${x.once.map((no) => esc(nm(K, no))).join(', ')}` : ''}</span></li>`).join('')}</ul>${Object.keys(wt).length ? `<label class="gtrap"><input type="checkbox" id="trap" ${trap ? 'checked' : ''}> 이 생각을 고쳤는지 보는 문제를 섞어요 <span class="small muted">(아이 화면 · 종이 모두 표시 없음 · 다 풀면 아래 '보낸 보충'에 함정 몇 개를 맞혔는지 떠요)</span></label>` : ''}</div>` : ''; })()}
       <h3>누구에게 <small>${who.size}명</small></h3>
-      <div class="kchips">${nos.map((no) => { const v = r0 ? r0.cells[nos.indexOf(no)] : ''; return `<label class="kchip ${SIGN[v][0]}${who.has(no) ? ' on' : ''}"><input type="checkbox" value="${no}" ${who.has(no) ? 'checked' : ''}><b>${no}</b>${K.names && K.names[no] ? `<small>${esc(String(K.names[no]).slice(0, 3))}</small>` : ''}<i>${{ root: '부족', bad: '부족', shaky: '가끔 틀림', ok: '됨', '': '' }[v]}</i></label>`;   /* 칩 위 ✕는 '닫기'로 읽혀서 아래 작은 글로(11-07 처음 쓰는 선생님) */ }).join('')}</div>
-      <div class="acts sub">${r0 && r0.lack.length ? `<button type="button" data-w="lack">부족한 아이(${r0.lack.length})</button>` : ''}${r0 && r0.shaky.length ? `<button type="button" data-w="shaky">가끔 틀리는 아이까지</button>` : ''}<button type="button" data-w="all">모두</button><button type="button" data-w="none">지우기</button></div>
+      <div class="kchips">${nos.map((no) => { const v = r0 ? r0.cells[nos.indexOf(no)] : ''; return `<label class="kchip ${SIGN[v][0]}${who.has(no) ? ' on' : ''}"><input type="checkbox" value="${no}" ${who.has(no) ? 'checked' : ''}><b>${who.has(no) ? '✓ ' : ''}${no}</b>${K.names && K.names[no] ? `<small>${esc(String(K.names[no]).slice(0, 3))}</small>` : ''}<i>${{ root: '부족', bad: '부족', shaky: '가끔 틀림', ok: '됨', '': '' }[v]}</i></label>`;   /* 칩 위 ✕는 '닫기'로 읽혀서 아래 작은 글로(11-07 처음 쓰는 선생님) */ }).join('')}</div>
+      ${r0 && r0.later.length ? `<p class="small g-later">${r0.later.map(([no, ls]) => `<b>${esc(nm(K, no))}</b>`).join(' · ')}${P(nm(K, r0.later[0][0]), '은', '는')} 더 아래 기능이 먼저예요 — ${[...new Set(r0.later.map(([, ls]) => ls.name))].map((x) => `<b>${esc(x)}</b>`).join(' · ')}부터 권해요. 그래도 넣으려면 번호를 눌러 고르세요.</p>` : ''}
+      <div class="acts sub">${r0 && r0.first.length ? `<button type="button" data-w="lack">이 기능부터인 아이(${r0.first.length})</button>` : ''}${r0 && r0.later.length ? `<button type="button" data-w="later">더 아래가 먼저인 아이까지</button>` : ''}${r0 && r0.shaky.length ? `<button type="button" data-w="shaky">가끔 틀리는 아이까지</button>` : ''}<button type="button" data-w="all">모두</button><button type="button" data-w="none">지우기</button></div>
       <h3>몇 문제</h3><div class="seg">${COUNTS.map((k) => `<button type="button" class="${k === n ? 'on' : ''}" data-n="${k}">${k}문제</button>`).join('')}</div>
       <div class="acts give-go"><button class="pri big" id="send" ${who.size ? '' : 'disabled'}>${icon('send', 22)}아이 화면으로 보내기</button><button class="big" id="paper">같은 문제 종이로</button><span class="give-sum">${who.size ? `<b>${[...who].sort((x, y) => x - y).join(' · ')}번</b>에게 ${n}문제` : '보낼 아이를 골라 주세요'}</span></div>
       <p class="small muted">아이 처음 화면의 <b>'배울 것'</b> 카드에 '선생님이 준 문제'로 떠요(30초 안). 종이로 뽑아도 아이 화면과 같은 문제예요.</p>`;
@@ -135,7 +141,7 @@ export function giveTView(root, C) {
       ${pick}<p class="qmsg tight${msg ? ' ok' : ''}" id="msg">${esc(msg)}</p></div>${sentHTML}`;
     const sel = root.querySelector('#sel'); if (sel) sel.addEventListener('change', () => { if (sel.value) location.hash = `#/t/c/${C}/give?sk=${sel.value}`; });
     root.querySelectorAll('.kchip input').forEach((x) => x.addEventListener('change', () => { if (x.checked) who.add(x.value); else who.delete(x.value); render(); }));
-    root.querySelectorAll('[data-w]').forEach((b) => b.addEventListener('click', () => { const w = b.dataset.w; who = new Set(w === 'all' ? nos : w === 'none' ? [] : w === 'lack' ? r0.lack : [...r0.lack, ...r0.shaky]); render(); }));
+    root.querySelectorAll('[data-w]').forEach((b) => b.addEventListener('click', () => { const w = b.dataset.w; who = new Set(w === 'all' ? nos : w === 'none' ? [] : w === 'lack' ? r0.first : w === 'later' ? r0.lack : [...r0.lack, ...r0.shaky]); render(); }));
     root.querySelectorAll('[data-n]').forEach((b) => b.addEventListener('click', () => { n = Number(b.dataset.n); render(); }));
     const sb = root.querySelector('#send'); if (sb) sb.addEventListener('click', send);
     const tb = root.querySelector('#trap'); if (tb) tb.addEventListener('change', () => { trap = tb.checked; });
