@@ -298,7 +298,7 @@ export function storyView(root, arg) {
   const ansLine = () => `<div class="sb-ansbox"><p class="sb-ask"><span class="sb-tag">묻는 것</span> ${askOf(pr.s.story)}</p><p class="sb-ans">${staticHTML(pr.s.item.prompt, pr.s.item.sol)}</p></div>`;
   function stepCalc() {
     const calc = pr.s.steps[1].item, one = oneAns();
-    const b = shell(3, 'point', one ? '고른 식을 계산해요.<br>계산한 수에 단위를 붙이면 답이에요.' : '고른 식을 계산해요.', '<div id="slot"></div>');
+    const b = shell(3, 'point', one ? '고른 식을 계산해요. 칸에는 <b>수만</b> 써요.' : '고른 식을 계산해요.', '<div id="slot"></div>');
     draw(b.querySelector('#slot'), { prompt: calc.prompt, conf: false, idk: false, onAnswer: (a) => {
       let ok = false; try { ok = !!calc.check(a.vals, a.raws).ok; } catch (e) { ok = false; }
       if (!pr.ct) { st.s[3] = ok ? 1 : 0; if (one) st.s[4] = st.s[3]; }   /* 걸음 기록은 첫 번에 맞혔나 */
@@ -314,7 +314,7 @@ export function storyView(root, arg) {
       if (!one) return next(box, '답 쓰기', () => stepAns(false));
       if (!T0) { box.insertAdjacentHTML('beforeend', ansLine()); return finish(box); }
       /* 검산 도구로 먼저 확인해 보고 — 답은 단추를 눌러야 보임 */
-      next(box, '답 보기', () => { box.querySelectorAll('.qact').forEach((x) => x.remove()); box.insertAdjacentHTML('beforeend', `<p class="sb-calc small">바르게 계산하면 ${staticHTML(calc.prompt, calc.sol)}</p>${ansLine()}`); finish(box); });
+      { const x = document.createElement('div'); x.className = 'qact'; x.innerHTML = '<p class="small">위 단추로 먼저 확인해 봐요. 그래도 모르겠으면</p><button type="button" class="big">답 보기</button>'; box.appendChild(x); x.querySelector('button').addEventListener('click', () => { box.querySelectorAll('.qact, .tbtn, .tool').forEach((y) => y.remove()); box.insertAdjacentHTML('beforeend', `<p class="sb-calc small">바르게 계산하면 ${staticHTML(calc.prompt, calc.sol)}</p>${ansLine()}`); finish(box); }); }   /* 답 보기는 흰 단추 — 주황이면 바로 눌러 배움 없이 넘어가던 것 · 답 본 뒤 확인 도구는 치움(처음 보는 눈 11-08) */
     } });
   }
   function stepAns(calcOk) {

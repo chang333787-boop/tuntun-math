@@ -446,8 +446,8 @@ export function fixView(root, c, opt = {}) {
   function compare(X) {
     const A = X.rightFirst ? X.it.sol : X.wrong, B = X.rightFirst ? X.wrong : X.it.sol;
     const b = shell(head('think', '친구 둘이 같은 문제를 풀었어요. <b>누가 맞았을까요?</b><br>맞았다고 생각하는 친구의 카드를 눌러요.'), `<div class="cmp">
-      <button type="button" class="cmpc" data-w="${X.rightFirst ? 1 : 0}"><span class="who2">가 친구</span>${staticHTML(X.rightFirst ? X.it.prompt : (X.wrongPrompt || X.it.prompt), A)}</button>
-      <button type="button" class="cmpc" data-w="${X.rightFirst ? 0 : 1}"><span class="who2">나 친구</span>${staticHTML(X.rightFirst ? (X.wrongPrompt || X.it.prompt) : X.it.prompt, B)}</button></div>`);
+      <button type="button" class="cmpc" data-w="${X.rightFirst ? 1 : 0}"><span class="who2">가 친구</span>${staticHTML(X.rightFirst ? X.it.prompt : (X.wrongPrompt || X.it.prompt), A)}<span class="cmp-go">이 친구가 맞았어요</span></button>
+      <button type="button" class="cmpc" data-w="${X.rightFirst ? 0 : 1}"><span class="who2">나 친구</span>${staticHTML(X.rightFirst ? (X.wrongPrompt || X.it.prompt) : X.it.prompt, B)}<span class="cmp-go">이 친구가 맞았어요</span></button></div>`);
     /* 고른 뒤 왼쪽에 두 풀이를 그대로 두고 맞음 ✓ · 어긋남 ✕ 표시(오른쪽에서 까닭을 고르는 동안 볼 수 있게) */
     const cmpStatic = () => `<div class="cmp">${[0, 1].map((k) => { const right = X.rightFirst ? k === 0 : k === 1; return `<div class="cmpc ${right ? 'right' : 'no'}"><span class="who2">${k ? '나' : '가'} 친구 <span class="mk">${right ? '✓ 맞음' : '✕ 어긋남'}</span></span>${staticHTML(right ? X.it.prompt : (X.wrongPrompt || X.it.prompt), right ? X.it.sol : X.wrong)}</div>`; }).join('')}</div>`;
     b.querySelectorAll('.cmpc').forEach((btn) => btn.addEventListener('click', () => why(btn.dataset.w === '1')));
