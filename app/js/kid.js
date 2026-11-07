@@ -53,7 +53,7 @@ export function whoView(root, me, onYes) {
 export function joinView(root) {
   const q = new URLSearchParams(location.hash.split('?')[1] || '');
   const c0 = (q.get('c') || '').toUpperCase(), n0 = /^\d{1,3}$/.test(q.get('n') || '') ? q.get('n') : '';
-  root.innerHTML = `<div class="card msg join"><div class="join-a">${say('hi', '안녕하세요! 저는 <b>튼튼이</b>예요. 같이 수 다리를 튼튼하게 놓아요.<br>선생님이 준 카드를 보고 써 주세요.', 120)}</div>
+  root.innerHTML = `<div class="card msg join"><div class="join-a">${say('hi', '안녕하세요! 저는 <b>튼튼이</b>예요.<br>선생님이 준 카드에 적힌 <b>반 코드 · 번호 · 핀</b>을 그대로 써 주세요.', 120)}</div>
     <form id="f" autocomplete="off">
       <div class="field"><label for="c">반 코드</label><input id="c" maxlength="6" value="${esc(c0)}" autocapitalize="characters" autocomplete="off" placeholder="여섯 글자"></div>
       <div class="field"><label for="n">내 번호</label><input id="n" inputmode="numeric" maxlength="3" autocomplete="off" value="${esc(n0)}"></div>

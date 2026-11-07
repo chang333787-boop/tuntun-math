@@ -42,9 +42,9 @@ addEventListener('keydown', touched, { capture: true, passive: true });
 function startView(r) {
   const me = meOf();
   if (me) { location.hash = '#/me'; return; }
-  r.innerHTML = `<div class="card msg"><div class="say">${mascot('hi', 104)}<div class="bub">안녕하세요! 저는 다리를 놓는 비버 <b>튼튼이</b>예요.<br>오늘 배울 단원으로 가는 수 다리가 튼튼한지 같이 봐요.</div></div>
-    <div class="grid2"><a class="big-pick" href="#/join">${tile('prep', 28)}<b>학생이에요</b><span>선생님이 준 카드(반 코드 · 번호 · 핀)로 들어가요</span></a>
-    <a class="big-pick" href="#/t">${tile('week', 28)}<b>선생님이에요</b><span>반 만들기 · 오늘 단원 열기 · 반 한눈 보기</span></a></div></div>`;
+  r.innerHTML = `<div class="card msg"><div class="say">${mascot('hi', 104)}<div class="bub">안녕하세요! 저는 비버 <b>튼튼이</b>예요.<br>내가 어디까지 아는지 점검하고, 모르는 건 배우고, 날마다 조금씩 연습해요.</div></div>
+    <div class="grid2"><a class="big-pick" href="#/join">${tile('prep', 28)}<b>학생이에요</b><span>선생님이 나눠 준 카드를 보고 들어가요</span></a>
+    <a class="big-pick" href="#/t">${tile('week', 28)}<b>선생님이에요</b><span>반 만들기 · 점검 내기 · 반 표 · 보충 주기</span></a></div></div>`;
 }
 const ROUTES = [
   [/^#\/try(?:\/(.+))?$/, (m) => tryView(root, m[1])],
