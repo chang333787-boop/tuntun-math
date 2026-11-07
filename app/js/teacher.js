@@ -179,7 +179,7 @@ export function namesView(root, C) {
   const K = cls(C); if (!K) return go('#/t');
   root.innerHTML = `<div class="card"><h2>이름 적기 <small>이 기기에만 저장 · 서버로 가지 않아요</small></h2>
     <div class="grid2">${Array.from({ length: K.n }, (_, i) => i + 1).map((no) => `<label class="field" style="flex-direction:row;align-items:center;gap:8px;margin:2px 0"><b style="min-width:36px">${no}</b><input data-no="${no}" value="${esc(K.names[no] || '')}" style="font-size:16px;letter-spacing:0"></label>`).join('')}</div>
-    <div class="acts"><button class="pri" id="sv">저장</button><a class="btn" href="#/t/c/${C}">반 보기로</a></div></div>`;
+    <div class="acts"><button class="pri" id="sv">저장</button><a class="btn" href="#/t/c/${C}">반 화면으로</a></div></div>`;
   root.querySelector('#sv').addEventListener('click', () => { const X = tget(); root.querySelectorAll('[data-no]').forEach((i) => { const v = i.value.trim(); if (v) X.classes[C].names[i.dataset.no] = v; else delete X.classes[C].names[i.dataset.no]; }); tset(X); go(`#/t/c/${C}`); });
 }
 
@@ -404,7 +404,7 @@ export function groupCardView(root, C, c) {
   if (ex && ms.length) { const ids = (() => { try { return testable(ex); } catch (e) { return []; } })(); const id = ms.flatMap((m) => m.bugs || []).find((b) => ids.includes(b)); if (id) { let v = null; try { v = __predict(ex, id); } catch (e) { v = null; } if (v) cmp = `${askP('두 풀이 가운데 어느 쪽이 맞을까? 틀린 쪽은 어디서 어긋났을까?')}${pairBox(staticHTML(ex.prompt, ex.sol), staticHTML(ex.prompt, v))}${KIDSAY[id] ? `<p class="note"><b>틀린 친구는</b> ${esc(KIDSAY[id])}</p>` : ''}`; } }
   root.innerHTML = `<div class="card tcard"><h2>10분 소집단 카드 <small>${esc(lessonName(c))}</small></h2>
     ${intro('같은 칸을 배워야 하는 아이 2~4명과 10분 동안 할 활동이에요. 차례대로 진행하고, 선생님 말은 그대로 읽어도 돼요. 문제는 열 때마다 새 숫자로 바뀌어요.', 'no-print')}
-    <div class="acts no-print"><button class="pri" onclick="print()">인쇄</button><a class="btn" href="#/t/c/${C}">반 보기로</a></div>
+    <div class="acts no-print"><button class="pri" onclick="print()">인쇄</button><a class="btn" href="#/t/c/${C}">반 화면으로</a></div>
     <dl class="lead"><dt>오늘 목표</dt><dd>${esc(LES(c).kid)}</dd>${hintOf(c) ? `<dt>핵심</dt><dd>${esc(hintOf(c))}</dd>` : ''}</dl>
     <ol class="plan">
     ${stepBox(1, '선생님이 먼저 풀어 보이기', 2, `${askP('선생님이 먼저 풀어 볼게. 머릿속 생각을 말로 할 테니 잘 들어 봐.')}${ex ? `<div class="qline">${staticHTML(ex.prompt, null)}<span class="ans">답 ${ansHTML(ex)}</span></div>${modelHTML(ex)}${steps.length ? `<ol class="steps">${steps.map((s) => stepHTML(s)).join('')}</ol>` : ''}` : ''}<p class="note">모형이 있으면 모형으로 먼저(낱개 10개 → 십 막대 1개로 바꾸기), 그다음 그림, 그다음 식으로 보여 줘요.</p>`)}
@@ -437,7 +437,7 @@ export function mindCardView(root, C, id) {
   }
   root.innerHTML = `<div class="card tcard"><h2>이 생각 10분 카드 <small>${esc(m.title)}</small></h2>
     ${intro('같은 생각으로 틀린 아이 2~3명을 모아 10분 동안 함께 할 활동이에요. 차례대로 진행하고, 선생님 말은 그대로 읽어도 돼요. 문제는 열 때마다 새 숫자로 바뀌어요.', 'no-print')}
-    <div class="acts no-print"><button class="pri" onclick="print()">인쇄</button><a class="btn" href="#/t/c/${C}">반 보기로</a></div>
+    <div class="acts no-print"><button class="pri" onclick="print()">인쇄</button><a class="btn" href="#/t/c/${C}">반 화면으로</a></div>
     <dl class="lead"><dt>아이 생각</dt><dd>${esc(m.think)}<span class="ex">예: ${esc(m.shows)}</span></dd>
       <dt>왜 그럴까요</dt><dd>${esc(whyOf(m))}</dd>
       <dt>오늘 목표</dt><dd>이 생각을 지우려 하기보다, 이 방법이 <b>언제 맞고 언제 안 맞는지</b> 아이 입으로 가르게 해요.</dd></dl>
@@ -603,7 +603,7 @@ export function storyCardView(root, C, type) {
   const exBox = (pr, show) => (pr ? `${story(pr)}${show ? `<div class="sbf">${frame(pr)}</div><p class="small">식: ${staticHTML(calc(pr).prompt, calc(pr).sol)}</p>` : '<p class="note">아이들이 막대 그림을 그리고 모르는 칸에 <b class="q">?</b>를 넣은 뒤 식을 써요.</p>'}` : '');
   root.innerHTML = `<div class="card tcard"><h2>이야기 문제 10분 카드 <small>${esc(T.kid)}</small></h2>
     ${intro('이 유형에서 이해(무슨 이야기 · 막대 그림)가 끊기는 아이 2~3명을 모아 10분. 계산은 가볍게 두고 <b>이야기의 구조</b>만 봐요. 문제는 열 때마다 바뀌어요.', 'no-print')}
-    <div class="acts no-print"><button class="pri" onclick="print()">인쇄</button><a class="btn" href="#/t/c/${C}">반 보기로</a></div>
+    <div class="acts no-print"><button class="pri" onclick="print()">인쇄</button><a class="btn" href="#/t/c/${C}">반 화면으로</a></div>
     <dl class="lead"><dt>이 유형</dt><dd>${esc(T.say)}</dd><dt>오늘 목표</dt><dd>낱말 하나(모두 · 더 · 배 …)로 식을 고르지 않고, <b>막대 그림에 수와 <span class="q">?</span>를 놓아 보고</b> 식을 고르게 해요.</dd></dl>
     <ol class="plan">
     ${stepBox(1, '시범 — 선생님이 소리 내어 생각하기', 3, `${askP(ask[0] || '무슨 이야기일까?')}${exBox(ex[0], true)}<p class="note">수마다 '이 수는 틀의 어느 칸일까?'를 말하며 넣고, 모르는 수 칸에 <b class="q">?</b>를 그려요.</p>`)}
@@ -625,9 +625,9 @@ export function homeLetterView(root) {
     <h3>들어가는 법</h3><ol class="easy"><li>주소: <b>${esc(url)}</b></li><li>아이 카드에 적힌 <b>반 코드 · 번호 · 핀</b>을 넣어요. 이름은 어디에도 저장하지 않아요.</li><li>학교에서 푼 것과 집에서 푼 것이 이어져요.</li></ol>
     <h3>집에서 이렇게 도와주세요</h3><ul class="easy">
       <li><b>하루 5분이면 충분해요.</b> 처음 화면의 '매일 연습'이나 주황 단추 하나만 해도 돼요. 길게 한 번보다 짧게 자주가 오래 남아요.</li>
-      <li><b>답을 알려 주지 말아 주세요.</b> 틀리면 화면의 <b>돋보기 단추 '확인해 볼까요?'</b>(거꾸로 셈 · 어림 · 다시 읽기 …)을 눌러 아이가 스스로 어긋난 곳을 찾게 해 주세요. "어디서 달라졌어?" 한마디면 돼요.</li>
+      <li><b>답을 알려 주지 말아 주세요.</b> 틀리면 튼튼이가 그 문제 숫자로 떠올릴 것을 말해 주고, 그래도 어려우면 한 단계씩 같이 풀어 줘요. "어디서 달라졌어?" 한마디면 돼요.</li>
       <li><b>시간을 재촉하지 말아 주세요.</b> 아이는 자기 지난 기록하고만 비교해요.</li>
-      <li><b>'풀기 전 짐작'을 같이 봐 주세요.</b> 풀기 전에 '자신 있어요 · 조금 헷갈려요 · 잘 모르겠어요'를 골라요. 짐작이 맞아 가는 것도 실력이 느는 거예요.</li>
+      <li><b>'얼마나 자신 있는지'를 같이 봐 주세요.</b> 답을 쓰고 '자신 있어요 · 조금 헷갈려요 · 잘 모르겠어요' 가운데 하나를 눌러 내요. 내 짐작이 맞아 가는 것도 실력이 느는 거예요.</li>
       <li>문장제는 <b>이야기 문제</b>에서 '무슨 이야기 → 막대 그림 → 식 → 답'으로 나눠 풀어요. 글이 길면 '읽어 주기' 단추를 눌러도 돼요.</li></ul>
     <h3>이런 건 하지 않아요</h3><ul class="easy"><li>순위 · 친구와 비교하기 · 점수 공개는 없어요.</li><li>틀린 까닭은 앱이 짐작한 것이고, 선생님이 학교에서 확인해요.</li></ul>
     <p class="small muted foot">궁금한 점은 담임 선생님께 물어봐 주세요.</p></div>`;
