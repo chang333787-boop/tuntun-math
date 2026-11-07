@@ -153,7 +153,8 @@ button:focus-visible,.btn:focus-visible,a:focus-visible,summary:focus-visible,.b
 .conf button{flex:1 1 0;min-width:max-content;min-height:52px;padding:8px 12px;font-size:17px;border-radius:12px}
 .conf button.on{border-color:var(--teal);background:var(--teal-t);color:var(--ink);box-shadow:0 4px 0 var(--teal-l)}
 .conf button.on:active,.conf button.on.press{box-shadow:0 1px 0 var(--teal-l)}
-.conf #cfh{margin:10px 0 0;font-weight:400;font-size:15px;color:var(--mute)}.conf #cfh:empty{display:none}
+.conf button.pri{background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:0 4px 0 var(--pri-d)}
+.choices button.on{border-color:var(--teal);background:var(--teal-t);box-shadow:0 4px 0 var(--teal-l);outline:3px solid var(--teal);outline-offset:2px}
 /* 보기 — 잠김 = 납작한 회색(턱 없음) · 맞음 ✓ · 지운 보기 */
 .choices{display:flex;flex-wrap:wrap;gap:12px}
 .choices button{flex:1 1 140px;min-height:76px;border-radius:16px;font-size:clamp(24px,3.2cqi,32px);padding:8px 18px;font-weight:600}
@@ -281,7 +282,7 @@ div.cmpc{box-shadow:none}
 .kchips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 4px}
 .kchip{position:relative;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:58px;min-height:58px;padding:4px 8px;border:2px solid var(--line2);border-radius:14px;background:#fff;color:var(--ink);cursor:pointer;box-shadow:0 3px 0 var(--line2);user-select:none}
 .kchip input{position:absolute;opacity:0;pointer-events:none}.kchip b{font-size:18px;line-height:1.1}.kchip small{font-size:11px;color:var(--mute)}
-.kchip i{font-style:normal;font-size:12px;font-weight:800;position:absolute;top:2px;right:6px}.kchip.c-root i,.kchip.c-stuck i{color:var(--stuck)}.kchip.c-shaky i{color:var(--shaky)}.kchip.c-ok i{color:var(--ok-ink)}
+.kchip i{font-style:normal;font-size:11px;font-weight:700;line-height:1.2}.kchip.c-root i,.kchip.c-stuck i{color:var(--stuck)}.kchip.c-shaky i{color:var(--shaky)}.kchip.c-ok i{color:var(--ok-ink)}
 .kchip.on{border-color:var(--teal);background:var(--teal);color:#fff;box-shadow:0 3px 0 var(--teal-d)}.kchip.on small,.kchip.on i{color:#fff}
 .sent{list-style:none;margin:0;padding:0}.sent li{padding:10px 0;border-top:1px solid var(--line)}.sent li:first-child{border-top:0}.sent .whys{margin-top:6px}.pill.okc{border-color:var(--ok);color:var(--ok-ink);background:var(--ok-t)}.pill.muted{color:var(--mute)}
 .klack{margin:0 0 8px;padding:14px 18px;border:2px solid var(--line2);border-radius:16px;background:#FFFDF8}.kd .klack h3{margin:0 0 10px;padding:0;border:0}.qmsg.ok{color:var(--ok-ink)}
@@ -372,7 +373,7 @@ button.pk:active,button.pk.press{box-shadow:0 1px 0 var(--line2)}
 /* 이번 주 구보(뛴 날) */
 .week{display:inline-flex;gap:4px;vertical-align:middle}
 .week i{font-style:normal;font-size:13px;width:28px;height:28px;border-radius:8px;border:1.5px solid var(--line2);display:inline-flex;align-items:center;justify-content:center;color:var(--mute);background:#fff;font-weight:700}
-.week i.on{background:#2E7D4F;border-color:#2E7D4F;color:#fff}.week i.td{outline:2px solid var(--teal);outline-offset:2px}
+.week i.on{background:#2E7D4F;border-color:#2E7D4F;color:#fff}.week i.td{border-style:dashed;border-color:var(--teal);color:var(--teal-d);font-weight:800}   /* 오늘 = 점선(동그라미는 '했다'로 읽힘 · 11-07) · 한 날 = 초록 칠 */
 .runs{width:100%;max-width:480px;height:auto;display:block;border:1px solid var(--line);border-radius:12px;background:#fff}
 
 /* ── 들어가기 · 번호 확인 ── */
@@ -778,3 +779,15 @@ body.tv main{max-width:none}body.tv .ctab table{font-size:18px}body.tv .ctab td,
 .ck-lab{margin-right:6px;border-color:var(--teal);color:var(--teal-d);background:var(--teal-t)}
 .ck-pps{font-size:16px;margin:0 0 10px}
 .list.lad{font-size:14.5px}.list.lad td,.list.lad th{text-align:center;padding:4px 8px}
+/* 처음 쓰는 아이 점검(11-07) — 배우기 화면 이름 · 나가기 따로 · 사다리 '처음 문제의 답' 한 줄 */
+.fx-top{display:flex;align-items:center;gap:10px 18px;flex-wrap:wrap;margin:0 0 6px}.fx-top .sb-steps{margin:0}
+.fx-t{display:flex;align-items:center;gap:8px;margin:0;font-size:16px}.fx-t b{font-family:var(--head);font-size:20px;font-weight:700;font-synthesis:none}.fx-t span{color:var(--mute)}.fx-t .ico{width:32px;height:32px;border-radius:10px}
+.hl-ans{font-size:15px;color:var(--teal-d)}
+.out-row{margin:22px 0 0;text-align:right}.out-row .link{color:var(--mute)}
+.field label small{font-weight:400;color:var(--mute);font-size:13px}
+.c3-cnt{min-width:0;width:auto;font-size:15px;height:30px}
+.first-day{margin:4px 0 14px;padding:14px 18px;border:2px solid var(--teal);border-radius:16px;background:var(--teal-t)}.first-day ol{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:column;gap:6px}.first-day a{font-weight:700;color:var(--teal-d)}
+.local-note{margin:10px 0 0}
+.legend2 small{margin-left:4px;color:var(--mute)}
+.kid-pv{margin:8px 0 10px}.pv-k{display:block;font-size:13px;color:var(--mute);margin-bottom:4px}.pv-card{display:flex;flex-direction:column;gap:2px;padding:8px 12px;border:2px solid var(--line2);border-top:5px solid #2D6CB0;border-radius:12px;background:#fff;font-size:14px}.pv-card b{font-family:var(--head);font-size:17px;font-weight:700;font-synthesis:none}
+.ck-c.rec{border:2px solid var(--teal)}.rec-b{font-size:13px;font-weight:700;color:#fff;background:var(--teal);border-radius:999px;padding:1px 10px;margin-left:6px;vertical-align:middle}

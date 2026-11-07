@@ -27,6 +27,7 @@ const TIMES = ['', '한', '두', '세', '네', '다섯', '여섯', '일곱', '�
 const times = (k) => (TIMES[k] ? `${TIMES[k]} 번` : `${k}번`);
 const ymd = (t) => { const d = new Date(t); return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`; };
 const day = (t) => new Date(t).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
+const when = (t) => new Date(t).toLocaleString('ko-KR', { month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 const units = (K) => UNITS.filter((u) => prepPlan(u.id).fringe.length && gradeIdx(u.g) <= gradeIdx(K.g) + 1);
 // 기본 범위 = 반 학기 바로 앞 두 학기
 export function defaultRange(g) {
@@ -129,15 +130,17 @@ export function checkView(root, C) {
       <section class="card ck-c"><h3><span class="ck-no">1</span>오늘 단원 점검</h3>
         <p class="intro">오늘 배울 단원에 꼭 필요한 앞 칸을 봐요. 아이마다 막힌 곳을 따라 아래 칸으로 내려가고, 남으면 다음 시간에 이어서 봐요.</p>
         <label class="ck-f"><span>단원</span><select id="u" class="sel">${us.map((u) => `<option value="${u.id}"${u.id === unit ? ' selected' : ''}>${esc(gl(u.g))} · ${esc(u.nm)}</option>`).join('')}</select></label>
-        <label class="ck-f"><span>한 판 길이</span><select id="len" class="sel">${LEN.map((v) => `<option value="${v}"${v === len ? ' selected' : ''}>${v}문제 · 약 ${MIN[v]}분${v === PREP.budget ? '(기본)' : ''}</option>`).join('')}</select></label>
+        <label class="ck-f"><span>한 번에 풀 문제</span><select id="len" class="sel">${LEN.map((v) => `<option value="${v}"${v === len ? ' selected' : ''}>${v}문제 · 약 ${MIN[v]}분${v === PREP.budget ? '(기본)' : ''}</option>`).join('')}</select></label>
+        <div class="kid-pv"><span class="pv-k">아이 화면에 이렇게 떠요</span><div class="pv-card"><b>점검</b><span>오늘 단원 점검 — 선생님이 연 단원 · 약 ${MIN[len] || 8}분</span></div></div>
         <div class="acts"><button class="pri" id="open">오늘 단원으로 열기</button></div>
-        <p class="small ck-s">${K.today ? `지금 열린 단원: <b>${esc(unitLabel(K.today.unit))}</b> · 끝낸 아이 <b>${S ? prepDone(K, S) : '…'}</b>/${K.n}` : '<span class="muted">아직 연 단원이 없어요</span>'}</p>
+        <p class="small ck-s">${K.today ? `지금 열린 단원: <b>${esc(unitLabel(K.today.unit))}</b> <span class="muted">(${esc(when(K.today.t))}에 열었어요)</span> · 끝낸 아이 <b>${S ? prepDone(K, S) : '…'}</b>/${K.n}` : '<span class="muted">아직 연 단원이 없어요</span>'}</p>
         <p class="qmsg tight" id="m1" role="status"></p></section>
-      <section class="card ck-c"><h3><span class="ck-no">2</span>점검지 — 종이와 같은 문제</h3>
+      <section class="card ck-c${list.length ? '' : ' rec'}"><h3><span class="ck-no">2</span>점검지 — 종이와 같은 문제${list.length ? '' : ' <span class="rec-b">처음이면 이걸 권해요</span>'}</h3>
         <p class="intro">종이 점검지와 <b>같은 문제 · 같은 판정</b>이에요. 화면에서 풀면 결과가 바로 반 표에 들어가요.</p>
         <div class="ck-f"><span>범위</span><span class="ck-rg"><select id="from" class="sel" aria-label="범위 시작">${opt(range.from)}</select> ~ <select id="to" class="sel" aria-label="범위 끝">${opt(range.to)}</select></span></div>
-        <label class="ck-f"><span>쓰임</span><select id="lab" class="sel"><option value="">보통 점검</option><option value="pre"${lab === 'pre' ? ' selected' : ''}>사전 점검(시작할 때)</option><option value="post"${lab === 'post' ? ' selected' : ''}>사후 점검(몇 주 뒤 · 같은 범위)</option></select></label>
+        <label class="ck-f"><span>점검 종류</span><select id="lab" class="sel"><option value="">보통 점검</option><option value="pre"${lab === 'pre' ? ' selected' : ''}>사전 점검(시작할 때)</option><option value="post"${lab === 'post' ? ' selected' : ''}>사후 점검(몇 주 뒤 · 같은 범위)</option></select></label>
         <p class="ck-cnt" id="cnt">${cntLine()}</p>
+        <div class="kid-pv"><span class="pv-k">아이 화면에 이렇게 떠요</span><div class="pv-card"><b>점검</b><span>선생님이 낸 점검지 — 12문제씩 이어서 풀어요</span></div></div>
         <div class="acts"><button class="pri" id="give"${cnt ? '' : ' disabled'}>아이들에게 내기</button></div>
         <p class="small muted">종이로 푼 아이는 반 화면의 <a href="#/t/c/${esc(C)}/paper">종이 결과 가져오기</a>로 넣어요.</p>
         <p class="qmsg tight" id="m2" role="status"></p></section>

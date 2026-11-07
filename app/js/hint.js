@@ -78,7 +78,7 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
     const ch = it.choices || null, picked = ch && raws ? [Number(raws[0])] : [];
     if (ch && ch.length <= 2) return toSteps();
     draw(root, { ...base, prompt: it.prompt, choices: ch, hide: picked,
-      lead: head('cue', `<span class="hl-was">${raws ? `내 답 <b>${esc(mine(it, raws))}</b> — 아직 아니에요. ` : ''}${nudge || '생각을 떠올려 다시 풀어 봐요.'}</span>${cue ? `<span class="hl-cue-t">${esc(cue)}</span>` : ''}`, 'think', steps.length && !(budget && budget.left <= 0) ? '<button type="button" class="hl-go" id="hs">한 단계씩 같이 풀기</button>' : ''),
+      lead: head('cue', `<span class="hl-was">${raws ? `내 답 <b>${esc(mine(it, raws))}</b> — 아직 아니에요. ` : ''}${nudge || '생각을 떠올려 다시 풀어 봐요.'}</span>${cue ? `<span class="hl-cue-t">${esc(cue)}</span>` : ''}<span class="hl-ans">이 생각으로 <b>처음 문제의 답</b>을 써요.</span>`, 'think', steps.length && !(budget && budget.left <= 0) ? '<button type="button" class="hl-go" id="hs">모르겠어요 — 한 단계씩 같이 풀기</button>' : ''),
       onAnswer: (a, cf, t) => {
         if (sameAns(it, a)) return finish(true, ch ? 'pick' : 'recall', ch ? '맞았어요!' : '맞았어요! 생각을 떠올려서 스스로 고쳤어요.');
         if (t < RUSH && !ch) return recall('조금 빨라요. 끝까지 읽고 다시 풀어 봐요.');

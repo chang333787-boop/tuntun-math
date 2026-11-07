@@ -55,9 +55,9 @@ export function joinView(root) {
   const c0 = (q.get('c') || '').toUpperCase(), n0 = /^\d{1,3}$/.test(q.get('n') || '') ? q.get('n') : '';
   root.innerHTML = `<div class="card msg join"><div class="join-a">${say('hi', '안녕하세요! 저는 <b>튼튼이</b>예요.<br>선생님이 준 카드에 적힌 <b>반 코드 · 번호 · 핀</b>을 그대로 써 주세요.', 120)}</div>
     <form id="f" autocomplete="off">
-      <div class="field"><label for="c">반 코드</label><input id="c" maxlength="6" value="${esc(c0)}" autocapitalize="characters" autocomplete="off" placeholder="여섯 글자"></div>
+      <div class="field"><label for="c">반 코드 <small>(영어 대문자와 숫자 여섯 개 · 한/영 키로 영어)</small></label><input id="c" maxlength="6" value="${esc(c0)}" autocapitalize="characters" autocomplete="off" lang="en" spellcheck="false" placeholder="예: AB3CD7"></div>
       <div class="field"><label for="n">내 번호</label><input id="n" inputmode="numeric" maxlength="3" autocomplete="off" value="${esc(n0)}"></div>
-      <div class="field"><label for="p">핀(숫자 네 개)</label><input id="p" inputmode="numeric" maxlength="4" autocomplete="off" spellcheck="false"></div>
+      <div class="field"><label for="p">핀 <small>(카드에 적힌 비밀 숫자 네 개)</small></label><input id="p" inputmode="numeric" maxlength="4" autocomplete="off" spellcheck="false"></div>
       <p class="qmsg" id="msg" role="alert"></p>
       <button class="pri big">들어가기</button>
     </form></div>`;
@@ -119,11 +119,11 @@ function cardHTML(c, list, now, extra = '') {
   const first = list[0], go1 = first && first.href ? first : list.find((x) => x.href);
   const items = list.slice(0, 3).map((t) => (t.kind === 'help' ? helpItem(t) : `<li><a href="${t.href}"><b>${esc(t.title)}</b><span>${esc(t.sub)}</span></a></li>`)).join('');
   return `<section class="c3 act-${(ACT[c.k] || ACT.prep)[1]}${now ? ' now' : ''}${list.length ? '' : ' empty'}" aria-label="${c.no}. ${c.t}">
-    <div class="c3-h"><span class="c3-no">${c.no}</span>${tile(c.k, 30)}<h2>${c.t}</h2>${list.length ? `<span class="c3-cnt">${list.length}</span>` : ''}</div>
+    <div class="c3-h">${tile(c.k, 30)}<h2>${c.t}</h2>${list.length ? `<span class="c3-cnt">${list.length}개</span>` : ''}</div>
     <p class="c3-what">${c.what}</p>
     ${list.length ? `<ul class="c3-list">${items}</ul>${list.length > 3 ? `<p class="small muted">그 밖에 ${list.length - 3}개 더 있어요</p>` : ''}` : `<p class="c3-none">${c.none}</p>`}
     ${extra}
-    ${go1 ? `<a class="btn big c3-go${now ? ' pri' : ''}" href="${go1.href}">${now ? '지금 시작' : '시작'}${now ? icon('arrow', 22) : ''}</a>` : ''}</section>`;
+    ${go1 && now ? `<a class="btn big c3-go pri" href="${go1.href}">지금 시작${icon('arrow', 22)}</a>` : ''}</section>`;   /* 단추는 지금 할 카드에만(다른 카드도 단추가 있으면 '2번부터'와 1번 단추가 다툼 · 11-07 처음 쓰는 아이 점검) — 다른 카드는 줄을 눌러 시작 */
 }
 export async function homeView(root) {
   const me = meOf(); if (!me) return go('#/join');
@@ -148,7 +148,7 @@ export async function homeView(root) {
   const nowNo = doneOne ? 0 : classPrep ? 1 : prac.some((x) => x.kind === 'help' || x.kind === 'give') ? 2 : chk.some((x) => x.kind === 'check') ? 1 : prac.length ? 2 : chk.length ? 1 : daily.length ? 3 : 0;
   const lists = [chk, prac, daily];
   const head = doneOne ? say('cheer', '하나 배웠어요! 이제 <b>선생님 수업</b>으로 가요. 남은 것은 다음 시간에 해요.', 88)
-    : nowNo ? say('point', `오늘은 <b>${nowNo}번 ${CARDS[nowNo - 1].t}</b>부터 해요.`, 88)
+    : nowNo ? say('point', `오늘은 <b>${CARDS[nowNo - 1].t}</b>부터 해요. 주황 단추를 눌러요.`, 88)
     : say('cheer', `오늘 할 것을 다 했어요!${ran ? '' : ' 매일 연습할 문제가 생기면 3번에 나와요.'}`, 88);
   // 내 기록 — 나하고만 견줌 · 사실만(점검 맞힌 수 · 연습한 날 · 배워서 고친 것)
   const ws = lineOf(K.recs, weekTerm(K)), wl = ws[ws.length - 1], wb = ws[ws.length - 2];
@@ -160,14 +160,15 @@ export async function homeView(root) {
   root.innerHTML = `<div class="home3">
     <div class="home3-top">${head}${ok ? '' : '<p class="warn small">서버에 닿지 않아 이 기기에 저장된 것만 보여요. 푼 것은 이 기기에 모았다가 나중에 보내요.</p>'}</div>
     <div class="cards3">${CARDS.map((c, i) => cardHTML(c, lists[i], nowNo === c.no, c.k === 'daily' ? `<p class="c3-days">이번 주 연습한 날 ${weekHTML(K)}</p>${!lists[i].length && ran ? '<p class="c3-done">오늘 매일 연습을 했어요</p>' : ''}` : '')).join('')}</div>
-    <section class="mine" aria-label="내 기록"><h2 class="sec">내 기록 <small>나하고만 견줘요</small></h2>
+    <section class="mine" aria-label="내 기록"><h2 class="sec">내 기록 <small>나하고만 비교해요</small></h2>
       <div class="mine-row">
         <div class="mine-c"><span class="k">이번 주 점검 맞힌 수</span><span class="v">${weekLine}</span></div>
         <div class="mine-c"><span class="k">튼튼이와 배워서 고친 것</span><span class="v">${fixedN}개</span>${fixedN ? `<details class="more"><summary>보기</summary><p class="small">${names(Object.keys(K.fixed))}</p></details>` : ''}</div>
         <div class="mine-c"><span class="k">이번 주 틀린 뒤 스스로 고친 문제</span><span class="v">${selfWk}개${selfLast != null ? ` <small>(지난주 ${selfLast}개)</small>` : ''}</span></div>
-        <div class="mine-c"><span class="k">풀기 전 짐작이 맞은 정도</span><span class="v">${cal.n ? `${Math.round(cal.match * 100)}% <small>(${cal.n}문제)</small>` : '<small>아직 없어요</small>'}</span></div>
+        <div class="mine-c"><span class="k">내 자신감이 맞은 정도</span><span class="v">${cal.n ? `${Math.round(cal.match * 100)}% <small>(${cal.n}문제)</small>` : '<small>아직 없어요</small>'}</span></div>
       </div>
-      <p class="mine-links small"><a href="#/story">이야기 문제 풀기</a><a href="#/back">막힌 문제 거꾸로 찾기</a><button class="link" id="out">이 기기에서 나가기</button></p></section>
+      <p class="mine-links small"><a href="#/story">이야기 문제 풀기</a><a href="#/back">막힌 문제 직접 넣어 보기</a></p>
+      <p class="out-row small"><button class="link" id="out">다른 사람이 쓸게요(내 번호에서 나가기)</button></p></section>
   </div>`;
   root.querySelector('#out').addEventListener('click', () => { if (confirm('이 기기에서 나갈까요? 푼 기록은 서버에 남아 있어요.')) { lsDel('tt.me'); lsDel('tt.who'); WHO.ok = false; go('#/'); } });
   const known = K.inbox || {};   /* 같은 날 다시 열면 과제 id(prep<날짜>)가 같음 — 여는 시각(t)으로 견줌 */
@@ -251,7 +252,7 @@ export function prepView(root, unit) {
     root.innerHTML = `<div class="card msg act-prep"><p class="eyebrow">${tile('chk', 22)}오늘 단원 점검</p>${head}${S.why === 'teacher' ? '' : calLine}${acts}</div>`;
   };
   if (!asked(S) && !S.done) {
-    root.innerHTML = `<div class="card msg act-prep"><p class="eyebrow">${tile('prep', 22)}준비 다리</p>${say('point', `<b>${esc(unitLabel(unit))}</b> 배우기 전에, 꼭 필요한 앞 문제를 알고 있는지 볼게요(${S.prior ? '지난번에 멈춘 곳부터 · ' : ''}약 ${mins(S.budget)}분).<br>문제마다 <b>먼저 짐작</b>을 고르면 답 칸이 열려요. 모르면 넘어가도 돼요.`, 104)}<div class="acts"><button class="pri big" id="s">시작</button></div></div>`;
+    root.innerHTML = `<div class="card msg act-prep"><p class="eyebrow">${tile('chk', 22)}오늘 단원 점검</p>${say('point', `<b>${esc(unitLabel(unit))}</b> 배우기 전에, 꼭 필요한 앞 문제를 알고 있는지 볼게요(${S.prior ? '지난번에 멈춘 곳부터 · ' : ''}약 ${mins(S.budget)}분).<br>답을 쓰고, <b>얼마나 자신 있는지</b> 단추를 눌러 내요. 모르면 넘어가도 돼요.`, 104)}<div class="acts"><button class="pri big" id="s">시작</button></div></div>`;
     root.querySelector('#s').addEventListener('click', step);
   } else step();
 }
@@ -268,8 +269,8 @@ export function fixView(root, c) {
   const ct0 = classTask(K), inClass = !!(ct0 && Date.now() - ct0.t < 3 * 3600e3);   /* 수업 중(연 뒤 3시간)만 — 저녁 집에서는 보통 끝 화면(회귀 10-31) */
   KS.setNow(me, { mode: 'fix', c });
   const head = (pose, t) => say(pose, t, 64);
-  const PH = [['show', '튼튼이 시범'], ['together', '같이 풀기'], ['solo', '혼자 풀기'], ['check', '확인 3문제']];
-  const bar = () => { const k = PH.findIndex(([p]) => p === F.phase); return k < 0 ? '' : `<ol class="sb-steps fx-steps" aria-label="고치기 걸음">${PH.map(([, t], i) => `<li class="${i === k ? 'now' : i < k ? 'done' : ''}"${i === k ? ' aria-current="step"' : ''}><i>${i < k ? '✓' : i + 1}</i>${t}</li>`).join('')}</ol>`; };
+  const PH = [['show', '튼튼이가 먼저'], ['together', '같이 풀기'], ['solo', '혼자 풀기'], ['check', '확인 3문제']];
+  const bar = () => { const k = PH.findIndex(([p]) => p === F.phase); return k < 0 ? '' : `<div class="fx-top"><p class="fx-t">${tile('fix', 20)}<b>배우기</b><span>${esc(plank(c))}</span></p><ol class="sb-steps fx-steps" aria-label="배우기 걸음">${PH.map(([, t], i) => `<li class="${i === k ? 'now' : i < k ? 'done' : ''}"${i === k ? ' aria-current="step"' : ''}>${i < k ? '<i>✓</i>' : ''}${t}</li>`).join('')}</ol></div>`; };   /* 화면 이름 '배우기' + 무엇을 배우는지 · 걸음 칩엔 숫자 없음(풀이 순서 번호와 겹치지 않게 · 11-07 처음 쓰는 아이) */
   // 화면 틀(docs/ui.md 2차) — 걸음 칩은 위 · 왼쪽(시범 · 모형 · 단계 · 문제) · 오른쪽(튼튼이 말 · 할 일) · 좁으면 튼튼이 말이 맨 위
   //  shell(말, 왼쪽, 오른쪽 아래) → #b(.still — 왼쪽이 시범 · 비교처럼 위에서부터 읽는 것이라 오른쪽 판도 위로) · slot() → 문제 카드 자리(draw에 lead로 튼튼이 말을 넘김 · 오른쪽 판은 문제와 같은 높이 가운데)
   const shell = (top, main, side = '') => { root.innerHTML = `<div class="card fx">${bar()}<div id="b"><div class="qcard still"><div class="qgrid"><div class="qmain">${main}</div><div class="qside"><div class="qlead">${top}</div>${side}</div></div></div></div></div>`; return root.querySelector('#b'); };
@@ -284,7 +285,7 @@ export function fixView(root, c) {
     const b = root.querySelector('#b'); b.querySelector('#n').addEventListener('click', () => { showNext(F); route(); }); return b;
   };
   function show() {
-    const n = showLen(F), done = F.si >= n, has = F.steps.length > 0, md = modelHTML(F.ex) || tenFrameHTML(F.ex, { moved: has && F.si >= F.steps.length - 1, anim: has && F.si === F.steps.length - 1 });   /* 한 자리 10 만들기 · 10에서 빼기는 10칸 틀(둘째 단계에서 옮기는 모습 한 번) */
+    const n = showLen(F), done = F.si >= n, has = F.steps.length > 0, md = tenFrameHTML(F.ex, { moved: has && F.si >= F.steps.length - 1, anim: has && F.si === F.steps.length - 1 }) || modelHTML(F.ex);   /* 한 자리 10 만들기 · 10에서 빼기는 10칸 틀(둘째 단계에서 옮기는 모습 한 번) */
     const fin = done ? `<p class="fxa">${picAns(F.ex) ? '그래서 답은 ✓ 표시한 보기예요.' : ansSay(F.ex, '그래서 답은')}</p>` : '';
     if (has) {
       const C = colOf(F.ex, F.steps), st = F.si ? F.steps[F.si - 1] : null, v = C ? colView(C, F.si) : null;
@@ -380,7 +381,7 @@ export function fixView(root, c) {
   function check() {
     const it = checkItem(F);
     if (!it) return done();
-    draw(slot(), { lead: head('point', '마지막! 새 숫자 3문제를 <b>도움 없이</b> 풀어요. 먼저 짐작도 골라요.'), prompt: it.snap.prompt, choices: it.snap.choices, tag: '확인', act: 'fix', dots: [F.ci, F.check.items.length], onAnswer: (a, cf, ms) => { answerCheck(F, a, { conf: cf, ms }); route(); } });
+    draw(slot(), { lead: head('point', '마지막! 새 숫자 3문제를 <b>도움 없이</b> 풀어요. 답을 쓰고 자신 있는 만큼 단추를 눌러요.'), prompt: it.snap.prompt, choices: it.snap.choices, tag: '확인', act: 'fix', dots: [F.ci, F.check.items.length], onAnswer: (a, cf, ms) => { answerCheck(F, a, { conf: cf, ms }); route(); } });
   }
   function done() {
     const now = Date.now();

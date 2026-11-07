@@ -28,7 +28,8 @@ export function draw(root, { prompt, choices = null, tag = '', act = '', dots = 
   const t0 = performance.now();
   let cf = null;
   const gone = new Set((hide || []).map(Number));
-  root.innerHTML = `<div class="qcard${conf ? ' locked' : ''}"><div class="qgrid">
+  /* 자신감(conf) = 답을 쓰고 '얼마나 자신 있는지' 단추 셋 가운데 하나로 냄(처음 쓰는 아이 셋 모두 '먼저 짐작 고르기 → 답 칸 열림'에서 막힘 — 11-07 사용감 점검 · 고르기 문항은 보기를 고른 뒤 단추) */
+  root.innerHTML = `<div class="qcard"><div class="qgrid">
     <div class="qmain">
       <div class="qtop">${tagHTML(tag, act)}${dots ? progHTML(dots) : ''}</div>
       ${extra}
@@ -37,11 +38,11 @@ export function draw(root, { prompt, choices = null, tag = '', act = '', dots = 
     <div class="qside">
       ${lead ? `<div class="qlead">${lead}</div>` : ''}
       ${say && say.length ? `<div class="tsay">${say.map((x) => `<p>${esc(x)}</p>`).join('')}</div>` : ''}
-      ${conf ? `<div class="conf"><p>풀기 전에 — 풀 수 있을 것 같아요?</p><div class="row">${CONF.map(([v, t]) => `<button type="button" data-cf="${v}">${t}</button>`).join('')}</div><p class="small muted" id="cfh">짐작을 고르면 답 칸이 열려요.</p></div>` : ''}
       ${choices ? `<div class="choices">${choices.map((ch, k) => `<button type="button" data-k="${k}"${gone.has(k) ? ' class="gone" aria-label="튼튼이가 지운 보기"' : ''}><span class="math">${toHTML(ch, { static: true })}</span></button>`).join('')}</div>` : ''}
       <div class="qmsg" id="msg" role="alert"></div>
+      ${conf ? `<div class="conf"><p>${choices ? '보기를 골랐으면 — 얼마나 자신 있어요?' : '다 풀었으면 — 얼마나 자신 있어요?'}</p><div class="row">${CONF.map(([v, t]) => `<button type="button" class="${v === 2 ? 'pri' : ''}" data-cf="${v}">${t}</button>`).join('')}</div></div>` : ''}
       <div class="qact">
-        ${choices ? '' : '<button class="pri big" id="ok">다 풀었어요</button>'}
+        ${choices || conf ? '' : '<button class="pri big" id="ok">다 풀었어요</button>'}
         ${idk ? '<button id="idk">몰라서 넘어갈래요</button>' : ''}
       </div>
     </div>
@@ -58,32 +59,35 @@ export function draw(root, { prompt, choices = null, tag = '', act = '', dots = 
     root.querySelectorAll('[data-k]').forEach((b) => (b.disabled = on || gone.has(Number(b.dataset.k))));
     if (ok) ok.disabled = on;
   };
-  lock(!!conf);
-  root.querySelectorAll('[data-cf]').forEach((b) => b.addEventListener('click', () => {
-    cf = Number(b.dataset.cf);
-    root.querySelectorAll('[data-cf]').forEach((x) => x.classList.toggle('on', x === b));
-    msg.textContent = '';
-    const h = root.querySelector('#cfh'); if (h) h.textContent = '';
-    lock(false);
-    const e = open.find((x) => !x.value.trim()); if (e) e.focus(); else { const c0 = root.querySelector('[data-k]:not(:disabled)'); if (c0) c0.focus(); }
-  }));
+  lock(false);
   const done = (a) => onAnswer(a, conf ? cf : null, Math.round(performance.now() - t0));
-  if (ok) ok.addEventListener('click', () => {
+  let pick = null;   /* 자신감이 있는 고르기 문항 — 보기를 먼저 고르고(초록 테두리) 자신감 단추로 냄 */
+  const readBlanks = () => {
     const raws = blanks.map((b) => b.value.trim().replace(/,/g, ''));
-    if (raws.some((x) => !x)) return nudge('빈칸을 모두 채워 주세요. 모르면 "몰라서 넘어갈래요"를 눌러요.', open.find((b) => !b.value.trim()));
+    if (raws.some((x) => !x)) { nudge('빈칸을 모두 채워 주세요. 모르면 "몰라서 넘어갈래요"를 눌러요.', open.find((b) => !b.value.trim())); return null; }
     const vals = raws.map(parseNum);
-    if (vals.some((v) => Number.isNaN(v))) return nudge('숫자로 써 주세요.', blanks[vals.findIndex((v) => Number.isNaN(v))]);
-    done({ vals, raws });
-  });
+    if (vals.some((v) => Number.isNaN(v))) { nudge('숫자로 써 주세요.', blanks[vals.findIndex((v) => Number.isNaN(v))]); return null; }
+    return { vals, raws };
+  };
+  if (ok) ok.addEventListener('click', () => { const a = readBlanks(); if (a) done(a); });
+  root.querySelectorAll('[data-cf]').forEach((b) => b.addEventListener('click', () => {
+    if (choices) { if (pick == null) return nudge('먼저 보기를 하나 골라요.'); cf = Number(b.dataset.cf); return done({ vals: [pick], raws: [String(pick)] }); }
+    const a = readBlanks(); if (!a) return;
+    cf = Number(b.dataset.cf); done(a);
+  }));
   open.forEach((b, i) => b.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter') return;
     e.preventDefault();
-    if (i < open.length - 1 && !open[i + 1].value) open[i + 1].focus(); else ok && ok.click();
+    if (i < open.length - 1 && !open[i + 1].value) open[i + 1].focus(); else if (ok) ok.click(); else { const c1 = root.querySelector('[data-cf="2"]'); if (c1) c1.focus(); }
   }));
-  root.querySelectorAll('[data-k]').forEach((b) => b.addEventListener('click', () => { if (b.disabled) return; done({ vals: [Number(b.dataset.k)], raws: [b.dataset.k] }); }));
+  root.querySelectorAll('[data-k]').forEach((b) => b.addEventListener('click', () => {
+    if (b.disabled) return;
+    if (!conf) return done({ vals: [Number(b.dataset.k)], raws: [b.dataset.k] });
+    pick = Number(b.dataset.k); root.querySelectorAll('[data-k]').forEach((x) => x.classList.toggle('on', x === b)); msg.textContent = '';
+  }));
   const ik = root.querySelector('#idk');
   if (ik) ik.addEventListener('click', () => onAnswer({ idk: true }, 0, Math.round(performance.now() - t0)));
-  if (!conf && open[0]) open[0].focus();
+  if (open[0]) open[0].focus();
 }
 
 // 찍기 멈춤 — 2초 안에 틀린 답이 세 번 이어지면 잠깐 멈춤 · 찍기는 학습 저하와 가장 세게 묶인다 [A-R29]

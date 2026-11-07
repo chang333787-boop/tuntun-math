@@ -38,7 +38,7 @@ export function giveView(root, id) {
   const me = meOf(); if (!me) return go('#/join');
   const K = KS.load(me), task = (K.inbox || {})[id];
   if (!task || task.kind !== 'give' || !SKILL[task.sk]) return go('#/me');
-  const head = (body) => { root.innerHTML = `<div class="card msg act-fix"><p class="eyebrow">${tile('give', 22)}선생님이 준 문제</p>${body}</div>`; };
+  const head = (body) => { root.innerHTML = `<div class="card msg act-fix"><p class="eyebrow">${tile('give', 22)}연습할 것 · 선생님이 준 문제</p>${body}</div>`; };
   const doneRec = K.recs[id];
   if (doneRec) {
     const ok = doneRec.s.it.filter((i) => doneRec.r.it[i[0]] && doneRec.r.it[i[0]].s === 'ok').length;
