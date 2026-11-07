@@ -99,7 +99,7 @@ function run(root, me, K, S, SK) {
     const root0 = res.roots.slice().sort((a, b) => gradeIdx(byId[a].g) - gradeIdx(byId[b].g))[0];
     K.back = { c: C0, p: S.problem.p, text: S.problem.text, root: root0 || (res.bridges.includes(C0) ? C0 : null), t: Date.now() };
     if (early) K.help = { ...(K.help || {}), [C0]: Date.now() };   /* 처음 화면 '선생님과 같이 봐요' · 선생님 다음 할 것에도 */
-    KS.save(me, K); KS.pushSummary(me, K); KS.setNow(me, early ? { mode: 'home', c: C0, ask: Date.now() } : { mode: 'home' });   /* 일찍 멈춤 = 선생님 '선생님을 기다려요' */
+    KS.save(me, K); KS.pushSummary(me, K); KS.setNow(me, early ? { mode: 'back', c: C0, ask: Date.now() } : { mode: 'home' });   /* 일찍 멈춤 = 선생님 '선생님을 기다려요' */
     const chain = (() => { if (!root0) return []; const out = [root0]; let cur = root0; for (let g = 0; g < 6; g++) { const up = Object.entries(res.states).find(([c, v]) => v.s === 'shaky' && (v.because || []).includes(cur) && !out.includes(c)); if (!up) break; out.push(up[0]); cur = up[0]; } if (!out.includes(C0)) out.push(C0); return out; })();
     const chainHTML = chain.length ? `<div class="trail big">${chain.map((c, i) => `${i ? '<span class="arr">→</span>' : ''}<span class="tnode ${i === 0 ? 't-bad' : 't-wait'}"><i>${i === 0 ? '✕' : '·'}</i>${esc(c === C0 ? `처음 문제(${S.problem.text})` : plank(c, S))}</span>`).join('')}</div><p class="small muted">왼쪽부터 차례로 다지면 오른쪽 처음 문제까지 이어져요.</p>` : '';
     let head, acts;

@@ -388,6 +388,8 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   ok(/9\/10 맞혔어요/.test(g2.t), `같은 기능 보충이 여럿이면 가장 최근 결과(보충 A → 배우기 못 넘음 → 보충 B 9/10) — ${g2.t}`);
   const f = T9.nextOf({ C: 'ZZ', no: '3', rep, now: { mode: 'fix', c: '1-2-6:4', t: Date.now() - 9 * 60e3, ask: Date.now() - 9 * 60e3 } });
   ok(/선생님을 기다려요/.test(f.t) && /\/g\//.test(f.href), `배우기에서 막혀 손 든 아이(9분 전) → 맨 먼저 — ${f.t}`);
+  const fb = T9.nextOf({ C: 'ZZ', no: '3', rep, now: { mode: 'back', c: '3-1-1:7', t: Date.now() - 60e3, ask: Date.now() - 60e3 } });
+  ok(/거꾸로 찾기에서 막힘/.test(fb.t) && /\/g\/3-1-1/.test(fb.href), `거꾸로 찾기에서 멈춘 아이 → '거꾸로 찾기에서 막힘' · 10분 카드 — ${fb.t}`);
 }
 // 다른 기기로 들어오면 — 서버 요약의 거꾸로 찾기(st.bk)를 되살림(코덱스 11-08: 로컬에 없다고 null로 덮어써 선생님 기록이 사라지던 것)
 {
