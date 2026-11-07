@@ -47,7 +47,7 @@ export function stagesView(root) {
     <div class="stats"><div class="stat"><span class="k">모은 표 <small class="muted">(판자 ${list.length}개)</small></span><span class="tiers"><span>${plankSVG(1, 34)}정확<b>${counts[0]}</b></span><span>${plankSVG(2, 34)}빠르게<b>${counts[1]}</b></span><span>${plankSVG(3, 34)}오래<b>${counts[2]}</b></span></span></div></div>
     <p class="small muted note">판자는 나무 → 못 박은 판자 → 돌 판자로 바뀌어요. '빠르게'는 셈을 외워 두면 좋은 판자(한 자리 셈 · 곱셈구구 같은)에만 있어요.</p></section>
     <div class="stages">${list.map(card).join('') || '<p class="muted">아직 판자가 없어요. 먼저 준비 다리를 해요.</p>'}</div>
-    <div class="acts"><a class="btn" href="#/me">내 수 다리로</a></div>`;
+    <div class="acts"><a class="btn" href="#/me">처음 화면으로</a></div>`;
 }
 
 // 다듬기 한 판

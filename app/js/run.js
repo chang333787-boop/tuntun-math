@@ -1,4 +1,4 @@
-// 오늘의 구보 — 매일 3~5분 '수학 기초 체력'(교사 10-31 '매일 구보를 해야 체력이 느는 것처럼')
+// 매일 연습(옛 이름 '오늘의 구보' — 교사 11-05 '구보라는 말이 어색') — 매일 3~5분 기초 셈(교사 10-31 '매일 구보처럼 기초 체력')
 //  근거: 짧게 · 자주 · 섞어서 꺼내 풀기 [D-6][D-8][D-10] · 회기마다 약 10분 · 1~5분 시간 잰 활동 [B-R12][B-R13] · 시간은 조용히 잼(재촉 X)
 //  고른 판자: 다시 볼 날이 된 판자 → 오래 안 푼 판자(표가 있거나 고친 판자) · 판자마다 2문제 · 섞어서 · 다섯 판자까지
 //    '오래 안 푼' = 마지막으로 그 칸을 푼 때(준비 다리 · 다듬기 · 점검 기록 모두) — 방금 준비 다리에서 맞힌 판자를 곧바로 내지 않게(혹평 11-01)
@@ -9,9 +9,7 @@ import { makeSheet, itemOf, LES } from '../../paper/js/gen.js';
 import { mascot } from '../../paper/js/mascot.js';
 import * as KS from './kidstore.js';
 import { draw, ansSay, fbSlot } from './item.js';
-import { P } from '../../engine/concepts/kit.js';
-import { plankSVG } from './bridge.js';
-import { target, TIER, TIER_KID, wantOf, isFact, lastReady } from './stage.js';
+import { target, wantOf, isFact, lastReady } from './stage.js';
 import { esc, rand } from './local.js';
 import { nextStep } from './tools.js';
 import { go, meOf } from './kid.js';
@@ -45,7 +43,7 @@ export function runPlan(K, now = Date.now()) {
 export function weekHTML(K, now = Date.now()) {
   const d = new Date(now), dow = (d.getDay() + 6) % 7, mon = now - dow * DAY;
   const days = (K.jog || []);
-  return `<span class="week" aria-label="이번 주에 구보한 날">${['월', '화', '수', '목', '금', '토', '일'].map((w, i) => { const k = today(mon + i * DAY); return `<i class="${days.includes(k) ? 'on' : ''}${i === dow ? ' td' : ''}">${w}</i>`; }).join('')}</span>`;
+  return `<span class="week" aria-label="이번 주에 매일 연습한 날">${['월', '화', '수', '목', '금', '토', '일'].map((w, i) => { const k = today(mon + i * DAY); return `<i class="${days.includes(k) ? 'on' : ''}${i === dow ? ' td' : ''}">${w}</i>`; }).join('')}</span>`;
 }
 
 export function runView(root) {
@@ -53,7 +51,7 @@ export function runView(root) {
   const K = KS.load(me);
   const plan = runPlan(K);
   if (!plan.length) {
-    root.innerHTML = `<div class="card msg act-run"><p class="eyebrow">${tile('run', 22)}오늘의 구보</p>${say('think', '아직 구보할 판자가 없어요.<br><b>준비 다리</b>에서 튼튼한 판자가 생기거나 판자를 고치면 그 판자로 매일 구보를 해요.', 104)}<div class="acts"><a class="btn pri" href="#/back">거꾸로 찾기</a><a class="btn" href="#/me">내 수 다리로</a></div></div>`;
+    root.innerHTML = `<div class="card msg act-run"><p class="eyebrow">${tile('daily', 22)}매일 연습</p>${say('think', '아직 매일 연습할 문제가 없어요.<br><b>점검</b>에서 맞힌 것이나 튼튼이와 배운 것이 생기면, 그 문제로 날마다 조금씩 연습해요.', 104)}<div class="acts"><a class="btn pri" href="#/me">처음 화면으로</a></div></div>`;
     return;
   }
   const rep0 = KS.reportOf(K);
@@ -66,14 +64,14 @@ export function runView(root) {
   const one = () => {
     if (i >= sh.items.length) return fin();
     const it = sh.items[i];
-    draw(root, { prompt: it.snap.prompt, choices: it.snap.choices, tag: '오늘의 구보', act: 'run', dots: [i, sh.items.length], conf: false, onAnswer: (a, cf, t) => {
+    draw(root, { prompt: it.snap.prompt, choices: it.snap.choices, tag: '매일 연습', act: 'daily', dots: [i, sh.items.length], conf: false, onAnswer: (a, cf, t) => {
       let ok = false;
       if (a.idk) R.it[it.k] = { s: 'q' };
       else { try { ok = !!itemOf(it.c, it.p).check(a.vals, a.raws).ok; } catch (e) { ok = false; } R.it[it.k] = ok ? { s: 'ok' } : { s: 'x', a: a.raws }; }
       ms[it.k] = t; i++;
       if (ok) return one();
       const box = document.createElement('div'); box.className = a.idk ? 'fb' : 'fb no';   /* 넘어간 문제는 ✕ 없이(솔직한 모름 · docs/ui.md) */
-      try { nextStep(box, { it: itemOf(it.c, it.p), vals: a.vals || [], c: it.c, idk: !!a.idk, after: '이 판자는 내일 한 번 더 뛰어요.', onSelfFix: (t) => KS.selfFix(me, K, t) }); } catch (e) { box.innerHTML = `${ansSay(it.snap)} 이 판자는 내일 한 번 더 뛰어요.`; }
+      try { nextStep(box, { it: itemOf(it.c, it.p), vals: a.vals || [], c: it.c, idk: !!a.idk, after: '이 문제는 내일 한 번 더 나와요.', onSelfFix: (t) => KS.selfFix(me, K, t) }); } catch (e) { box.innerHTML = `${ansSay(it.snap)} 이 문제는 내일 한 번 더 나와요.`; }
       const b = document.createElement('button'); b.className = 'pri'; b.textContent = '다음'; box.appendChild(b);
       root.querySelectorAll('.qcard input, .qcard .qact button, .qcard .choices button').forEach((x) => (x.disabled = true));
       fbSlot(root).appendChild(box);
@@ -101,11 +99,10 @@ export function runView(root) {
     const d = today(now); K.jog = [...new Set([...(K.jog || []), d])].slice(-60);
     KS.save(me, K); KS.setReview(me, K); KS.pushMastery(me, K); KS.pushSummary(me, K); KS.setNow(me, { mode: 'home' });
     const okN = Object.values(R.it).filter((x) => x.s === 'ok').length;
-    root.innerHTML = `<div class="card msg act-run"><p class="eyebrow">${tile('run', 22)}오늘의 구보</p>${up.length ? say('cheer', `<b>${up.map((c) => esc(kid(c))).join(', ')}</b> — 며칠 지나도 그대로 정확해요! <b>'오래'</b> 표를 따서 <b>돌 판자</b>가 됐어요.`, 104) : say(again.length ? 'think' : 'cheer', `오늘 구보 끝! ${okN}/${sh.items.length} 맞혔어요.${again.length ? `<br><b>${again.map((c) => esc(kid(c))).join(', ')}</b>${P(kid(again[again.length - 1]), '은', '는')} 내일 한 번 더 뛰어요.` : ' 판자가 그대로 튼튼해요.'}`, 104)}
-      <p>이번 주 구보 ${weekHTML(K, now)}</p>
-      <div class="plank-list">${plan.map((c) => `<span class="pk ${again.includes(c) ? 'shaky' : 'ok'}">${plankSVG((K.mx[c] && K.mx[c].tier) || 1, 40)} ${esc(kid(c))}</span>`).join('')}</div>
-      <div class="acts"><a class="btn pri big" href="#/me">내 수 다리로</a><a class="btn big" href="#/stages">스테이지</a></div></div>`;
+    root.innerHTML = `<div class="card msg act-run"><p class="eyebrow">${tile('daily', 22)}매일 연습</p>${say(again.length ? 'think' : 'cheer', `오늘 매일 연습 끝! ${sh.items.length}문제 중 <b>${okN}개</b> 맞혔어요.${again.length ? `<br>틀린 문제와 같은 꼴은 내일 한 번 더 나와요.` : ''}`, 104)}
+      <p>이번 주 연습한 날 ${weekHTML(K, now)}</p>
+      <div class="acts"><a class="btn pri big" href="#/me">처음 화면으로</a></div></div>`;
   };
-  root.innerHTML = `<div class="card msg act-run"><p class="eyebrow">${tile('run', 22)}오늘의 구보</p>${say('hi', `<b>오늘의 구보</b> — 3~5분이면 돼요. 매일 조금씩 뛰면 수학 체력이 붙어요.<br>튼튼한 판자 <b>${plan.length}개</b>를 섞어서 두 문제씩 꺼내 풀어요.`, 104)}<p>이번 주 구보 ${weekHTML(K)}</p><div class="acts"><button class="pri big" id="s">출발</button><a class="btn" href="#/me">내 수 다리로</a></div></div>`;
+  root.innerHTML = `<div class="card msg act-run"><p class="eyebrow">${tile('daily', 22)}매일 연습</p>${say('hi', `<b>매일 연습</b> — 섞은 ${sh.items.length}문제, 3~5분이면 돼요.<br>아는 것도 며칠 안 풀면 잊어요. 날마다 조금씩 꺼내 풀면 오래 남아요.`, 104)}<p>이번 주 연습한 날 ${weekHTML(K)}</p><div class="acts"><button class="pri big" id="s">시작</button><a class="btn" href="#/me">처음 화면으로</a></div></div>`;
   root.querySelector('#s').addEventListener('click', one);
 }

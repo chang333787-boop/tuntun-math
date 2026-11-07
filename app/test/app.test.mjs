@@ -255,8 +255,8 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   const KD = await import('../js/kid.js'), KS5 = await import('../js/kidstore.js');
   const now = Date.now(), K0 = (o) => ({ recs: {}, rv: {}, fixed: {}, log: [], inbox: { a1: { kind: 'prep', unit: '4-1-3', t: now - 60000 } }, ...o });
   const rep0 = KS5.reportOf(K0({}));
-  ok(KD.todoOf(K0({}), rep0)[0].title === '오늘 단원 준비하기', '단원을 열면 맨 위가 준비하기');
-  ok(!KD.todoOf(K0({ lastPrep: { unit: '4-1-3', why: 'clear', t: now - 1000 } }), rep0).some((x) => x.title === '오늘 단원 준비하기'), "문제 0개로 끝난 판(기록 없음)도 '했음'");
+  ok(KD.todoOf(K0({}), rep0)[0].title === '오늘 단원 점검', '단원을 열면 맨 위가 오늘 단원 점검');
+  ok(!KD.todoOf(K0({ lastPrep: { unit: '4-1-3', why: 'clear', t: now - 1000 } }), rep0).some((x) => x.title === '오늘 단원 점검'), "문제 0개로 끝난 판(기록 없음)도 '했음'");
   const P7 = await import('../js/prep.js');
   const S = P7.newPrep({ unit: '2-1-3', id: 'TD' }); let it;
   while ((it = P7.current(S))) P7.answer(S, { vals: it.snap.sol.map((v) => Number(v) + 7), raws: it.snap.sol.map((v) => String(Number(v) + 7)) });
@@ -264,7 +264,7 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   const Kt = K0({ inbox: {}, recs, lastPrep: { unit: '2-1-3', why: S.why, t: now } }), rept = KS5.reportOf(Kt), td = KD.todoOf(Kt, rept);
   ok(S.why === 'teacher' && td[0].kind === 'help' && td[0].cs.length >= 1 && td[0].cs.length <= 3, `'선생님과 같이'로 멈춘 날: 맨 위 '${td[0].title}' · 같이 볼 문제 ${td[0].cs.length}개`);
   const Ky = { ...Kt, lastPrep: { ...Kt.lastPrep, t: now - 864e5 * 1.5 } }, ty = KD.todoOf(Ky, KS5.reportOf(Ky));
-  ok(ty[0] && (ty[0].title === '이어서 찾기' || ty[0].kind === 'fix') && ty.some((x) => x.title === '이어서 찾기') && !ty.some((x) => x.kind === 'help'), `다음 날엔 '선생님과 같이' 대신 찾은 판자 고치기 · 이어서 찾기(${ty.map((x) => x.title).join(' · ')})`);
+  ok(ty[0] && (ty[0].title === '오늘 단원 점검 이어서' || ty[0].kind === 'fix') && ty.some((x) => x.title === '오늘 단원 점검 이어서') && !ty.some((x) => x.kind === 'help'), `다음 날엔 '선생님과 같이' 대신 찾은 판자 고치기 · 이어서 찾기(${ty.map((x) => x.title).join(' · ')})`);
   ok(!td.concat(ty).some((x) => /— (10에서 빼기|한 자리 수 빼기)$/.test(x.title)), '판자 할 일 이름은 예시 문제로');
 }
 // ㉑ '빠르게'는 셈 사실 칸만 — 큰 수 · 비교 같은 칸은 정확 → (3일 뒤) 오래 · 셈 사실은 그대로 정확 → 빠르게 → 오래

@@ -1,4 +1,4 @@
-// 이번 주 점검 — 주 1회 3~5분 · 섞은 10문제 · 맞고 틀림은 끝나고 · 시간은 조용히 → 내 선 그래프(나와만 견줌)
+// 이번 주 점검 — 주 1회 3~5분 · 섞은 10문제 · 맞고 틀림은 끝나고 · 시간은 조용히 → 주마다 맞힌 수(나와만 견줌 · 교사 11-05 '내 선이 어디로 가나 = AI 말투' → 사실만)
 //  근거: 진행 점검(CBM)은 주 1회 · 짧게 · 같은 범위에서 고르게 뽑은 혼합 문항 → 선 그래프 → 선생님이 그 선을 보고 수업을 바꿀 때 효과 [B-R12][B-R18][B-R19][B-R20] · 순위 X [D-20]
 //  범위는 학기마다 고정 — 이번 학기 단원 칸 여섯(아직 안 배운 것도 · weekcore curPool) + 앞 학기 기초 넷(termPool) · 학기 초엔 낮고 배울수록 오름(CBM 표준) · 주마다 고르는 칸이 바뀌면 선끼리 견줄 수 없음
 //  기록은 따로 두지 않음 — 푼 묶음(kind 'week' · unit = 'T4-2') 자체가 기록 → 다른 기기 · 선생님 화면에서도 같은 선 · 판정(판자 상태)에는 넣지 않음(kidstore history)
@@ -11,6 +11,7 @@ import { draw, staticHTML, ansSay } from './item.js';
 import { lineOf, weekTerm, weekPlan, weekChart, weekTrend, doneThisWeek } from './weekcore.js';
 import { esc, rand } from './local.js';
 import { go, meOf } from './kid.js';
+import { exampleOf } from './fix.js';
 import { tile } from './icons.js';
 
 const say = (pose, html, size = 104) => `<div class="say">${mascot(pose, size)}<div class="bub">${html}</div></div>`;
@@ -20,12 +21,12 @@ export function weekView(root) {
   const me = meOf(); if (!me) return go('#/join');
   const K = KS.load(me), rep = KS.reportOf(K), term = weekTerm(K);
   if (doneThisWeek(K.recs)) {
-    root.innerHTML = `<div class="card msg act-week">${EB}${say('cheer', '이번 주 점검은 벌써 했어요. 다음 주에 또 해요!')}${weekChart(lineOf(K.recs, term))}<div class="acts"><a class="btn big" href="#/me">내 수 다리로</a></div></div>`;
+    root.innerHTML = `<div class="card msg act-week">${EB}${say('cheer', '이번 주 점검은 벌써 했어요. 다음 주에 또 해요!')}${weekChart(lineOf(K.recs, term))}<div class="acts"><a class="btn big" href="#/me">처음 화면으로</a></div></div>`;
     return;
   }
   const plan = weekPlan(K, rep, term);
   if (plan.length < 4) {
-    root.innerHTML = `<div class="card msg act-week">${EB}${say('think', '아직 점검할 판자가 적어요. 준비 다리나 판자 고치기를 하고 나서 해요.')}<div class="acts"><a class="btn big" href="#/me">내 수 다리로</a></div></div>`;
+    root.innerHTML = `<div class="card msg act-week">${EB}${say('think', '아직 점검할 문제가 적어요. 오늘 단원 점검이나 배우기를 하고 나서 해요.')}<div class="acts"><a class="btn big" href="#/me">처음 화면으로</a></div></div>`;
     return;
   }
   const sh = makeSheet({ kind: 'week', words: false, id: rand(6), lessons: plan.map((c) => ({ c, n: 1 })), mixed: true });
@@ -56,19 +57,17 @@ export function weekView(root) {
     KS.addSheet(me, K, sh, R, {}, ms);
     const ws = lineOf(K.recs, term), n = sh.items.length, tr = weekTrend(ws);
     KS.setNow(me, { mode: 'home' });
-    const head = R.rush ? say('think', '이번 점검은 너무 빨리 풀어서 <b>선에 넣지 않았어요</b>. 이번 주에 한 번 더, 천천히 해 봐요.')
-      : ws.length <= 1 ? say('hi', '이번 주 점검 끝! 내 선에 <b>첫 점</b>이 찍혔어요. 다음 주에 또 해서 선을 이어 가요.')
-      : tr === 'up' ? say('cheer', '몇 주 동안 <b>선이 올라가고</b> 있어요. 앞 판자들이 튼튼해지고 있어요.')
-      : tr === 'down' ? say('think', '몇 주 동안 선이 내려갔어요. 아래 판자를 <b>다듬기</b>로 다시 다져요. 선생님도 같이 봐요.')
-      : say('hi', '내 선에 점 하나가 더 생겼어요. 선은 주마다 조금씩 오르내려요. 몇 주를 이어서 봐요.');
+    const okN = sh.items.filter((it) => R.it[it.k] && R.it[it.k].s === 'ok').length, prev = ws.length >= 2 ? ws[ws.length - 2] : null;
+    const head = R.rush ? say('think', '이번 점검은 너무 빨리 풀어서 <b>기록에 넣지 않았어요</b>. 이번 주에 한 번 더, 천천히 해 봐요.')
+      : say(tr === 'up' ? 'cheer' : tr === 'down' ? 'think' : 'hi', `이번 주 점검 끝! ${n}문제 중 <b>${okN}개</b> 맞혔어요.${prev ? ` 지난번엔 ${prev.ok}개였어요.` : ' 다음 주에 또 해서 견줘 봐요.'}${tr === 'up' ? '<br>몇 주째 맞힌 수가 늘고 있어요.' : tr === 'down' ? '<br>몇 주째 맞힌 수가 줄었어요. 선생님과 같이 봐요.' : ''}`);
     const miss = sh.items.filter((it) => !R.it[it.k] || R.it[it.k].s !== 'ok');
     const li = (it) => { const r = R.it[it.k] || {}, mine = r.s === 'q' ? '넘어감' : it.snap.choices ? '' : `내 답 ${esc((r.a || []).join(', '))}`;
       return `<li class="${r.s === 'q' ? 'skipq' : 'miss'}"><span class="why">${esc(lessonName(it.c))}${mine ? ` · ${mine}` : ''}</span>${it.snap.choices ? `${staticHTML(it.snap.prompt)} <span class="small">${ansSay(it.snap)}</span>` : staticHTML(it.snap.prompt, it.snap.sol)}</li>`; };
     const cs = [...new Set(miss.map((it) => it.c))];
-    const drill = cs.length ? `<p class="small">틀린 문제의 판자는 <b>다듬기</b>로 바로 연습할 수 있어요.</p><div class="acts">${cs.slice(0, 4).map((c) => `<a class="btn teal" href="#/drill/${encodeURIComponent(c)}">${esc(lessonName(c))} 다듬기</a>`).join('')}</div>` : '';
+    const drill = cs.length ? `<p class="small">틀린 문제와 같은 꼴은 튼튼이와 배울 수 있어요.</p><div class="acts">${cs.slice(0, 3).map((c) => `<a class="btn teal" href="#/fix/${encodeURIComponent(c)}">배우기 — ${esc(exampleOf(c) || lessonName(c))}</a>`).join('')}</div>` : '';
     const list = miss.length ? `<h3>다시 볼 문제 ${miss.length}개 <small class="muted">(바른 답을 넣어 보여 줘요)</small></h3><ul class="steps">${miss.slice(0, 4).map(li).join('')}</ul>${miss.length > 4 ? `<details><summary>${miss.length - 4}개 더 보기</summary><ul class="steps">${miss.slice(4).map(li).join('')}</ul></details>` : ''}${drill}` : `<p>${n}문제 모두 맞혔어요.</p>`;
-    root.innerHTML = `<div class="card msg msg2 act-week">${EB}${head}<div class="split"><div><h3>내 선 <small class="muted">(나하고만 견줘요)</small></h3>${weekChart(ws)}</div><div>${list}</div></div><div class="acts"><a class="btn pri big" href="#/me">내 수 다리로</a></div></div>`;   /* 넓으면 왼쪽 내 선 · 오른쪽 다시 볼 문제 */
+    root.innerHTML = `<div class="card msg msg2 act-week">${EB}${head}<div class="split"><div><h3>주마다 맞힌 수 <small class="muted">(나하고만 견줘요)</small></h3>${weekChart(ws)}</div><div>${list}</div></div><div class="acts"><a class="btn pri big" href="#/me">처음 화면으로</a></div></div>`;   /* 넓으면 왼쪽 주마다 맞힌 수 · 오른쪽 다시 볼 문제 */
   };
-  root.innerHTML = `<div class="card msg act-week">${EB}${say('hi', `<b>이번 주 점검</b> — ${term ? `${esc(term.slice(1, 2))}학년 ${esc(term.slice(3))}학기 문제와 앞 판자 문제를 ` : ''}섞은 ${plan.length}문제, 3~5분이면 돼요.<br>아직 안 배운 문제도 섞여 있어요. 모르면 '몰라서 넘어갈래요'를 눌러도 괜찮아요. 학기 끝으로 갈수록 내 선이 올라가요.`)}${(() => { const ws = lineOf(K.recs, term); return ws.length ? `<h3>지금까지 내 선</h3>${weekChart(ws)}` : ''; })()}<div class="acts"><button class="pri big" id="s">시작</button><a class="btn" href="#/me">내 수 다리로</a></div></div>`;
+  root.innerHTML = `<div class="card msg act-week">${EB}${say('hi', `<b>이번 주 점검</b> — 이번 학기 문제와 앞에서 배운 문제를 섞은 ${plan.length}문제, 3~5분이면 돼요.<br>아직 안 배운 문제도 섞여 있어요. 모르면 '몰라서 넘어갈래요'를 눌러도 괜찮아요. 학기 끝으로 갈수록 더 많이 맞혀요.`)}${(() => { const ws = lineOf(K.recs, term); return ws.length ? `<h3>주마다 맞힌 수</h3>${weekChart(ws)}` : ''; })()}<div class="acts"><button class="pri big" id="s">시작</button><a class="btn" href="#/me">처음 화면으로</a></div></div>`;
   root.querySelector('#s').addEventListener('click', one);
 }

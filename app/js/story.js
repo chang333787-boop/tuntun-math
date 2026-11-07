@@ -168,7 +168,7 @@ function chooser(root, me, K) {
     ${fresh(S) ? `<div class="acts" style="margin-top:0;margin-bottom:18px"><a class="btn pri big" href="#/story/${encodeURIComponent(S.cs.join(','))}">이어서 하기 (${S.i + 1}번째 이야기부터)</a></div>` : ''}
     <div class="grid2">${['as', 'md'].map((f) => `<a class="big-pick sb-fam" href="#/story/${encodeURIComponent(fam(f).cs.join(','))}">${tile('story', 28)}<b>${esc(FAMILY[f].kid)}</b><span>${FAMILY[f].types.map((t) => esc(TYPES[t].kid)).join(' · ')}</span></a>`).join('')}</div>
     ${known.length ? `<p class="small">익숙해진 이야기 — <b>${known.map(esc).join(', ')}</b>: 묻는 자리가 같으면 바로 식부터 해요.</p>` : '<p class="small muted">한 판에 이야기 여섯 개 · 같은 이야기를 두 번 이어서 잘 읽으면 다음엔 걸음을 줄여요.</p>'}
-    <div class="acts"><a class="btn" href="#/me">내 수 다리로</a></div></div>`;
+    <div class="acts"><a class="btn" href="#/me">처음 화면으로</a></div></div>`;
 }
 
 // ── 한 판 ──
@@ -383,7 +383,7 @@ export function storyView(root, arg) {
       <p class="small">걸음마다 돌아봐요 <span class="muted">— 바로 = 첫 번에 · 다시 = 다시 보고 · 건너뜀 = 익숙해서</span></p>
       <ul class="sb-recap">${rows.map((x) => `<li class="${x.b ? 'again' : x.a ? 'ok' : 'skip'}"><span>${x.j + 1}. ${x.nm}</span><b>${[cnt('바로', x.a), cnt('다시', x.b), cnt('건너뜀', x.c)].filter(Boolean).join(' · ')}</b></li>`).join('')}</ul>
       ${known.length ? `<p class="small">익숙해진 이야기 — <b>${known.map(esc).join(', ')}</b>: 묻는 자리가 같으면 다음엔 바로 식부터 해요.</p>` : ''}
-      <div class="acts"><a class="btn pri big" href="#/story/${encodeURIComponent(S.cs.join(','))}?${Date.now()}">한 판 더</a><a class="btn big" href="#/story">다른 이야기</a><a class="btn big" href="#/me">내 수 다리로</a></div></div>`;
+      <div class="acts"><a class="btn pri big" href="#/story/${encodeURIComponent(S.cs.join(','))}?${Date.now()}">한 판 더</a><a class="btn big" href="#/story">다른 이야기</a><a class="btn big" href="#/me">처음 화면으로</a></div></div>`;
   }
   if (S.i === 0 && !Object.keys(S.res).length) {
     root.innerHTML = `<div class="card msg act-story"><p class="eyebrow">${tile('story', 22)}이야기 다리</p>${say('point', `이야기 ${S.items.length}개를 풀어요. 문제마다 <b>걸음 넷</b>이에요.<br>① 무슨 이야기? ② 막대 틀 ③ 식 ④ 계산 · 답`, 104)}<div class="acts"><button class="pri big" id="s">시작</button><a class="btn" href="#/story">다른 이야기</a></div></div>`;

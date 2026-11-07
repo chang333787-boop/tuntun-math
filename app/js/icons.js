@@ -17,6 +17,12 @@ const P = {
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   sound: '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6"/><path d="M18 6.5a7.5 7.5 0 0 1 0 11"/>',
   stop: '<rect x="6.5" y="6.5" width="11" height="11" rx="1.5"/>',
+  clip: '<rect x="5" y="4.5" width="14" height="16.5" rx="2"/><path d="M9 4.5V3h6v1.5"/><path d="M8.5 12.5l2.2 2.2 4.8-4.8"/>',
+  pencil: '<path d="M4 20l1-4.5L15.5 5a2.1 2.1 0 0 1 3 3L8 18.5z"/><path d="M13.5 7l3 3"/>',
+  cal: '<rect x="4" y="5.5" width="16" height="15" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/><path d="M8.5 14.5l2 2 4-4"/>',
+  users: '<circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19.5c.6-3.3 2.8-5 5.5-5s4.9 1.7 5.5 5"/><path d="M15.5 5.6a3.2 3.2 0 0 1 0 5.8M17.5 14.8c1.6.7 2.6 2.3 3 4.7"/>',
+  table: '<rect x="3.5" y="4.5" width="17" height="15" rx="1.5"/><path d="M3.5 9.5h17M3.5 14.5h17M9 4.5v15"/>',
+  send: '<path d="M4 12l16-7-6 15-2.5-6.5z"/><path d="M11.5 13.5L20 5"/>',
 };
 export const ICONS = Object.keys(P);
 export const icon = (name, size = 24, cls = '') => (P[name] ? `<svg class="ic${cls ? ` ${cls}` : ''}" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${P[name]}</g></svg>` : '');
@@ -24,6 +30,7 @@ export const icon = (name, size = 24, cls = '') => (P[name] ? `<svg class="ic${c
 export const ACT = {
   prep: ['bridge', 'prep'], fix: ['hammer', 'fix'], drill: ['stairs', 'drill'], stages: ['stairs', 'drill'], run: ['shoe', 'run'],
   story: ['book', 'story'], week: ['chart', 'week'], back: ['back', 'back'], retry: ['star', 'back'], help: ['chat', 'help'],
+  chk: ['clip', 'week'], prac: ['pencil', 'fix'], give: ['pencil', 'fix'], daily: ['cal', 'run'],
 };
 // 아이콘 타일(색 바탕 + 흰 선) — 활동 이름(ACT 열쇠)으로
 export const tile = (kind, size = 26) => { const a = ACT[kind] || ACT.prep; return `<span class="ico act-${a[1]}">${icon(a[0], size)}</span>`; };

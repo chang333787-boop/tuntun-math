@@ -9,6 +9,10 @@ import { storyView } from './story.js';
 import { stopSpeak } from './speak.js';
 import { tryView, tryInfo } from './try.js';
 import { sheetView } from './sheet.js';
+import { giveView } from './give.js';
+import { checkRunView } from './check.js';
+import { checkView } from './tcheck.js';
+import { tableView, giveTView } from './ttable.js';
 import { teacherHome, newClassView, openClassView, cardsView, namesView, classView, kidDetailView, groupCardView, guideView, mindCardView, paperImportView, storyCardView, homeLetterView } from './teacher.js';
 import { lsGet, esc } from './local.js';
 import { flush, pending } from './db.js';
@@ -23,11 +27,10 @@ let pressed = null, pressAt = 0;
 const unpress = () => { const el = pressed; if (!el) return; pressed = null; setTimeout(() => el.classList.remove('press'), Math.max(0, 120 - (Date.now() - pressAt))); };
 addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse') return; const el = e.target.closest && e.target.closest(PRESS); if (!el || el.disabled) return; pressed = el; pressAt = Date.now(); el.classList.add('press'); }, { passive: true });
 ['pointerup', 'pointercancel'].forEach((t) => addEventListener(t, unpress, { passive: true }));
-// 아이 탭 넷 — 오늘 · 스테이지 · 이야기 · 거꾸로(지금 탭 표시 · 폰은 가로로 밀림)
-const TABS = [['#/me', '오늘', 'bridge', /^#\/(me|prep|fix|run|week|review)/], ['#/stages', '스테이지', 'stairs', /^#\/(stages|drill)/], ['#/story', '이야기', 'book', /^#\/story/], ['#/back', '거꾸로', 'back', /^#\/(back|retry)/]];
+// 아이 머리띠 — 탭 없이 [처음 화면] 하나(처음 화면의 카드 셋이 길잡이 · 교사 11-07 '로그인하면 카드 셋으로')
 const tabs = document.getElementById('tabs');
-tabs.innerHTML = TABS.map(([href, t, ic]) => `<a href="${href}">${icon(ic, 20)}<span>${t}</span></a>`).join('');
-const setTabs = (h) => { tabs.hidden = !h; if (h) [...tabs.children].forEach((a, i) => { if (TABS[i][3].test(h)) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); }); };
+tabs.innerHTML = `<a href="#/me">${icon('cal', 20)}<span>처음 화면</span></a>`;
+const setTabs = (h) => { tabs.hidden = !h || /^#\/me$/.test(h); };
 let cleanup = null;
 // 같은 크롬북을 여럿이 쓸 때 — 아이 화면은 앱을 열 때 · 날짜가 바뀌었을 때 · 20분 넘게 손대지 않다가 누를 때 'n번 맞아요?'(혹평 17)
 //  idle = 바로 앞 입력과 이번 입력 사이(누른 그 입력이 주소를 바꾸므로 그 앞 공백을 봄)
@@ -58,6 +61,8 @@ const ROUTES = [
   [/^#\/story(?:\/([^?]+))?(\?.*)?$/, (m) => storyView(root, m[1] ? decodeURIComponent(m[1]) : '')],
   [/^#\/retry$/, () => retryView(root)],
   [/^#\/drill\/([\w:.-]+?)(\?.*)?$/, (m) => drillView(root, decodeURIComponent(m[1]))],
+  [/^#\/give\/([\w-]+)$/, (m) => giveView(root, m[1])],
+  [/^#\/check\/([\w-]+)$/, (m) => checkRunView(root, m[1])],
   [/^#\/t$/, () => teacherHome(root)],
   [/^#\/t\/new/, () => newClassView(root)],
   [/^#\/t\/open$/, () => openClassView(root)],
@@ -66,6 +71,9 @@ const ROUTES = [
   [/^#\/t\/sheet(\?.*)?$/, () => sheetView(root)],
   [/^#\/t\/c\/(\w+)$/, (m) => classView(root, m[1])],
   [/^#\/t\/c\/(\w+)\/cards$/, (m) => cardsView(root, m[1])],
+  [/^#\/t\/c\/(\w+)\/check$/, (m) => checkView(root, m[1])],
+  [/^#\/t\/c\/(\w+)\/table(\?.*)?$/, (m) => tableView(root, m[1])],
+  [/^#\/t\/c\/(\w+)\/give(\?.*)?$/, (m) => giveTView(root, m[1])],
   [/^#\/t\/c\/(\w+)\/names$/, (m) => namesView(root, m[1])],
   [/^#\/t\/c\/(\w+)\/paper$/, (m) => paperImportView(root, m[1])],
   [/^#\/t\/c\/(\w+)\/s\/(\w+)$/, (m) => storyCardView(root, m[1], m[2])],
@@ -78,9 +86,9 @@ function route() {
   stopSpeak();
   cleanup = null;
   const h = location.hash || '#/';
-  const kid = /^#\/(me|prep|fix|review|join|stages|drill|back|retry|run|story|week)/.test(h);
+  const kid = /^#\/(me|prep|fix|review|join|stages|drill|back|retry|run|story|week|give|check)/.test(h);
   document.body.classList.toggle('kid', kid);
-  document.body.classList.toggle('wide', /^#\/t\/c\/\w+$/.test(h));   /* 반 화면은 넓게(1440) */
+  document.body.classList.toggle('wide', /^#\/t\/c\/\w+(\/table|\/give)?(\?.*)?$/.test(h));   /* 반 화면 · 반 표 · 보충 주기는 넓게(1440) */
   const me = meOf();
   setTabs(kid && me && !/^#\/join/.test(h) ? h : null);
   document.getElementById('who').textContent = kid && me ? `${me.C} · ${me.no}번` : /^#\/t/.test(h) ? '선생님' : '';
