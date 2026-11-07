@@ -250,12 +250,12 @@ div.cmpc{box-shadow:none}
 .hub-h h2{margin-bottom:8px}.more-all>summary{cursor:pointer;font-size:18px;padding:2px 0}.more-all[open]>summary{margin-bottom:12px}.more-all .card{border-color:var(--line2)}
 /* 반 표 — 줄 = 기능(가로 글씨) · 칸 = 아이 번호 · 칸 하나 = 누르는 자리(44px) · 기능 칸 · 부족한 아이 칸은 가로로 밀어도 붙어 있음 */
 .tv-h{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 6px}.tv-h h2{margin:0}
-.tv-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 20px;margin:0 0 12px}.tv-bar .legend2{margin:0}
+.tv-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 20px;margin:0 0 12px}.tv-bar .legend2{margin:0}.tv-bar .legend2 small{font-size:14px;color:var(--ink)}
 .seg{display:inline-flex;flex-wrap:wrap;border:2px solid var(--line2);border-radius:14px;overflow:hidden;background:#fff}
 .seg>a,.seg>button{min-height:44px;padding:8px 16px;font:inherit;font-weight:700;font-size:15px;color:var(--ink);text-decoration:none;border:0;border-radius:0;box-shadow:none;background:none;display:inline-flex;align-items:center;cursor:pointer}
 .seg>*+*{border-left:2px solid var(--line2)}.seg>.on{background:var(--teal);color:#fff}
 .stab{overflow:auto;border:1px solid var(--line);border-radius:14px;max-height:72vh;background:#fff}
-.stab table{border-collapse:separate;border-spacing:0;font-size:15px}
+.stab table{border-collapse:separate;border-spacing:0;font-size:15px;min-width:100%}   /* 아이가 적어도 표가 틀 폭을 다 씀(오른쪽이 비어 보이던 것 · 11-07) */
 .stab th,.stab td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:0;text-align:center;white-space:nowrap}
 .stab th{background:#F3EEE6;position:sticky;top:0;z-index:2;font-weight:700}
 .stab th.sk{position:sticky;left:0;z-index:1;background:#FFFDF8;text-align:left;padding:8px 14px;min-width:230px;max-width:290px;white-space:normal}
