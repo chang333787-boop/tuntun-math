@@ -126,14 +126,14 @@ export function checkView(root, C) {
         <td><a class="btn ck-pr" href="#/t/c/${esc(C)}/check/${esc(id)}/print">같은 문제 인쇄</a></td></tr>`;
     }).join('');
     root.innerHTML = `<div class="ck-bar"><a class="btn" href="#/t/c/${esc(C)}">반 화면으로</a><h2 class="sec">점검 내기 <small>${esc(C)} · ${esc(gl(K.g))} · ${K.n}명</small></h2></div>
-    ${list.length ? '' : '<p class="ck-first">처음이면 <b>② 점검지</b>를 <b>사전 점검</b>으로 하나만 내 보세요. 우리 반이 어디까지 아는지 한 번에 보여요. ①은 수업 시작 5~10분에, ③은 저절로 떠요.</p>'}
+    ${list.length ? '' : '<p class="ck-first">처음이면 <b>② 점검지</b> 하나만 내 보세요. 우리 반이 어디까지 아는지 한 번에 보여요. ①은 수업 시작 5~10분에, ③은 저절로 떠요.</p>'}
     <div class="ck-pick">
       <section class="card ck-c"><h3><span class="ck-no">1</span>오늘 단원 점검</h3>
         <p class="intro">오늘 배울 단원에 꼭 필요한 앞 학년 셈을 봐요. 틀리면 더 쉬운 앞 단계 문제로 이어지고, 남으면 다음 시간에 이어서 풀어요.</p>
         <label class="ck-f"><span>단원</span><select id="u" class="sel">${us.map((u) => `<option value="${u.id}"${u.id === unit ? ' selected' : ''}>${esc(gl(u.g))} · ${esc(u.nm)}</option>`).join('')}</select></label>
         <label class="ck-f"><span>한 번에 풀 문제</span><select id="len" class="sel">${LEN.map((v) => `<option value="${v}"${v === len ? ' selected' : ''}>${v}문제 · 약 ${MIN[v]}분${v === PREP.budget ? '(기본)' : ''}</option>`).join('')}</select></label>
         <div class="kid-pv"><span class="pv-k">아이 화면에 이렇게 떠요</span><div class="pv-card"><b>점검</b><span>오늘 단원 점검 — 선생님이 연 단원 · 약 ${MIN[len] || 8}분</span></div></div>
-        <div class="acts"><button class="pri" id="open">오늘 단원으로 열기</button></div>
+        <div class="acts"><button class="${list.length || K.today ? 'pri' : ''}" id="open">오늘 단원 점검 내기</button></div>
         <p class="small ck-s">${K.today ? `지금 열린 단원: <b>${esc(unitLabel(K.today.unit))}</b> <span class="muted">(${esc(when(K.today.t))}에 열었어요)</span> · 끝낸 아이 <b>${S ? prepDone(K, S) : '…'}</b>/${K.n}` : '<span class="muted">아직 연 단원이 없어요</span>'}</p>
         <p class="qmsg tight" id="m1" role="status"></p></section>
       <section class="card ck-c${list.length ? '' : ' rec'}"><h3><span class="ck-no">2</span>점검지 — 종이와 같은 문제${list.length ? '' : ' <span class="rec-b">처음이면 이걸 권해요</span>'}</h3>
@@ -142,7 +142,7 @@ export function checkView(root, C) {
         <label class="ck-f"><span>점검 종류</span><select id="lab" class="sel"><option value="">보통 점검</option><option value="pre"${lab === 'pre' ? ' selected' : ''}>사전 점검(시작할 때)</option><option value="post"${lab === 'post' ? ' selected' : ''}>사후 점검(몇 주 뒤 · 같은 범위)</option></select></label>
         <p class="ck-cnt" id="cnt">${cntLine()}</p>
         <div class="kid-pv"><span class="pv-k">아이 화면에 이렇게 떠요</span><div class="pv-card"><b>점검</b><span>선생님이 낸 점검지 — 12문제씩 이어서 풀어요</span></div></div>
-        <div class="acts"><button class="pri" id="give"${cnt ? '' : ' disabled'}>아이들에게 내기</button></div>
+        <div class="acts"><button class="pri" id="give"${cnt ? '' : ' disabled'}>점검지 내기</button></div>
         <p class="small muted">종이로 푼 아이는 반 화면의 <a href="#/t/c/${esc(C)}/paper">종이 결과 가져오기</a>로 넣어요.</p>
         <p class="qmsg tight" id="m2" role="status"></p></section>
       <section class="card ck-c ck-w"><h3><span class="ck-no">3</span>이번 주 점검</h3>
