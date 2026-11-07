@@ -70,7 +70,8 @@ export function mxOut(K, max = 56000) {
 }
 export function pushMastery(me, K) { db.queuePut(`${base(me)}/mx`, mxOut(K)); }
 export function setReview(me, K) { save(me, K); db.queuePut(`${base(me)}/rv`, db.enc(K.rv)); }   // 규칙에 rv 칸 있음
-export function setNow(me, now) { db.put(`${base(me)}/now`, db.enc({ ...now, t: Date.now() })).catch(() => {}); }
+let lastNow = { mode: 'home' };
+export function setNow(me, now) { lastNow = now; db.put(`${base(me)}/now`, db.enc({ ...now, t: Date.now() })).catch(() => {}); }
 
 // 모든 기록 → 종이와 같은 판정
 export function history(K) {
@@ -149,6 +150,7 @@ export function selfFix(me, K, tool) { K.tools = K.tools || {}; const x = (K.too
 // 도움 사다리 한 번의 결과(hint.js onEnd how) — 이번 주 칸에 하나 더 · 요약은 다음 pushSummary 때
 export function ladLog(me, K, how) {
   const k = { recall: 'r', steps: 's', shown: 'x', pick: 'p' }[how]; if (!k) return;
+  if (how === 'shown') setNow(me, { ...lastNow, sos: Date.now() });   /* 도움을 다 쓰고 답을 봄 → 선생님 '지금 우리 반'에 '막혀서 답을 봤어요'(10분) */
   const w = weekKey(); K.lad = K.lad || {}; const v = (K.lad[w] = K.lad[w] || {}); v[k] = (v[k] || 0) + 1;
   const ws = Object.keys(K.lad).sort(); if (ws.length > 12) ws.slice(0, ws.length - 12).forEach((x) => delete K.lad[x]);
   save(me, K);
