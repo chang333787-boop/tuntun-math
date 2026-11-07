@@ -314,7 +314,7 @@ export function fixView(root, c) {
       const talk = st ? `<p>${esc(st.why).replace(/(\d) ([+−×÷=]) (?=\d)/g, '$1\u00a0$2\u00a0')}</p>${v ? `<p class="fxe">${staticHTML(st.prompt, st.sol)}${v.lead0 ? '<span class="small">맨 앞자리의 0은 쓰지 않아요.</span>' : ''}${done ? `<span class="fxa">${ansSay(F.ex, '그래서 답은')}</span>` : ''}</p>` : fin}`
         : `<p>튼튼이가 먼저 풀어 볼게요. ${C ? '일의 자리부터 한 자리씩 계산해요.' : '한 단계씩 풀면서 생각을 말할게요.'}</p>`;
       const plan = planHTML(F.steps, planNames(F.ex.c || c, F.ex.p, F.steps), done ? F.steps.length : F.si - 1);   /* 풀이 순서 — 처음부터 전체 순서를 보여 주고 지금 단계를 짚음(교사 11-07 '단계적으로 하나씩') */
-      stage({ top: `${staticHTML(F.ex.prompt, done ? F.ex.sol : null)}${choices}`, mid, side: `${md}${plan}`, talk, act: nextAct(done ? '이제 같이 풀어요' : F.si ? '다음 단계' : '첫 단계 보기') });
+      stage({ top: `${staticHTML(F.ex.prompt, done ? F.ex.sol : null)}${choices}`, mid: mid || '<span class="fxs-ph" aria-hidden="true"></span>', side: `${md}${plan}`, talk,   /* 첫 화면에도 가운데 자리를 비워 둠(문제가 가운데 → 왼쪽 위로 튀던 것 · 11-07) */ act: nextAct(done ? '이제 같이 풀어요' : F.si ? '다음 단계' : '첫 단계 보기') });
       return;
     }
     const nb = F.ex.choices ? 0 : blankCount(F.ex.prompt);
