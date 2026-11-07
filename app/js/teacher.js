@@ -416,7 +416,7 @@ export async function kidDetailView(root, C, no) {
     <div class="acts no-print"><a class="btn" href="#/t/c/${C}">반 화면으로</a><button onclick="print()">인쇄</button><button type="button" class="teal" id="ksheet" title="배울 것 · 막힌 칸 · 흔들리는 칸만 골라 둔 맞춤 연습지">이 아이 연습지</button></div>
     <div class="kd-grid"><div class="kd-a">
     ${rep.start.length ? `<h3>먼저 배울 차시 <small>더 아래 차시는 다 맞혔어요 — 여기부터 보충하면 돼요</small></h3><ul class="lines">${rep.start.map((s) => line(s.c)).join('')}</ul>` : ''}
-    ${rep.below.length ? `<h3>더 아래 차시도 알아봐야 해요 <small>틀렸는데 그 아래 차시를 아직 안 풀었어요 — <a href="#/t/c/${C}/check">점검 내기</a>에서 오늘 단원 점검이나 점검지로</small></h3><ul class="lines">${rep.below.map((b) => line(b.c, `아직 안 푼 아래 차시: ${b.check.map((x) => esc(lessonName(x))).join(', ')}`)).join('')}</ul>` : ''}
+    ${rep.below.length ? `<h3>더 아래 차시도 알아봐야 해요 <small>틀렸는데 그 아래 차시를 아직 안 풀었어요 — 이 아이에게만 그 아래 차시 보충을 보내면 확인돼요</small></h3><ul class="lines">${rep.below.map((b) => { const sk0 = b.check.map((x) => skillsOf(x)[0]).find(Boolean); return line(b.c, `아직 안 푼 아래 차시: ${b.check.map((x) => esc(lessonName(x))).join(', ')}${sk0 ? ` <a class="btn mini" href="#/t/c/${C}/give?sk=${sk0.id}&who=${no}">아래 차시 보충으로 확인</a>` : ''}`); }).join('')}</ul>` : ''}
     ${rep.under.length ? `<h3>아래 차시 때문일 수도 <small>아래 차시를 보충하면 같이 풀릴 수 있어요</small></h3><ul class="lines">${rep.under.map((u) => line(u.c, `← ${u.because.map((x) => esc(lessonName(x))).join(', ')}`)).join('')}</ul>` : ''}
     ${Object.keys(mxK).length ? `<h3>연습한 차시</h3><ul class="lines">${Object.keys(mxK).filter((c) => LES(c)).sort(byGrade).map((c) => line(c)).join('')}</ul>` : ''}
     </div><div class="kd-b">
