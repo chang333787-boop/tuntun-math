@@ -29,8 +29,9 @@ addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse') return; 
 ['pointerup', 'pointercancel'].forEach((t) => addEventListener(t, unpress, { passive: true }));
 // 아이 머리띠 — 탭 없이 [처음 화면] 하나(처음 화면의 카드 셋이 길잡이 · 교사 11-07 '로그인하면 카드 셋으로')
 const tabs = document.getElementById('tabs');
-tabs.innerHTML = `<a href="#/me">${icon('home', 20)}<span>처음 화면</span></a>`;
-const setTabs = (h) => { tabs.hidden = !h || /^#\/me$/.test(h); };
+//  선생님도 같은 자리에 [반 화면] · [선생님 처음 화면](돌아가기 단추 자리가 화면마다 달랐던 것 · 11-07 처음 보는 눈)
+const KID_TAB = `<a href="#/me">${icon('home', 20)}<span>처음 화면</span></a>`;
+const setTabs = (h, html = KID_TAB) => { tabs.hidden = !h; if (h) tabs.innerHTML = html; };
 let cleanup = null;
 // 같은 크롬북을 여럿이 쓸 때 — 아이 화면은 앱을 열 때 · 날짜가 바뀌었을 때 · 20분 넘게 손대지 않다가 누를 때 'n번 맞아요?'(혹평 17)
 //  idle = 바로 앞 입력과 이번 입력 사이(누른 그 입력이 주소를 바꾸므로 그 앞 공백을 봄)
@@ -91,7 +92,11 @@ function route() {
   document.body.classList.toggle('kid', kid);
   document.body.classList.toggle('wide', /^#\/t\/c\/\w+(\/table|\/give)?(\?.*)?$/.test(h));   /* 반 화면 · 반 표 · 보충 주기는 넓게(1440) */
   const me = meOf();
-  setTabs(kid && me && !/^#\/join/.test(h) ? h : null);
+  { const tc = h.match(/^#\/t\/c\/(\w+)\/./);
+    if (kid && me && !/^#\/join/.test(h)) setTabs(/^#\/me$/.test(h) ? null : h);
+    else if (tc) setTabs(h, `<a href="#/t/c/${tc[1]}">${icon('home', 20)}<span>반 화면</span></a>`);
+    else if (/^#\/t\/./.test(h)) setTabs(h, `<a href="#/t">${icon('home', 20)}<span>선생님 처음 화면</span></a>`);
+    else setTabs(null); }
   document.getElementById('who').textContent = kid && me ? `${me.C} · ${me.no}번` : /^#\/t/.test(h) ? '선생님' : '';
   { const tl = document.getElementById('trylink'); if (tl) tl.hidden = !tryInfo() || /^#\/try/.test(h); }   /* 시험 반이 있는 기기만 */
   if (kid && me && !/^#\/join/.test(h)) {
