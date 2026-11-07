@@ -475,7 +475,7 @@ const H = {
       }
       return [{ c: 'N4', p: { v: 'split10', n: p.t }, why: `${J(p.t, '을', '를')} 10과 몇으로 갈라요.`, n: TEN_DOWN[0] },
         { c: 'N3', p: { v: 'split', t: 10, a: p.a }, why: `10에서 ${J(p.a, '을', '를')} 빼요.`, n: TEN_DOWN[1] },
-        { c: 'N3', p: { v: 'join', t: b, a: 10 - p.a }, why: `${J(10 - p.a, '과', '와')} 갈라 둔 ${J(b, '을', '를')} 더해요.`, n: TEN_DOWN[2] }];
+        { c: 'N3', p: { v: 'join', t: b, a: 10 - p.a }, why: `${J(10 - p.a, '과', '와')} 갈라 둔 ${J(p.t - 10, '을', '를')} 더해요.`, n: TEN_DOWN[2] }   /* 갈라 둔 수 = 십몇의 낱개(b는 답 · 코덱스 11-07) */];
     },
   },
   '1-1-5:5': { cue: n4Cue, noSteps: NO.read },

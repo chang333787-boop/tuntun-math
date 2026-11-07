@@ -89,7 +89,7 @@ export const reportOf = (K) => { const H = history(K); return kidReport(H.sheets
 
 // 자신감 비교하기(모든 기록) — 확실했는데 틀림 · 짐작이 맞은 비율
 export function calOf(K, since = 0) {
-  let n = 0, hit = 0; const sureWrong = {};
+  let n = 0, hit = 0, sureRight = 0; const sureWrong = {};
   for (const x of Object.values(K.recs)) {
     if (!okRec(x) || x.s.made < since) continue;
     for (const [k, c] of x.s.it) {
@@ -97,9 +97,10 @@ export function calOf(K, since = 0) {
       const ok = r.s === 'ok'; n++;
       hit += cf === 1 ? 0.5 : (cf === 2) === ok ? 1 : 0;
       if (cf === 2 && !ok) sureWrong[c] = (sureWrong[c] || 0) + 1;
+      if (cf === 2 && ok) sureRight++;
     }
   }
-  return { n, match: n ? hit / n : null, sureWrong };
+  return { n, match: n ? hit / n : null, sureWrong, sureRight };   /* sureRight = '자신 있어요' 하고 맞힌 문제 수(아이 내 기록 · 11-07) */
 }
 
 // 선생님 화면용 요약
