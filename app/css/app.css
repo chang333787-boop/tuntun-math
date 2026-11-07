@@ -808,7 +808,7 @@ body.tv main{max-width:none}body.tv .ctab table{font-size:18px}body.tv .ctab td,
 .ck-pps{font-size:16px;margin:0 0 10px}
 .list.lad{font-size:14.5px}.list.lad td,.list.lad th{text-align:center;padding:4px 8px}
 /* 처음 쓰는 아이 점검(11-07) — 배우기 화면 이름 · 나가기 따로 · 사다리 '처음 문제의 답' 한 줄 */
-.fx-top{display:flex;align-items:center;gap:10px 18px;flex-wrap:wrap;margin:0 0 6px}.fx-top .sb-steps{margin:0}
+.fx-top{display:flex;align-items:center;gap:10px 18px;flex-wrap:wrap;margin:0 0 6px}.fx-top .sb-steps{margin:0}.fx-top .fx-back{margin:0 0 0 auto;font-size:15px;color:var(--mute)}.fx-top .fx-back b{color:var(--ink)}
 .fx-t{display:flex;align-items:center;gap:8px;margin:0;font-size:16px}.fx-t b{font-family:var(--head);font-size:20px;font-weight:700;font-synthesis:none}.fx-t span{color:var(--mute)}.fx-t .ico{width:32px;height:32px;border-radius:10px}
 .hl-ans{font-size:15px;color:var(--teal-d)}
 .out-row{margin:22px 0 0;text-align:right}.out-row .link{color:var(--mute)}

@@ -55,14 +55,14 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
   const base = { tag, act, dots, conf: false, idk: false };
   const head = (k, html, pose = 'think', after = '') => `<div class="hl hl-${k}"><div class="say">${mascot(pose, 60)}<div class="bub">${html}</div></div>${after}</div>`;
   const last = steps.length - 1;
-  const pt = toText(it.prompt).replace(/\s*=\s*□.*$/, '').replace(/\s+/g, ' ').trim(), qName = pt && pt.length <= 16 && !/□/.test(pt) ? `${pt}의 답` : '처음 문제의 답';   /* '처음 문제'를 '1번 문제'로 읽던 것 — 짧은 식이면 식 그대로(11-07 처음 쓰는 아이) */
+  const pt = toText(it.prompt).replace(/\s*=\s*□.*$/, '').replace(/\s+/g, ' ').trim(), qName = pt && pt.length <= 16 && !/□/.test(pt) ? `${pt}의 답` : '이 문제의 답';   /* '처음 문제'를 '1번 문제'로 읽던 것 — 짧은 식이면 식 그대로(11-07 처음 쓰는 아이) */
   const names = steps.length ? planNames(c, it.p, steps) : null;
   /* 그림 — 10칸 틀(한 자리 10 만들기 · 10에서 빼기): 마지막 단계는 옮긴 모습(방금 앞 단계를 마쳤으면 옮기는 모습 한 번) · 그 앞은 한 번 틀렸을 때만 처음 모습
      묶음 바꾸기(받아올림 · 받아내림 — model.js regroupHTML · docs/motion.md ① ②): 움직임은 이 사다리에서 한 번만(seen) · 다시 보기 단추는 늘
        뺄셈 첫 단계에서 한 번 틀리면 = 십 막대 하나가 낱개 10개로(이 단계 식 '12 − 7'의 12가 어디서 왔나 — 단계 답은 보이지 않음)
        덧셈 첫 단계에서 한 번 틀리면 = 바꾸기 전 모습만(낱개를 세면 되는 단계라 모은 뒤 모습은 답이 됨)
        첫 단계를 마치고 둘째 단계로 오면 = 아직 안 봤으면 방금 한 것의 뜻으로 한 번(세로셈 빗금 · 올린 1이 같은 때에 — lag) · 그 뒤는 틀렸을 때만 끝 모습 */
-  let seen = false;
+  let seen = false, rushN = 0;   /* 떠올리기에서 빨리 낸 오답 — 두 번째면 '조금 빨라요'를 되풀이하지 않고 단계로(11-08 처음 보는 눈) */
   const isSub = (() => { try { return readExpr(it).op === '−'; } catch (e) { return false; } })();
   const pic = (i, tries, fresh) => {
     if (tenFrameHTML(it)) { const tf = tenFrameHTML(it, { moved: i >= last, anim: i >= last && fresh }); return { html: i >= last || tries ? tf : '' }; }
@@ -96,7 +96,7 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
       lead: head('cue', `<span class="hl-was">내 답 <b>${esc(mine(it, raws))}</b> — 아직 아니에요. ${nudge || '튼튼이 말을 읽고 다시 풀어 봐요.'}</span>${cue ? `<span class="hl-cue-t">${esc(cue)}</span>` : ''}<span class="hl-ans">이 생각으로 <b>${esc(qName)}</b>${P(qName.slice(-1), '을', '를')} 써요.</span>`, 'think', `<button type="button" class="hl-go" id="hs">${canStep ? '모르겠어요 — 한 단계씩 같이 풀기' : '모르겠어요 — 같이 보기'}</button>`),   /* 늘 나가는 길 하나(아무 수나 써야 빠져나가던 것 · 11-07) */
       onAnswer: (a, cf, t) => {
         if (sameAns(it, a)) return finish(true, ch ? 'pick' : 'recall', ch ? '맞았어요!' : '맞았어요! 생각을 떠올려서 스스로 고쳤어요.');
-        if (t < RUSH && !ch) return recall('조금 빨라요. 끝까지 읽고 다시 풀어 봐요.');
+        if (t < RUSH && !ch && ++rushN < 2) return recall('조금 빨라요. 끝까지 읽고 다시 풀어 봐요.');
         toSteps();
       } });
     const hs = root.querySelector('#hs'); if (hs) hs.addEventListener('click', toSteps);
@@ -119,7 +119,7 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
         shown.add(i);
         const box = document.createElement('div'); box.className = 'fb no';
         lock(); box.innerHTML = ansSay({ sol: s.sol, choices: sit && sit.choices }, '이 단계의 답은');
-        const b = document.createElement('button'); b.type = 'button'; b.className = 'pri'; b.textContent = i + 1 < steps.length ? '다음 단계' : '처음 문제로'; box.appendChild(b);
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'pri'; b.textContent = i + 1 < steps.length ? '다음 단계' : '문제로 돌아가기'; box.appendChild(b);
         fbSlot(root).appendChild(box); b.focus();
         b.addEventListener('click', () => step(i + 1, 0, shown, true));
       } });

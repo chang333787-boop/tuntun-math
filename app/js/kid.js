@@ -308,7 +308,7 @@ export function fixView(root, c, opt = {}) {
   KS.setNow(me, { mode: 'fix', c });
   const head = (pose, t) => say(pose, t, 64);
   const PH = [['show', '튼튼이가 먼저'], ['together', '같이 풀기'], ['solo', '혼자 풀기'], ['check', '확인 3문제']];
-  const bar = () => { const k = PH.findIndex(([p]) => p === F.phase); return k < 0 ? '' : `<div class="fx-top"><p class="fx-t">${tile('fix', 20)}<b>배우기</b></p><ol class="sb-steps fx-steps" aria-label="배우기 걸음">${PH.map(([, t], i) => `<li class="${i === k ? 'now' : i < k ? 'done' : ''}"${i === k ? ' aria-current="step"' : ''}>${i < k ? '<i>✓</i>' : ''}${t}</li>`).join('')}</ol></div>`; };   /* 화면 이름 '배우기'만(예시 문제를 붙이면 바로 아래 문제와 두 문제로 읽히고 '작은 수 · 큰 수'처럼 어긋나 보임 · 11-07 처음 보는 눈) · 걸음 칩엔 숫자 없음(풀이 순서 번호와 겹치지 않게 · 11-07 처음 쓰는 아이) */
+  const bar = () => { const k = PH.findIndex(([p]) => p === F.phase); return k < 0 ? '' : `<div class="fx-top"><p class="fx-t">${tile('fix', 20)}<b>배우기</b></p><ol class="sb-steps fx-steps" aria-label="배우기 걸음">${PH.map(([, t], i) => `<li class="${i === k ? 'now' : i < k ? 'done' : ''}"${i === k ? ' aria-current="step"' : ''}>${i < k ? '<i>✓</i>' : ''}${t}</li>`).join('')}</ol>${K.back && K.back.root === c && !K.back.solved && K.back.text ? `<p class="fx-back">다 고치면 <b>${esc(RO(K.back.text))}</b> 돌아가요</p>` : ''}</div>`; };   /* 거꾸로 찾기에서 온 배우기 — 처음 막혔던 문제로 가는 길이 화면에 늘(11-08 처음 보는 눈) */   /* 화면 이름 '배우기'만(예시 문제를 붙이면 바로 아래 문제와 두 문제로 읽히고 '작은 수 · 큰 수'처럼 어긋나 보임 · 11-07 처음 보는 눈) · 걸음 칩엔 숫자 없음(풀이 순서 번호와 겹치지 않게 · 11-07 처음 쓰는 아이) */
   // 화면 틀(docs/ui.md 2차) — 걸음 칩은 위 · 왼쪽(시범 · 모형 · 단계 · 문제) · 오른쪽(튼튼이 말 · 할 일) · 좁으면 튼튼이 말이 맨 위
   //  shell(말, 왼쪽, 오른쪽 아래) → #b(.still — 왼쪽이 시범 · 비교처럼 위에서부터 읽는 것이라 오른쪽 판도 위로) · slot() → 문제 카드 자리(draw에 lead로 튼튼이 말을 넘김 · 오른쪽 판은 문제와 같은 높이 가운데)
   const shell = (top, main, side = '') => { root.innerHTML = `<div class="card fx">${bar()}<div id="b"><div class="qcard still"><div class="qgrid"><div class="qmain">${main}</div><div class="qside"><div class="qlead">${top}</div>${side}</div></div></div></div></div>`; return root.querySelector('#b'); };
@@ -348,7 +348,7 @@ export function fixView(root, c, opt = {}) {
     if (F.assist) return assist();
     const st = F.curSteps[F.si];
     if (!st) {   // 단계 다 함 → 원래 문제
-      draw(slot(), { lead: head('think', '단계를 다 했어요. 이제 처음 문제의 답을 써요.') + planHTML(F.curSteps, planNames(F.cur.c || c, F.cur.p, F.curSteps), F.curSteps.length), prompt: F.cur.prompt, choices: F.cur.choices, conf: false, idk: false, extra: stepCtx(F.cur, F.curSteps, F.curSteps.length, { C: colFor(F.cur, F.curSteps), head: false, fresh: F.curSteps.length - 1 }), onAnswer: (a) => { const it0 = F.cur; const r = answerItem(F, a.vals, a.raws); feedback({ ...r, it0, how: 'steps' }, route); } });
+      draw(slot(), { lead: head('think', '단계를 다 했어요. 이제 이 문제의 답을 써요.') + planHTML(F.curSteps, planNames(F.cur.c || c, F.cur.p, F.curSteps), F.curSteps.length), prompt: F.cur.prompt, choices: F.cur.choices, conf: false, idk: false, extra: stepCtx(F.cur, F.curSteps, F.curSteps.length, { C: colFor(F.cur, F.curSteps), head: false, fresh: F.curSteps.length - 1 }), onAnswer: (a) => { const it0 = F.cur; const r = answerItem(F, a.vals, a.raws); feedback({ ...r, it0, how: 'steps' }, route); } });
       return;
     }
     /* 왼쪽 위 = 같이 풀 문제 · 세로셈 · 채운 단계(도움 사다리와 같은 모양 hint.js stepCtx) · 오른쪽 튼튼이 말 = 몇 단계 · 할 일 */

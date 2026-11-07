@@ -75,10 +75,11 @@ function run(root, me, K, S, SK) {
   const step = () => {
     const q = currentItem(S);
     if (!q || S.done) return done();
-    const top = q.role === 'problem' ? (S.log.length ? '처음 문제와 닮은 문제를 새 숫자로 한 번 더 풀어요. 한 번만으로는 정말 아는지 알 수 없어요.' : '먼저 처음 문제를 풀어 봐요. 모르면 넘어가도 괜찮아요.')
-      : q.role === 'step' ? `같은 숫자로 <b>쪼개</b> 볼게요 (${q.n}/${q.of}) — ${esc(q.why || '')}`
+    const last = S.log[S.log.length - 1], pre = !last || S.verifying ? '' : last.ok ? '맞혔어요. ' : last.idk ? '괜찮아요. ' : '아직이에요. ';   /* 틀렸다는 말 없이 다음 문제로 바뀌던 것(11-08 처음 보는 눈) */
+    const top = pre + (q.role === 'problem' ? (S.log.length ? '처음 문제와 닮은 문제를 새 숫자로 한 번 더 풀어요. 한 번만으로는 정말 아는지 알 수 없어요.' : '먼저 처음 문제를 풀어 봐요. 모르면 넘어가도 괜찮아요.')
+      : q.role === 'step' ? `같은 숫자로 <b>쪼개</b> 볼게요(${q.of}단계 중 ${q.n}단계) — ${esc(q.why || '')}`
       : S.verifying ? '맞혔어요! 새 숫자로 몇 개 더 풀어서 정말 아는지 봐요.'
-      : `여기서 끊겼는지 <b>새 숫자</b>로 알아봐요.<br><b>${esc(kid(q.c))}</b>`;
+      : `${last && !last.ok ? '더 쉬운 문제로 어디서 막혔는지 볼게요' : '여기서 막혔는지 알아봐요'} — <b>새 숫자</b>로 풀어요.<br><b>${esc(kid(q.c))}</b>`);
     root.innerHTML = `<div class="card fx">${trailHTML(S, q)}<div id="slot"></div></div>`;
     draw(root.querySelector('#slot'), { lead: say(q.role === 'step' ? 'point' : 'think', top, 64), prompt: q.item.prompt, choices: q.item.choices || null, tag: q.role === 'problem' ? '처음 문제' : q.role === 'step' ? '쪼개기' : '확인', act: 'back', conf: false, onAnswer: (a, cf, ms) => { engAnswer(S, { ...a, ms, t: Date.now() }); lsSet(SK, S); step(); } });
   };
@@ -96,9 +97,9 @@ function run(root, me, K, S, SK) {
     K.back = { c: C0, p: S.problem.p, text: S.problem.text, root: root0 || (res.bridges.includes(C0) ? C0 : null), t: Date.now() };
     KS.save(me, K); KS.pushSummary(me, K); KS.setNow(me, { mode: 'home' });
     const chain = (() => { if (!root0) return []; const out = [root0]; let cur = root0; for (let g = 0; g < 6; g++) { const up = Object.entries(res.states).find(([c, v]) => v.s === 'shaky' && (v.because || []).includes(cur) && !out.includes(c)); if (!up) break; out.push(up[0]); cur = up[0]; } if (!out.includes(C0)) out.push(C0); return out; })();
-    const chainHTML = chain.length ? `<div class="trail big">${chain.map((c, i) => `${i ? '<span class="arr">→</span>' : ''}<span class="tnode ${i === 0 ? 't-bad' : 't-wait'}"><i>${i === 0 ? '✕' : '·'}</i>${esc(c === C0 ? `처음 문제(${S.problem.text})` : kid(c))}</span>`).join('')}</div><p class="small muted">왼쪽이 끊긴 곳이에요. 여기를 고치면 오른쪽으로 차례로 이어져요.</p>` : '';
+    const chainHTML = chain.length ? `<div class="trail big">${chain.map((c, i) => `${i ? '<span class="arr">→</span>' : ''}<span class="tnode ${i === 0 ? 't-bad' : 't-wait'}"><i>${i === 0 ? '✕' : '·'}</i>${esc(c === C0 ? `처음 문제(${S.problem.text})` : plank(c))}</span>`).join('')}</div><p class="small muted">왼쪽부터 차례로 다지면 오른쪽 처음 문제까지 이어져요.</p>` : '';
     let head, acts;
-    if (root0) { head = say('fix', `찾았어요! <b>${esc(S.problem.text)}</b>${P(S.problem.text, '이', '가')} 어려웠던 까닭은 <b>${esc(plank(root0))}</b>에서 끊겨서예요.<br>여기부터 고치면 처음 문제도 풀려요.`, 104); acts = `<a class="btn pri big" href="#/fix/${root0}">여기부터 고치기</a>`; }
+    if (root0) { head = say('fix', `찾았어요! <b>${esc(S.problem.text)}</b>${P(S.problem.text, '을', '를')} 풀려면 <b>${esc(plank(root0))}</b>부터 다지면 돼요.<br>여기부터 배우고 처음 문제로 돌아가요.`, 104);   /* '어려웠던 까닭은 …에서 끊겨서' — 아이 탓처럼 들리던 것(11-08 처음 보는 눈) */ acts = `<a class="btn pri big" href="#/fix/${root0}">여기부터 고치기</a>`; }
     else if (st0 && st0.s === 'bridge') { head = say('think', `쪼갠 단계는 다 알아요! <b>합쳐서 한 번에 풀기</b>가 빈칸이에요. ${esc(st0.note || '')}`, 104); acts = `<a class="btn pri big" href="#/fix/${C0}">합쳐 풀기 연습</a>`; }
     else if (st0 && ['known', 'auto', 'slow'].includes(st0.s)) { head = say('cheer', `이 문제는 이미 튼튼해요! 새 숫자로도 다 맞혔어요.${st0.s === 'slow' ? ' 조금 느려요 — 매일 연습에서 자주 만나면 빨라져요.' : ''}`, 104); acts = `<a class="btn pri big" href="#/run">매일 연습</a>`; }   /* 다듬기 · 스테이지는 메뉴에서 뺌(docs/what.md 11-05) */
     else { head = say('think', '오늘은 여기까지 찾았어요. 조금 흔들리는 곳이 있어요 — 선생님과 함께 보거나 다음에 이어서 찾아요.', 104); acts = res.shaky.length ? `<a class="btn pri big" href="#/fix/${res.shaky[0]}">${esc(kid(res.shaky[0]))} 다지기</a>` : ''; }
