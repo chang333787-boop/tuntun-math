@@ -57,6 +57,7 @@ const bad = [];
 for (const f of files) {
   const src = readFileSync(f, 'utf8'), lines = src.split('\n');
   for (const s of strings(src)) {
+    if (s.parts.length || s.text.includes('\n')) for (const m of s.text.matchAll(/\/\*\s[^`]*?\*\//g)) bad.push(`${f}:${s.line} 템플릿 글 안에 주석이 들어가 화면에 그대로 보여요 — ${m[0].slice(0, 50)}`);   // ${ } 밖 · 코덱스 11-08
     if (!/[가-힣]/.test(s.text)) continue;
     const L = lines[s.line - 1] || '';
     if (/조사 고정/.test(L) || /조사 고정/.test(lines[s.line] || '') && /^\s*\/\//.test(lines[s.line] || '')) continue;

@@ -260,6 +260,14 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   ok(KD.todoOf(K0({}), rep0)[0].title === '오늘 단원 점검', '단원을 열면 맨 위가 오늘 단원 점검');
   ok(!KD.todoOf(K0({ lastPrep: { unit: '4-1-3', why: 'clear', t: now - 1000 } }), rep0).some((x) => x.title === '오늘 단원 점검'), "문제 0개로 끝난 판(기록 없음)도 '했음'");
   const P7 = await import('../js/prep.js');
+  {   /* 하다가 나간 점검은 '이어서' · 다른 기기에서 끝냈으면(lastPrep이 시작보다 뒤) '이어서' X(코덱스 11-08) */
+    const L9 = await import('../js/local.js');
+    const sp = P7.newPrep({ unit: '4-1-3', id: 'SP' }), i0 = P7.current(sp); P7.answer(sp, { vals: i0.snap.sol, raws: i0.snap.sol.map(String) }); sp.made = now - 30000;
+    L9.lsSet('tt.me', { C: 'ZZT', no: 1, pin: 'x' }); L9.lsSet('tt.prep.ZZT.1', sp);
+    ok(KD.todoOf(K0({}), rep0)[0].title === '오늘 단원 점검 — 이어서', '하다가 나간 점검은 맨 위에 이어서');
+    ok(!KD.todoOf(K0({ lastPrep: { unit: '4-1-3', why: 'clear', t: now - 1000 } }), rep0).some((x) => x.kind === 'prep'), '다른 기기에서 끝낸 점검은 이어서로 다시 뜨지 않음');
+    L9.lsDel('tt.prep.ZZT.1'); L9.lsDel('tt.me');
+  }
   const S = P7.newPrep({ unit: '2-1-3', id: 'TD' }); let it;
   while ((it = P7.current(S))) P7.answer(S, { vals: it.snap.sol.map((v) => Number(v) + 7), raws: it.snap.sol.map((v) => String(Number(v) + 7)) });
   const recs = {}; for (const sh of S.sheets) { sh.unit = '2-1-3'; recs[sh.id] = { s: KS5.pack(sh), r: S.res[sh.id].me, cf: {}, ms: {} }; }

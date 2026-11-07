@@ -85,7 +85,7 @@ export function todoOf(K, rep) {
   const t = tasks[0], lp = K.lastPrep, now = Date.now(), td = today();
   const preppedAfter = (u, since) => (lp && lp.unit === u && lp.t >= since) || Object.values(K.recs).some((x) => x && x.s && x.s.unit === u && x.s.made >= since);
   const me0 = meOf(), sp = me0 ? lsGet(`tt.prep.${me0.C}.${me0.no}`) : null;
-  const spOn = (u) => !!(sp && sp.unit === u && !sp.done && now - sp.made <= 3 * 3600e3 && asked(sp) > 0);   /* 하다가 나간 점검(3시간 안 · prepView와 같은 기준) */
+  const spOn = (u) => !!(sp && sp.unit === u && !sp.done && now - sp.made <= 3 * 3600e3 && asked(sp) > 0 && !(lp && lp.unit === u && lp.t >= sp.made));   /* 하다가 나간 점검(3시간 안 · 다른 기기에서 끝냈으면 X · prepView와 같은 기준) */
   if (t && (spOn(t.unit) || !preppedAfter(t.unit, t.t))) out.push(spOn(t.unit) ?   /* 다 푼 묶음은 그때그때 기록이 되므로 — 하던 점검이 있으면 '했음'보다 '이어서'가 먼저(코덱스 11-08) */ { kind: 'prep', unit: t.unit, pri: true, resume: true, title: '오늘 단원 점검 — 이어서', sub: `${asked(sp) + 1}번째 문제부터 이어서 풀어요`, href: `#/prep/${t.unit}` } : { kind: 'prep', unit: t.unit, pri: true, title: '오늘 단원 점검', sub: `선생님이 연 단원: ${unitLabel(t.unit)} · 약 ${mins(t.len)}분`, href: `#/prep/${t.unit}` });
   /* 하다가 나간 배우기(3시간 안 · 같이 풀기 · 혼자 풀기 · 확인) — 배울 것 맨 앞에 '이어서'(fixView resume과 같은 기준) */
   const fx0 = me0 ? lsGet(`tt.fx.${me0.C}.${me0.no}`) : null, FXN = { together: '같이 풀기', solo: '혼자 풀기', check: '확인 3문제' };
@@ -220,7 +220,7 @@ export function prepView(root, unit) {
   const SK = `tt.prep.${me.C}.${me.no}`;
   let S = lsGet(SK);
   let fresh = false;
-  if (!S || S.unit !== unit || S.done || Date.now() - S.made > 3 * 3600e3) { fresh = true; const task = Object.values(K.inbox || {}).filter((x) => x && x.kind === 'prep' && x.unit === unit).sort((a, b) => b.t - a.t)[0]; S = newPrep({ unit, id: rand(6), prior: KS.history(K), budget: task && task.len }); }   /* 길이는 선생님이 연 과제(len)대로 */
+  if (!S || S.unit !== unit || S.done || Date.now() - S.made > 3 * 3600e3 || (K.lastPrep && K.lastPrep.unit === unit && K.lastPrep.t >= S.made)) { fresh = true; const task = Object.values(K.inbox || {}).filter((x) => x && x.kind === 'prep' && x.unit === unit).sort((a, b) => b.t - a.t)[0]; S = newPrep({ unit, id: rand(6), prior: KS.history(K), budget: task && task.len }); }   /* 길이는 선생님이 연 과제(len)대로 */
   const saved = new Set(S.saved || []);
   const keep = () => { S.saved = [...saved]; lsSet(SK, S); };
   // 선생님이 방금 다른 길이로 다시 열었는데 이 기기 과제가 아직 옛것이면 — 서버 과제를 한 번 읽어 아직 하나도 안 풀었으면 길이를 맞춤(회귀 10-31)
