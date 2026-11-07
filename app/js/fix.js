@@ -209,7 +209,8 @@ export function togetherStep(F, vals) {
   const st = F.curSteps[F.si];
   const ok = !!st && st.sol.every((s, i) => Number(vals[i]) === Number(s));
   if (!ok && F.miss == null) F.miss = F.si;
-  F.si++;
+  if (!ok && st && !F.tw) { F.tw = 1; return { ok, retry: true, sol: st.sol, why: st.why }; }   /* 같이 풀기는 처음 틀리면 한 번 더 써 봄 — 바로 답을 보이면 아이가 맞는 답을 한 번도 안 씀(처음 보는 눈 11-08) */
+  F.tw = 0; F.si++;
   return { ok, sol: st ? st.sol : null, why: st ? st.why : '' };
 }
 // 원래 문제의 답 — 함께 단계 끝 · 혼자

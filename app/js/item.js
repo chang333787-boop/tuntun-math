@@ -75,7 +75,7 @@ export function draw(root, { prompt, choices = null, tag = '', act = '', dots = 
   let pick = null;   /* 자신감이 있는 고르기 문항 — 보기를 먼저 고르고(초록 테두리) 자신감 단추로 냄 */
   const readBlanks = () => {
     const raws = blanks.map((b) => b.value.trim().replace(/,/g, ''));
-    if (raws.some((x) => !x)) { nudge('빈칸을 모두 채워 주세요. 모르면 "못 풀겠어요 · 넘어가기"를 눌러요.', open.find((b) => !b.value.trim())); return null; }
+    if (raws.some((x) => !x)) { nudge(idk ? '빈칸을 모두 채워 주세요. 모르면 "못 풀겠어요 · 넘어가기"를 눌러요.' : '빈칸을 모두 채워 주세요. 모르면 위 튼튼이 말을 다시 읽어 봐요.', open.find((b) => !b.value.trim()));   /* 넘어가기 단추가 없는 화면(배우기)에서 없는 단추를 가리키지 않게 */ return null; }
     const vals = raws.map(parseNum);
     if (vals.some((v) => Number.isNaN(v))) { nudge('숫자로 써 주세요.', blanks[vals.findIndex((v) => Number.isNaN(v))]); return null; }
     return { vals, raws };

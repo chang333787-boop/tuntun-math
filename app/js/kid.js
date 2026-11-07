@@ -347,7 +347,7 @@ export function fixView(root, c, opt = {}) {
       return;
     }
     /* 왼쪽 위 = 같이 풀 문제 · 세로셈 · 채운 단계(도움 사다리와 같은 모양 hint.js stepCtx) · 오른쪽 튼튼이 말 = 몇 단계 · 할 일 */
-    draw(slot(), { lead: head('point', `<span class="hl-k">${F.si + 1}단계</span> 이번엔 같이 풀어요. <b>${esc(st.why)}</b>`) + planHTML(F.curSteps, planNames(F.cur.c || c, F.cur.p, F.curSteps), F.si), extra: stepCtx(F.cur, F.curSteps, F.si, { C: colFor(F.cur, F.curSteps), label: '같이 풀 문제', fresh: F.si - 1 }), prompt: st.prompt, conf: false, idk: false, onAnswer: (a) => { const r = togetherStep(F, a.vals); if (r.ok) together(); else feedback({ ok: false, msg: `${ansSay({ sol: r.sol }, '이 단계의 답은')} ${esc(r.why)}` }, together); } });
+    draw(slot(), { lead: head('point', `<span class="hl-k">${F.si + 1}단계</span> 이번엔 같이 풀어요. <b>${esc(st.why)}</b>`) + planHTML(F.curSteps, planNames(F.cur.c || c, F.cur.p, F.curSteps), F.si), extra: stepCtx(F.cur, F.curSteps, F.si, { C: colFor(F.cur, F.curSteps), label: '같이 풀 문제', fresh: F.si - 1 }), prompt: st.prompt, conf: false, idk: false, onAnswer: (a) => { const r = togetherStep(F, a.vals); if (r.ok) together(); else if (r.retry) feedback({ ok: false, msg: '아직 아니에요. 위 튼튼이 말을 다시 읽고 <b>한 번 더</b> 써 봐요.', label: '다시 써 보기' }, together); else feedback({ ok: false, msg: `${ansSay({ sol: r.sol }, '이 단계의 답은')} ${esc(r.why)}` }, together); }, okLabel: F.si + 1 < F.curSteps.length ? '이 단계 다 했어요' : '다 풀었어요' });
   }
   function assist() {
     const A = F.assist;
@@ -400,7 +400,7 @@ export function fixView(root, c, opt = {}) {
     fbSlot(b).appendChild(box);
     return box;
   };
-  const nextBtn = (box, then) => { const btn = document.createElement('button'); btn.className = 'pri'; btn.textContent = '다음'; box.appendChild(btn); btn.focus(); btn.addEventListener('click', then); };
+  const nextBtn = (box, then, label = '다음') => { const btn = document.createElement('button'); btn.className = 'pri'; btn.textContent = label; box.appendChild(btn); btn.focus(); btn.addEventListener('click', then); };
   // 함께에서의 되먹임 — 칭찬은 실제로 한 것만('단계를 차례로'는 단계를 했을 때만) · 틀리면 답 + 그 문제 숫자로 한 생각
   function feedback(r, then) {
     const box = fbBox(r.ok);
@@ -411,7 +411,7 @@ export function fixView(root, c, opt = {}) {
       const why = factTalk(it0, true) || (nb ? blankTalk(it0, nb - 1, true) : '');
       box.innerHTML = `${ansSay({ sol: r.sol || [], choices: it0.choices })}${why ? `<br><span class="small">${esc(why)}</span>` : ''}`;
     }
-    nextBtn(box, then);
+    nextBtn(box, then, r.label);
   }
   function check() {
     const it = checkItem(F);
@@ -444,7 +444,7 @@ export function fixView(root, c, opt = {}) {
   // 비교하기 — 함께 풀기 뒤, 혼자 풀기 전에 한 번(맞는 풀이 · 친구 같은 틀린 풀이 · 어디서 어긋났나)
   function compare(X) {
     const A = X.rightFirst ? X.it.sol : X.wrong, B = X.rightFirst ? X.wrong : X.it.sol;
-    const b = shell(head('think', '친구 둘이 같은 문제를 풀었어요. <b>누가 맞았을까요?</b>'), `<div class="cmp">
+    const b = shell(head('think', '친구 둘이 같은 문제를 풀었어요. <b>누가 맞았을까요?</b><br>맞았다고 생각하는 친구의 카드를 눌러요.'), `<div class="cmp">
       <button type="button" class="cmpc" data-w="${X.rightFirst ? 1 : 0}"><span class="who2">가 친구</span>${staticHTML(X.rightFirst ? X.it.prompt : (X.wrongPrompt || X.it.prompt), A)}</button>
       <button type="button" class="cmpc" data-w="${X.rightFirst ? 0 : 1}"><span class="who2">나 친구</span>${staticHTML(X.rightFirst ? (X.wrongPrompt || X.it.prompt) : X.it.prompt, B)}</button></div>`);
     /* 고른 뒤 왼쪽에 두 풀이를 그대로 두고 맞음 ✓ · 어긋남 ✕ 표시(오른쪽에서 까닭을 고르는 동안 볼 수 있게) */
