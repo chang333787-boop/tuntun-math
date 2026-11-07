@@ -105,9 +105,11 @@ export function makeItem(cid, p) {
 export function genItem(cid, seed) { const r = rng(seed); return makeItem(cid, byId[cid].gen(r)); }
 export function stepsOf(cid, p) {
   const c = byId[cid];
-  const raw = c && (c.stepsRaw || extraSteps(cid));   /* 차시 정의에 단계가 없으면 engine/hints 단계(교사 11-07 '단계별로') */
-  if (!raw) return [];
-  let xs = []; try { xs = raw(p) || []; } catch (e) { return []; }
+  if (!c) return [];
+  /* 차시 정의 단계가 없거나 이 문제 모양에서 비면 engine/hints 단계(교사 11-07 '단계별로' · 한 자리 모으기 · 가르기처럼 가족 단계가 빈 배열이던 것 — 팀 E1) */
+  const run = (f) => { if (!f) return []; try { return (f(p) || []).filter(Boolean); } catch (e) { return []; } };
+  let xs = run(c.stepsRaw);
+  if (!xs.length) xs = run(extraSteps(cid));
   return xs.filter(Boolean).map((s) => ({ ...s, ...resolve(s.c, s.p) })).filter((s) => s.c && byId[s.c]);
 }
 export function preOf(cid, p) {

@@ -70,7 +70,7 @@ for (const [c, mis] of [['5-2-2:4', '곱하면'], ['6-2-1:5', '나누면']]) {
 {
   const bad = [];
   for (const c of ['1-2-6:2', '1-2-6:4', '1-2-2:2', '1-2-2:4']) gens(c, 80).forEach((p) => { const t = factTalk(itemOf(c, p), true); if (/이어 세어|거꾸로 세어|몇 번 더 세면/.test(t)) bad.push(`${c} ${t}`); });
-  ok(!bad.length && /이어 세어/.test(factTalk(itemOf('1-1-3:6', { a: 3, b: 4 }), true)), `⑦ 1-2-6 · 단계 칸 이어 세기 말 ${bad.length}${bad.length ? ` — ${bad[0]}` : ''} · 단계 없는 1-1-3:6은 그대로`);
+  ok(!bad.length && stepsOf('1-1-3:6', { a: 3, b: 4 }).length > 0, `⑦ 1-2-6 · 단계 칸 이어 세기 말 ${bad.length}${bad.length ? ` — ${bad[0]}` : ''} · 1-1-3:6은 이제 engine/hints 단계(두 수 모으기 · 11-07)`);
 }
 // ⑧ 자연수 × 진분수(나누어떨어지지 않음) — 첫 단계는 'N의 1/d'(1/d이 N개)
 {

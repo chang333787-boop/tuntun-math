@@ -45,7 +45,7 @@ function n3Cue(p) {
   }
   const b = p.t - p.a;
   if (p.t >= 11) {
-    if (p.v === 'join') return `10을 먼저 만들면 쉬워요. ${p.a}에 얼마를 더하면 10이 될까요?`;
+    if (p.v === 'join') return `10을 먼저 만들어 봐요. ${p.a}에 얼마를 더하면 10이 될까요?`;
     return `${J(p.t, '을', '를')} 10과 몇으로 갈라 볼까요? 10에서 ${J(p.a, '을', '를')} 먼저 빼 봐요.`;
   }
   if (p.v === 'join') return countOn(p.a, b);
@@ -412,7 +412,6 @@ const NO = {
   fact: '한 자리 수 계산은 이어 세기 · 가르기 한 번이라 나눌 단계가 없어요 — 떠올리기 말로 세는 법을 보여 줘요.',
 };
 // 덧셈 · 뺄셈 가족이 한 자리 수에서 빈 단계를 돌려줘서 아직 안 쓰이는 단계(머리 ※)
-const famBlocked = '덧셈 · 뺄셈 가족 단계가 한 자리 수에서 비어 있어 이 단계가 아직 안 쓰여요 — 그동안은 떠올리기 말로 도와요.';
 
 const H = {
   // 1-1-1 9까지의 수
@@ -439,7 +438,7 @@ const H = {
   '1-1-3:6': {
     cue: (p) => countOn(p.a, p.b),
     steps: (p) => [{ c: 'N3', p: { v: 'join', t: p.a + p.b, a: p.a }, why: `${J(p.a, '과', '와')} ${J(p.b, '을', '를')} 모아요.`, n: '두 수 모으기' }],
-    noSteps: famBlocked, plan: none,
+    plan(p) { return this.steps(p).map((x) => x.n); },   /* 가족 단계가 비어 이 단계가 쓰임(lessons stepsOf 대신 단계) — 이름 = 단계의 n */
   },
   '1-1-3:9': {
     cue: (p) => (p.v === 'pic' ? '×표 한 것은 덜어 낸 것이에요. 처음 점의 수에서 ×표 한 수를 빼는 식으로 써 볼까요?'
@@ -450,7 +449,7 @@ const H = {
   '1-1-3:10': {
     cue: (p) => splitSub(p.a, p.b),
     steps: (p) => [{ c: 'N3', p: { v: 'split', t: p.a, a: p.b }, why: `${J(p.a, '을', '를')} ${J(p.b, '과', '와')} 몇으로 갈라요.`, n: '빼는 수와 남은 수로 가르기' }],
-    noSteps: famBlocked, plan: none,
+    plan(p) { return this.steps(p).map((x) => x.n); },   /* 가족 단계가 비어 이 단계가 쓰임(lessons stepsOf 대신 단계) — 이름 = 단계의 n */
   },
   '1-1-3:12': { cue: zeroCue, noSteps: '0을 더하거나 빼는 것은 한 번에 보는 생각이라 나눌 단계가 없어요 — 빈 접시로 떠올리게 해요.' },
   '1-1-3:13': {
@@ -512,16 +511,16 @@ const H = {
     steps: (p) => (p.pos === 1 || p.pos === 2
       ? [{ c: 'N3', p: { v: 'split', t: 10, a: p.pos === 1 ? p.b : p.a }, why: `10을 ${J(p.pos === 1 ? p.b : p.a, '과', '와')} 몇으로 갈라요.`, n: '10을 아는 수와 남은 수로 가르기' }]
       : [{ c: 'N3', p: { v: 'join', t: 10, a: p.a }, why: `${J(p.a, '과', '와')} ${J(p.b, '을', '를')} 모아요.`, n: '두 수 모으기' }]),
-    noSteps: famBlocked, plan: none,
+    plan(p) { return this.steps(p).map((x) => x.n); },   /* 가족 단계가 비어 이 단계가 쓰임(lessons stepsOf 대신 단계) — 이름 = 단계의 n */
   },
   '1-2-4:5': {
     cue: (p) => (p.pos === 2 ? `10은 ${J(p.a - p.b, '과', '와')} 몇으로 가를 수 있을까요? 10칸 틀에서 ${p.a - p.b}칸이 남으려면 몇 칸을 지울까요?` : `10을 둘로 갈라 생각해요. 10은 ${J(p.b, '과', '와')} 몇으로 가를 수 있을까요?`),
     steps: (p) => [{ c: 'N3', p: { v: 'split', t: 10, a: p.pos === 2 ? p.a - p.b : p.b }, why: `10을 ${J(p.pos === 2 ? p.a - p.b : p.b, '과', '와')} 몇으로 갈라요.`, n: '10을 아는 수와 남은 수로 가르기' }],
-    noSteps: famBlocked, plan: none,
+    plan(p) { return this.steps(p).map((x) => x.n); },   /* 가족 단계가 비어 이 단계가 쓰임(lessons stepsOf 대신 단계) — 이름 = 단계의 n */
   },
   '1-2-4:6': { cue: () => '세 수 중 더해서 10이 되는 두 수를 먼저 찾아볼까요? 더하는 순서를 바꿔도 합은 같아요.', plan: () => ['더해서 10이 되는 두 수 더하기', '10과 남은 수 모으기'] },
   // 1-2-6 덧셈과 뺄셈(3)
-  '1-2-6:2': { cue: (p) => `10을 먼저 만들면 쉬워요. ${p.a}에 얼마를 더하면 10이 될까요?`, plan: () => TEN_UP },
+  '1-2-6:2': { cue: (p) => `10을 먼저 만들어 봐요. ${p.a}에 얼마를 더하면 10이 될까요?`, plan: () => TEN_UP },
   '1-2-6:4': { cue: (p) => `${J(p.a, '을', '를')} 10과 몇으로 갈라 볼까요? 10에서 ${J(p.b, '을', '를')} 먼저 빼 봐요.`, plan: () => TEN_DOWN },
   // 2-1-1 세 자리 수
   '2-1-1:2': { cue: g2BigCue, noSteps: NO.read },
