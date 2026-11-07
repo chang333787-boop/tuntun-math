@@ -389,5 +389,13 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   const f = T9.nextOf({ C: 'ZZ', no: '3', rep, now: { mode: 'fix', c: '1-2-6:4', t: Date.now() - 9 * 60e3, ask: Date.now() - 9 * 60e3 } });
   ok(/선생님을 기다려요/.test(f.t) && /\/g\//.test(f.href), `배우기에서 막혀 손 든 아이(9분 전) → 맨 먼저 — ${f.t}`);
 }
+// 다른 기기로 들어오면 — 서버 요약의 거꾸로 찾기(st.bk)를 되살림(코덱스 11-08: 로컬에 없다고 null로 덮어써 선생님 기록이 사라지던 것)
+{
+  const KSb = await import('../js/kidstore.js'), dbb = await import('../js/db.js');
+  const bk = { x: '306-158', c: '3-1-1:7', p: { a: 306, b: 158, fam: 'SUB' }, r: '3-1-1:7', t: Date.now() - 5000, s: 0 };
+  const f0 = globalThis.fetch; globalThis.fetch = async (url) => ({ ok: true, status: 200, json: async () => (/\/st\.json/.test(url) ? dbb.enc({ bk }) : /ZZBK\/7\/0000\.json/.test(url) ? { st: dbb.enc({ bk }) } : null) });
+  const r = await KSb.pull({ C: 'ZZBK', no: '7', pin: '0000' }); globalThis.fetch = f0;
+  ok(r.K.back && r.K.back.text === '306-158' && r.K.back.p && r.K.back.p.a === 306 && KSb.summaryOf(r.K).bk && KSb.summaryOf(r.K).bk.x === '306-158', `다른 기기 — 거꾸로 찾기 되살림 · 요약에 그대로 — ${JSON.stringify(r.K.back)}`);
+}
 console.log(fail ? `FAIL ${fail}` : 'PASS');
 process.exitCode = fail ? 1 : 0;

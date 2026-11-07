@@ -167,10 +167,10 @@ function chooser(root, me, K) {
   const rep = KS.reportOf(K), seed = (Math.random() * 2 ** 31) >>> 0, S = lsGet(skey(me));
   const log = storyLog(K), fam = (f) => pickLessons(rep.L, f, seed + f.length);
   const known = familiarTypes(log).map((t) => TYPES[t].kid);
-  root.innerHTML = `<div class="card msg act-story"><p class="eyebrow">${tile('story', 22)}이야기 문제</p>${say('point', '어떤 이야기를 풀까요? 하나를 골라 <b>시작</b>을 눌러요.', 104)}
+  root.innerHTML = `<div class="card msg act-story"><p class="eyebrow">${tile('story', 22)}이야기 문제</p>${say('point', '어떤 이야기를 풀까요? 하나를 골라요.', 104)}
     ${fresh(S) ? `<div class="acts" style="margin-top:0;margin-bottom:18px"><a class="btn pri big" href="#/story/${encodeURIComponent(S.cs.join(','))}">이어서 하기 (${S.i + 1}번째 이야기부터)</a></div>` : ''}
-    <div class="grid2">${['as', 'md'].map((f) => `<a class="big-pick sb-fam" href="#/story/${encodeURIComponent(fam(f).cs.join(','))}">${tile('story', 28)}<b>${f === 'as' ? '더하기 · 빼기 이야기' : '곱하기 · 나누기 이야기'}</b><span>예: ${esc(FAMILY[f].eg)}</span><span>${esc(FAMILY[f].kid)}</span><span class="btn pri sb-go">시작</span></a>`).join('')}</div>
-    ${known.length ? `<p class="small">익숙해진 이야기 — <b>${known.map(esc).join(', ')}</b>: 다음엔 바로 식부터 써요.</p>` : '<p class="small muted">한 번에 이야기 여섯 개예요. 잘 풀면 다음엔 단계가 줄어요.</p>'}
+    <div class="grid2">${['as', 'md'].map((f) => `<a class="big-pick sb-fam" href="#/story/${encodeURIComponent(fam(f).cs.join(','))}">${tile('story', 28)}<b>${f === 'as' ? '더하기 · 빼기 이야기' : '곱하기 · 나누기 이야기'}</b><span>예: ${esc(FAMILY[f].eg)}</span><span>${esc(FAMILY[f].kid)}</span><span class="btn pri sb-go">이걸로 풀기</span></a>`).join('')}</div>
+    ${known.length ? `<p class="small">익숙해진 이야기 — <b>${known.map(esc).join(', ')}</b>: 다음엔 바로 식부터 써요.</p>` : '<p class="small muted">한 번에 이야기 6개예요. 같은 종류를 두 번 잘 풀면 다음엔 바로 식부터 해요.</p>'}
     <div class="acts"><a class="btn" href="#/me">처음 화면으로</a></div></div>`;
 }
 
@@ -316,8 +316,8 @@ export function storyView(root, arg) {
   // 크기로 먼저 — 이야기 수 가운데 가장 큰 것보다 답이 큰가 작은가(식 고르기) · 쓴 답이 더하면 · 빼면 · 곱하면 나와야 할 크기인가(계산)
   const sizeOf = () => { const tx = toText(pr.s.story); if (/\//.test(tx)) return null; const ns = (tx.match(/\d+(?:\.\d+)?/g) || []).map(Number), xf = Number(pr.sc.xf); if (ns.length < 2 || !Number.isFinite(xf)) return null; const M = Math.max(...ns); return xf === M ? null : { M, up: xf > M }; };
   const senseOf = (calc, vals) => {
-    const m = toText(calc.prompt).match(/(\d+(?:\.\d+)?)\s*([+−×-])\s*(\d+(?:\.\d+)?)/), v = vals && vals.length === 1 ? Number(vals[0]) : NaN;
-    if (!m || !Number.isFinite(v)) return '';
+    const tx = toText(calc.prompt), m = tx.match(/(\d+(?:\.\d+)?)\s*([+−×-])\s*(\d+(?:\.\d+)?)/), v = vals && vals.length === 1 ? Number(vals[0]) : NaN;
+    if (!m || !Number.isFinite(v) || /\//.test(tx)) return '';   /* 분수 식은 분모를 수로 읽어 거짓 힌트가 됨(5/6 × 6 — 코덱스 11-08) */
     const A = Number(m[1]), B = Number(m[3]), M = Math.max(A, B), vs = String(v);
     if (m[2] === '+' && v <= M) return `더하면 ${M}보다 커져야 해요. 쓴 답 ${vs}${P(vs, '은', '는')} ${M}보다 ${v < M ? '작아요' : '크지 않아요'}. `;
     if ((m[2] === '−' || m[2] === '-') && v >= A) return `${A}에서 빼면 ${A}보다 작아져야 해요. 쓴 답 ${vs}${P(vs, '은', '는')} ${A}보다 ${v > A ? '커요' : '작지 않아요'}. `;
@@ -406,7 +406,7 @@ export function storyView(root, arg) {
     const hard = Object.entries(lastOf).filter(([, x]) => x.s[0] === 0 || x.s[1] === 0).map(([t]) => TYPES[t].kid);
     const word = mine.some((p, i) => rs[i] && p.sc.inc && rs[i].s[2] === 0);
     const here = new Set(mine.map((p) => p.sc.type)), known = familiarTypes(log).filter((t) => here.has(t)).map((t) => TYPES[t].kid);
-    const tip = hard.length ? `다음엔 <b>${esc(hard[0])}</b>${P(hard[0], '을', '를')} 그림으로 먼저 나타내 보고 식을 세워요.` : word ? '낱말 하나만 보지 말고, <b>묻는 것</b>을 끝까지 읽고 식을 세워요.' : '이야기를 나눠 읽고 틀을 먼저 세웠어요.';
+    const tip = hard.length ? `다음엔 <b>${esc(hard[0])}</b>${P(hard[0], '을', '를')} 그림으로 먼저 나타내 보고 식을 세워요.` : word ? '낱말 하나만 보지 말고, <b>묻는 것</b>을 끝까지 읽고 식을 세워요.' : '이야기를 나눠 읽고 그림을 먼저 고른 뒤 식을 세웠어요.';
     /* 걸음마다 — 바로(첫 번에) · 다시(다시 보고) · 건너뜀(익숙해서) */
     const rows = STEPS.map((nm, j) => { const xs = rs.map((x) => (j < 3 ? x.s[j] : x.s[3] === 1 && x.s[4] === 1 ? 1 : 0)); return { nm, j, a: xs.filter((x) => x === 1).length, b: xs.filter((x) => x === 0).length, c: xs.filter((x) => x == null).length }; });
     const cnt = (w, k) => (k ? `${w} ${k}개` : '');

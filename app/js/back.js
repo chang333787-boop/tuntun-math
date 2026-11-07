@@ -5,10 +5,10 @@
 import { byId, makeItem, gradeIdx } from '../../engine/lessons/index.js';
 import { readProblem } from '../../engine/lessons/read.js';
 import { newSession, currentItem, answer as engAnswer } from '../../engine/engine.js';
-import { toHTML } from '../../engine/tokens.js';
+import { toHTML, toText } from '../../engine/tokens.js';
 import { mascot } from '../../paper/js/mascot.js';
 import * as KS from './kidstore.js';
-import { draw, ansSay } from './item.js';
+import { draw, ansSay, staticHTML } from './item.js';
 import { P } from '../../engine/concepts/kit.js';
 import { lsGet, lsSet, lsDel, esc, rand } from './local.js';
 import { go, meOf } from './kid.js';
@@ -17,7 +17,7 @@ import { icon, tile } from './icons.js';
 
 const say = (pose, html, size = 64) => `<div class="say">${mascot(pose, size)}<div class="bub">${html}</div></div>`;
 const kid = (c) => (byId[c] ? byId[c].kid : c);
-const plank = (c) => { const x = exampleOf(c); return x ? `${x} 같은 문제` : kid(c); };   /* 찾은 곳은 이름 대신 예시 문제로(낮은 학년 이름이 크게 보이지 않게) */
+const plank = (c, S = null) => { const l = S && [...S.log].reverse().find((y) => y.c === c && !y.ok); let x = ''; if (l) { try { x = toText(makeItem(l.c, l.p).prompt).replace(/\s*=\s*□\s*$/, ''); } catch (e) { x = ''; } } x = x || exampleOf(c); return x ? `${x} 같은 문제` : kid(c); };   /* 찾은 곳은 이름 대신 예시 문제로 — 이 판에서 실제로 틀린 문제가 있으면 그것(한 번도 안 물은 '넷'이 나오던 것 · 11-08) */   /* 찾은 곳은 이름 대신 예시 문제로(낮은 학년 이름이 크게 보이지 않게) */
 const EX = ['7 + 8', '47 + 38', '52 − 27', '245 + 378', '306 − 158', '8 × 7', '34 × 6', '23 × 45', '96 ÷ 4', '17 ÷ 5', '3/5 + 1/5', '2 1/3 + 1 2/3'];
 
 // 거꾸로 길 — 지금까지 따라간 칸(처음 문제 → 단계 → 더 아래) · 상태: 확인 중 · 됨 · 막힘
@@ -25,7 +25,7 @@ function trailHTML(S, now) {
   const seen = [], depth = {};
   for (const l of S.log) if (!seen.includes(l.c)) { seen.push(l.c); depth[l.c] = l.role === 'problem' ? 0 : l.role === 'step' ? 1 : (l.depth || 0) + 1; }
   if (now && !seen.includes(now.c)) { seen.push(now.c); depth[now.c] = now.role === 'problem' ? 0 : now.role === 'step' ? 1 : (now.depth || 0) + 1; }
-  const st = (c) => { const r = S.res[c]; if (now && now.c === c) return 'now'; if (!r) return 'wait'; return r.st === 'pass' ? 'ok' : r.st === 'fail' ? 'bad' : r.st === 'unstable' ? 'shaky' : 'wait'; };
+  const st = (c) => { const r = S.res[c]; if (now && now.c === c) return 'now'; const lg = [...S.log].reverse().find((l) => l.c === c); if (!r || !['pass', 'fail', 'unstable'].includes(r.st)) return lg ? (lg.ok ? 'ok' : 'bad') : 'wait'; return r.st === 'pass' ? 'ok' : r.st === 'fail' ? 'bad' : 'shaky'; };   /* 판정 전이면 그 칸의 마지막 답으로 ✓ · ✕(틀렸는데 점으로 남던 것 · 11-08 처음 보는 눈) */
   const mark = { ok: '✓', bad: '✕', shaky: '△', wait: '·' };
   return `<div class="trail" aria-label="거꾸로 따라간 길">${seen.map((c, i) => `${i ? '<span class="arr">←</span>' : ''}<span class="tnode t-${st(c)}" style="--d:${depth[c]}">${st(c) === 'now' ? icon('search', 16) : `<i>${mark[st(c)]}</i>`}${esc(i === 0 ? '처음 문제' : kid(c))}</span>`).join('')}</div>`;
 }
@@ -75,15 +75,18 @@ function run(root, me, K, S, SK) {
   const step = () => {
     const q = currentItem(S);
     if (!q || S.done) return done();
-    const last = S.log[S.log.length - 1], pre = !last || S.verifying ? '' : last.ok ? '맞혔어요. ' : last.idk ? '괜찮아요. ' : '아직이에요. ';   /* 틀렸다는 말 없이 다음 문제로 바뀌던 것(11-08 처음 보는 눈) */
+    let miss = 0; for (let i = S.log.length - 1; i >= 0 && !S.log[i].ok; i--) miss++;
+    if (miss >= 6) return done(true);   /* 여섯 번 내리 틀림 — 수 세기까지 끝없이 내려가지 않고 선생님과(11-08 처음 보는 눈 2차) */
+    const last = S.log[S.log.length - 1], lastIt = last && !last.ok && last.role !== 'problem' && last.role !== 'step' ? (() => { try { return makeItem(last.c, last.p); } catch (e) { return null; } })() : null;   /* 새 숫자 확인 문제는 틀리면 답을 보임(처음 문제 · 쪼갠 단계는 처음 문제 답이 되므로 X) */
+    const pre = !last || S.verifying ? '' : last.ok ? '맞혔어요. ' : last.idk ? '괜찮아요. ' : lastIt ? `아직이에요 — ${staticHTML(lastIt.prompt, lastIt.sol)}. ` : '아직이에요. ';   /* 틀렸다는 말 없이 다음 문제로 바뀌던 것(11-08 처음 보는 눈) */
     const top = pre + (q.role === 'problem' ? (S.log.length ? '처음 문제와 닮은 문제를 새 숫자로 한 번 더 풀어요. 한 번만으로는 정말 아는지 알 수 없어요.' : '먼저 처음 문제를 풀어 봐요. 모르면 넘어가도 괜찮아요.')
       : q.role === 'step' ? `같은 숫자로 <b>쪼개</b> 볼게요(${q.of}단계 중 ${q.n}단계) — ${esc(q.why || '')}`
       : S.verifying ? '맞혔어요! 새 숫자로 몇 개 더 풀어서 정말 아는지 봐요.'
       : `${last && !last.ok ? '더 쉬운 문제로 어디서 막혔는지 볼게요' : '여기서 막혔는지 알아봐요'} — <b>새 숫자</b>로 풀어요.<br><b>${esc(kid(q.c))}</b>`);
     root.innerHTML = `<div class="card fx">${trailHTML(S, q)}<div id="slot"></div></div>`;
-    draw(root.querySelector('#slot'), { lead: say(q.role === 'step' ? 'point' : 'think', top, 64), prompt: q.item.prompt, choices: q.item.choices || null, tag: q.role === 'problem' ? '처음 문제' : q.role === 'step' ? '쪼개기' : '확인', act: 'back', conf: false, onAnswer: (a, cf, ms) => { engAnswer(S, { ...a, ms, t: Date.now() }); lsSet(SK, S); step(); } });
+    draw(root.querySelector('#slot'), { lead: say(q.role === 'step' ? 'point' : 'think', top, 64), prompt: q.item.prompt, choices: q.item.choices || null, tag: '', act: 'back',   /* 꼬리표 X — 위 길 칩과 '처음 문제'가 둘로 보이고 ↩ 표지가 뒤로 가기처럼 보이던 것 */ conf: false, onAnswer: (a, cf, ms) => { engAnswer(S, { ...a, ms, t: Date.now() }); lsSet(SK, S); step(); } });
   };
-  const done = () => {
+  const done = (early = false) => {
     lsDel(SK);
     // 종이와 같은 판정 묶음으로도 남김(선생님 화면 · 오늘 할 일)
     const items = S.log.map((l, i) => ({ k: i + 1, c: l.c, p: l.p, gate: false, covers: null, ch: 'B', form: 'h', cls: '', snap: null }));
@@ -91,15 +94,17 @@ function run(root, me, K, S, SK) {
     const R = { done: { B: true }, it: Object.fromEntries(S.log.map((l, i) => [i + 1, l.ok ? { s: 'ok' } : l.idk ? { s: 'q' } : { s: 'x', a: l.raws }])) };
     const ms = Object.fromEntries(S.log.map((l, i) => [i + 1, l.ms || 0]));
     if (items.length) KS.addSheet(me, K, sh, R, {}, ms);
-    const res = S.result || { roots: [], bridges: [], shaky: [], known: [], states: {} };
+    const res = (!early && S.result) || { roots: [], bridges: [], shaky: [], known: [], states: {} };
     const C0 = S.problem.c, st0 = res.states[C0];
     const root0 = res.roots.slice().sort((a, b) => gradeIdx(byId[a].g) - gradeIdx(byId[b].g))[0];
     K.back = { c: C0, p: S.problem.p, text: S.problem.text, root: root0 || (res.bridges.includes(C0) ? C0 : null), t: Date.now() };
-    KS.save(me, K); KS.pushSummary(me, K); KS.setNow(me, { mode: 'home' });
+    if (early) K.help = { ...(K.help || {}), [C0]: Date.now() };   /* 처음 화면 '선생님과 같이 봐요' · 선생님 다음 할 것에도 */
+    KS.save(me, K); KS.pushSummary(me, K); KS.setNow(me, early ? { mode: 'home', c: C0, ask: Date.now() } : { mode: 'home' });   /* 일찍 멈춤 = 선생님 '선생님을 기다려요' */
     const chain = (() => { if (!root0) return []; const out = [root0]; let cur = root0; for (let g = 0; g < 6; g++) { const up = Object.entries(res.states).find(([c, v]) => v.s === 'shaky' && (v.because || []).includes(cur) && !out.includes(c)); if (!up) break; out.push(up[0]); cur = up[0]; } if (!out.includes(C0)) out.push(C0); return out; })();
-    const chainHTML = chain.length ? `<div class="trail big">${chain.map((c, i) => `${i ? '<span class="arr">→</span>' : ''}<span class="tnode ${i === 0 ? 't-bad' : 't-wait'}"><i>${i === 0 ? '✕' : '·'}</i>${esc(c === C0 ? `처음 문제(${S.problem.text})` : plank(c))}</span>`).join('')}</div><p class="small muted">왼쪽부터 차례로 다지면 오른쪽 처음 문제까지 이어져요.</p>` : '';
+    const chainHTML = chain.length ? `<div class="trail big">${chain.map((c, i) => `${i ? '<span class="arr">→</span>' : ''}<span class="tnode ${i === 0 ? 't-bad' : 't-wait'}"><i>${i === 0 ? '✕' : '·'}</i>${esc(c === C0 ? `처음 문제(${S.problem.text})` : plank(c, S))}</span>`).join('')}</div><p class="small muted">왼쪽부터 차례로 다지면 오른쪽 처음 문제까지 이어져요.</p>` : '';
     let head, acts;
-    if (root0) { head = say('fix', `찾았어요! <b>${esc(S.problem.text)}</b>${P(S.problem.text, '을', '를')} 풀려면 <b>${esc(plank(root0))}</b>부터 다지면 돼요.<br>여기부터 배우고 처음 문제로 돌아가요.`, 104);   /* '어려웠던 까닭은 …에서 끊겨서' — 아이 탓처럼 들리던 것(11-08 처음 보는 눈) */ acts = `<a class="btn pri big" href="#/fix/${root0}">여기부터 고치기</a>`; }
+    if (early) { root.innerHTML = `<div class="card msg act-back"><p class="eyebrow">${tile('back', 22)}거꾸로 찾기</p>${say('think', '많이 어려웠죠? 오늘은 여기까지 찾아요.<br><b>선생님과 같이</b> 보면 어디서 막혔는지 금방 찾을 수 있어요. 손을 들고 알려요.', 104)}<div class="acts"><a class="btn pri big" href="#/me">처음 화면으로</a></div></div>`; return; }
+    else if (root0) { head = say('fix', `찾았어요! <b>${esc(S.problem.text)}</b>${P(S.problem.text, '을', '를')} 풀려면 <b>${esc(plank(root0, S))}</b>부터 다지면 돼요.<br>여기부터 배우고 처음 문제로 돌아가요.`, 104);   /* '어려웠던 까닭은 …에서 끊겨서' — 아이 탓처럼 들리던 것(11-08 처음 보는 눈) */ acts = `<a class="btn pri big" href="#/fix/${root0}">여기부터 고치기</a>`; }
     else if (st0 && st0.s === 'bridge') { head = say('think', `쪼갠 단계는 다 맞혔어요! 이제 <b>단계를 이어서 한 번에 풀기</b>만 연습하면 돼요.`, 104);   /* 엔진 설명(선생님 말)을 붙여 '빈칸이에요'가 두 번 나오던 것 */ acts = `<a class="btn pri big" href="#/fix/${C0}">합쳐 풀기 연습</a>`; }
     else if (st0 && ['known', 'auto', 'slow'].includes(st0.s)) { head = say('cheer', `이 문제는 이미 튼튼해요! 새 숫자로도 다 맞혔어요.${st0.s === 'slow' ? ' 조금 느려요 — 매일 연습에서 자주 만나면 빨라져요.' : ''}`, 104); acts = `<a class="btn pri big" href="#/run">매일 연습</a>`; }   /* 다듬기 · 스테이지는 메뉴에서 뺌(docs/what.md 11-05) */
     else { head = say('think', '오늘은 여기까지 찾았어요. 조금 흔들리는 곳이 있어요 — 선생님과 함께 보거나 다음에 이어서 찾아요.', 104); acts = res.shaky.length ? `<a class="btn pri big" href="#/fix/${res.shaky[0]}">${esc(kid(res.shaky[0]))} 다지기</a>` : ''; }
