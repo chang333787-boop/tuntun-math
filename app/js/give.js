@@ -30,8 +30,10 @@ export function giveSheet(id, task) {
 export function exampleOfSkill(sk) { try { const [e] = examplesOf(SKILL[sk]); return e ? short(toText(e.it.prompt)) : ''; } catch (e) { return ''; } }
 // 아직 안 푼 보충(받은 차례대로)
 export function giveTasks(K) {
+  const me = meOf(), S = me ? lsGet(`tt.gv.${me.C}.${me.no}`) : null;   /* 하다가 나간 보충은 '이어서'로 맨 앞에(11-07 '다시 들어와도 이어서') */
   return Object.entries(K.inbox || {}).filter(([id, x]) => x && x.kind === 'give' && SKILL[x.sk] && !(K.recs || {})[id]).sort((a, b) => (a[1].t || 0) - (b[1].t || 0))
-    .map(([id, x]) => { const ex = exampleOfSkill(x.sk); return { kind: 'give', id, t: x.t, title: `선생님이 준 문제 ${Number(x.n) || 10}개`, sub: ex ? `${ex} 같은 문제` : '선생님이 고른 문제', href: `#/give/${id}` }; });
+    .map(([id, x]) => { const ex = exampleOfSkill(x.sk), n = Number(x.n) || 10, on = S && S.id === id && S.i > 0; return { kind: 'give', id, t: x.t, resume: !!on, title: on ? '선생님이 준 문제 — 이어서' : `선생님이 준 문제 ${n}개`, sub: on ? `${Math.min(S.i + 1, n)}번째 문제부터 이어서 풀어요(모두 ${n}문제)` : ex ? `${ex} 같은 문제` : '선생님이 고른 문제', href: `#/give/${id}` }; })
+    .sort((a, b) => (b.resume ? 1 : 0) - (a.resume ? 1 : 0));
 }
 
 export function giveView(root, id) {

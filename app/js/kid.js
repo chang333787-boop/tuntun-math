@@ -83,7 +83,12 @@ export function todoOf(K, rep) {
   const tasks = Object.entries(K.inbox || {}).map(([id, x]) => ({ id, ...x })).filter((x) => x && x.kind === 'prep').sort((a, b) => b.t - a.t);
   const t = tasks[0], lp = K.lastPrep, now = Date.now(), td = today();
   const preppedAfter = (u, since) => (lp && lp.unit === u && lp.t >= since) || Object.values(K.recs).some((x) => x && x.s && x.s.unit === u && x.s.made >= since);
-  if (t && !preppedAfter(t.unit, t.t)) out.push({ kind: 'prep', unit: t.unit, pri: true, title: '오늘 단원 점검', sub: `선생님이 연 단원: ${unitLabel(t.unit)} · 약 ${mins(t.len)}분`, href: `#/prep/${t.unit}` });
+  const me0 = meOf(), sp = me0 ? lsGet(`tt.prep.${me0.C}.${me0.no}`) : null;
+  const spOn = (u) => !!(sp && sp.unit === u && !sp.done && now - sp.made <= 3 * 3600e3 && asked(sp) > 0);   /* 하다가 나간 점검(3시간 안 · prepView와 같은 기준) */
+  if (t && !preppedAfter(t.unit, t.t)) out.push(spOn(t.unit) ? { kind: 'prep', unit: t.unit, pri: true, resume: true, title: '오늘 단원 점검 — 이어서', sub: `${asked(sp) + 1}번째 문제부터 이어서 풀어요`, href: `#/prep/${t.unit}` } : { kind: 'prep', unit: t.unit, pri: true, title: '오늘 단원 점검', sub: `선생님이 연 단원: ${unitLabel(t.unit)} · 약 ${mins(t.len)}분`, href: `#/prep/${t.unit}` });
+  /* 하다가 나간 배우기(3시간 안 · 같이 풀기 · 혼자 풀기 · 확인) — 배울 것 맨 앞에 '이어서'(fixView resume과 같은 기준) */
+  const fx0 = me0 ? lsGet(`tt.fx.${me0.C}.${me0.no}`) : null, FXN = { together: '같이 풀기', solo: '혼자 풀기', check: '확인 3문제' };
+  if (fx0 && byId[fx0.c] && FXN[fx0.phase] && now - fx0.t < 3 * 3600e3 && !(K.fixed && K.fixed[fx0.c] > fx0.t)) out.push({ kind: 'fix', c: fx0.c, resume: true, title: '배우기 — 이어서', sub: `'${FXN[fx0.phase]}'부터 이어서 해요 · ${plank(fx0.c)}`, href: `#/fix/${fx0.c}` });
   // 선생님과 같이 볼 판자
   const plan = lp && unitById[lp.unit] ? prepPlan(lp.unit) : null;
   const stuck = Object.values(rep.L).filter((x) => x.st === 'stuck' && byId[x.c] && (!plan || plan.below.includes(x.c))).map((x) => x.c).sort(byGrade);
@@ -130,7 +135,7 @@ function cardHTML(c, list, now, extra = '') {
     <p class="c3-what">${c.what}</p>
     ${list.length ? `<ul class="c3-list">${items}</ul>${list.length > 3 ? `<p class="small muted">그 밖에 ${list.length - 3}개 더 있어요</p>` : ''}` : `<p class="c3-none">${c.none}</p>`}
     ${extra}
-    ${go1 && now ? `<a class="btn big c3-go pri" href="${go1.href}">${first && first.kind === 'help' ? '기다리는 동안 다른 것 하기' : '지금 시작'}${icon('arrow', 22)}</a>` : ''}</section>`;   /* 단추는 지금 할 카드에만(다른 카드도 단추가 있으면 '2번부터'와 1번 단추가 다툼 · 11-07 처음 쓰는 아이 점검) — 다른 카드는 줄을 눌러 시작 */
+    ${go1 && now ? `<a class="btn big c3-go pri" href="${go1.href}">${first && first.kind === 'help' ? '기다리는 동안 다른 것 하기' : go1.resume ? '이어서 하기' : '지금 시작'}${icon('arrow', 22)}</a>` : ''}</section>`;   /* 단추는 지금 할 카드에만(다른 카드도 단추가 있으면 '2번부터'와 1번 단추가 다툼 · 11-07 처음 쓰는 아이 점검) — 다른 카드는 줄을 눌러 시작 */
 }
 export async function homeView(root) {
   const me = meOf(); if (!me) return go('#/join');
@@ -146,7 +151,8 @@ export async function homeView(root) {
   // 카드 셋에 나눠 담기 — ① 점검(오늘 단원 점검 · 선생님 점검지 · 이번 주 점검) ② 배울 것(선생님과 같이 · 선생님이 준 문제 · 배우기) ③ 매일 연습
   const chk = [...todo.filter((x) => x.kind === 'prep'), ...checkTasks(K).map((x) => ({ ...x, kind: 'check' }))];
   if (wp.length >= 4 && Object.keys(K.recs || {}).length) chk.push({ kind: 'week', title: '이번 주 점검', sub: `섞은 문제 ${wp.length}개 · 3~5분 · 주마다 한 번`, href: '#/week' });
-  const prac = [...todo.filter((x) => x.kind === 'help'), ...giveTasks(K), ...todo.filter((x) => x.kind === 'fix' || x.kind === 'retry')];
+  const fixR = todo.find((x) => x.kind === 'fix' && x.resume), gvs = giveTasks(K);
+  const prac = [...todo.filter((x) => x.kind === 'help'), ...(fixR ? [fixR] : []), ...gvs, ...todo.filter((x) => (x.kind === 'fix' || x.kind === 'retry') && x !== fixR && !(fixR && x.c === fixR.c))];   /* 이어서 할 배우기 → 선생님이 준 문제(이어서가 앞) → 배우기 */
   const daily = todo.filter((x) => x.kind === 'run');
   const ran = (K.jog || []).includes(today());
   const doneOne = ct && Date.now() - ct.t < 3 * 3600e3 && Object.values(K.fixed || {}).some((t) => t >= ct.t) && !chk.some((x) => x.kind === 'prep') && !prac.some((x) => x.kind === 'help');   // 이번 수업에 하나 배움 → 이제 선생님 수업으로(혹평 13) · 점검 · 선생님과 같이가 남았거나 수업 뒤(3시간)면 그대로(회귀 10-31)
@@ -160,6 +166,7 @@ export async function homeView(root) {
   const head = doneOne ? say('cheer', '하나 배웠어요! 이제 <b>선생님 수업</b>으로 가요. 남은 것은 다음 시간에 해요.', 88)
     : classRest ? say('cheer', '오늘 단원 점검을 끝냈어요. 지금은 <b>선생님 수업 시간</b>이에요. 남은 것은 다음 시간에 해요.', 88)
     : hasHelp ? sayArt('hand', '<b>선생님과 같이</b> 볼 것이 있어요. 손을 들고 선생님께 알려요.<br>기다리는 동안 주황 단추로 다른 것을 해도 돼요.', 88)
+    : nowNo && lists[nowNo - 1][0] && lists[nowNo - 1][0].resume ? say('point', '하던 것이 있어요. <b>이어서 하기</b>를 눌러요.', 88)
     : nowNo ? say('point', `오늘은 <b>${CARDS[nowNo - 1].t}</b>부터 해요. 주황 단추를 눌러요.`, 88)
     : firstDay ? sayArt('wait', '반가워요! 선생님이 점검을 열면 <b>점검</b> 카드에 나와요.<br>기다리는 동안 아래 <b>이야기 문제 풀기</b>를 해 봐도 돼요.', 88)
     : say('cheer', `오늘 할 것을 다 했어요! 더 하고 싶으면 <a class="btn mini" href="#/story">이야기 문제에 도전</a>해 봐요.`, 88);
