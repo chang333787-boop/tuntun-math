@@ -10,7 +10,7 @@ import { newFix, showNext, showLen, showTalk, blankTalk, factTalk, togetherStep,
 import * as KS from './kidstore.js';
 import { draw, stepHTML, staticHTML, ansSay, rushGuard, rushPause, fbSlot } from './item.js';
 import { P, RO } from '../../engine/concepts/kit.js';
-import { modelHTML, colOf, colView, picAns } from './model.js';
+import { modelHTML, colOf, colView, picAns, tenFrameHTML } from './model.js';
 import { grantAccurate } from './stage.js';
 import { lsGet, lsSet, lsDel, esc, rand } from './local.js';
 import { flush, get as dbGet, dec } from './db.js';
@@ -281,7 +281,7 @@ export function fixView(root, c) {
     const b = root.querySelector('#b'); b.querySelector('#n').addEventListener('click', () => { showNext(F); route(); }); return b;
   };
   function show() {
-    const n = showLen(F), done = F.si >= n, has = F.steps.length > 0, md = modelHTML(F.ex);
+    const n = showLen(F), done = F.si >= n, has = F.steps.length > 0, md = modelHTML(F.ex) || tenFrameHTML(F.ex, { moved: has && F.si >= F.steps.length - 1, anim: has && F.si === F.steps.length - 1 });   /* 한 자리 10 만들기 · 10에서 빼기는 10칸 틀(둘째 단계에서 옮기는 모습 한 번) */
     const fin = done ? `<p class="fxa">${picAns(F.ex) ? '그래서 답은 ✓ 표시한 보기예요.' : ansSay(F.ex, '그래서 답은')}</p>` : '';
     if (has) {
       const C = colOf(F.ex, F.steps), st = F.si ? F.steps[F.si - 1] : null, v = C ? colView(C, F.si) : null;

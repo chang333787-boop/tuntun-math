@@ -300,6 +300,13 @@ div.cmpc{box-shadow:none}
 .hl-steps li.shown .hl-n{background:var(--off-ink)}.hl-steps li.shown{border-style:dashed}
 .hl-steps .why{font-size:14px;color:var(--mute);line-height:1.4}.hl-steps .math{font-size:clamp(20px,2.4cqi,26px)}
 @media (prefers-reduced-motion:no-preference){.hl-steps li:last-child{animation:hlIn .26s ease-out both}.hl .bub{animation:hlFade .2s ease-out both}}
+.tf{margin:6px 0 12px;display:flex}.tf svg{max-width:100%;height:auto}
+.tf .d1 circle{fill:var(--teal)}.tf .d2 circle{fill:var(--pri)}
+.tf .mv.done{transform:translate(var(--dx),var(--dy))}.tf .gone.done{opacity:.22}
+@media (prefers-reduced-motion:no-preference){.tf.anim .mv{animation:tfMove .45s ease-in-out forwards}.tf.anim .gone{animation:tfGone .4s ease-out forwards}}
+@media (prefers-reduced-motion:reduce){.tf.anim .mv{transform:translate(var(--dx),var(--dy))}.tf.anim .gone{opacity:.22}}
+@keyframes tfMove{to{transform:translate(var(--dx),var(--dy))}}
+@keyframes tfGone{to{opacity:.22}}
 @keyframes hlIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @keyframes hlFade{from{opacity:.2}to{opacity:1}}
 @media (max-width:1000px){.cards3,.mine-row{grid-template-columns:minmax(0,1fr)}.c3-h h2{font-size:26px}}

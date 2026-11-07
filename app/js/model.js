@@ -117,3 +117,35 @@ export function colView(C, k) {
 }
 // 답 보기가 그림인가 — 시범 끝 말풍선에 그림을 다시 넣지 않고 '✓ 표시한 보기'로 가리킴(kid.js fixView)
 export const picAns = (it) => !!(it && it.choices) && toText(it.choices[Number(it.sol[0])] || []).includes('[그림]');
+
+// 10칸 틀 둘 — 10을 넘는 한 자리 덧셈(7 + 8)과 십몇 − 몇(16 − 7)의 '10 만들기 · 10에서 빼기'(교사 11-07 '7 + 8이면 7 + 3 + 5 · 7 + 3은 10 · 그다음 15')
+//  moved = false → 처음 모습(앞 틀의 빈칸을 셀 수 있게 — 떠올리기 그림 · 답을 말하지 않음)
+//  moved = true  → 덧셈: 뒤 틀의 바둑돌이 앞 틀 빈칸으로 옮겨 10 · 뺄셈: 앞 틀(10)에서 뺄 만큼 지움
+//  anim = true면 옮기는 모습을 한 번(0.45초 · 하나씩 0.12초 차이 · 동작 줄이기 설정이면 끝 모습만 — app.css .tf)
+export function tenFrameHTML(it, { moved = false, anim = false } = {}) {
+  let X = null; try { X = readExpr(it); } catch (e) { X = null; }
+  if (!X || X.st !== 'W') return '';
+  const a = X.A.i, b = X.B.i;
+  const add = X.op === '+' && a >= 1 && a <= 9 && b >= 1 && b <= 9 && a + b > 10;
+  const sub = X.op === '−' && a >= 11 && a <= 18 && b >= 1 && b <= 9 && a % 10 < b;
+  if (!add && !sub) return '';
+  const S = 36, G = 4, F = 5 * S + 4 * G, GAP = 30, R = 13;
+  const cellXY = (f, k) => ({ x: f * (F + GAP) + (k % 5) * (S + G) + S / 2, y: Math.floor(k / 5) * (S + G) + S / 2 });
+  const frame = (f) => Array.from({ length: 10 }, (_, k) => { const { x, y } = cellXY(f, k); return `<rect x="${x - S / 2}" y="${y - S / 2}" width="${S}" height="${S}" rx="4" fill="#fff" stroke="#8a8076" stroke-width="1.5"/>`; }).join('');
+  const dot = (x, y, cls, extra = '') => `<g class="${cls}"${extra}><circle cx="${x}" cy="${y}" r="${R}"/></g>`;
+  let dots = '';
+  if (add) {
+    const need = 10 - a;
+    for (let k = 0; k < a; k++) { const p = cellXY(0, k); dots += dot(p.x, p.y, 'd1'); }
+    for (let k = 0; k < b; k++) {
+      const p = cellXY(1, k);
+      if (k < need && moved) { const t = cellXY(0, a + k); dots += dot(p.x, p.y, `d2 mv${anim ? '' : ' done'}`, ` style="--dx:${t.x - p.x}px;--dy:${t.y - p.y}px;animation-delay:${k * 120}ms"`); }
+      else dots += dot(p.x, p.y, k < need ? 'd2 will' : 'd2');
+    }
+  } else {
+    for (let k = 0; k < 10; k++) { const p = cellXY(0, k); dots += dot(p.x, p.y, moved && k >= 10 - b ? `d1 gone${anim ? '' : ' done'}` : 'd1', moved && k >= 10 - b ? ` style="animation-delay:${(k - 10 + b) * 120}ms"` : ''); }
+    for (let k = 0; k < a - 10; k++) { const p = cellXY(1, k); dots += dot(p.x, p.y, 'd2'); }
+  }
+  const W = 2 * F + GAP, H = 2 * S + G;
+  return `<figure class="tf${anim ? ' anim' : ''}"><svg viewBox="-2 -2 ${W + 4} ${H + 4}" width="${W}" height="${H}" role="img" aria-label="10칸 틀 두 개 — ${a} ${add ? '더하기' : '빼기'} ${b}">${frame(0)}${frame(1)}${dots}</svg></figure>`;
+}
