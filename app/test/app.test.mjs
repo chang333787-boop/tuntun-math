@@ -196,7 +196,7 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   while ((it = P6.current(C))) P6.answer(C, { vals: it.snap.sol.map(Number), raws: it.snap.sol.map(String) });
   ok(P6.asked(C) <= 18 && C.why !== 'teacher', `다 맞히는 아이: ${P6.asked(C)}문항 · 끝 '${C.why}'`);
 }
-// ⑰ 단계 없는 칸도 '시범 → 함께 → 혼자' — 시범 다음은 늘 함께 · 함께는 튼튼이가 일부를 해 줌(보기는 지움 · 빈칸 여럿은 마지막만 · 하나는 첫 생각) · 앞 빈칸 답이 마지막과 같으면 채워 주지 않음
+// ⑰ 단계 없는 칸도 '시범 → 함께 → 혼자'(11-07 engine/hints가 단계를 더해 단계 없는 칸이 60 → 41) — 시범 다음은 늘 함께 · 함께는 튼튼이가 일부를 해 줌(보기는 지움 · 빈칸 여럿은 마지막만 · 하나는 첫 생각) · 앞 빈칸 답이 마지막과 같으면 채워 주지 않음
 {
   const FX = await import('../js/fix.js'), LX = await import('../../engine/lessons/index.js'), TK = await import('../../engine/tokens.js');
   let none = 0, bad = [];
@@ -212,7 +212,7 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
     else if (A && A.kind === 'pick' && !(A.hide.length && !A.hide.includes(Number(F.cur.sol[0])))) bad.push(`${n.id}:지운 보기`);
     else if (A && A.kind === 'given' && (Object.keys(A.given).length !== nb - 1 || Object.values(A.given).map(String).includes(String(F.cur.sol[nb - 1])))) bad.push(`${n.id}:채운 빈칸`);
   }
-  ok(none > 60 && !bad.length, `단계 없는 칸 ${none}개: 시범 → 함께(튼튼이가 일부) ${bad.length ? `— ${bad.slice(0, 6).join(' ')}` : ''}`);
+  ok(none > 30 && !bad.length, `단계 없는 칸 ${none}개: 시범 → 함께(튼튼이가 일부) ${bad.length ? `— ${bad.slice(0, 6).join(' ')}` : ''}`);
 }
 // ⑱ 혼자에서 세 번 내리 틀리면 함께로 한 번 · 또 세 번이면 확인 없이 '선생님과 같이'(아홉 번 내리 틀리지 않음)
 {

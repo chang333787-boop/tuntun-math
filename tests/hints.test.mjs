@@ -34,7 +34,7 @@ for (const n of LIST) {
     if (h && typeof h.plan === 'function') {
       let pl = null; try { pl = h.plan(p); } catch (e) { pl = null; }
       if (!Array.isArray(pl) || pl.length !== st.length) planBad.push(`${n.id} 풀이 순서 ${Array.isArray(pl) ? pl.length : '오류'}개 · 단계 ${st.length}개`);
-      else for (const nm of pl) if (typeof nm !== 'string' || !nm.trim() || /\d/.test(nm.replace(/(?<!\d)10(?!\d)/g, ''))) planBad.push(`${n.id} 풀이 순서 이름에 숫자: ${nm}`);
+      else for (const nm of pl) if (typeof nm !== 'string' || !nm.trim() || nm === '한 단계 풀기' || /\d/.test(nm.replace(/(?<!\d)10(?!\d)/g, ''))) planBad.push(`${n.id} 풀이 순서 이름에 숫자: ${nm}`);
     } else noPlan.add(n.id);
     for (const s of st) { try { const x = makeItem(s.c, s.p); if (!x.sol || !x.sol.length) bad.push(`${n.id} 단계 문항에 답이 없어요(${s.c})`); } catch (e) { bad.push(`${n.id} 단계 문항을 못 만들어요(${s.c}): ${e.message}`); break; } }
   }
