@@ -18,28 +18,28 @@ const BASE = 'https://chang333787-boop.github.io/tuntun-math/app/';
   await pg.goto(BASE + '#/t/new?zz=1'); await w(500);
   await pg.fill('#n', '3'); t0 = Date.now(); await pg.click('#mk'); await pg.waitForURL(/cards/, { timeout: 60000 }); T.makeClass = Date.now() - t0;
   const C = (await pg.url()).match(/c\/(\w+)\/cards/)[1];
-  t0 = Date.now(); await pg.goto(BASE + `#/t/c/${C}`); await pg.waitForSelector('#u', { timeout: 60000 }); T.classView = Date.now() - t0;
+  t0 = Date.now(); await pg.goto(BASE + `#/t/c/${C}`); await pg.waitForSelector('.hub-h', { timeout: 60000 }); T.classView = Date.now() - t0;
+  await pg.goto(BASE + `#/t/c/${C}/check`); await pg.waitForSelector('#u', { timeout: 60000 });   /* 단원 고르기는 점검 내기 화면에(11-07 카드 셋) */
   await pg.selectOption('#u', '3-1-1'); await pg.click('#open'); await w(3000);
   const pin = await pg.evaluate((c) => JSON.parse(localStorage.getItem('tt.t')).classes[c].pins[1], C);
   await pg.goto(BASE + `#/join?c=${C}`); await w(800);
   await pg.fill('#n', '1'); await pg.fill('#p', pin); t0 = Date.now(); await pg.click('#f button'); await pg.waitForURL(/#\/me/, { timeout: 60000 });
-  await pg.waitForFunction(() => document.querySelector('.todo'), null, { timeout: 60000 }); T.joinToHome = Date.now() - t0;
+  { const y = await pg.waitForSelector('#y', { timeout: 5000 }).catch(() => null); if (y) await y.click(); } await pg.waitForFunction(() => document.querySelector('.c3'), null, { timeout: 60000 }); T.joinToHome = Date.now() - t0;   /* 처음 화면 = 카드 셋(.c3) */
   await pg.goto(BASE + '#/prep/3-1-1'); await pg.waitForSelector('#s', { timeout: 60000 }); await pg.click('#s');
   const lat = [];
   for (let n = 0; n < 15; n++) {
     if (!(await pg.$('.qcard'))) break;
-    const conf = await pg.$('[data-cf="1"]'); if (conf) await conf.tap();
-    const before = await pg.evaluate(() => document.querySelector('#q') && document.querySelector('#q').innerText);
+    const before = await pg.evaluate(() => document.querySelector('.qcard') && document.querySelector('.qcard').innerText);
     const s0 = Date.now();
     await pg.tap('#idk');
-    await pg.waitForFunction((b) => { const q = document.querySelector('#q'); return !q || q.innerText !== b; }, before, { timeout: 30000 }).catch(() => {});
+    await pg.waitForFunction((b) => { const q = document.querySelector('.qcard'); return !q || q.innerText !== b; }, before, { timeout: 30000 }).catch(() => {});
     lat.push(Date.now() - s0);
   }
   T.prepAnswerMs = { n: lat.length, med: lat.slice().sort((a, b) => a - b)[Math.floor(lat.length / 2)], max: Math.max(...lat) };
-  t0 = Date.now(); await pg.goto(BASE + '#/me'); await pg.waitForFunction(() => document.querySelector('.todo') || document.querySelector('#view h2'), null, { timeout: 60000 }); T.homeAgain = Date.now() - t0;
-  t0 = Date.now(); await pg.goto(BASE + '#/stages'); await w(300); await pg.waitForFunction(() => document.getElementById('view').innerText.length > 50, null, { timeout: 60000 }); T.stages = Date.now() - t0;
+  t0 = Date.now(); await pg.goto(BASE + '#/me'); await pg.waitForFunction(() => document.querySelector('.c3') || document.querySelector('#view h2'), null, { timeout: 60000 }); T.homeAgain = Date.now() - t0;
+  t0 = Date.now(); await pg.goto(BASE + '#/run'); await w(300); await pg.waitForFunction(() => document.getElementById('view').innerText.length > 50, null, { timeout: 60000 }); T.run = Date.now() - t0;
   t0 = Date.now(); await pg.goto(BASE + '#/story'); await pg.waitForFunction(() => document.getElementById('view').innerText.length > 50, null, { timeout: 60000 }); T.story = Date.now() - t0;
-  await pg.goto(BASE + `#/t/c/${C}`); t0 = Date.now(); await pg.waitForSelector('.ctab', { timeout: 60000 }).catch(() => {}); T.classView2 = Date.now() - t0;
+  await pg.goto(BASE + `#/t/c/${C}`); t0 = Date.now(); await pg.waitForSelector('.hub-h', { timeout: 60000 }).catch(() => {}); T.classView2 = Date.now() - t0;
   const fonts = await pg.evaluate(() => { const xs = [...document.querySelectorAll('#view *')].filter((e) => e.childElementCount === 0 && e.innerText && e.innerText.trim()).map((e) => parseFloat(getComputedStyle(e).fontSize)); return { min: Math.min(...xs), small: xs.filter((v) => v < 13).length, n: xs.length }; });
   console.log(JSON.stringify({ C, T, fonts, errs }, null, 1));
   await b.close();
