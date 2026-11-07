@@ -61,6 +61,7 @@ export function runView(root) {
   const R = { done: {}, it: {} }, ms = {};
   let i = 0;
   KS.setNow(me, { mode: 'run' });
+  const budget = { left: 2 };   /* 한 판에 '한 단계씩'은 두 번까지(매일 연습은 짧게 · 조사 R) */
   const one = () => {
     if (i >= sh.items.length) return fin();
     const it = sh.items[i];
@@ -71,7 +72,7 @@ export function runView(root) {
       ms[it.k] = t; i++;
       if (ok) return one();
       /* 틀리면 넘어가지 않고 떠올리기 → 한 단계씩 → 처음 문제 다시(hint.js · 판정 · 내일 다시는 첫 답으로) */
-      ladder(root, { it: itemOf(it.c, it.p), c: it.c, raws: a.idk ? null : a.raws, tag: '매일 연습', act: 'daily', dots: [i - 1, sh.items.length], onEnd: (r) => { if (r.how !== 'shown') KS.selfFix(me, K, r.how); one(); } });
+      ladder(root, { it: itemOf(it.c, it.p), c: it.c, raws: a.idk ? null : a.raws, tag: '매일 연습', act: 'daily', dots: [i - 1, sh.items.length], budget, onEnd: (r) => { if (r.how === 'recall' || r.how === 'steps') KS.selfFix(me, K, r.how); one(); } });
     } });
   };
   const fin = () => {

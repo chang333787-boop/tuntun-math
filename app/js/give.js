@@ -51,6 +51,7 @@ export function giveView(root, id) {
   if (!S || S.id !== id) S = { id, i: 0, R: { done: {}, it: {} }, ms: {} };
   const keep = () => lsSet(SK, S);
   KS.setNow(me, { mode: 'give' });
+  const budget = { left: 3 };   /* 한 판에 '한 단계씩'은 세 번까지(조사 R · docs/hint_ladder.md) */
   const one = () => {
     if (S.i >= sh.items.length) return fin();
     const it = sh.items[S.i];
@@ -61,7 +62,7 @@ export function giveView(root, id) {
       S.ms[it.k] = Math.max(0, Math.round(t || 0)); S.i++; keep();
       if (ok) return one();
       /* 틀리면 넘어가지 않고 떠올리기 → 한 단계씩 → 처음 문제 다시(hint.js · 기록은 첫 답 그대로) */
-      ladder(root, { it: itemOf(it.c, it.p), c: it.c, raws: a.idk ? null : a.raws, tag: '선생님이 준 문제', act: 'give', dots: [S.i - 1, sh.items.length], onEnd: (r) => { if (r.how !== 'shown') KS.selfFix(me, K, r.how); one(); } });
+      ladder(root, { it: itemOf(it.c, it.p), c: it.c, raws: a.idk ? null : a.raws, tag: '선생님이 준 문제', act: 'give', dots: [S.i - 1, sh.items.length], budget, onEnd: (r) => { if (r.how === 'recall' || r.how === 'steps') KS.selfFix(me, K, r.how); one(); } });
     } });
   };
   const fin = () => {

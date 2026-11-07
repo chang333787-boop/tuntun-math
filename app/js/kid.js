@@ -20,7 +20,7 @@ import { lineOf, weekTerm, weekPlan, doneThisWeek } from './weekcore.js';
 import { makeItem as mkItem } from '../../engine/lessons/index.js';
 import { icon, tile, ACT } from './icons.js';
 import { giveTasks } from './give.js';
-import { ladder, stepCtx, colFor } from './hint.js';
+import { ladder, stepCtx, colFor, planHTML, planNames } from './hint.js';
 import { checkTasks } from './check.js';
 
 export const go = (h) => { location.hash = h; };
@@ -288,7 +288,8 @@ export function fixView(root, c) {
       const mid = v ? v.html : F.si ? `<ol class="steps eq">${F.steps.slice(0, F.si).map((x, i) => stepHTML(x, { cls: i === F.si - 1 ? 'now' : '', why: false })).join('')}</ol>` : '';
       const talk = st ? `<p>${esc(st.why).replace(/(\d) ([+−×÷=]) (?=\d)/g, '$1\u00a0$2\u00a0')}</p>${v ? `<p class="fxe">${staticHTML(st.prompt, st.sol)}${v.lead0 ? '<span class="small">맨 앞자리의 0은 쓰지 않아요.</span>' : ''}${done ? `<span class="fxa">${ansSay(F.ex, '그래서 답은')}</span>` : ''}</p>` : fin}`
         : `<p>튼튼이가 먼저 풀어 볼게요. ${C ? '일의 자리부터 한 자리씩 계산해요.' : '한 단계씩 풀면서 생각을 말할게요.'}</p>`;
-      stage({ top: staticHTML(F.ex.prompt, done ? F.ex.sol : null), mid, side: md, talk, act: nextAct(done ? '이제 같이 풀어요' : F.si ? '다음 단계' : '첫 단계 보기') });
+      const plan = planHTML(F.steps, planNames(F.ex.c || c, F.ex.p, F.steps), done ? F.steps.length : F.si - 1);   /* 풀이 순서 — 처음부터 전체 순서를 보여 주고 지금 단계를 짚음(교사 11-07 '단계적으로 하나씩') */
+      stage({ top: staticHTML(F.ex.prompt, done ? F.ex.sol : null), mid, side: `${md}${plan}`, talk, act: nextAct(done ? '이제 같이 풀어요' : F.si ? '다음 단계' : '첫 단계 보기') });
       return;
     }
     const nb = F.ex.choices ? 0 : blankCount(F.ex.prompt);
@@ -303,11 +304,11 @@ export function fixView(root, c) {
     if (F.assist) return assist();
     const st = F.curSteps[F.si];
     if (!st) {   // 단계 다 함 → 원래 문제
-      draw(slot(), { lead: head('think', '단계를 다 했어요. 이제 처음 문제의 답을 써요.'), prompt: F.cur.prompt, choices: F.cur.choices, conf: false, idk: false, extra: stepCtx(F.cur, F.curSteps, F.curSteps.length, { C: colFor(F.cur, F.curSteps), head: false }), onAnswer: (a) => { const it0 = F.cur; const r = answerItem(F, a.vals, a.raws); feedback({ ...r, it0, how: 'steps' }, route); } });
+      draw(slot(), { lead: head('think', '단계를 다 했어요. 이제 처음 문제의 답을 써요.') + planHTML(F.curSteps, planNames(F.cur.c || c, F.cur.p, F.curSteps), F.curSteps.length), prompt: F.cur.prompt, choices: F.cur.choices, conf: false, idk: false, extra: stepCtx(F.cur, F.curSteps, F.curSteps.length, { C: colFor(F.cur, F.curSteps), head: false, fresh: F.curSteps.length - 1 }), onAnswer: (a) => { const it0 = F.cur; const r = answerItem(F, a.vals, a.raws); feedback({ ...r, it0, how: 'steps' }, route); } });
       return;
     }
     /* 왼쪽 위 = 같이 풀 문제 · 세로셈 · 채운 단계(도움 사다리와 같은 모양 hint.js stepCtx) · 오른쪽 튼튼이 말 = 몇 단계 · 할 일 */
-    draw(slot(), { lead: head('point', `<span class="hl-k">${F.si + 1} / ${F.curSteps.length}단계</span> 이번엔 같이 풀어요. <b>${esc(st.why)}</b>`), extra: stepCtx(F.cur, F.curSteps, F.si, { C: colFor(F.cur, F.curSteps), label: '같이 풀 문제' }), prompt: st.prompt, conf: false, idk: false, onAnswer: (a) => { const r = togetherStep(F, a.vals); if (r.ok) together(); else feedback({ ok: false, msg: `${ansSay({ sol: r.sol }, '이 단계의 답은')} ${esc(r.why)}` }, together); } });
+    draw(slot(), { lead: head('point', `<span class="hl-k">${F.si + 1}단계</span> 이번엔 같이 풀어요. <b>${esc(st.why)}</b>`) + planHTML(F.curSteps, planNames(F.cur.c || c, F.cur.p, F.curSteps), F.si), extra: stepCtx(F.cur, F.curSteps, F.si, { C: colFor(F.cur, F.curSteps), label: '같이 풀 문제', fresh: F.si - 1 }), prompt: st.prompt, conf: false, idk: false, onAnswer: (a) => { const r = togetherStep(F, a.vals); if (r.ok) together(); else feedback({ ok: false, msg: `${ansSay({ sol: r.sol }, '이 단계의 답은')} ${esc(r.why)}` }, together); } });
   }
   function assist() {
     const A = F.assist;
@@ -323,7 +324,7 @@ export function fixView(root, c) {
   // 혼자에서 틀린 뒤 — 세 번 내리 틀림이면 같이 한 번 더 / 선생님과 · 아니면 다음에 할 한 가지: 검산 도구(답 보기 전에) → 같은 숫자로 나눠 보기 → 방법 한 줄
   function soloBack(r, it0, a) {
     /* 틀리면(세 번 내리 · 선생님과가 아니면) 도움 사다리 — 떠올리기 → 한 단계씩 → 처음 문제 다시(hint.js · 교사 11-07) · 혼자 풀기 맞힌 수는 첫 답 그대로 */
-    if (!r.ok && !r.back && !r.help) return ladder(slot(), { it: mkItem(it0.c || c, it0.p), c: it0.c || c, raws: a.raws, tag: '혼자 풀기', act: 'fix', onEnd: (x) => { if (x.how !== 'shown') KS.selfFix(me, K, x.how); if (F.reStep) afterReStep(F); route(); } });
+    if (!r.ok && !r.back && !r.help) return ladder(slot(), { it: mkItem(it0.c || c, it0.p), c: it0.c || c, raws: a.raws, tag: '혼자 풀기', act: 'fix', onEnd: (x) => { if (x.how === 'recall' || x.how === 'steps') KS.selfFix(me, K, x.how); if (F.reStep) afterReStep(F); route(); } });
     const box = fbBox(r.ok);
     let selfFixed = false;
     if (r.ok) box.innerHTML = '맞았어요! 혼자서 풀었어요.';
