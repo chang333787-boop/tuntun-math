@@ -42,7 +42,7 @@ export function skillMinds(K, S, s) {
   const cs = new Set(s.parts.map((p) => p.c)), nos = Array.from({ length: K.n }, (_, i) => String(i + 1));
   return MIS.filter((m) => m.lessons.some((c) => cs.has(c))).map((m) => {
     const rep = [], once = [];
-    for (const no of nos) { const v = S && S[no] && S[no].st && S[no].st.mis ? S[no].st.mis[m.id] : null; if (v === 's') rep.push(no); else if (v === 'm') once.push(no); }
+    for (const no of nos) { const st = S && S[no] && S[no].st; if (st && skillState(st, s) === 'ok') continue; const v = st && st.mis ? st.mis[m.id] : null; if (v === 's') rep.push(no); else if (v === 'm') once.push(no); }   /* 이 기능이 '됨'인 아이는 빼고(다른 기능에서 보인 생각이 ○ 칸에 찍히던 것) */
     return { m, rep, once };
   }).filter((x) => x.rep.length || x.once.length).sort((a, b) => b.rep.length - a.rep.length || b.once.length - a.once.length);
 }
@@ -89,7 +89,7 @@ export function tableView(root, C) {
     const sx = (root.querySelector('.stab') || {}).scrollLeft || 0;
     const head = `<tr><th class="sk">기능</th>${nos.map((no) => `<th class="kn"><a href="#/t/c/${C}/k/${no}" title="${esc(nm(K, no))} 자세히">${no}${K.names && K.names[no] ? `<small>${esc(String(K.names[no]).slice(0, 3))}</small>` : ''}</a></th>`).join('')}<th class="lack">보충할 아이</th></tr>`;
     const row = (r) => { const md = S ? skillMinds(K, S, r.s).slice(0, 2) : [];
-      return `<tr><th class="sk"><b>${esc(r.s.name)}</b><small>${esc(glOf(r.s))}</small>${md.length ? `<span class="sk-m">${md.map((x) => `<a href="#/t/c/${C}/m/${x.m.id}" title="${esc(x.m.plain || x.m.title)}">틀린 생각: ${esc(x.m.title)} <b>${x.rep.length + x.once.length}명</b></a>`).join('')}</span>` : ''}</th>${r.cells.map((v, i) => { const [c, t] = SIGN[v], km = S ? kidMinds(S[nos[i]] && S[nos[i]].st, r.s) : [], lab = `${nm(K, nos[i])} ${r.s.name} ${{ root: '부족(먼저 배울 곳)', bad: '부족', shaky: '가끔 틀림', ok: '됨', '': '아직 안 풂' }[v]}${km.length ? ` · 생각: ${km.map((m) => m.title).join(', ')}` : ''}`; return `<td class="${c}${km.length ? ' has-m' : ''}"><a href="#/t/c/${C}/k/${nos[i]}" title="${esc(lab)}" aria-label="${esc(lab)}">${t}</a></td>`; }).join('')}
+      return `<tr><th class="sk"><b>${esc(r.s.name)}</b><small>${esc(glOf(r.s))}</small>${md.length ? `<span class="sk-m">${md.map((x) => `<a href="#/t/c/${C}/m/${x.m.id}" title="${esc(x.m.plain || x.m.title)}">틀린 생각: ${esc(x.m.title)} <b>${x.rep.length + x.once.length}명</b></a>`).join('')}</span>` : ''}</th>${r.cells.map((v, i) => { const [c, t] = SIGN[v], km = S && v !== 'ok' ? kidMinds(S[nos[i]] && S[nos[i]].st, r.s) : [], lab = `${nm(K, nos[i])} ${r.s.name} ${{ root: '부족(먼저 배울 곳)', bad: '부족', shaky: '가끔 틀림', ok: '됨', '': '아직 안 풂' }[v]}${km.length ? ` · 생각: ${km.map((m) => m.title).join(', ')}` : ''}`; return `<td class="${c}${km.length ? ' has-m' : ''}"><a href="#/t/c/${C}/k/${nos[i]}" title="${esc(lab)}" aria-label="${esc(lab)}">${t}</a></td>`; }).join('')}
       <td class="lack"><div class="lk">${r.lack.length ? `<span>${r.lack.map((no) => esc(no)).join(' · ')}번</span><a class="btn teal mini" href="#/t/c/${C}/give?sk=${r.s.id}&who=${r.first.join(',')}">${icon('send', 16)}보충 주기</a>` : r.shaky.length ? `<span class="muted">가끔 틀림 ${r.shaky.length}명</span><a class="btn mini" href="#/t/c/${C}/give?sk=${r.s.id}&who=${r.shaky.join(',')}">보충 주기</a>` : ''}</div></td></tr>`; };
     root.innerHTML = `<div class="card tview">
       <div class="tv-h"><h2>반 표 <small>${esc(C)} · ${K.n}명 · 기능 × 아이</small></h2><a class="btn" href="#/t/c/${C}">반 화면으로</a></div>
