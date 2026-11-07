@@ -1,15 +1,17 @@
 // 틀렸을 때 도움(engine/hints) 검사 — 차시마다 떠올리기 말(cue)이 있나 · 답을 말하지 않나 · 단계가 있나(차시 정의 또는 hints)
 //  node tests/hints.test.mjs        덮은 정도만 알림(통과)
-//  STRICT=1 node tests/hints.test.mjs  모든 차시에 cue가 있어야 · 단계 없는 차시는 까닭(HINTS[c].noSteps)이 있어야
+//  STRICT=1 node tests/hints.test.mjs  모든 차시에 cue가 있어야 · 단계 없는 차시는 까닭(HINTS[c].noSteps)이 있어야 · STRANDS=N,A 처럼 영역만
 import { NODES, byId, makeItem, stepsOf } from '../engine/lessons/index.js';
 import { HINTS, cueOf } from '../engine/hints/index.js';
 import { rng } from '../engine/math.js';
 import { toText } from '../engine/tokens.js';
 
 const STRICT = !!process.env.STRICT;
+const ONLY = process.env.STRANDS ? new Set(process.env.STRANDS.split(',')) : null;   /* STRANDS=N,A 처럼 영역만 */
 let fail = 0, noCue = [], noStep = [], leak = [], bad = [];
 const nums = (t) => (String(t).match(/\d+(?:\.\d+)?/g) || []).map(Number);
-for (const n of NODES) {
+const LIST = NODES.filter((n) => !ONLY || ONLY.has(n.s || '?'));
+for (const n of LIST) {
   const r = rng(11);
   let cueN = 0, stepN = 0;
   for (let k = 0; k < 30; k++) {
@@ -31,7 +33,7 @@ for (const n of NODES) {
   if (!cueN) noCue.push(n.id);
   if (!stepN && !(HINTS[n.id] && HINTS[n.id].noSteps)) noStep.push(n.id);
 }
-const T = NODES.length;
+const T = LIST.length;
 console.log(`떠올리기 말: ${T - noCue.length}/${T} 차시 · 단계: ${T - noStep.length}/${T} 차시(까닭 있는 '단계 없음' 포함)`);
 if (leak.length) { console.log(`✗ 답을 말한 떠올리기 말 ${leak.length}개`); leak.slice(0, 12).forEach((x) => console.log('  ', x)); fail++; }
 if (bad.length) { console.log(`✗ 모양이 이상한 것 ${bad.length}개`); [...new Set(bad)].slice(0, 12).forEach((x) => console.log('  ', x)); fail++; }
