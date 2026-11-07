@@ -31,10 +31,10 @@ const UNIT = '2-2-2', GAP = '2-1-6:3';
     }, [C, GAP]);
     if (it === 'done') break;
     if (!it) { await pg.click('#idk'); await w(150); continue; }
-    await pg.click(`[data-cf="${it.knows ? 2 : 0}"]`);
-    if (it.ch) await pg.click(`[data-k="${it.knows ? it.sol[0] : (Number(it.sol[0]) + 1) % 2}"]`);
+    /* 11-07: 답을 쓰고(보기를 고르고) 자신감 단추로 냄 */
+    if (it.ch) { await pg.click(`[data-k="${it.knows ? it.sol[0] : (Number(it.sol[0]) + 1) % 2}"]`); await pg.click(`[data-cf="${it.knows ? 2 : 0}"]`); }
     else if (!it.knows) await pg.click('#idk');
-    else { const bl = await pg.$$('.qcard .blank'); for (let i = 0; i < bl.length; i++) await bl[i].fill(String(it.sol[i])); await pg.click('#ok'); }
+    else { const bl = await pg.$$('.qcard .blank'); for (let i = 0; i < bl.length; i++) await bl[i].fill(String(it.sol[i])); await pg.click('[data-cf="2"]'); }
     await w(150);
   }
   const end = (await pg.textContent('#view')).slice(0, 80);

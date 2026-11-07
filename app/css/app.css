@@ -153,7 +153,7 @@ button:focus-visible,.btn:focus-visible,a:focus-visible,summary:focus-visible,.b
 .conf button{flex:1 1 0;min-width:max-content;min-height:52px;padding:8px 12px;font-size:17px;border-radius:12px}
 .conf button.on{border-color:var(--teal);background:var(--teal-t);color:var(--ink);box-shadow:0 4px 0 var(--teal-l)}
 .conf button.on:active,.conf button.on.press{box-shadow:0 1px 0 var(--teal-l)}
-.conf button.pri{background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:0 4px 0 var(--pri-d)}
+.conf button.cfs{border-color:var(--teal);color:var(--teal-d);box-shadow:0 4px 0 var(--teal-l);font-weight:800}   /* 셋 다 같은 모양(하나만 주황이면 늘 그것만 누름 — 자신감 기록이 흐려짐) */
 .choices button.on{border-color:var(--teal);background:var(--teal-t);box-shadow:0 4px 0 var(--teal-l);outline:3px solid var(--teal);outline-offset:2px}
 /* 보기 — 잠김 = 납작한 회색(턱 없음) · 맞음 ✓ · 지운 보기 */
 .choices{display:flex;flex-wrap:wrap;gap:12px}

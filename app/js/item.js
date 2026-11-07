@@ -40,7 +40,7 @@ export function draw(root, { prompt, choices = null, tag = '', act = '', dots = 
       ${say && say.length ? `<div class="tsay">${say.map((x) => `<p>${esc(x)}</p>`).join('')}</div>` : ''}
       ${choices ? `<div class="choices">${choices.map((ch, k) => `<button type="button" data-k="${k}"${gone.has(k) ? ' class="gone" aria-label="튼튼이가 지운 보기"' : ''}><span class="math">${toHTML(ch, { static: true })}</span></button>`).join('')}</div>` : ''}
       <div class="qmsg" id="msg" role="alert"></div>
-      ${conf ? `<div class="conf"><p>${choices ? '보기를 골랐으면 — 얼마나 자신 있어요?' : '다 풀었으면 — 얼마나 자신 있어요?'}</p><div class="row">${CONF.map(([v, t]) => `<button type="button" class="${v === 2 ? 'pri' : ''}" data-cf="${v}">${t}</button>`).join('')}</div></div>` : ''}
+      ${conf ? `<div class="conf"><p>${choices ? '보기를 골랐으면 — 얼마나 자신 있어요?' : '다 풀었으면 — 얼마나 자신 있어요?'}</p><div class="row">${CONF.map(([v, t]) => `<button type="button" class="cfs" data-cf="${v}">${t}</button>`).join('')}</div></div>` : ''}
       <div class="qact">
         ${choices || conf ? '' : '<button class="pri big" id="ok">다 풀었어요</button>'}
         ${idk ? '<button id="idk">몰라서 넘어갈래요</button>' : ''}
