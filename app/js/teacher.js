@@ -566,7 +566,7 @@ export function storyCardView(root, C, type) {
   const story = (pr) => `<p class="qline">${toHTML(pr.s.story, { static: true })}</p>`;
   const ask = STORY_ASK[type] || [];
   const exBox = (pr, show) => (pr ? `${story(pr)}${show ? `<div class="sbf">${frame(pr)}</div><p class="small">식: ${staticHTML(calc(pr).prompt, calc(pr).sol)}</p>` : '<p class="note">아이들이 막대 틀을 그리고 모르는 칸에 <b class="q">?</b>를 넣은 뒤 식을 써요.</p>'}` : '');
-  root.innerHTML = `<div class="card tcard"><h2>이야기 다리 10분 카드 <small>${esc(T.kid)}</small></h2>
+  root.innerHTML = `<div class="card tcard"><h2>이야기 문제 10분 카드 <small>${esc(T.kid)}</small></h2>
     ${intro('이 유형에서 이해(무슨 이야기 · 막대 틀)가 끊기는 아이 2~3명을 모아 10분. 계산은 가볍게 두고 <b>이야기의 구조</b>만 봐요. 문제는 열 때마다 바뀌어요.', 'no-print')}
     <div class="acts no-print"><button class="pri" onclick="print()">인쇄</button><a class="btn" href="#/t/c/${C}">반 보기로</a></div>
     <dl class="lead"><dt>이 유형</dt><dd>${esc(T.say)}</dd><dt>오늘 목표</dt><dd>낱말 하나(모두 · 더 · 배 …)로 식을 고르지 않고, <b>막대 틀에 수와 <span class="q">?</span>를 놓아 보고</b> 식을 고르게 해요.</dd></dl>
@@ -576,7 +576,7 @@ export function storyCardView(root, C, type) {
     ${stepBox(3, '혼자 — 낱말에 속지 않기', 3, `${askP(ask[2] || '이 낱말이 있으면 꼭 그 셈일까?')}${exBox(ex[2], false)}${ex[2] ? `<p class="note">답: ${staticHTML(calc(ex[2]).prompt, calc(ex[2]).sol)}${ex[2].sc.inc ? ' — 낱말과 셈이 반대인 이야기예요.' : ''}</p>` : ''}`)}
     ${stepBox(4, '마무리', 1, askP('이 이야기에서 무엇을 보고 틀을 골랐나요? 한 줄로 말해 볼까?'))}
     </ol>
-    <p class="small muted foot">앱의 이야기 다리도 같은 걸음(무슨 이야기 → 막대 틀 → 식 → 답)이에요. 같은 유형을 두 번 이어 맞히면 앞 두 걸음을 건너뛰어요.</p></div>`;
+    <p class="small muted foot">앱의 이야기 문제도 같은 걸음(무슨 이야기 → 막대 틀 → 식 → 답)이에요. 같은 유형을 두 번 이어 맞히면 앞 두 걸음을 건너뛰어요.</p></div>`;
 }
 
 // ── 가정 안내문(인쇄용 · 반 하나에 한 장 · 아이 기록 X) ──
