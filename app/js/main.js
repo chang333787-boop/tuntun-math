@@ -29,7 +29,7 @@ addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse') return; 
 ['pointerup', 'pointercancel'].forEach((t) => addEventListener(t, unpress, { passive: true }));
 // 아이 머리띠 — 탭 없이 [처음 화면] 하나(처음 화면의 카드 셋이 길잡이 · 교사 11-07 '로그인하면 카드 셋으로')
 const tabs = document.getElementById('tabs');
-tabs.innerHTML = `<a href="#/me">${icon('cal', 20)}<span>처음 화면</span></a>`;
+tabs.innerHTML = `<a href="#/me">${icon('home', 20)}<span>처음 화면</span></a>`;
 const setTabs = (h) => { tabs.hidden = !h || /^#\/me$/.test(h); };
 let cleanup = null;
 // 같은 크롬북을 여럿이 쓸 때 — 아이 화면은 앱을 열 때 · 날짜가 바뀌었을 때 · 20분 넘게 손대지 않다가 누를 때 'n번 맞아요?'(혹평 17)
