@@ -1,4 +1,4 @@
-// 선생님이 준 문제(보충) — 선생님이 반 표 · 아이 자세히에서 고른 기능 하나 · n문제(docs/what.md ② 연습할 것)
+// 선생님이 준 문제(보충) — 선생님이 반 표 · 아이 자세히에서 고른 기능 하나 · n문제(docs/what.md ② 배울 것)
 //  과제 = in/<id> { kind: 'give', sk: 기능 id(engine/skills.js), n, seed, t } · 같은 씨앗 = 종이 맞춤 연습지와 같은 문제(paper/js/pick.js buildSheet)
 //  다 풀면 기록 kind 'gv' · 기록 id = 과제 id → 판정(반 표)에 들어감 · 요약 gv = [맞힘, 문제 수, 때](kidstore.summaryOf)
 //  틀리면 넘어가지 않고 도움 사다리(hint.js — 떠올리기 → 한 단계씩 → 처음 문제 다시) · 맞으면 바로 다음 · 도중에 나가도 이 기기에서 이어서
@@ -38,7 +38,7 @@ export function giveView(root, id) {
   const me = meOf(); if (!me) return go('#/join');
   const K = KS.load(me), task = (K.inbox || {})[id];
   if (!task || task.kind !== 'give' || !SKILL[task.sk]) return go('#/me');
-  const head = (body) => { root.innerHTML = `<div class="card msg act-fix"><p class="eyebrow">${tile('give', 22)}연습할 것 · 선생님이 준 문제</p>${body}</div>`; };
+  const head = (body) => { root.innerHTML = `<div class="card msg act-fix"><p class="eyebrow">${tile('give', 22)}배울 것 · 선생님이 준 문제</p>${body}</div>`; };
   const doneRec = K.recs[id];
   if (doneRec) {
     const ok = doneRec.s.it.filter((i) => doneRec.r.it[i[0]] && doneRec.r.it[i[0]].s === 'ok').length;

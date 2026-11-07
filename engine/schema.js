@@ -20,15 +20,15 @@ import { P } from './concepts/kit.js';
 export const TYPES = {
   change: { fam: 'as', kid: '더해지거나 덜어지는 이야기', short: '변화', say: '처음 수에서 무엇이 생기거나 없어져서 수가 바뀌어요.' },
   combine: { fam: 'as', kid: '여러 부분이 모여 전체가 되는 이야기', short: '부분과 전체', say: '몇 부분이 모여 전체가 돼요.' },
-  compare: { fam: 'as', kid: '두 수를 견주는 이야기', short: '비교', say: '두 수 가운데 어느 쪽이 얼마나 더 많은지 봐요.' },
+  compare: { fam: 'as', kid: '두 수를 비교하는 이야기', short: '비교', say: '두 수 가운데 어느 쪽이 얼마나 더 많은지 봐요.' },
   groups: { fam: 'md', kid: '같은 수씩 묶는 이야기', short: '같은 묶음', say: '같은 수씩 든 묶음이 여러 개 있어요.' },
   times: { fam: 'md', kid: '몇 배 이야기', short: '몇 배', say: '한 양이 다른 양의 몇 배인지 견줘요.' },
   share: { fam: 'md', kid: '똑같이 나누는 이야기', short: '똑같이 나누기', say: '전체를 똑같이 나누어 한 몫을 봐요.' },
   pack: { fam: 'md', kid: '몇씩 덜어 내는 이야기', short: '몇씩 덜어 내기', say: '전체에서 같은 수씩 덜어 내어 몇 번인지 봐요.' },
 };
 export const FAMILY = {
-  as: { kid: '생기거나 없어지거나, 합치거나 견주는 이야기', types: ['change', 'combine', 'compare'], ask: '수가 생기거나 없어졌나요? 부분이 모여 전체가 되나요? 두 양을 견주나요?' },
-  md: { kid: '같은 수씩 묶거나 나누는 이야기', types: ['groups', 'times', 'share', 'pack'], ask: '같은 수씩 든 묶음이 여럿인가요? 몇 배인가요? 똑같이 나누나요? 같은 수씩 덜어 내나요?' },
+  as: { kid: '늘어나요 · 줄어요 · 합쳐요 · 비교해요', eg: '사탕이 5개 있었는데 3개를 더 받았어요.', types: ['change', 'combine', 'compare'], ask: '수가 생기거나 없어졌나요? 부분이 모여 전체가 되나요? 두 양을 비교하나요?' },
+  md: { kid: '똑같이 묶어요 · 몇 배 · 똑같이 나눠요', eg: '한 봉지에 4개씩 3봉지가 있어요.', types: ['groups', 'times', 'share', 'pack'], ask: '같은 수씩 든 묶음이 여럿인가요? 몇 배인가요? 똑같이 나누나요? 같은 수씩 덜어 내나요?' },
 };
 // words.js kind → 유형(모든 kind를 덮음 — 시험이 확인)
 export const KIND_TYPE = { join: 'change', take: 'change', start: 'change', change: 'change', combine: 'combine', part: 'combine', add3: 'combine', diff: 'compare', more: 'compare', less: 'compare', groups: 'groups', rows: 'groups', rate: 'groups', times: 'times', of: 'times', share: 'share', pack: 'pack' };

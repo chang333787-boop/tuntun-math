@@ -164,10 +164,10 @@ function chooser(root, me, K) {
   const rep = KS.reportOf(K), seed = (Math.random() * 2 ** 31) >>> 0, S = lsGet(skey(me));
   const log = storyLog(K), fam = (f) => pickLessons(rep.L, f, seed + f.length);
   const known = familiarTypes(log).map((t) => TYPES[t].kid);
-  root.innerHTML = `<div class="card msg act-story"><p class="eyebrow">${tile('story', 22)}이야기 문제</p>${say('point', '문장제를 <b>걸음 넷</b>으로 나눠 풀어요.<br>무슨 이야기인지 → 막대 틀 → 식 → 답.', 104)}
+  root.innerHTML = `<div class="card msg act-story"><p class="eyebrow">${tile('story', 22)}이야기 문제</p>${say('point', '이야기 문제를 <b>네 단계</b>로 풀어요.<br>① 무슨 이야기인지 고르기 ② 막대 그림 채우기 ③ 식 쓰기 ④ 답 쓰기', 104)}
     ${fresh(S) ? `<div class="acts" style="margin-top:0;margin-bottom:18px"><a class="btn pri big" href="#/story/${encodeURIComponent(S.cs.join(','))}">이어서 하기 (${S.i + 1}번째 이야기부터)</a></div>` : ''}
-    <div class="grid2">${['as', 'md'].map((f) => `<a class="big-pick sb-fam" href="#/story/${encodeURIComponent(fam(f).cs.join(','))}">${tile('story', 28)}<b>${esc(FAMILY[f].kid)}</b><span>${FAMILY[f].types.map((t) => esc(TYPES[t].kid)).join(' · ')}</span></a>`).join('')}</div>
-    ${known.length ? `<p class="small">익숙해진 이야기 — <b>${known.map(esc).join(', ')}</b>: 묻는 자리가 같으면 바로 식부터 해요.</p>` : '<p class="small muted">한 판에 이야기 여섯 개 · 같은 이야기를 두 번 이어서 잘 읽으면 다음엔 걸음을 줄여요.</p>'}
+    <div class="grid2">${['as', 'md'].map((f) => `<a class="big-pick sb-fam" href="#/story/${encodeURIComponent(fam(f).cs.join(','))}">${tile('story', 28)}<b>${esc(FAMILY[f].kid)}</b><span>예: ${esc(FAMILY[f].eg)}</span><span class="btn pri sb-go">시작</span></a>`).join('')}</div>
+    ${known.length ? `<p class="small">익숙해진 이야기 — <b>${known.map(esc).join(', ')}</b>: 다음엔 바로 식부터 써요.</p>` : '<p class="small muted">한 번에 이야기 여섯 개예요. 잘 풀면 다음엔 단계가 줄어요.</p>'}
     <div class="acts"><a class="btn" href="#/me">처음 화면으로</a></div></div>`;
 }
 

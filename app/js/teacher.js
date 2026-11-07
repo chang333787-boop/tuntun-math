@@ -59,7 +59,7 @@ const whyOf = (m) => m.plain || `${WHY[m.why[0]] || ''} — ${easy(m.why[1])}`;
 export function teacherHome(root) {
   const T = tget(), list = Object.entries(T.classes);
   root.innerHTML = `<div class="card"><h2>선생님 처음 화면</h2>
-    ${say('hi', '반을 만들면 아이마다 <b>번호 카드</b>(반 코드 · 번호 · 핀)가 나와요.<br>아이 이름은 이 기기에만 두고 서버에 보내지 않아요.')}
+    ${say('hi', '반을 만들면 아이마다 <b>아이 카드</b>(반 코드 · 번호 · 핀)가 나와요.<br>아이 이름은 이 기기에만 두고 서버에 보내지 않아요.')}
     ${list.length ? `<table class="list"><tr><th>반 코드</th><th>학기</th><th>아이</th><th></th></tr>${list.map(([C, x]) => `<tr><td><b class="code">${esc(C)}</b></td><td>${esc(gl(x.g))}</td><td>${x.n}명</td><td style="text-align:right"><a class="btn teal" href="#/t/c/${C}">반 열기</a></td></tr>`).join('')}</table>` : '<p class="muted">이 기기에서 연 반이 아직 없어요. 처음이면 <b>새 반 만들기</b>부터 하세요.</p>'}
     <div class="acts"><a class="btn pri" href="#/t/new">새 반 만들기</a><a class="btn" href="#/t/open">다른 기기에서 만든 반 열기</a></div><div class="acts sub"><a class="btn" href="#/t/guide">한 장 안내(인쇄용)</a><a class="btn" href="#/t/letter">가정 안내문(인쇄용)</a><a class="btn" href="../paper/" target="_blank" rel="noopener" title="인쇄해서 푸는 진단 · 점검 — 채점 결과는 반 화면의 '종이 결과 가져오기'로">종이 점검(인쇄용)</a><a class="btn" href="#/t/sheet" title="기능 이름으로 골라 한 아이에게 그 칸만 연습시키는 종이">맞춤 연습지(인쇄용)</a></div></div>
     <div class="tgrid2"><div class="card"><h2>반 정보 백업</h2>
@@ -68,9 +68,9 @@ export function teacherHome(root) {
     <div class="card"><h2>이 앱이 하는 일</h2>
     <p>아이마다 빠진 앞 학년 셈을 <b>찾고</b>, 그 아이에게 <b>그것만 주고</b>, 아이는 <b>매일 조금씩</b> 풀어 메워요.</p>
     <ol class="easy"><li><b>① 점검</b> — 오늘 단원 점검(그 단원에 꼭 필요한 앞 칸만 · 12~24문제) · 종이와 같은 점검지(화면에서 12문제씩 이어 풀기) · 이번 주 점검(10문제). 결과는 바로 반 표에 들어가요.</li>
-    <li><b>② 반 표</b> — 줄은 기능(맞춤 연습지와 같은 이름), 칸은 아이 번호. ✕ 부족 · △ 흔들 · ○ 됨만 봐요.</li>
-    <li><b>③ 보충 주기</b> — 부족한 아이에게 그 기능 문제를 보내요. 아이 화면 '연습할 것'에 뜨고, 같은 문제를 종이로도 뽑을 수 있어요.</li>
-    <li>아이 화면도 카드 셋이에요 — <b>점검 · 연습할 것 · 매일 연습</b>. 틀리면 그 자리에서 튼튼이가 풀이를 보여 줘요</li></ol></div></div>`;
+    <li><b>② 반 표</b> — 가로줄 = 셈 기능(맞춤 연습지와 같은 이름) · 세로줄 = 아이 번호. ✕ 부족 · △ 가끔 틀림 · ○ 됨만 봐요.</li>
+    <li><b>③ 보충 주기</b> — 부족한 아이에게 그 기능 문제를 보내요. 아이 화면 '배울 것'에 뜨고, 같은 문제를 종이로도 뽑을 수 있어요.</li>
+    <li>아이 화면도 카드 셋이에요 — <b>점검 · 배울 것 · 매일 연습</b>. 틀리면 그 자리에서 튼튼이가 풀이를 보여 줘요</li></ol></div></div>`;
   const bk = root.querySelector('#bk');
   if (bk) bk.addEventListener('click', () => {
     const local = {}; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (/^tt\.(note|paper)\.[A-Z0-9]{6}(\.\d{1,3})?$/.test(k)) local[k] = lsGet(k, null); } } catch (e) { /* */ }   /* 이 기기에만 둔 것(지도 메모 글 · 종이 번호 맞춤)도 같이 */
@@ -97,18 +97,18 @@ export function guideView(root) {
     <div class="acts no-print"><button class="pri" onclick="print()">인쇄</button><a class="btn" href="#/t">처음으로</a></div>
     <h3>처음 한 번</h3><ol class="easy"><li><b>새 반 만들기</b> — 학기와 아이 수를 넣으면 반 코드와 번호마다 핀이 생겨요.</li><li><b>카드 인쇄</b> — 아이 카드는 잘라 나눠 주고, <b>선생님 열쇠 카드</b>는 따로 보관해요(다른 기기에서 반을 열 때 필요해요).</li><li><b>이름 적기</b>(골라서) — 이름은 이 기기에만 저장되고 서버엔 번호만 가요. 처음 화면에서 <b>백업</b>을 내려받아 두세요.</li></ol>
     <h3>반 화면 = 카드 셋</h3><ol class="easy"><li><b>① 점검 내기</b> — <b>오늘 단원 점검</b>: 오늘 배울 단원과 길이(12 · 18 · 24문제)를 골라 열면 아이들 처음 화면 1번 카드에 떠요(30초 안 · 새로고침 X). 막히면 반씩 좁혀 어디서부터인지 찾고, 못 찾은 아이는 다음 시간에 이어서 해요. <b>점검지</b>: 종이와 같은 문제를 아이 화면에서 12문제씩 풀어요. 같은 문제를 인쇄해 종이로 풀어도 돼요(결과는 '종이 결과 가져오기'). <b>이번 주 점검</b>: 주 1회 10문제가 저절로 떠요.</li>
-    <li><b>② 반 표</b> — 줄은 기능, 칸은 아이 번호예요. 줄 끝에 부족한 아이 번호와 <b>[보충 주기]</b>가 있어요. 칸을 누르면 그 아이 자세히.</li>
-    <li><b>③ 보충 주기</b> — 기능 · 아이 · 문제 수(5~20)를 골라 보내요. 아이 처음 화면 2번 '연습할 것'에 '선생님이 준 문제'로 떠요. 다 풀면 결과(맞힌 수)가 보낸 목록에 나와요. 같은 문제를 종이로도 뽑을 수 있어요.</li></ol>
+    <li><b>② 반 표</b> — 가로줄 = 셈 기능 · 세로줄 = 아이 번호예요. 줄 끝에 부족한 아이 번호와 <b>[보충 주기]</b>가 있어요. 칸을 누르면 그 아이 자세히.</li>
+    <li><b>③ 보충 주기</b> — 기능 · 아이 · 문제 수(5~20)를 골라 보내요. 아이 처음 화면 2번 '배울 것'에 '선생님이 준 문제'로 떠요. 다 풀면 결과(맞힌 수)가 보낸 목록에 나와요. 같은 문제를 종이로도 뽑을 수 있어요.</li></ol>
     <h3>반 표 읽기</h3><div class="legend2"><span><i class="c-root">✕</i>부족 — 여기서부터</span><span><i class="c-stuck">✕</i>부족</span><span><i class="c-shaky">△</i>흔들</span><span><i class="c-ok">○</i>됨</span><span><i class="c-none"></i>아직 안 봄</span></div>
     <ul class="easy"><li><b>먼저 봐 줄 아이</b> — 막힌 칸이 많거나, 배우고도 흔들리거나, 이번 주 점검 맞힌 수가 줄거나, '자신 있었는데 틀린' 문제가 많거나, 2초 안에 찍은 아이예요. 앱보다 선생님이 먼저 봐 주세요.</li>
     <li><b>더 보기</b>(반 화면 아래) — 같은 생각으로 틀린 아이끼리 · 같은 칸을 배울 아이끼리 묶음과 <b>10분 카드</b>(인쇄용 소집단 안내) · 이야기 문제가 어디서 끊기나 · 기록 내려받기.</li>
-    <li><b>아이 자세히</b> — 원인은 짐작이에요. <b>한 번 보임</b>은 한 문제에서만, <b>여러 번 보임</b>은 서로 다른 두 문제 이상에서 같은 틀린 방법이 나온 거예요. 아이 화면엔 원인 이름이 나오지 않아요.</li></ul>
+    <li><b>아이 자세히</b> — 틀린 생각은 짐작이에요. <b>한 번 보임</b>은 한 문제에서만, <b>여러 번 보임</b>은 서로 다른 두 문제 이상에서 같은 틀린 방법이 나온 거예요. 아이 화면엔 원인 이름이 나오지 않아요.</li></ul>
     <h3>첫 시범 15분 — 아이 2~3명으로 먼저(진짜 크롬북)</h3><ol class="easy"><li><b>5분 전</b> — 카드 2~3장 · 크롬북 2~3대 · <b>점검 내기</b>에서 점검지(사전) 또는 오늘 단원 점검을 열어 둬요.</li>
     <li><b>아이에게 할 말은 한마디만</b> — "카드 보고 들어가서 주황 단추만 따라가 봐. 막히면 손 들어." 미리 설명하지 않아야 처음 쓰는 모습 그대로 보여요.</li>
     <li><b>볼 것(체크)</b> — □ 혼자 들어갔나 □ 첫 문제까지 혼자 갔나 □ 답 내는 법(자신감 단추)을 바로 알았나 □ 틀렸을 때 '모르겠어요 — 한 단계씩'을 썼나 □ 받아올림 · 받아내림 문제에서 막대 · 낱개가 움직이는 그림이 끊기지 않았나 □ 지루해하거나 어려워한 곳 □ 손 든 곳(화면 맨 위 이름)</li>
     <li><b>끝나고 물을 것</b> — "어디가 헷갈렸어?" "제일 좋았던 것 · 싫었던 것 하나씩?"</li>
     <li>막힌 화면은 사진(아이 얼굴 X)으로 남겨 두면 바로 고칠 수 있어요.</li></ol>
-    <h3>알아 두기</h3><ul class="easy"><li>순위 · 친구 비교는 없어요. 아이가 보는 숫자는 '내 짐작이 맞은 정도' · 배워서 고친 것 · 이번 주 점검의 내 맞힌 수(지난번과 견줌)뿐이에요.</li><li>배워서 고친 칸은 1 · 3 · 7일 뒤 매일 연습에 섞여 다시 나와요.</li><li><b>AI에게 물어보기</b>(아이 자세히 맨 아래) — 번호만 들어간 근거 글을 복사해 Claude에 붙여 넣으면 막힌 까닭 후보 · 발문 · 확인 문항을 받아요. AI 답은 짐작이라 선생님이 확인한 뒤에만 써요.</li><li>효과는 앱 안 기록보다 다음 단원 형성평가로 보세요. 연구에 따르면 이런 지도의 효과는 0.2~0.4 표준편차 안팎이에요.</li></ul></div>`;
+    <h3>알아 두기</h3><ul class="easy"><li>순위 · 친구 비교는 없어요. 아이가 보는 숫자는 '자신 있어요' 하고 맞힌 문제 · 배워서 고친 것 · 이번 주 점검의 내 맞힌 수(지난번과 비교)뿐이에요.</li><li>배워서 고친 칸은 1 · 3 · 7일 뒤 매일 연습에 섞여 다시 나와요.</li><li><b>AI에게 물어보기</b>(아이 자세히 맨 아래) — 번호만 들어간 근거 글을 복사해 Claude에 붙여 넣으면 막힌 까닭 후보 · 발문 · 확인 문항을 받아요. AI 답은 짐작이라 선생님이 확인한 뒤에만 써요.</li><li>효과는 앱 안 기록보다 다음 단원 형성평가로 보세요. 큰 변화는 한두 주가 아니라 한 학기에 걸쳐 나타나요.</li></ul></div>`;
 }
 
 export function newClassView(root) {
@@ -251,17 +251,16 @@ export function classView(root, C) {
     const card3 = (k, no, t, what, body, href, btn, ic) => `<section class="c3 t3 act-${k}"><div class="c3-h"><span class="c3-no">${no}</span><span class="ico act-${k}">${icon(ic, 30)}</span><h2>${t}</h2></div><p class="c3-what">${what}</p><div class="c3-body">${body}</div><a class="btn big c3-go" href="${href}">${btn}</a></section>`;
     const gvSent = rows.reduce((a, no) => a + Object.keys((S[no] && S[no].st && S[no].st.gv) || {}).length, 0);
     root.innerHTML = `<div class="card hub-h no-print"><h2>${esc(C)} <small>${esc(gl(K.g))} · ${K.n}명 · 기록 있는 아이 ${seen}명</small></h2>
-      ${intro('반에서 하는 일은 셋이에요. <b>① 점검</b>으로 아이들이 어디까지 아는지 보고, <b>② 반 표</b>에서 누가 무엇이 부족한지 보고, <b>③ 보충 주기</b>로 그 아이에게 그 문제를 보내요.')}
-      ${!seen ? `<div class="first-day"><b>처음이세요? 이 차례로 시작해요</b><ol>
+            ${!seen ? `<div class="first-day"><b>처음이세요? 이 차례로 시작해요</b><ol>
         <li><a href="#/t/c/${C}/cards">아이 카드 인쇄</a> — 잘라서 나눠 주고, 아이들은 카드의 QR을 크롬북 카메라로 비추거나 반 코드 · 번호 · 핀을 써서 들어와요.</li>
         <li><a href="#/t/c/${C}/check">점검 내기</a> — 처음엔 <b>점검지(사전 점검)</b>를 권해요. 우리 반이 어디까지 아는지 한 번에 보여요. 아이 처음 화면 '점검' 카드에 떠요.</li>
         <li>아이들이 풀면 <b>반 표</b>가 채워져요 — 부족한 아이에게 줄 끝 <b>보충 주기</b>를 눌러요.</li></ol></div>` : ''}
-      <div class="acts sub"><button id="re" class="btn">새로 보기</button><a class="btn" href="#/t/c/${C}/cards">아이 카드 인쇄</a><a class="btn" href="#/t/c/${C}/names">이름 적기</a><a class="btn" href="#/t/guide">한 장 안내</a></div>
+      <div class="acts sub"><button id="re" class="btn">새로고침</button><a class="btn" href="#/t/c/${C}/cards">아이 카드 인쇄</a><a class="btn" href="#/t/c/${C}/names">이름 적기</a><a class="btn" href="#/t/guide">한 장 안내</a></div>
       <p class="small muted local-note">아이 이름 · 선생님 열쇠는 <b>이 기기에만</b> 있어요(서버엔 번호만). 기기를 바꾸거나 기록을 지우기 전에 <a href="#/t">처음 화면</a>에서 <b>백업</b>을 내려받아요.</p>
       <p class="qmsg tight" id="msg"></p></div>
     <div class="cards3">
       ${card3('week', 1, '점검 내기', '아이들이 어디까지 아는지 알아봐요 — 오늘 단원 점검 · 종이와 같은 점검지 · 이번 주 점검', checkCard(C, K, data || {}) || (K.today ? `<p class="small">지금 열린 단원: <b>${esc(unitLabel(K.today.unit))}</b></p>` : '<p class="c3-none">아직 낸 점검이 없어요</p>'), `#/t/c/${C}/check`, '점검 내기', 'clip')}
-      ${card3('drill', 2, '반 표', '누가 무엇이 부족한지 한눈에 봐요 — 줄은 기능 · 칸은 아이', tableCard(C, K, data), `#/t/c/${C}/table`, '반 표 보기', 'table')}
+      ${card3('drill', 2, '반 표', '누가 무엇이 부족한지 한눈에 봐요 — 가로줄 = 셈 기능 · 세로줄 = 아이 번호', tableCard(C, K, data), `#/t/c/${C}/table`, '반 표 보기', 'table')}
       ${card3('fix', 3, '보충 주기', '부족한 아이에게 그 기능 문제를 보내요 — 아이 화면 또는 종이(같은 문제)', gvSent ? `<p class="small">아이들이 푼 보충 <b>${gvSent}개</b></p>` : '<p class="c3-none">아직 보낸 보충이 없어요</p>', `#/t/c/${C}/give`, '보충 주기', 'send')}
     </div>
     <div class="trow">${first.length ? `<div class="card first"><h2>먼저 봐 줄 아이 <small>${first.length}명</small></h2>${intro('앱이 혼자 고치기 어려워 보이는 아이예요. 수업 중에 먼저 들러 주세요. 이름을 누르면 자세히 봐요.')}<ul class="who">${first.map((x) => `<li><a href="#/t/c/${C}/k/${x.no}">${esc(nm(K, x.no))}</a><span class="whys">${x.why.map((w) => `<span class="pill">${esc(w)}</span>`).join('')}</span></li>`).join('')}</ul></div>` : ''}
@@ -369,14 +368,14 @@ export async function kidDetailView(root, C, no) {
       <div class="row">${Object.entries(NOTE_K).map(([k, t]) => `<label class="chip"><input type="radio" name="nk" value="${k}"> ${esc(t)}</label>`).join('')}</div>
       <div class="row"><input id="nx" maxlength="60" placeholder="덧붙일 말(이 기기에만 · 이름 X)" style="flex:1;min-width:200px"><button id="nadd">적기</button></div></div>`; })()}
     ${(() => { const x = st ? storyStep(st.story) : null; if (!x) return ''; const pc = (v) => `${Math.round(v * 100)}%`; return `<h3>이야기 문제(문장제)</h3><p>${x.n}문제 · 이해 ${pc(x.und)} · 바꾸기(식) ${pc(x.conv)} · 계산(답) ${pc(x.calc)}${x.weak ? ` — 먼저 <b>${esc(x.weak)}</b>` : ''}${x.types.length ? `<br><span class="small muted">헷갈리는 이야기: ${x.types.map(esc).join(', ')}</span>` : ''}</p>`; })()}
-    ${(() => { const L = st ? st.lad || [] : []; if (!L.length) return ''; return `<h3>틀린 뒤 스스로 고친 비율 <small>주마다</small></h3><table class="list lad"><tr><th>주</th><th>떠올려 고침</th><th>풀이 순서로 고침</th><th>답 봄</th><th>스스로</th></tr>${L.slice(-6).map((a) => { const p = ladPct(a); return `<tr><td>${esc(wkShort(a[0]))}</td><td>${a[1]}</td><td>${a[2]}</td><td>${a[3]}</td><td><b>${p == null ? '—' : `${p}%`}</b></td></tr>`; }).join('')}</table><p class="small muted">스스로 = 떠올려 고침 + 풀이 순서로 고침 ÷ 틀린 뒤 도움을 받은 문제 · 반 표 판정은 첫 답만 써요.</p>`; })()}
+    ${(() => { const L = st ? st.lad || [] : []; if (!L.length) return ''; return `<h3>틀린 뒤 스스로 고친 비율 <small>주마다</small></h3><table class="list lad"><tr><th>주</th><th>떠올려 고침</th><th>풀이 순서로 고침</th><th>답 봄</th><th>스스로</th></tr>${L.slice(-6).map((a) => { const p = ladPct(a); return `<tr><td>${esc(wkShort(a[0]))}</td><td>${a[1]}</td><td>${a[2]}</td><td>${a[3]}</td><td><b>${p == null ? '—' : `${p}%`}</b></td></tr>`; }).join('')}</table><p class="small muted">스스로 고친 비율 = (떠올려 고침 + 풀이 순서로 고침) ÷ 도움을 받은 문제 전체(답 봄까지) · 반 표 판정은 첫 답만 써요.</p>`; })()}
     <h3>배워서 고친 차시 · 다시 보기</h3><p>${Object.keys(st && st.fixed || {}).map((c) => `${esc(lessonName(c))}${rv[c] ? ` <span class="small muted">(다시 보기 ${rv[c].n}/3)</span>` : ''}`).join(', ') || '<span class="muted">아직 없어요.</span>'}</p>
     <details class="no-print ai"><summary><b>AI에게 물어보기</b> <span class="small muted">— 이 아이 근거를 Claude에 붙여 넣을 글로(번호만 · 이름 X)</span></summary>
       <p class="small">아래 글을 복사해 Claude(claude.ai)에 붙여 넣으면 막힌 까닭 후보 · 먼저 볼 칸 · 소집단 발문 · 가르는 확인 문항을 받아요. 붙여 넣기 전에 한 번 읽어 보세요. AI 답은 짐작이라, 아이나 가정에 전하기 전에 선생님이 확인해요.</p>
       <textarea id="aiq" rows="10" readonly style="width:100%;font-size:13px">${esc(promptOf(no, packetOf(rep, st, { unit: K.today && K.today.unit ? unitLabel(K.today.unit) : '', weeks: lastLine(weeksOf(KK.recs)), trend: { up: '올라감', down: '내려감', flat: '그대로' }[weekTrend(lastLine(weeksOf(KK.recs)))], story: st ? storyStep(st.story) : null, fixed: st ? st.fixed : {} }), String(K.g || '')[0] || ''))}</textarea>
       <div class="acts"><button id="aicp">복사</button><span class="small muted" id="aimsg"></span></div></details>
     </div></div>
-    <p class="small muted foot">원인은 짐작이에요. '한 번 보임'은 한 문제에서만, '여러 번 보임'은 서로 다른 두 문제 이상에서 같은 틀린 방법이 나온 거예요. 아이 화면엔 원인 이름이 나오지 않아요.</p></div>`;
+    <p class="small muted foot">틀린 생각은 짐작이에요. '한 번 보임'은 한 문제에서만, '여러 번 보임'은 서로 다른 두 문제 이상에서 같은 틀린 방법이 나온 거예요. 아이 화면엔 원인 이름이 나오지 않아요.</p></div>`;
   root.querySelector('#ksheet').addEventListener('click', () => kidSheet({ C, rep, st, cal, who: nm(K, no) }));
   const aicp = root.querySelector('#aicp');
   if (aicp) aicp.addEventListener('click', async () => { const ta = root.querySelector('#aiq'); let ok = false; try { await navigator.clipboard.writeText(ta.value); ok = true; } catch (e) { ta.select(); try { ok = document.execCommand('copy'); } catch (e2) { ok = false; } } root.querySelector('#aimsg').textContent = ok ? '복사했어요. Claude에 붙여 넣어요.' : '복사가 막혔어요. 글을 길게 눌러 직접 복사해요.'; });
@@ -621,7 +620,7 @@ export function homeLetterView(root) {
   root.innerHTML = `<div class="card tcard letter"><h2>가정 안내 — 튼튼 수 다리</h2>
     ${intro('인쇄해서 나눠 주세요. 아이 이름 · 기록은 들어가지 않아요. 문장은 선생님 말투로 고쳐 써도 좋아요.', 'no-print')}
     <div class="acts no-print"><button class="pri" onclick="print()">인쇄</button><a class="btn" href="#/t">처음으로</a></div>
-    <p>우리 반은 수학 시간에 <b>튼튼 수 다리</b>를 써요. 점검으로 아이에게 빠진 앞 학년 셈을 찾고, 그것만 배우고 연습해요. 화면은 카드 셋(점검 · 연습할 것 · 매일 연습)이에요. 집에서도 같은 카드로 들어갈 수 있어요.</p>
+    <p>우리 반은 수학 시간에 <b>튼튼 수 다리</b>를 써요. 점검으로 아이에게 빠진 앞 학년 셈을 찾고, 그것만 배우고 연습해요. 화면은 카드 셋(점검 · 배울 것 · 매일 연습)이에요. 집에서도 같은 카드로 들어갈 수 있어요.</p>
     <h3>들어가는 법</h3><ol class="easy"><li>주소: <b>${esc(url)}</b></li><li>아이 카드에 적힌 <b>반 코드 · 번호 · 핀</b>을 넣어요. 이름은 어디에도 저장하지 않아요.</li><li>학교에서 푼 것과 집에서 푼 것이 이어져요.</li></ol>
     <h3>집에서 이렇게 도와주세요</h3><ul class="easy">
       <li><b>하루 5분이면 충분해요.</b> 처음 화면의 '매일 연습'이나 주황 단추 하나만 해도 돼요. 길게 한 번보다 짧게 자주가 오래 남아요.</li>

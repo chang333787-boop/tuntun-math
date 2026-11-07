@@ -90,7 +90,7 @@ function prePost(K, S, list) {
   const pre = list.find(([, x]) => x.lab === 'pre'), post = pre ? list.find(([, x]) => x.lab === 'post' && Number(x.t) > Number(pre[1].t)) : null;
   if (!pre) return '';
   const head = `<section class="card ck-pp"><h2>사전 · 사후 비교 <small>시범 운영 기록</small></h2>`;
-  if (!post) return `${head}<p class="muted">사전 점검(${esc(day(Number(pre[1].t)))} · ${esc(gl(pre[1].from))} ~ ${esc(gl(pre[1].to))})을 냈어요. 몇 주 뒤 같은 범위로 <b>사후 점검</b>을 내면 여기에서 아이마다 전 → 후를 견줘요.</p></section>`;
+  if (!post) return `${head}<p class="muted">사전 점검(${esc(day(Number(pre[1].t)))} · ${esc(gl(pre[1].from))} ~ ${esc(gl(pre[1].to))})을 냈어요. 몇 주 뒤 같은 범위로 <b>사후 점검</b>을 내면 여기에서 아이마다 전 → 후를 비교해요.</p></section>`;
   if (!S) return `${head}<p class="muted">불러오는 중…</p></section>`;
   const [pid, px] = pre, [qid, qx] = post;
   const pc = (no, id) => { const st = S[no] && S[no].st, n = st && st.ck ? st.ck[id] || 0 : 0, o = st && st.cko ? st.cko[id] || 0 : 0; return n ? { o, n, p: Math.round((o / n) * 100) } : null; };
@@ -114,7 +114,7 @@ export function checkView(root, C) {
   const upto = GRADES.slice(0, Math.max(1, gradeIdx(K.g) + 1));
   const cntOf = (r) => { const sh = checkSheet('ckCOUNT', { kind: 'check', from: r.from, to: r.to, n: 1 }); return sh ? sh.items.length : 0; };
   let cnt = cntOf(range);
-  const cntLine = () => (cnt ? `<b>${cnt}문제</b> · 한 번에 ${CK.per}문제씩 ${times(Math.ceil(cnt / CK.per))}` : '범위를 다시 골라 주세요');
+  const cntLine = () => (cnt ? `<b>한 번에 ${Math.min(cnt, CK.per)}문제</b>${cnt > CK.per ? ` · ${times(Math.ceil(cnt / CK.per))}에 나눠 풀어요(모두 ${cnt}문제)` : ''}` : '범위를 다시 골라 주세요');   /* 한 번 분량을 먼저(11-05 '36개면 애들이 안 지치려나') */
   function render() {
     const keepY = window.scrollY;
     const opt = (sel) => upto.map((g) => `<option value="${g}"${g === sel ? ' selected' : ''}>${esc(gl(g))}</option>`).join('');
@@ -129,7 +129,7 @@ export function checkView(root, C) {
     ${list.length ? '' : '<p class="ck-first">처음이면 <b>② 점검지</b>를 <b>사전 점검</b>으로 하나만 내 보세요. 우리 반이 어디까지 아는지 한 번에 보여요. ①은 수업 시작 5~10분에, ③은 저절로 떠요.</p>'}
     <div class="ck-pick">
       <section class="card ck-c"><h3><span class="ck-no">1</span>오늘 단원 점검</h3>
-        <p class="intro">오늘 배울 단원에 꼭 필요한 앞 칸을 봐요. 아이마다 막힌 곳을 따라 아래 칸으로 내려가고, 남으면 다음 시간에 이어서 봐요.</p>
+        <p class="intro">오늘 배울 단원에 꼭 필요한 앞 학년 셈을 봐요. 틀리면 더 쉬운 앞 단계 문제로 이어지고, 남으면 다음 시간에 이어서 풀어요.</p>
         <label class="ck-f"><span>단원</span><select id="u" class="sel">${us.map((u) => `<option value="${u.id}"${u.id === unit ? ' selected' : ''}>${esc(gl(u.g))} · ${esc(u.nm)}</option>`).join('')}</select></label>
         <label class="ck-f"><span>한 번에 풀 문제</span><select id="len" class="sel">${LEN.map((v) => `<option value="${v}"${v === len ? ' selected' : ''}>${v}문제 · 약 ${MIN[v]}분${v === PREP.budget ? '(기본)' : ''}</option>`).join('')}</select></label>
         <div class="kid-pv"><span class="pv-k">아이 화면에 이렇게 떠요</span><div class="pv-card"><b>점검</b><span>오늘 단원 점검 — 선생님이 연 단원 · 약 ${MIN[len] || 8}분</span></div></div>

@@ -511,9 +511,10 @@ b.q{font-weight:800;border:1.5px dashed var(--ink);border-radius:4px;padding:0 4
 .sb-recap li{border-radius:14px;padding:10px 14px;background:var(--panel);display:flex;flex-direction:column;border-left:5px solid var(--line2)}.sb-recap li span{font-size:14px;color:var(--mute)}
 .sb-recap li.ok{border-left-color:var(--ok)}.sb-recap li.again{border-left-color:var(--stuck);border-left-style:dashed}.sb-recap li.skip{opacity:.65}
 .sb-recap li.ok b::before{content:'✓ ';color:var(--ok-ink)}
-.sb-fam span{font-size:15px}
+.sb-fam span{font-size:15px}.sb-fam>span.sb-go{margin-top:auto;font-size:17px;padding:8px 22px;pointer-events:none;color:#fff}   /* 카드 안 시작 표시(카드 전체가 눌림 · 11-07 '주황 단추가 어딨음') */
 .sb-say{float:right;margin:-4px -6px 6px 12px;padding:4px 14px;min-height:44px;font-size:15px;border-radius:999px;color:var(--teal);box-shadow:0 3px 0 var(--line2)}
 .sb-say:active{box-shadow:0 1px 0 var(--line2)}
+.hl .bub>.sb-say,.fxs-say .bub>.sb-say{align-self:flex-end;width:auto}   /* 말풍선이 세로 flex여도 오른쪽에 작게(넓게 늘면 입력 칸처럼 보임 · 11-07) */
 
 /* ── 선생님 ── */
 .intro{margin:0 0 14px;color:var(--mute);font-size:15px;line-height:1.65;max-width:76ch}.intro b{color:var(--ink);font-weight:700}

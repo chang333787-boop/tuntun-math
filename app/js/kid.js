@@ -22,6 +22,7 @@ import { icon, tile, ACT, art } from './icons.js';
 import { giveTasks } from './give.js';
 import { ladder, stepCtx, colFor, planHTML, planNames } from './hint.js';
 import { checkTasks } from './check.js';
+import { speakButton } from './speak.js';
 
 export const go = (h) => { location.hash = h; };
 const say = (pose, html, size = 72) => `<div class="say">${mascot(pose, size)}<div class="bub">${html}</div></div>`;
@@ -109,12 +110,12 @@ export function todoOf(K, rep) {
   if (lp && unitById[lp.unit] && (lp.why === 'budget' || lp.why === 'teacher') && today(lp.t) !== td && !out.some((x) => x.kind === 'prep'))   /* '이어서'는 날이 바뀐 뒤에만(방금 '다음 시간에'라고 해 놓고 바로 '지금 시작'이던 것 · 11-07 사용감 점검) */ out.push({ kind: 'prep', unit: lp.unit, pri: !out.length, title: '오늘 단원 점검 이어서', sub: `${unitLabel(lp.unit)} — 지난번에 멈춘 곳부터 · 약 ${mins((tasks.find((x) => x.unit === lp.unit) || {}).len)}분`, href: `#/prep/${lp.unit}` });
   return out;
 }
-// ── 처음 화면(홈) — 카드 셋: ① 점검 · ② 연습할 것 · ③ 매일 연습(docs/what.md · 교사 11-07 '로그인하면 카드 셋으로 뭘 할지 명확히') ──
+// ── 처음 화면(홈) — 카드 셋: ① 점검 · ② 배울 것 · ③ 매일 연습(docs/what.md · 교사 11-07 '로그인하면 카드 셋으로 뭘 할지 명확히') ──
 //  할 일 규칙은 todoOf 그대로 · 카드마다 '무엇을 하는 곳인지' 한 줄 · 지금 할 카드 하나만 주황 단추 · 탭 없음
 //  켜 둔 화면도 선생님이 단원 · 점검지 · 보충을 내면 바뀌게 — 보이는 동안 30초마다 받은 과제(in)만 가볍게 확인(서버 GET 하나 · 열린 연결 X · 혹평 18)
 const CARDS = [
   { k: 'chk', no: 1, t: '점검', what: '내가 어디까지 아는지 알아봐요', none: '지금 할 점검이 없어요' },
-  { k: 'prac', no: 2, t: '연습할 것', what: '모르는 것을 배우고 연습해요', none: '지금 연습할 것이 없어요' },
+  { k: 'prac', no: 2, t: '배울 것', what: '모르는 것을 배우고 연습해요', none: '지금 배울 것이 없어요' },
   { k: 'daily', no: 3, t: '매일 연습', what: '아는 것을 잊지 않게 날마다 조금씩 풀어요', none: '점검이나 연습을 하면 매일 연습할 문제가 생겨요' },
 ];
 function helpItem(t) {
@@ -142,7 +143,7 @@ export async function homeView(root) {
   const todo = todoOf(K, rep);
   const wp = doneThisWeek(K.recs) ? [] : weekPlan(K, rep);
   const ct = classTask(K);
-  // 카드 셋에 나눠 담기 — ① 점검(오늘 단원 점검 · 선생님 점검지 · 이번 주 점검) ② 연습할 것(선생님과 같이 · 선생님이 준 문제 · 배우기) ③ 매일 연습
+  // 카드 셋에 나눠 담기 — ① 점검(오늘 단원 점검 · 선생님 점검지 · 이번 주 점검) ② 배울 것(선생님과 같이 · 선생님이 준 문제 · 배우기) ③ 매일 연습
   const chk = [...todo.filter((x) => x.kind === 'prep'), ...checkTasks(K).map((x) => ({ ...x, kind: 'check' }))];
   if (wp.length >= 4 && Object.keys(K.recs || {}).length) chk.push({ kind: 'week', title: '이번 주 점검', sub: `섞은 문제 ${wp.length}개 · 3~5분 · 주마다 한 번`, href: '#/week' });
   const prac = [...todo.filter((x) => x.kind === 'help'), ...giveTasks(K), ...todo.filter((x) => x.kind === 'fix' || x.kind === 'retry')];
@@ -177,10 +178,10 @@ export async function homeView(root) {
         <div class="mine-c"><span class="k">이번 주 점검 맞힌 수</span><span class="v">${weekLine}</span></div>
         <div class="mine-c"><span class="k">튼튼이와 배워서 고친 것</span><span class="v">${fixedN}개</span>${fixedN ? `<details class="more"><summary>보기</summary><p class="small">${names(Object.keys(K.fixed))}</p></details>` : ''}</div>
         <div class="mine-c"><span class="k">이번 주 틀린 뒤 스스로 고친 문제</span><span class="v">${selfWk}개${selfLast != null ? ` <small>(지난주 ${selfLast}개)</small>` : ''}</span></div>
-        <div class="mine-c"><span class="k">내 자신감이 맞은 문제</span><span class="v">${cal.n ? `${Math.round(cal.match * cal.n)}문제 <small>(${cal.n}문제 중)</small>` : '<small>아직 없어요</small>'}</span></div>
+        <div class="mine-c"><span class="k">'자신 있어요' 하고 맞힌 문제</span><span class="v">${cal.n ? `${Math.round(cal.match * cal.n)}문제 <small>(${cal.n}문제 중)</small>` : '<small>아직 없어요</small>'}</span></div>
       </div>
       <p class="mine-links small"><a href="#/story">이야기 문제 풀기</a><a href="#/back">막힌 문제 직접 넣어 보기</a></p>
-      <p class="out-row small"><button class="link" id="out">다른 사람이 쓸게요(내 번호에서 나가기)</button></p></section>
+      <p class="out-row small"><button class="link" id="out">나가기(다른 친구가 이 크롬북을 쓸 때)</button></p></section>
   </div>`;
   root.querySelector('#out').addEventListener('click', () => { if (confirm('이 기기에서 나갈까요? 푼 기록은 서버에 남아 있어요.')) { lsDel('tt.me'); lsDel('tt.who'); WHO.ok = false; go('#/'); } });
   const known = K.inbox || {};   /* 같은 날 다시 열면 과제 id(prep<날짜>)가 같음 — 여는 시각(t)으로 견줌 */
@@ -287,7 +288,7 @@ export function fixView(root, c) {
   KS.setNow(me, { mode: 'fix', c });
   const head = (pose, t) => say(pose, t, 64);
   const PH = [['show', '튼튼이가 먼저'], ['together', '같이 풀기'], ['solo', '혼자 풀기'], ['check', '확인 3문제']];
-  const bar = () => { const k = PH.findIndex(([p]) => p === F.phase); return k < 0 ? '' : `<div class="fx-top"><p class="fx-t">${tile('fix', 20)}<b>배우기</b><span>${esc(plank(c).replace(/ = □ 같은 문제$/, ' 같은 문제'))}</span></p><ol class="sb-steps fx-steps" aria-label="배우기 걸음">${PH.map(([, t], i) => `<li class="${i === k ? 'now' : i < k ? 'done' : ''}"${i === k ? ' aria-current="step"' : ''}>${i < k ? '<i>✓</i>' : ''}${t}</li>`).join('')}</ol></div>`; };   /* 화면 이름 '배우기' + 무엇을 배우는지(예시의 '= □'는 뗌 — 바로 아래 문제와 두 문제로 읽힘 · 11-07) · 걸음 칩엔 숫자 없음(풀이 순서 번호와 겹치지 않게 · 11-07 처음 쓰는 아이) */
+  const bar = () => { const k = PH.findIndex(([p]) => p === F.phase); return k < 0 ? '' : `<div class="fx-top"><p class="fx-t">${tile('fix', 20)}<b>배우기</b></p><ol class="sb-steps fx-steps" aria-label="배우기 걸음">${PH.map(([, t], i) => `<li class="${i === k ? 'now' : i < k ? 'done' : ''}"${i === k ? ' aria-current="step"' : ''}>${i < k ? '<i>✓</i>' : ''}${t}</li>`).join('')}</ol></div>`; };   /* 화면 이름 '배우기'만(예시 문제를 붙이면 바로 아래 문제와 두 문제로 읽히고 '작은 수 · 큰 수'처럼 어긋나 보임 · 11-07 처음 보는 눈) · 걸음 칩엔 숫자 없음(풀이 순서 번호와 겹치지 않게 · 11-07 처음 쓰는 아이) */
   // 화면 틀(docs/ui.md 2차) — 걸음 칩은 위 · 왼쪽(시범 · 모형 · 단계 · 문제) · 오른쪽(튼튼이 말 · 할 일) · 좁으면 튼튼이 말이 맨 위
   //  shell(말, 왼쪽, 오른쪽 아래) → #b(.still — 왼쪽이 시범 · 비교처럼 위에서부터 읽는 것이라 오른쪽 판도 위로) · slot() → 문제 카드 자리(draw에 lead로 튼튼이 말을 넘김 · 오른쪽 판은 문제와 같은 높이 가운데)
   const shell = (top, main, side = '') => { root.innerHTML = `<div class="card fx">${bar()}<div id="b"><div class="qcard still"><div class="qgrid"><div class="qmain">${main}</div><div class="qside"><div class="qlead">${top}</div>${side}</div></div></div></div></div>`; return root.querySelector('#b'); };
@@ -299,24 +300,26 @@ export function fixView(root, c) {
   const stage = ({ top, mid = '', side = '', pose = 'point', talk, act }) => {
     const cls = ['fxs', mid ? '' : 'nomid', side ? '' : 'one'].filter(Boolean).join(' ');
     root.innerHTML = `<div class="card fx">${bar()}<div id="b"><div class="${cls}"><div class="fxs-q">${top}</div>${mid ? `<div class="fxs-mid">${mid}</div>` : ''}${side ? `<div class="fxs-side">${side}</div>` : ''}<div class="fxs-say">${say(pose, talk, 64)}${act}</div></div></div></div>`;
-    const b = root.querySelector('#b'); b.querySelector('#n').addEventListener('click', () => { showNext(F); route(); }); return b;
+    const b = root.querySelector('#b'); b.querySelector('#n').addEventListener('click', () => { showNext(F); route(); });
+    { const bub = b.querySelector('.fxs-say .bub'); if (bub) speakButton(bub); }   /* 튼튼이 말 읽어 주기(글 읽기가 느린 아이 · 도움 사다리와 같은 단추 · 11-07) */
+    return b;
   };
   function show() {
     const n = showLen(F), done = F.si >= n, has = F.steps.length > 0, md = tenFrameHTML(F.ex, { moved: has && F.si >= F.steps.length - 1, anim: has && F.si === F.steps.length - 1 }) || regroupHTML(F.ex, { pre: F.si === 0, anim: F.si === 1 });   /* 한 자리 10 만들기 · 10에서 빼기는 10칸 틀(둘째 단계에서 옮기는 모습 한 번) · 받아올림 · 받아내림은 첫 단계에서 묶음 바꾸기 한 번(docs/motion.md ① ②) */
     const fin = done ? `<p class="fxa">${picAns(F.ex) ? '그래서 답은 ✓ 표시한 보기예요.' : ansSay(F.ex, '그래서 답은')}</p>` : '';
+    const choices = F.ex.choices ? `<div class="choices static">${F.ex.choices.map((ch, k) => `<button type="button" disabled class="${done && String(k) === String(F.ex.sol[0]) ? 'right' : ''}">${staticHTML(ch, null)}</button>`).join('')}</div>` : '';   /* 고르기 문제는 단계가 있어도 보기를 보임(11-07 — '가장 큰 수를 고르세요'만 있고 고를 수가 없던 것) */
     if (has) {
       const C = colOf(F.ex, F.steps), st = F.si ? F.steps[F.si - 1] : null, v = C ? colView(C, F.si, F.si === 1 ? rgLag(F.ex) : null) : null;   /* 묶음 바꾸기와 같은 때에 빗금 · 위 숫자 */
       const mid = v ? v.html : F.si ? `<ol class="steps eq">${F.steps.slice(0, F.si).map((x, i) => stepHTML(x, { cls: i === F.si - 1 ? 'now' : '', why: false })).join('')}</ol>` : '';
       const talk = st ? `<p>${esc(st.why).replace(/(\d) ([+−×÷=]) (?=\d)/g, '$1\u00a0$2\u00a0')}</p>${v ? `<p class="fxe">${staticHTML(st.prompt, st.sol)}${v.lead0 ? '<span class="small">맨 앞자리의 0은 쓰지 않아요.</span>' : ''}${done ? `<span class="fxa">${ansSay(F.ex, '그래서 답은')}</span>` : ''}</p>` : fin}`
         : `<p>튼튼이가 먼저 풀어 볼게요. ${C ? '일의 자리부터 한 자리씩 계산해요.' : '한 단계씩 풀면서 생각을 말할게요.'}</p>`;
       const plan = planHTML(F.steps, planNames(F.ex.c || c, F.ex.p, F.steps), done ? F.steps.length : F.si - 1);   /* 풀이 순서 — 처음부터 전체 순서를 보여 주고 지금 단계를 짚음(교사 11-07 '단계적으로 하나씩') */
-      stage({ top: staticHTML(F.ex.prompt, done ? F.ex.sol : null), mid, side: `${md}${plan}`, talk, act: nextAct(done ? '이제 같이 풀어요' : F.si ? '다음 단계' : '첫 단계 보기') });
+      stage({ top: `${staticHTML(F.ex.prompt, done ? F.ex.sol : null)}${choices}`, mid, side: `${md}${plan}`, talk, act: nextAct(done ? '이제 같이 풀어요' : F.si ? '다음 단계' : '첫 단계 보기') });
       return;
     }
     const nb = F.ex.choices ? 0 : blankCount(F.ex.prompt);
     const vals = F.ex.choices ? null : F.ex.sol.map((x, i) => (i < F.si ? x : null));
     const say1 = F.si ? [...showTalk(F), ...(nb >= 2 ? Array.from({ length: F.si }, (_, i) => blankTalk(F.ex, i)).filter(Boolean) : [])] : [];
-    const choices = F.ex.choices ? `<div class="choices static">${F.ex.choices.map((ch, k) => `<button type="button" disabled class="${done && String(k) === String(F.ex.sol[0]) ? 'right' : ''}">${staticHTML(ch, null)}</button>`).join('')}</div>` : '';
     const talk = say1.length ? `${say1.map((x) => `<p>${esc(x)}</p>`).join('')}${fin}` : done ? fin : '<p>튼튼이가 먼저 풀어 볼게요. 생각을 말하면서 풀게요.</p>';
     stage({ top: `${staticHTML(F.ex.prompt, vals)}${choices}`, side: md, talk, act: nextAct(done ? '이제 같이 풀어요' : F.si ? '다음' : '튼튼이 생각 보기') });
   }
