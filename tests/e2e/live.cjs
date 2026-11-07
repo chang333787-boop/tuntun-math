@@ -100,6 +100,9 @@ const UNIT = '2-2-2', GAP = '2-1-6:3';
       const nx = await pg.$('.fb button.pri'); if (nx) { await nx.click(); await w(200); } }
     gdone = (await pg.textContent('#view')).replace(/\s+/g, ' ').trim().slice(0, 50);
   }
+  /* 보충 끝 '튼튼이와 배우기'처럼 %3A로 싼 주소도 배우기가 열림(11-07 버그) */
+  await pg.goto(BASE + '#/fix/1-2-6%3A4'); await w(1200); if (await pg.$('#y')) { await pg.click('#y'); await w(800); }
+  const fixEnc = !!(await pg.$('.card.fx'));
   await w(3000);
   await pg.goto(BASE + `#/t/c/${C}/give`); await w(4000);
   const gres = await pg.evaluate(() => { const li = document.querySelector('.sent li'); return li ? li.textContent.replace(/\s+/g, ' ').trim().slice(0, 80) : null; });
@@ -131,6 +134,6 @@ const UNIT = '2-2-2', GAP = '2-1-6:3';
   const scard = { title: (await pg.textContent('h2')).trim().slice(0, 30), frames: (await pg.$$('.sbf svg')).length };
   await pg.goto(BASE + '#/t/letter'); await w(800);
   const letter = (await pg.textContent('h2')).trim();
-  console.log(JSON.stringify({ C, opened, story, scard, letter, todo: todo.replace(/\s+/g, ' ').slice(0, 90), items: n, end: end.trim(), drill, back, weekTodo, week, head, cards, row1, strip, wkPanel, give: { gsent, gcard, gdone, gres, lad }, paper: { psel, pmsg, kid2, moved2, moved1 }, ai, errs }, null, 1));
+  console.log(JSON.stringify({ C, opened, story, scard, letter, todo: todo.replace(/\s+/g, ' ').slice(0, 90), items: n, end: end.trim(), drill, back, weekTodo, week, head, cards, row1, strip, wkPanel, give: { gsent, gcard, gdone, gres, lad, fixEnc }, paper: { psel, pmsg, kid2, moved2, moved1 }, ai, errs }, null, 1));
   await b.close();
 })().catch((e) => { console.error('ERR', e.message); process.exit(1); });
