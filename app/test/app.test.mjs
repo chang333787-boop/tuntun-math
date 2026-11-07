@@ -351,6 +351,7 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   sh.tr = [T.length, T.length];
   const K = { recs: { gvZZTRAP1: { s: KS9.pack(sh), r: R, cf: {}, ms: {} } }, fixed: {}, rv: {}, inbox: {}, mx: {}, lad: {} };
   const g = KS9.summaryOf(K).gv.gvZZTRAP1;
+  { const bk = KS9.summaryOf({ ...K, back: { c: '3-1-1:7', text: '306-158', root: '1-2-6:4', t: 1, solved: 0 } }).bk; ok(bk && bk.x === '306-158' && bk.r === '1-2-6:4' && !KS9.summaryOf(K).bk, `요약에 거꾸로 찾기(넣은 문제 · 찾은 곳) — ${JSON.stringify(bk)}`); }
   ok(Array.isArray(g) && g.length === 5 && g[3] === T.length && g[4] === T.length, `요약 gv에 함정 맞힘 · 수 — ${JSON.stringify(g)}`);
   const plain = GV.giveSheet('gvZZTRAP2', { ...task, want: undefined });
   ok(!plain.items.some((x) => x.tr) && !('tr' in KS9.pack(plain)), '함정을 안 섞은 보충은 tr 없음');
