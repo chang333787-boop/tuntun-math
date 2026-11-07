@@ -26,14 +26,16 @@ export function newFix({ c, id }) {
   return F;
 }
 // 단계가 둘 이상 나오는 숫자를 고름(쪼갤 게 없으면 그냥)
+//  시범은 보통 꼴로 — 답의 맨 앞자리가 0이 되거나(93 − 89 = 4) 자리가 하나 늘어나는(95 + 7 = 102) 덧셈 · 뺄셈은 배울 것이 둘이라 피함(11-07 처음 보는 눈)
+const odd = (it) => { const m = toText(it.prompt).match(/^(\d+) ([+−]) (\d+) = □$/); return !!m && String(it.sol[0]).length !== Math.max(m[1].length, m[3].length); };
 function example(F, r) {
   const used = new Set(F.used);
   let best = null;
   for (let k = 0; k < 20; k++) {
     const [it] = pickItems(F.c, 1, r, used); if (!it) break;
-    const st = stepsOf(it);
-    if (!best || st.length > best.st.length) best = { it, st };
-    if (st.length >= 2) break;
+    const st = stepsOf(it), sc = Math.min(st.length, 2) * 2 - (odd(it) ? 1 : 0);
+    if (!best || sc > best.sc) best = { it, st, sc };
+    if (sc >= 4) break;
   }
   const it = best ? best.it : itemOf(F.c, byId[F.c].gen(r));
   F.used.push(JSON.stringify([it.prompt, it.choices || null]));

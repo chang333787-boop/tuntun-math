@@ -83,7 +83,7 @@ export function regroupHTML(it, { pre = false, anim = false } = {}) {
   const R = rgOf(it); if (!R) return '';
   const { a, b } = R, y0 = 4, x0 = 70;
   const label = (t, y) => `<text x="0" y="${y + U * 5 + 6}" font-size="18" fill="${INK}" font-weight="700">${t}</text>`;
-  let svg = '', w = 0, h = 0, cap = '', aria = '';
+  let svg = '', w = 0, h = 0, cap = '', c0 = '', aria = '';
   if (R.op === '−') {
     const H = Math.floor(a / 100), t = Math.floor(a / 10) % 10, o = a % 10, ob = b % 10;
     const rs = x0 + flatsW(H), rx = rs + (t - 1) * (U + 3), xo = rs + t * (U + 3) + 4, xn = xo + (o ? 5 * SP + 8 : 0);
@@ -92,30 +92,45 @@ export function regroupHTML(it, { pre = false, anim = false } = {}) {
     for (let i = 0; i < o; i++) { const p = gp(xo, y0, i); svg += cube(p.x, p.y); }
     /* 옮겨 간 십 막대 자리(점선) + 낱개 쪽으로 가는 굽은 화살표 — 끝 모습에서 '어디서 왔나' */
     const ex = xn + 2 * SP, ey = y0 + U * 10 - 2 * SP - 8;
-    svg += `<g class="ghost"><rect x="${rx}" y="${y0}" width="${U}" height="${U * 10}" fill="none" stroke="${INK}" stroke-width="1.2" stroke-dasharray="4 3" opacity=".55"/></g><g class="arr"><path d="M${rx + U / 2} ${y0 - 1}Q${(rx + ex) / 2} ${y0 - 26} ${ex} ${ey - 6}" fill="none" stroke="${TEAL}" stroke-width="2"/><path d="M${ex} ${ey}l-5 -9h10z" fill="${TEAL}"/></g>`;   /* 화살표는 움직임이 끝난 뒤에(움직이는 동안 낱개를 가로지르지 않게) */
+    svg += `<g class="ghost"><rect x="${rx}" y="${y0}" width="${U}" height="${U * 10}" fill="none" stroke="${INK}" stroke-width="1.2" stroke-dasharray="4 3" opacity=".4"/></g><g class="arr"><path d="M${rx + U / 2} ${y0 - 1}Q${(rx + ex) / 2} ${y0 - 26} ${ex} ${ey - 6}" fill="none" stroke="${TEAL}" stroke-width="2"/><path d="M${ex} ${ey}l-5 -9h10z" fill="${TEAL}"/></g>`;   /* 화살표는 움직임이 끝난 뒤에(움직이는 동안 낱개를 가로지르지 않게) · 굽은 꼭대기가 y 0 위로 2px 나가서 그림 틀은 −6부터 */
     svg += `<g class="rod-mv" style="${px({ dx: xn - rx })}">${rod(rx, y0)}<rect class="hi" x="${rx - 3}" y="${y0 - 3}" width="${U + 6}" height="${U * 10 + 6}" rx="3" fill="none" stroke="${TEAL}" stroke-width="2.5"/></g>`;
     for (let k = 0; k < 10; k++) { const f = gp(xn, y0, k); svg += `<g class="c-new" style="${px({ sx: xn - f.x, sy: y0 + U * 10 - (k + 1) * U - f.y })};--k:${k}">${cubeT(f.x, f.y)}</g>`; }
-    w = xn + 5 * SP + 6; h = y0 + U * 10 + 6;
-    cap = pre ? (o ? `낱개 ${o}개에서 ${ob}개를 뺄 수 없어요.` : `낱개가 없어서 ${ob}개를 뺄 수 없어요.`) : `십 막대 1개를 낱개 10개로 바꿨어요. 이제 낱개 ${o + 10}개${t > 1 ? `, 십 막대 ${t - 1}개` : ''} — 수는 그대로 ${a}${P(String(a), '이에요', '예요')}.`;
+    /* 끝 모습: 원래 낱개와 새 낱개 10개를 한 묶음으로(세로셈 일의 자리 위 숫자와 같은 수) */
+    const yb = y0 + U * 10 + 6, bx1 = xo - 2, bx2 = xn + 5 * SP;
+    svg += `<g class="sum"><path d="M${bx1} ${yb}v5H${bx2}v-5" fill="none" stroke="${TEAL}" stroke-width="1.6"/><text x="${(bx1 + bx2) / 2}" y="${yb + 21}" font-size="15" fill="${TEAL}" font-weight="700" text-anchor="middle">낱개 ${o + 10}개</text></g>`;
+    w = xn + 5 * SP + 6; h = yb + 26;
+    c0 = o ? `낱개 ${o}개에서 ${ob}개를 뺄 수 없어요.` : `낱개가 없어서 ${ob}개를 뺄 수 없어요.`;
+    cap = pre ? c0 : `십 막대 1개를 낱개 10개로 바꿨어요. 이제 낱개 ${o + 10}개${t > 1 ? `, 십 막대 ${t - 1}개` : ''} — 수는 그대로 ${a}${P(String(a), '이에요', '예요')}.`;
     aria = pre ? `${a} 모형 — 십 막대 ${t}개, 낱개 ${o}개` : `${a} 모형 — 십 막대 1개를 낱개 10개로 바꿔 낱개 ${o + 10}개${t > 1 ? `, 십 막대 ${t - 1}개` : ''}`;
   } else {
     const ha = Math.floor(a / 100), ta = Math.floor(a / 10) % 10, oa = a % 10, hb = Math.floor(b / 100), tb = Math.floor(b / 10) % 10, ob = b % 10, s = oa + ob;
-    const yB = y0 + U * 10 + 14, rs = x0 + Math.max(flatsW(ha), flatsW(hb)), slot = rs + ta * (U + 3), xo = rs + Math.max(ta + 1, tb) * (U + 3) + 4, xg = xo + 5 * SP + 8;
+    const yB = y0 + U * 10 + 14, rs = x0 + Math.max(flatsW(ha), flatsW(hb)), xo = rs + Math.max(ta, tb) * (U + 3) + 4;
+    /* 모으면 칸(오른쪽 · 두 줄 사이 높이) — 두 수의 낱개가 모두 이리 와서 10개가 십 막대 1개로 바뀜(새 막대를 처음 수의 줄에 붙이면 그 줄이 다른 수로 읽힘 · 11-07 처음 보는 눈) */
+    const xz = xo + 5 * SP + 14, xzg = xz + 8, xr = xzg + 5 * SP + 6, yZ = (y0 + yB) / 2;
     svg += label(String(a), y0) + flats(ha, x0, y0) + label(`+ ${b}`, yB) + flats(hb, x0, yB);
     for (let i = 0; i < ta; i++) svg += rod(rs + i * (U + 3), y0);
     for (let i = 0; i < tb; i++) svg += rod(rs + i * (U + 3), yB);
-    svg += `<g class="ghost b">${Array.from({ length: ob }, (_, j) => { const p = gp(xo, yB, j); return `<rect x="${p.x}" y="${p.y}" width="${U}" height="${U}" fill="none" stroke="${INK}" stroke-dasharray="3 2" opacity=".5"/>`; }).join('')}</g>`;
-    /* 낱개 s개 — 아래 s − 10개(처음 수의 낱개)는 그대로 · 나머지 10개(위 줄 + 더하는 수의 낱개 전부)가 모여 십 막대 1개 */
-    const go = (gi, from) => { const f = gp(xo, y0, gi), m = gi - (s - 10); return `<g class="go" style="${px({ x0: from.x - f.x, y0: from.y - f.y, x2: xg - f.x, y2: y0 + U * 10 - (m + 1) * U - f.y })}">${cube(f.x, f.y)}<rect class="hi" x="${f.x - 2}" y="${f.y - 2}" width="${U + 4}" height="${U + 4}" fill="none" stroke="${TEAL}" stroke-width="2"/></g>`; };
-    for (let i = 0; i < oa; i++) { const p = gp(xo, y0, i); svg += i < s - 10 ? cube(p.x, p.y) : go(i, p); }
-    for (let j = 0; j < ob; j++) svg += go(oa + j, gp(xo, yB, j));
-    svg += `<g class="rod-new" style="${px({ dx: xg - slot })}">${rodT(slot, y0)}</g>`;
-    w = xg + U + 6; h = yB + U * 10 + 6;
-    cap = pre ? `${a}${P(String(a).slice(-1), '과', '와')} ${b}${P(String(b).slice(-1), '을', '를')} 모형으로 나타냈어요.` : (s > 10 ? `낱개끼리 모으면 ${s}개 — 그중 10개를 십 막대 1개로 바꿨어요. 이제 낱개 ${s - 10}개예요.` : '낱개끼리 모으면 10개 — 십 막대 1개로 바꿨어요. 남은 낱개는 없어요.');
+    svg += `<rect x="${xz}" y="${yZ - 26}" width="${xr + U + 8 - xz}" height="${U * 10 + 34}" rx="8" fill="#fff" fill-opacity=".55" stroke="#cdbfa8" stroke-width="1.2"/><text x="${xz + 8}" y="${yZ - 9}" font-size="14" fill="${INK}">모으면</text>`;
+    const was = (x, y) => `<rect x="${x}" y="${y}" width="${U}" height="${U}" fill="none" stroke="${INK}" stroke-dasharray="3 2" opacity=".45"/>`;
+    svg += `<g class="ghost b">${Array.from({ length: oa }, (_, i) => { const p = gp(xo, y0, i); return was(p.x, p.y); }).join('')}${Array.from({ length: ob }, (_, j) => { const p = gp(xo, yB, j); return was(p.x, p.y); }).join('')}</g>`;
+    /* 낱개 s개가 모두 모으면 칸으로 · 위 10개는 한 줄로 모여 십 막대 1개 · 아래 s − 10개는 그대로 남음 */
+    const one = (i, from) => {
+      const f = gp(xzg, yZ, i), m = i - (s - 10);
+      if (m < 0) return `<g class="mv" style="${px({ x0: from.x - f.x, y0: from.y - f.y })}">${cube(f.x, f.y)}</g>`;
+      return `<g class="go" style="${px({ x0: from.x - f.x, y0: from.y - f.y, x2: xr - f.x, y2: yZ + U * 10 - (m + 1) * U - f.y })}">${cube(f.x, f.y)}<rect class="hi" x="${f.x - 2}" y="${f.y - 2}" width="${U + 4}" height="${U + 4}" fill="none" stroke="${TEAL}" stroke-width="2"/></g>`;
+    };
+    for (let i = 0; i < oa; i++) svg += one(i, gp(xo, y0, i));
+    for (let j = 0; j < ob; j++) svg += one(oa + j, gp(xo, yB, j));
+    svg += `<g class="rod-new" style="--dx:0px">${rodT(xr, yZ)}</g>`;
+    w = xr + U + 12; h = yB + U * 10 + 6;
+    c0 = '낱개끼리 모아 볼게요.';
+    cap = pre ? `${a}${P(String(a).slice(-1), '과', '와')} ${b}${P(String(b).slice(-1), '을', '를')} 모형으로 나타냈어요.` : (s > 10 ? `낱개끼리 모으면 ${s}개 — 10개를 십 막대 1개로 바꿔 십의 자리로 올려요. 남은 낱개는 ${s - 10}개예요.` : '낱개끼리 모으면 10개 — 십 막대 1개로 바꿔 십의 자리로 올려요. 남은 낱개는 없어요.');
     aria = pre ? `${a}${P(String(a).slice(-1), '과', '와')} ${b} 모형` : `${a} 더하기 ${b} 모형 — 낱개 ${s}개 중 10개를 십 막대 1개로 바꿔 낱개 ${s - 10}개`;
   }
   const re = pre ? '' : '<button type="button" class="rg-re">다시 보기</button>';
-  return `<div class="model rg${pre ? ' pre' : ''}${anim && !pre ? ' anim' : ''}"><p>${esc(cap)}</p><svg viewBox="0 0 ${w} ${h}" style="--w:${Math.min(w, 640)}px" role="img" aria-label="${esc(aria)}">${svg}</svg>${re}</div>`;
+  /* 글도 그림과 같은 때에: 움직이는 동안은 바꾸기 전 글(c0) → 끝나면 바꾼 뒤 글 · 끝 모습 · 동작 줄이기면 뒤 글만(app.css .rg-cap) */
+  const capH = pre ? `<p>${esc(cap)}</p>` : `<p class="c0" aria-hidden="true">${esc(c0)}</p><p class="c1">${esc(cap)}</p>`;
+  return `<div class="model rg${pre ? ' pre' : ''}${anim && !pre ? ' anim' : ''}"><div class="rg-top"><div class="rg-cap">${capH}</div>${re}</div><svg viewBox="0 -6 ${w} ${h + 6}" style="--w:${Math.min(w, 640)}px" role="img" aria-label="${esc(aria)}">${svg}</svg></div>`;
 }
 /* [다시 보기] — 끝 모습에서 처음부터 한 번 더(꼬리표를 뗐다 붙여 CSS 움직임을 다시 시작) */
 if (typeof document !== 'undefined') document.addEventListener('click', (e) => {

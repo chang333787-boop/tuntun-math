@@ -110,7 +110,7 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
     draw(root, { ...base, prompt: s.prompt, choices: sit && sit.choices ? sit.choices : null,
       extra: (() => { const pv = pic(i, tries, fresh && !tries); return stepCtx(it, steps, i, { shown, C, pic: pv.html, fresh: fresh && !tries ? i - 1 : -1, lag: pv.anim && i === 1 ? rgLag(it) : null }); })(),
       okLabel: '이 단계 내기',
-      lead: head('step', `<span class="hl-k">${i + 1}단계</span><span class="hl-why">${esc(s.why)}</span>${tries === 1 ? '<span class="hl-re">아직 아니에요. 그림을 보고 한 번 더 해 봐요.</span>' : tries === -1 ? '<span class="hl-re">조금 빨라요. 천천히 다시 풀어 봐요.</span>' : ''}`, tries ? 'think' : 'point', planHTML(steps, names, i, shown, `${qName} 쓰기`)),
+      lead: head('step', `<span class="hl-k">${i + 1}단계</span><span class="hl-why">${esc(s.why).replace(/(\d) ([+−×÷=]) (?=\d)/g, '$1\u00a0$2\u00a0')}</span>${tries === 1 ? '<span class="hl-re">아직 아니에요. 그림을 보고 한 번 더 해 봐요.</span>' : tries === -1 ? '<span class="hl-re">조금 빨라요. 천천히 다시 풀어 봐요.</span>' : ''}`, tries ? 'think' : 'point', planHTML(steps, names, i, shown, `${qName} 쓰기`)),
       onAnswer: (a, cf, t) => {
         const ok = sit ? sameAns(sit, a) : s.sol.every((v, k) => Number(a.vals[k]) === Number(v));
         if (ok) return step(i + 1, 0, shown, true);

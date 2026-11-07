@@ -320,6 +320,16 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   const C = MD.colOf(sub, FX8.stepsOf({ c: sub.c, p: sub.p }));
   const v1 = MD.colView(C, 1, MD.rgLag(sub)).html, v0 = MD.colView(C, 1).html;
   ok(C && v1.includes('class="lag"') && v1.includes('x lag') && !v0.includes('lag'), '세로셈: 첫 단계의 빗금 · 위 숫자 · 답만 늦게 나타남(lag 없으면 그대로)');
+  /* 11-07 처음 보는 눈: 덧셈은 모으면 칸으로(처음 수의 줄에 붙이지 않음) · 뺄셈 끝 모습에 낱개 묶음 수 · 글은 움직임과 같은 때에 */
+  const h29 = MD.regroupHTML({ prompt: ['29 + 69 = ', { b: 0 }], sol: [98] }), h93 = MD.regroupHTML({ prompt: ['93 − 89 = ', { b: 0 }], sol: [4] });
+  ok(cnt(h29, 'mv') === 8 && cnt(h29, 'go') === 10 && h29.includes('>모으면<') && h29.includes('class="c0"') && h29.includes('십의 자리로 올려요'), '덧셈 29 + 69: 낱개 18개가 모두 모으면 칸으로 · 10개는 십 막대 · 8개는 남음');
+  ok(h93.includes('낱개 13개</text>') && h93.includes('class="c0" aria-hidden="true">낱개 3개에서 9개를 뺄 수 없어요.') && !MD.regroupHTML(sub, { pre: true }).includes('class="c0"'), '뺄셈 93 − 89: 끝 모습에 낱개 13개 묶음 · 움직이는 동안은 바꾸기 전 글');
+  const HI = await import('../../engine/hints/index.js'), TK8 = await import('../../engine/tokens.js');
+  const pl = JSON.stringify(HI.planOf(sub.c, sub.p, FX8.stepsOf({ c: sub.c, p: sub.p }).length) || []);
+  ok(pl.includes('받아내려') && !pl.includes('윗자리'), `풀이 순서에 '윗자리' 대신 가져오는 자리 이름 — ${pl}`);
+  let odd = 0;
+  for (let k = 0; k < 30; k++) { const F = FX8.newFix({ c: '2-1-3:7', id: `zz${k}` }), A = TK8.toText(F.ex.prompt).match(/\d+/g) || []; if (A.length >= 2 && String(F.ex.sol[0]).length !== Math.max(A[0].length, A[1].length)) odd++; }
+  ok(odd === 0, `배우기 시범 문제는 보통 꼴(답의 맨 앞 0 · 자리 늘어남 X) — 30번 중 ${odd}번`);
 }
 console.log(fail ? `FAIL ${fail}` : 'PASS');
 process.exitCode = fail ? 1 : 0;
