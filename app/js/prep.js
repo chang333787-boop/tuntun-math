@@ -141,7 +141,7 @@ function advance(S) {
   return finish(S, 'clear');
 }
 
-// 끝난 뒤 아이에게 보일 것: 고칠 판자(여기서부터) · 튼튼한 판자 · 자신감 견주기
+// 끝난 뒤 아이에게 보일 것: 고칠 판자(여기서부터) · 튼튼한 판자 · 자신감 비교하기
 export function summary(S) {
   const rep = report(S);
   const inP = (c) => S.plan.below.includes(c);
@@ -151,7 +151,7 @@ export function summary(S) {
   const strong = Object.values(rep.L).filter((x) => x.st === 'ok' || x.st === 'pass').map((x) => x.c);
   return { rep, fix, firstCheck, because, shaky, strong, cal: calibration(S), n: asked(S), why: S.why };
 }
-// 자신감 견주기 — 확실했는데 틀림(가장 센 신호 [D-1]) · 모름이었는데 맞음 · 짐작이 맞은 비율(조금 = 반)
+// 자신감 비교하기 — 확실했는데 틀림(가장 센 신호 [D-1]) · 모름이었는데 맞음 · 짐작이 맞은 비율(조금 = 반)
 export function calibration(S) {
   let n = 0, hit = 0, unsureRight = 0, sure = 0;
   const sureWrong = [];

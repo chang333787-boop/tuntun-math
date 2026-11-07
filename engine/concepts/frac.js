@@ -140,7 +140,7 @@ export default [
           },
         };
       }
-      return nums([`분모를 ${RO(L)} 하여 통분하세요.`, { br: 1 }, fx(p.n1, p.d1), ' → ', { f: [B(0), L] }, '      ', fx(p.n2, p.d2), ' → ', { f: [B(1), L] }], [p.n1 * L / p.d1, p.n2 * L / p.d2], {
+      return nums([`분모를 ${RO(L)} 통분해 보세요.`, { br: 1 }, fx(p.n1, p.d1), ' → ', { f: [B(0), L] }, '      ', fx(p.n2, p.d2), ' → ', { f: [B(1), L] }], [p.n1 * L / p.d1, p.n2 * L / p.d2], {
         bugs: [
           { test: (v) => v[0] === p.n1 && v[1] === p.n2, name: '분모만 바꿈', to: 'F7' },
           { test: (v) => v[0] === p.n1 + L - p.d1 || v[1] === p.n2 + L - p.d2, name: '분모·분자에 같은 수를 더함 (덧셈으로 지키기)', to: 'F7' },
@@ -156,7 +156,7 @@ export default [
   },
   {
     id: 'F10', name: '분모가 다른 분수의 크기 비교', kid: '분모가 다른 분수 비교', g: '5-1', s: 'F', pre: ['F9', 'F3'],
-    tip: '통분해서 분자끼리 비교하거나, 1/2 같은 기준과 견주어 어림해요.',
+    tip: '통분해서 분자끼리 비교하거나, 1/2 같은 기준과 비교해 어림해요.',
     gen: (r) => { let q; do { q = pair(r); } while (eqv(F(q.n1, q.d1), F(q.n2, q.d2))); return q; },
     make: (p) => { const big = p.n1 * p.d2 > p.n2 * p.d1 ? 0 : 1; return pick(['더 큰 수를 고르세요.'], [[fx(p.n1, p.d1)], [fx(p.n2, p.d2)]], big, { bugs: { [1 - big]: { name: '통분하지 않고 비교', to: 'F9' } } }); },
     steps: (p) => [{ c: 'F9', p: { v: 'given', n1: p.n1, d1: p.d1, n2: p.n2, d2: p.d2 }, why: '분모를 같게 하면 분자끼리 비교할 수 있어요.' }],

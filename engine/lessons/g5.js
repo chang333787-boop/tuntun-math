@@ -730,7 +730,7 @@ export default {
       steps: (p) => {
         const out = [{ c: 'F9', p: { v: 'given', n1: p.n1, d1: p.d1, n2: p.n2, d2: p.d2 }, why: '분모를 같게 하면 분자끼리 비교할 수 있어요.' }];
         if (p.v === 'three') {
-          // 앞의 두 수 중 큰 수를 남은 수와 견준다
+          // 앞의 두 수 중 큰 수를 남은 수와 비교한다
           const [wn, wd] = p.n1 * p.d2 > p.n2 * p.d1 ? [p.n1, p.d1] : [p.n2, p.d2];
           out.push({ c: 'F9', p: { v: 'given', n1: wn, d1: wd, n2: p.n3, d2: p.d3 }, why: `더 큰 ${wn}/${wd}${P(wn, '과', '와')} 남은 ${p.n3}/${p.d3}${P(p.n3, '을', '를')} 통분해서 비교해요.` });
         }

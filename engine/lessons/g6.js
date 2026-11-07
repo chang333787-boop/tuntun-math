@@ -293,9 +293,9 @@ const FAMS = [
     steps: (p) => {
       const W = Math.floor(p.a / 10), Q = Math.floor(p.a / (10 * p.b));
       return [
-        { c: 'DIV', p: { a: W, b: p.b }, why: `자연수 부분으로 몫을 구해요: ${W} ÷ ${p.b}` },
+        { c: 'DIV', p: { a: W, b: p.b }, why: '자연수 부분으로 몫과 나머지를 구해요.' },
         { c: 'MUL', p: { a: p.b, b: Q }, why: `${p.b}씩 ${Q}번 나누어 준 양은 ${p.b} × ${jn(Q, '이에요', '예요')}.` },
-        { c: 'g4_DECAS', p: { op: '-', a: p.a, ka: 1, b: Q * p.b * 10, kb: 1 }, why: `남는 양 = 처음 양 − 나누어 준 양이에요: ${ds(p.a, 1)} − ${Q * p.b}` },
+        { c: 'g4_DECAS', p: { op: '-', a: p.a, ka: 1, b: Q * p.b * 10, kb: 1 }, why: '남는 양은 처음 양에서 나누어 준 양을 빼요.' },
       ];
     },
   },
@@ -774,7 +774,7 @@ export default {
         return [
           kn > 1 ? ratio : null,
           p.v === 'div'
-            ? { c: 'DIV', p: { a: other * k, b: k }, why: `다른 항도 같은 수로 나눠요: ${other * k} ÷ ${k}` }
+            ? { c: 'DIV', p: { a: other * k, b: k }, why: '다른 항도 같은 수로 나눠요.' }
             : { c: 'MUL', p: { a: other, b: k }, why: `다른 항에도 같은 수를 곱해요: ${other} × ${k}` },
         ];
       },
@@ -892,7 +892,7 @@ export default {
         // 외항의 곱 = 내항의 곱
         const [x1, x2, by, side] = { 3: [b, c, a, '내항'], 2: [a, d, b, '외항'], 1: [a, d, c, '외항'], 0: [b, c, d, '내항'] }[pos];
         return [
-          { c: 'MUL', p: { a: x1, b: x2 }, why: `${side}의 곱을 구해요: ${x1} × ${x2}` },
+          { c: 'MUL', p: { a: x1, b: x2 }, why: `${side}의 곱을 구해요.` },
           { c: 'DIV', p: { a: x1 * x2, b: by }, why: `${by} × □ = ${jn(x1 * x2, '이니까', '니까')} □ = ${x1 * x2} ÷ ${by}` },
         ];
       },

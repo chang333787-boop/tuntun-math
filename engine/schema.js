@@ -22,7 +22,7 @@ export const TYPES = {
   combine: { fam: 'as', kid: '여러 부분이 모여 전체가 되는 이야기', short: '부분과 전체', say: '몇 부분이 모여 전체가 돼요.' },
   compare: { fam: 'as', kid: '두 수를 비교하는 이야기', short: '비교', say: '두 수 가운데 어느 쪽이 얼마나 더 많은지 봐요.' },
   groups: { fam: 'md', kid: '같은 수씩 묶는 이야기', short: '같은 묶음', say: '같은 수씩 든 묶음이 여러 개 있어요.' },
-  times: { fam: 'md', kid: '몇 배 이야기', short: '몇 배', say: '한 양이 다른 양의 몇 배인지 견줘요.' },
+  times: { fam: 'md', kid: '몇 배 이야기', short: '몇 배', say: '한 양이 다른 양의 몇 배인지 비교해요.' },
   share: { fam: 'md', kid: '똑같이 나누는 이야기', short: '똑같이 나누기', say: '전체를 똑같이 나누어 한 몫을 봐요.' },
   pack: { fam: 'md', kid: '몇씩 덜어 내는 이야기', short: '몇씩 덜어 내기', say: '전체에서 같은 수씩 덜어 내어 몇 번인지 봐요.' },
 };
@@ -44,7 +44,7 @@ export const ROLES = {
   groups: { total: '전체', size: '한 묶음', count: '묶음 수' },
   share: { total: '전체', size: '한 몫', count: '나누는 수' },
   pack: { total: '전체', size: '한 묶음', count: '묶음 수' },
-  times: { base: '기준', big: '견주는 양', tm: '몇 배' },
+  times: { base: '기준', big: '비교하는 양', tm: '몇 배' },
 };
 
 // ── 이야기 하나 → 구조 ──
@@ -133,7 +133,7 @@ function pref(sc, f) {
 // 틀 셋(맞는 틀 하나 + 틀린 틀 둘 · seed로 섞음) → { list:[{ R, dir, T?, key, x }], right }
 //  틀린 틀은 말이 되는 것만 — 음수 · 0 · 자연수 이야기에 자연수 아닌 답이 나오는 틀(부분 14 > 전체 6 같은 것)은 쓰지 않음
 //  같은 유형 틀이 먼저 · 모자라면 이웃 유형의 틀(T)로 채움 — 부분과 전체는 틀 모양이 셋뿐이라 하나는 늘 '부분 > 전체'
-//    부분과 전체 ↔ 비교(막대 모델에서 가장 헷갈리는 둘 [C ②5]) · 같은 묶음 ↔ 두 수를 모으거나 견주는 틀(식 보기의 덧 · 뺄과 같은 잘못 읽기)
+//    부분과 전체 ↔ 비교(막대 모델에서 가장 헷갈리는 둘 [C ②5]) · 같은 묶음 ↔ 두 수를 모으거나 비교하는 틀(식 보기의 덧 · 뺄과 같은 잘못 읽기)
 //  그래도 둘이 안 되면 list가 셋보다 짧음 → 한 판에 내지 않음(storylog findStory)
 const ROLE_KEYS = { change: ['start', 'chg', 'res'], combine: ['whole', 'p0', 'p1'], compare: ['big', 'small', 'diff'], groups: ['total', 'size', 'count'], times: ['base', 'big', 'tm'] };
 const CROSS = { change: ['compare', 'combine'], combine: ['compare', 'change'], compare: ['combine', 'change'], groups: ['times', 'combine', 'compare', 'change'], times: ['groups', 'compare', 'combine', 'change'], share: ['groups', 'combine', 'compare', 'change'], pack: ['groups', 'combine', 'compare', 'change'] };
@@ -183,8 +183,8 @@ export function whyOf(sc) {
     case 'more−': return `아는 쪽이 더 ${L ? '길어요' : '많아요'}. 그러니 묻는 쪽이 더 ${L ? '짧아요' : '적어요'} — <b class="q">?</b>는 <b>짧은 막대</b>예요.`;
     case 'groups×': case 'rows×': return '한 묶음의 수와 묶음 수를 알아요. 모두를 물으니 <b class="q">?</b>는 <b>전체</b> 자리예요.';
     case 'rate×': return '1 m의 무게(한 묶음)와 길이(묶음 수)를 알아요. 전체 무게를 물으니 <b class="q">?</b>는 <b>전체</b> 자리예요.';
-    case 'times×': return '기준과 몇 배인지 알아요. 견주는 양을 물으니 <b class="q">?</b>는 <b>견주는 양</b> 자리예요.';
-    case 'of×': return '전체와 몇 분의 몇인지 알아요. 그만큼이 얼마인지 물으니 <b class="q">?</b>는 <b>견주는 양</b> 자리예요.';
+    case 'times×': return '기준과 몇 배인지 알아요. 비교하는 양을 물으니 <b class="q">?</b>는 <b>비교하는 양</b> 자리예요.';
+    case 'of×': return '전체와 몇 분의 몇인지 알아요. 그만큼이 얼마인지 물으니 <b class="q">?</b>는 <b>비교하는 양</b> 자리예요.';
     case 'timesB÷': return '큰 양이 기준의 몇 배인지 알아요. 기준을 물으니 <b class="q">?</b>는 <b>기준</b>(짧은 막대) 자리예요.';
     case 'timesM÷': return '두 양을 다 알아요. 몇 배인지 물으니 <b class="q">?</b>는 <b>몇 배</b> 자리예요.';
     case 'share÷': return '전체와 몇으로 나누는지 알아요. 한 몫을 물으니 <b class="q">?</b>는 <b>한 몫</b> 자리예요.';

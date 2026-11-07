@@ -98,7 +98,7 @@ export function frameSVG(sc, f) {
       body += lab(X0 - 8, 24, L.base) + cell(X0, 8, cw * d, 32, q('base')) + Array.from({ length: d - 1 }, (_, i) => tick(X0 + cw * (i + 1), 8, 32)).join('') + numG(v('base'), X0 + (cw * d) / 2, 24)
         + lab(X0 - 8, 70, L.big) + cell(X0, 54, cw * n, 32, q('big')) + numG(v('big'), X0 + (cw * n) / 2, 70);
     } else {
-      /* 기준 한 칸 · 견주는 양 = 기준 몇 칸(1보다 작으면 기준 칸을 길게) · 다섯 배를 넘으면 가운데를 '…'로 */
+      /* 기준 한 칸 · 비교하는 양 = 기준 몇 칸(1보다 작으면 기준 칸을 길게) · 다섯 배를 넘으면 가운데를 '…'로 */
       const small = t < 1, cw = small ? Math.min(44 / t, 216) : 44, many = t > 5, bw = small ? 44 : cw * Math.min(t, 5);
       body += lab(X0 - 8, 24, L.base) + cell(X0, 8, cw, 32, q('base')) + numG(v('base'), X0 + cw / 2, 24, { size: 15 })
         + lab(X0 - 8, 70, L.big) + cell(X0, 54, bw, 32, q('big'))

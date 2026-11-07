@@ -84,8 +84,8 @@ export function checkCard(C, K, S = {}) {
   return `<div class="ckc"><p class="ckc-r"><span class="ckc-k">오늘 단원 점검</span><span class="ckc-v">${today}</span></p><p class="ckc-r"><span class="ckc-k">점검지</span><span class="ckc-v">${sheet}</span></p></div>`;   /* 단추는 반 화면 카드 ①의 [점검 내기] 하나만 */
 }
 
-// 사전 · 사후 견주기(시범 운영 · 연구 기록) — 가장 최근 '사전'과 그 뒤 가장 최근 '사후' · 아이마다 맞힌 비율(푼 문제 기준) 전 → 후 · 반 평균 · 사전 아래 30% 아이들 평균
-//  같은 범위일 때 견주기가 바로 됨(다르면 한 줄 알림) · 종이로 푼 것은 세지 않음(화면에서 푼 것만 — 종이는 반 표에 들어감)
+// 사전 · 사후 비교하기(시범 운영 · 연구 기록) — 가장 최근 '사전'과 그 뒤 가장 최근 '사후' · 아이마다 맞힌 비율(푼 문제 기준) 전 → 후 · 반 평균 · 사전 아래 30% 아이들 평균
+//  같은 범위일 때 비교하기가 바로 됨(다르면 한 줄 알림) · 종이로 푼 것은 세지 않음(화면에서 푼 것만 — 종이는 반 표에 들어감)
 function prePost(K, S, list) {
   const pre = list.find(([, x]) => x.lab === 'pre'), post = pre ? list.find(([, x]) => x.lab === 'post' && Number(x.t) > Number(pre[1].t)) : null;
   if (!pre) return '';
@@ -99,7 +99,7 @@ function prePost(K, S, list) {
   const low = both.slice().sort((x, y) => x.a.p - y.a.p).slice(0, Math.max(1, Math.round(both.length * 0.3)));
   const cell = (v) => (v ? `${v.p}% <span class="small muted">(${v.o}/${v.n})</span>` : '<span class="muted">—</span>');
   const same = px.from === qx.from && px.to === qx.to;
-  return `${head}<p class="intro">사전 ${esc(day(Number(px.t)))}(${esc(gl(px.from))} ~ ${esc(gl(px.to))}) → 사후 ${esc(day(Number(qx.t)))}(${esc(gl(qx.from))} ~ ${esc(gl(qx.to))})${same ? '' : ' · <b>범위가 달라요</b> — 같은 범위로 내야 바로 견줄 수 있어요'}. 맞힌 비율은 화면에서 푼 문제 기준이에요.</p>
+  return `${head}<p class="intro">사전 ${esc(day(Number(px.t)))}(${esc(gl(px.from))} ~ ${esc(gl(px.to))}) → 사후 ${esc(day(Number(qx.t)))}(${esc(gl(qx.from))} ~ ${esc(gl(qx.to))})${same ? '' : ' · <b>범위가 달라요</b> — 같은 범위로 내야 바로 비교할 수 있어요'}. 맞힌 비율은 화면에서 푼 문제 기준이에요.</p>
     ${both.length ? `<p class="ck-pps">둘 다 푼 아이 <b>${both.length}</b>명 · 반 평균 <b>${avg(both.map((r) => r.a.p))}% → ${avg(both.map((r) => r.b.p))}%</b> · 사전 아래 30%(${low.length}명) <b>${avg(low.map((r) => r.a.p))}% → ${avg(low.map((r) => r.b.p))}%</b></p>` : ''}
     <div class="ck-tw"><table class="list ck-t"><thead><tr><th>아이</th><th>사전</th><th>사후</th><th>변화</th></tr></thead><tbody>${rows.map((r) => `<tr><td>${esc(nm(K, r.no))}</td><td>${cell(r.a)}</td><td>${cell(r.b)}</td><td>${r.a && r.b ? `<b class="${r.b.p >= r.a.p ? 'okc' : ''}">${r.b.p - r.a.p >= 0 ? '+' : ''}${r.b.p - r.a.p}</b>` : ''}</td></tr>`).join('')}</tbody></table></div></section>`;
 }
