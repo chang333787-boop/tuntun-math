@@ -80,7 +80,7 @@ const ROUTES = [
   [/^#\/t\/c\/(\w+)\/check\/([A-Za-z0-9-]{1,24})\/print$/, (m) => checkPrintView(root, m[1], m[2])],
   [/^#\/t\/c\/(\w+)\/s\/(\w+)$/, (m) => storyCardView(root, m[1], m[2])],
   [/^#\/t\/c\/(\w+)\/k\/(\d+)$/, (m) => kidDetailView(root, m[1], m[2])],
-  [/^#\/t\/c\/(\w+)\/g\/(.+)$/, (m) => groupCardView(root, m[1], decodeURIComponent(m[2]))],
+  [/^#\/t\/c\/(\w+)\/g\/(.+)$/, (m) => { const [c, q] = decodeURIComponent(m[2]).split('?'); groupCardView(root, m[1], c, new URLSearchParams(q || '').get('no')); }],   /* ?no= — 그 아이가 이 칸에서 쓴 답을 맨 위에 */
   [/^#\/t\/c\/(\w+)\/m\/([\w.]+)$/, (m) => mindCardView(root, m[1], m[2])],
 ];
 function route() {

@@ -13,7 +13,7 @@ const textOf = (c, p) => { try { return toText(itemOf(c, p).prompt).replace(/\s+
 const solOf = (c, p) => { try { const it = itemOf(c, p); return it.choices ? toText(it.choices[Number(it.sol[0])] || []) : it.sol.join(', '); } catch (e) { return ''; } };
 
 // 틀린 문항 몇 개(문제 글 · 아이 답 · 바른 답 · 엔진이 맞춰 본 원인)
-function wrongOf(x, n = 3) {
+export function wrongOf(x, n = 3) {
   return (x.recs || []).filter((r) => !r.ok).slice(-n).map((r) => ({
     q: textOf(r.c, r.p), mine: r.s === 'q' ? '(몰라서 넘어감)' : (r.ans || []).join(', '), right: solOf(r.c, r.p),
     fit: r.d && r.d.hyps ? r.d.hyps.map((h) => h.name).slice(0, 3) : [],

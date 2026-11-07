@@ -19,7 +19,7 @@ import { MIS, misFor, misById, WHY, wantFor, WANT } from '../../engine/mis.js';
 import { TOOLS, CARD_TOOL } from './tools.js';
 import { KIDSAY } from './fix.js';
 import { weeksOf, weekChart, weekTrend, weekKey, lastLine } from './weekcore.js';
-import { packetOf, promptOf, wrongList, photoPromptOf } from './copilot.js';
+import { packetOf, promptOf, wrongList, wrongOf, photoPromptOf } from './copilot.js';
 import { aiKey, setAiKey, keyTail, askClaude, shrinkPhoto } from './ai.js';
 import { qrSVG } from './qr.js';
 import { TYPES } from '../../engine/schema.js';
@@ -334,7 +334,7 @@ const NOTE_K = { group: '소집단', tool: '검산 도구 연습', model: '모�
 export function nextOf({ C, no, rep, st, inbox = {}, now = null, recs = {} }) {
   const MODE = { prep: '오늘 단원 점검', fix: '배우기', run: '매일 연습', story: '이야기 문제', week: '이번 주 점검', give: '선생님이 준 문제', check: '점검지', back: '거꾸로 찾기' };
   const L = rep && rep.L ? rep.L : {}, cs = Object.keys(L);
-  if (now && now.ask && Date.now() - now.ask < 15 * 60e3 && now.c) return { t: `배우기에서 막혀 <b>선생님을 기다려요</b> — ${esc(lessonName(now.c))}`, a: '10분 카드 보기', href: `#/t/c/${C}/g/${encodeURIComponent(now.c)}` };
+  if (now && now.ask && Date.now() - now.ask < 15 * 60e3 && now.c) return { t: `배우기에서 막혀 <b>선생님을 기다려요</b> — ${esc(lessonName(now.c))}`, a: '10분 카드 보기', href: `#/t/c/${C}/g/${encodeURIComponent(now.c)}?no=${no}` };
   if (now && now.mode && now.mode !== 'home' && Date.now() - (Number(now.t) || 0) < 5 * 60e3) return now.sos && Date.now() - now.sos < 10 * 60e3 ? { t: `지금 <b>${esc(MODE[now.mode] || '앱')}</b> 하는 중 — 도움을 다 쓰고 <b>답을 본 문제</b>가 있어요. 지금 들러 보세요.` } : { t: `지금 <b>${esc(MODE[now.mode] || '앱')}</b> 하는 중이에요 — 끝나면 이 화면이 바뀌어요.` };
   if (!cs.length) return { t: '아직 점검을 하지 않았어요.', a: '점검 내기', href: `#/t/c/${C}/check` };
   const gives = Object.entries(inbox).filter(([id, x]) => x && x.kind === 'give' && SKILL[x.sk]);
@@ -348,8 +348,8 @@ export function nextOf({ C, no, rep, st, inbox = {}, now = null, recs = {} }) {
     if (sk && open.some(([, x]) => x.sk === sk.id)) return { t: `보낸 보충 <b>${esc(sk.name)}</b>${P(sk.name.replace(/\s*\([^)]*\)\s*$/, '') || sk.name, '을', '를')} 아직 푸는 중이에요 — 다 풀면 '보낸 보충'에 결과가 떠요.` };
     const g = sk && done.map(([id, x]) => ({ x, r: st && st.gv && st.gv[id] })).find((y) => y.x.sk === sk.id && y.r);
     const hp = st && st.help ? Number(st.help[start]) || 0 : 0;
-    if (hp && hp > (g ? Number(g.r[2]) || 0 : 0)) return { t: `<b>${esc(lessonName(start))}</b> — 배우기를 해 봤지만 혼자서는 아직 어려워요. 선생님과 같이 10분 봐 주세요.`, a: '10분 카드 보기', href: `#/t/c/${C}/g/${encodeURIComponent(start)}` };   /* 배우기를 못 넘은 뒤로 보충을 안 풀었으면 또 혼자 하기보다 선생님과 */
-    if (g && g.r[0] / g.r[1] < 0.5) return { t: `<b>${esc(sk.name)}</b> 보충에서 ${g.r[0]}/${g.r[1]} — 혼자 연습으로는 아직 어려워요. 선생님과 같이 10분 봐 주세요.`, a: '10분 카드 보기', href: `#/t/c/${C}/g/${encodeURIComponent(start)}` };   /* 보충 절반 못 맞힘 → 또 보충보다 선생님 먼저 [A-R27] */
+    if (hp && hp > (g ? Number(g.r[2]) || 0 : 0)) return { t: `<b>${esc(lessonName(start))}</b> — 배우기를 해 봤지만 혼자서는 아직 어려워요. 선생님과 같이 10분 봐 주세요.`, a: '10분 카드 보기', href: `#/t/c/${C}/g/${encodeURIComponent(start)}?no=${no}` };   /* 배우기를 못 넘은 뒤로 보충을 안 풀었으면 또 혼자 하기보다 선생님과 */
+    if (g && g.r[0] / g.r[1] < 0.5) return { t: `<b>${esc(sk.name)}</b> 보충에서 ${g.r[0]}/${g.r[1]} — 혼자 연습으로는 아직 어려워요. 선생님과 같이 10분 봐 주세요.`, a: '10분 카드 보기', href: `#/t/c/${C}/g/${encodeURIComponent(start)}?no=${no}` };   /* 보충 절반 못 맞힘 → 또 보충보다 선생님 먼저 [A-R27] */
     if (g && g.r[0] / g.r[1] >= 0.8) return { t: `<b>${esc(sk.name)}</b> 보충에서 ${g.r[0]}/${g.r[1]} 맞혔어요. 며칠 뒤 매일 연습에서 저절로 다시 확인해요 — 따로 할 것 없어요.` };
     if (sk) return { t: `${lead}: <b>${esc(sk.name)}</b>${g ? ` (지난 보충 ${g.r[0]}/${g.r[1]})` : ''}`, a: '이 아이에게 보충 주기', href: `#/t/c/${C}/give?sk=${sk.id}&who=${no}` };
   }
@@ -447,8 +447,9 @@ export async function kidDetailView(root, C, no) {
 }
 
 // 10분 소집단 카드 — 명시적 지도 차례(시범 · 생각 말하기 → 함께 → 혼자 · 바로 고치기) [B-R11][B-R12][B-R13]
-export function groupCardView(root, C, c) {
+export function groupCardView(root, C, c, no = null) {
   const K = cls(C); if (!K || !byId[c]) return go('#/t');
+  if (no && !(K.pins || {})[no]) no = null;
   const r = rng(Date.now() % 1e9), used = new Set();
   const [ex] = pickItems(c, 1, r, used), together = pickItems(c, 2, r, used), solo = pickItems(c, 3, r, used);
   const steps = ex ? stepsOf(ex) : [];
@@ -460,6 +461,7 @@ export function groupCardView(root, C, c) {
     ${intro('같은 칸을 배워야 하는 아이 2~4명과 10분 동안 할 활동이에요. 차례대로 진행하고, 선생님 말은 그대로 읽어도 돼요. 문제는 열 때마다 새 숫자로 바뀌어요.', 'no-print')}
     <div class="acts no-print"><button class="pri" onclick="print()">인쇄</button><a class="btn" href="#/t/c/${C}">반 화면으로</a></div>
     <dl class="lead"><dt>오늘 목표</dt><dd>${esc(LES(c).kid)}</dd>${hintOf(c) ? `<dt>핵심</dt><dd>${esc(hintOf(c))}</dd>` : ''}</dl>
+    ${no ? `<div class="kidw" id="kidw"><p class="small muted">${esc(nm(K, no))}의 답을 불러오는 중…</p></div>` : ''}
     <ol class="plan">
     ${stepBox(1, '선생님이 먼저 풀어 보이기', 2, `${askP('선생님이 먼저 풀어 볼게. 머릿속 생각을 말로 할 테니 잘 들어 봐.')}${ex ? `<div class="qline">${staticHTML(ex.prompt, null)}<span class="ans">답 ${ansHTML(ex)}</span></div>${modelHTML(ex)}${steps.length ? `<ol class="steps">${steps.map((s) => stepHTML(s)).join('')}</ol>` : ''}` : ''}<p class="note">모형이 있으면 모형으로 먼저(낱개 10개 → 십 막대 1개로 바꾸기), 그다음 그림, 그다음 식으로 보여 줘요.</p>`)}
     ${stepBox(2, '함께 풀기', 3, `${askP('첫 단계는 뭐부터 할까? 말해 주면 선생님이 받아 적을게.')}${qGrid(together)}`)}
@@ -468,6 +470,14 @@ export function groupCardView(root, C, c) {
     </ol>
     ${ms.length ? `<h3>알아 두기 — 이 칸에서 자주 보이는 틀린 생각</h3>${cmp}<div class="misrow">${ms.slice(0, 3).map((m) => misCard(m)).join('')}</div>` : ''}
     <p class="small muted foot">이 묶음은 앱의 제안이에요. 경계에 있는 아이는 선생님이 보고 넣거나 빼 주세요.</p></div>`;
+  if (no) (async () => {   /* 아이 하나로 열었을 때(다음 할 것 · 선생님을 기다려요) — 그 아이가 이 칸에서 틀린 최근 답 셋 */
+    let raw = null; try { raw = await db.get(`k/${C}/${no}/${K.pins[no]}/r`); } catch (e) { raw = null; }
+    const box = root.querySelector('#kidw'); if (!box) return;
+    const KK = { recs: {}, rv: {}, fixed: {} }; for (const [id, v] of Object.entries(raw || {})) { const o = db.dec(v); if (o) KK.recs[id] = o; }
+    const x = KS.reportOf(KK).L[c], ws = x ? wrongOf(x, 3) : [];
+    box.innerHTML = ws.length ? `<h3>이 아이가 이 칸에서 쓴 답 <small>${esc(nm(K, no))} · 최근 ${ws.length}개</small></h3><ul class="kw">${ws.map((w) => `<li><span class="kw-q">${esc(w.q)}</span><span>낸 답 <b>${esc(w.mine)}</b></span><span class="muted">바른 답 ${esc(w.right)}</span>${w.fit.length ? `<span class="pill">짐작: ${esc(w.fit[0])}</span>` : ''}</li>`).join('')}</ul>${askP('이 문제를 어떻게 풀었는지 말해 볼래? 처음 한 일부터.')}`
+      : `<p class="small muted">${esc(nm(K, no))} — 이 칸에서 틀린 기록이 아직 없어요.</p>`;
+  })();
 }
 
 // 이 생각 10분 카드 — 생각을 지우지 않고 '언제 맞고 언제 안 맞나'로 가르기 [E4-4][E4-1] · 도구 · 맞는 풀이 ↔ 틀린 풀이 · 함정 꼴 반례
