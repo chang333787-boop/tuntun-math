@@ -19,7 +19,9 @@ import { flush, pending } from './db.js';
 import { icon, tile } from './icons.js';
 
 const root = document.getElementById('view');
-addEventListener('touchstart', () => document.body.classList.add('touch'), { once: true, passive: true });   /* 손가락으로 누른 기기 → hover 끔(app.css) */
+addEventListener('touchstart', () => document.body.classList.add('touch'), { once: true, passive: true });
+/* 끝 · 빈 화면(카드 하나 · 주황 단추 하나)은 그 단추에 포커스 — 크롬북 자판 Enter로 바로 다음(11-08 자판만으로 점검) */
+new MutationObserver(() => { const a = document.activeElement; if ((a && a !== document.body) || root.querySelector('input, textarea, select')) return; const p = root.querySelector(':scope > .card.msg .acts .pri:not([disabled])'); if (p) p.focus({ preventScroll: true }); }).observe(root, { childList: true });   /* 손가락으로 누른 기기 → hover 끔(app.css) */
 document.getElementById('logo-m').innerHTML = mascot('hi', 34);
 // 누름 손맛 — 터치 · 펜은 :active가 늦거나 안 보여서, 누른 동안 .press를 붙임(짧게 톡 쳐도 120ms는 보이게 · app.css 단추 규칙과 같은 모양)
 const PRESS = 'button, .btn, .tile, .todo .item, .big-pick, .tabs a';

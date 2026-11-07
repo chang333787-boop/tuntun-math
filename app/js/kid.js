@@ -201,6 +201,7 @@ export async function homeView(root) {
       <p class="out-row small"><button class="link" id="out">나가기(다른 친구가 이 크롬북을 쓸 때)</button></p></section>
   </div>`;
   root.querySelector('#out').addEventListener('click', () => { if (confirm('이 기기에서 나갈까요? 푼 기록은 서버에 남아 있어요.')) { lsDel('tt.me'); lsDel('tt.who'); WHO.ok = false; go('#/'); } });
+  { const g0 = root.querySelector('.c3.now .c3-go'), ae = document.activeElement; if (g0 && (!ae || ae === document.body)) g0.focus({ preventScroll: true }); }   /* 지금 할 카드 단추에 포커스 — 자판 Enter로 바로 시작 · 이어서(11-08 자판만으로 점검) */
   const known = K.inbox || {};   /* 같은 날 다시 열면 과제 id(prep<날짜>)가 같음 — 여는 시각(t)으로 견줌 */
   const tick = setInterval(async () => {
     if (root.dataset.home !== tok || location.hash !== '#/me' || !root.isConnected) return clearInterval(tick);
