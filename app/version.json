@@ -1,10 +1,9 @@
 {
- "v": "77b4c58200ac",
+ "v": "4f41e9fd54c4",
  "files": [
   "css/app.css",
   "js/ai.js",
   "js/back.js",
-  "js/bridge.js",
   "js/check.js",
   "js/copilot.js",
   "js/db.js",
@@ -25,7 +24,6 @@
   "js/sheet.js",
   "js/speak.js",
   "js/stage.js",
-  "js/stageview.js",
   "js/story.js",
   "js/storylog.js",
   "js/tcheck.js",

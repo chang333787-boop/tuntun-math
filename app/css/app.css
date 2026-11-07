@@ -12,7 +12,7 @@
   --press:80ms ease-out;
 }
 /* 활동 색 — 아이콘 타일 바탕(흰 선) · 아주 옅은 바탕 · 왼쪽 띠 · 흰 글 대비 4.6 ~ 6.5 */
-.act-prep{--a:#C4511A;--a-t:#F9EEE8}.act-fix{--a:#0E6F68;--a-t:#E7F1F0}.act-drill{--a:#8A5A2B;--a-t:#F3EFEA}.act-run{--a:#2E7D4F;--a-t:#EAF2ED}
+.act-prep{--a:#C4511A;--a-t:#F9EEE8}.act-fix{--a:#0E6F68;--a-t:#E7F1F0}.act-run{--a:#2E7D4F;--a-t:#EAF2ED}
 .act-story{--a:#5B4FB3;--a-t:#EFEDF7}.act-week{--a:#2D6CB0;--a-t:#EAF0F7}.act-back{--a:#A1406B;--a-t:#F6ECF0}.act-help{--a:#F4C247;--a-t:#FDF6E3;--a-on:#1F1B16}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -393,14 +393,6 @@ div.cmpc{box-shadow:none}
 .more{margin-top:12px}.more>summary{cursor:pointer;color:var(--teal);font-weight:700;padding:10px 2px;min-height:44px}.more .todo{margin-top:10px}
 .kid .card>details>summary{padding:10px 2px;cursor:pointer}
 /* 기록 타일 */
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:0 0 6px}
-.stat{background:var(--panel);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;min-width:0}
-.stat .k{font-size:15px;color:var(--mute);font-weight:700}
-.stat .v{font-size:28px;font-weight:800;line-height:1.15;font-variant-numeric:tabular-nums}
-.stat .v small{font-size:14px;font-weight:400;color:var(--mute);margin-left:4px}
-.stat .tiers{display:flex;flex-direction:column;gap:4px;font-size:16px}
-.stat .tiers span{display:flex;align-items:center;gap:8px}.stat .tiers b{margin-left:auto;font-size:20px;font-variant-numeric:tabular-nums}
-.stat.wide{grid-column:1/-1}
 /* 더 해 보기 타일 */
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
 .tile{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:18px 20px 20px;border:2px solid var(--line2);border-radius:18px;background:var(--surface);color:var(--ink);text-decoration:none;box-shadow:0 4px 0 var(--line2);transition:transform var(--press),box-shadow var(--press),border-color var(--press)}
@@ -413,7 +405,6 @@ div.cmpc{box-shadow:none}
 .legend{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:14px;color:var(--mute);margin-top:8px}.legend i{display:inline-block;width:18px;height:10px;border-radius:2px;margin-right:5px;vertical-align:middle;border:1.5px solid var(--wood2)}
 .plank-list{display:flex;flex-wrap:wrap;gap:8px}
 .pk{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--wood2);border-radius:8px;padding:2px 10px;font-size:15px;background:#fff}.pk.ok{background:#F1E2CC}.pk.fix{background:var(--stuck-t);border-color:var(--stuck)}.pk.shaky{background:var(--shaky-t)}
-.pk .pk-svg{vertical-align:middle}
 button.pk{min-height:46px;font-size:19px;font-weight:600;border:2px solid var(--line2);border-radius:12px;box-shadow:0 3px 0 var(--line2);padding:6px 16px;font-variant-numeric:tabular-nums;background:var(--surface)}
 button.pk:active,button.pk.press{box-shadow:0 1px 0 var(--line2)}
 /* 이번 주 구보(뛴 날) */
@@ -471,17 +462,8 @@ button.pk:active,button.pk.press{box-shadow:0 1px 0 var(--line2)}
 .vcol td.x::after{content:'';position:absolute;left:16%;right:16%;top:50%;border-top:3px solid var(--stuck);transform:rotate(-58deg)}
 
 /* ── 스테이지 ── */
-.stage-top{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px 28px;align-items:center;margin:0 0 20px}
-.stage-top>.say{margin:0}.stage-top>.say>svg.mascot{width:88px;height:88px}
-.stage-top .stats{margin:0}.stage-top>.note{grid-column:1/-1;margin:0}
-.stages{display:grid;grid-template-columns:repeat(auto-fill,minmax(480px,1fr));gap:14px;margin:0 0 8px}
-.stage{display:flex;align-items:center;gap:14px;border:2px solid var(--line2);border-left:6px solid #8A5A2B;border-radius:18px;padding:14px 16px;background:var(--surface);min-width:0}
-.stage.gap{border-left-color:var(--stuck)}
-.stage .no{flex:none;width:32px;height:32px;border-radius:50%;background:var(--panel);color:var(--ink);font-weight:800;display:flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
-.stage .st-b{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}.stage .st-b b{font-size:18px}.stage .btn{flex:none}
 .marks{display:inline-flex;gap:4px;flex-wrap:wrap}.marks i{font-style:normal;font-size:13px;font-weight:700;border:1.5px solid var(--line2);border-radius:999px;padding:0 9px;color:var(--mute);background:#fff}.marks i.on{background:var(--sun);border-color:#C99A30;color:var(--ink)}
 .clock{display:flex;justify-content:flex-end;align-items:center;gap:6px;font-variant-numeric:tabular-nums;font-size:19px;font-weight:700;margin:0}.clock .muted{font-weight:400;font-size:15px}
-.drill-res{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin:0 0 6px}.drill-res p{margin:4px 0}.drill-res .arr{font-size:28px;color:var(--mute)}
 .c-t2{background:#C5E2CD}.c-t3{background:#DAD5CC}
 
 /* ── 거꾸로 찾기 ── */
@@ -636,8 +618,6 @@ body.tv main{max-width:none}body.tv .ctab table{font-size:18px}body.tv .ctab td,
   .kd-grid,.split{grid-template-columns:minmax(0,1fr)}
   .trow{flex-direction:column;gap:0}.trow>.card{width:100%}
   .tmore,.tgrid2{grid-template-columns:minmax(0,1fr)}
-  .stages{grid-template-columns:minmax(0,1fr)}
-  .stage-top{grid-template-columns:minmax(0,1fr)}
 }
 @media (max-width:900px){.card.join,.back-start{grid-template-columns:minmax(0,1fr)}.card.join>.join-a>.say{flex-direction:row;align-items:center}.card.join>.join-a>.say>svg.mascot{width:72px;height:72px}.card.join>.join-a .bub::before{left:-9px;top:50%;margin-top:-7px;transform:rotate(45deg)}}
 @media (max-width:760px){
@@ -665,14 +645,12 @@ body.tv main{max-width:none}body.tv .ctab table{font-size:18px}body.tv .ctab td,
   .todo .item .ico{width:42px;height:42px;border-radius:12px}.todo .item.now .ico{width:48px;height:48px}
   .todo .item.now .it-b b{font-size:20px}
   .todo .item .go{padding:6px 14px}
-  .stage{flex-wrap:wrap}.stage .btn{width:100%}
   .sb-frames{grid-template-columns:minmax(0,1fr)}
   .sb-story{padding:14px 16px}.sb-steps li{font-size:13px;padding-right:10px}
   .sb-steps li:not(.now){font-size:0;gap:0;padding:3px}.sb-steps li:not(.now) i{font-size:13px}
   .qprog .pseg{display:none}
   .mis dl{grid-template-columns:1fr;gap:0}.mis dd{margin-bottom:8px}.pair{grid-template-columns:1fr}.lead{grid-template-columns:1fr;gap:0}.lead dd{margin-bottom:10px}.qg{grid-template-columns:1fr}.ask{font-size:16px}.stp{padding:10px 12px 12px}
   .strip .st-row{flex-direction:column;gap:2px}.strip .st-k{flex:none}
-  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
   .tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.tile{padding:14px}.tile b{font-size:19px}.tile .sub{display:none}
   .grid2{grid-template-columns:minmax(0,1fr)}.big-pick{min-height:0}
   .eyebrow{font-size:19px}

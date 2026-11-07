@@ -1,7 +1,6 @@
 // 튼튼 수 다리 — 화면 나누기(#/주소)
 import { mascot } from '../../paper/js/mascot.js';
 import { joinView, homeView, prepView, fixView, reviewView, meOf, whoView, whoOk, WHO } from './kid.js';
-import { stagesView, drillView } from './stageview.js';
 import { backView, retryView } from './back.js';
 import { runView } from './run.js';
 import { weekView } from './week.js';
@@ -58,13 +57,11 @@ const ROUTES = [
   [/^#\/fix\/([\w:.%-]+)\/check$/, (m) => fixView(root, decodeURIComponent(m[1]), { check: true })],   /* 선생님과 같이 본 뒤 — 확인 3문제부터(선생님과 같이 봐요 카드) */
   [/^#\/fix\/([\w:.%-]+)$/, (m) => fixView(root, decodeURIComponent(m[1]))],   /* %3A(encodeURIComponent한 :)도 — 보충 끝 · 이번 주 점검 '배우기' 단추가 처음 화면으로 가던 것(11-07 사용감 점검) */
   [/^#\/review$/, () => reviewView(root)],
-  [/^#\/stages$/, () => stagesView(root)],
   [/^#\/back$/, () => backView(root)],
   [/^#\/run$/, () => runView(root)],
   [/^#\/week$/, () => weekView(root)],
   [/^#\/story(?:\/([^?]+))?(\?.*)?$/, (m) => storyView(root, m[1] ? decodeURIComponent(m[1]) : '')],
   [/^#\/retry$/, () => retryView(root)],
-  [/^#\/drill\/([\w:.%-]+?)(\?.*)?$/, (m) => drillView(root, decodeURIComponent(m[1]))],
   [/^#\/give\/([\w-]+)$/, (m) => giveView(root, m[1])],
   [/^#\/t$/, () => teacherHome(root)],
   [/^#\/t\/new/, () => newClassView(root)],
@@ -92,7 +89,7 @@ function route() {
   cleanup = null;
   document.title = '튼튼 수 다리';   /* 반 화면이 '(n) 선생님을 기다려요'로 바꾼 탭 제목을 되돌림 */
   const h = location.hash || '#/';
-  const kid = /^#\/(me|prep|fix|review|join|stages|drill|back|retry|run|story|week|give|check)/.test(h);
+  const kid = /^#\/(me|prep|fix|review|join|back|retry|run|story|week|give|check)/.test(h);
   document.body.classList.toggle('kid', kid);
   document.body.classList.toggle('tch', /^#\/t(\/|$)/.test(h));   /* 선생님 화면 — 머리띠 말을 선생님 할 일로 */
   document.body.classList.toggle('wide', /^#\/t\/c\/\w+(\/table|\/give)?(\?.*)?$/.test(h));   /* 반 화면 · 반 표 · 보충 주기는 넓게(1440) */

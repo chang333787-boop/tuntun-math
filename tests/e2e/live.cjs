@@ -38,14 +38,6 @@ const UNIT = '2-2-2', GAP = '2-1-6:3';
     await w(150);
   }
   const end = (await pg.textContent('#view')).slice(0, 80);
-  // 다듬기 한 판(곱셈구구 3·6단 — 다 맞힘) → 표를 땀
-  await pg.goto(BASE + '#/drill/2-2-2:4'); await w(900); await pg.click('#s'); await w(200);
-  for (let i = 0; i < 20; i++) {
-    if (!(await pg.$('.qcard'))) break;
-    const q = (await pg.textContent('.qcard #q')).replace(/\s/g, '').replace(/=.*$/, '').replace(/×/g, '*');
-    await pg.fill('.qcard .blank', String(Function(`return (${q})`)())); await pg.click('#ok'); await w(120);
-  }
-  const drill = (await pg.textContent('#view')).slice(0, 70);
   // 막힌 문제 거꾸로 찾기: 47 + 38 — 10을 넘는 한 자리 덧셈(1-2-6:2)이 빈 아이
   await pg.goto(BASE + '#/back'); await w(900);
   await pg.fill('#pq', '47+38'); await w(200); await pg.click('#go'); await w(300);
@@ -134,6 +126,6 @@ const UNIT = '2-2-2', GAP = '2-1-6:3';
   const scard = { title: (await pg.textContent('h2')).trim().slice(0, 30), frames: (await pg.$$('.sbf svg')).length };
   await pg.goto(BASE + '#/t/letter'); await w(800);
   const letter = (await pg.textContent('h2')).trim();
-  console.log(JSON.stringify({ C, opened, story, scard, letter, todo: todo.replace(/\s+/g, ' ').slice(0, 90), items: n, end: end.trim(), drill, back, weekTodo, week, head, cards, row1, strip, wkPanel, give: { gsent, gcard, gdone, gres, lad, fixEnc }, paper: { psel, pmsg, kid2, moved2, moved1 }, ai, errs }, null, 1));
+  console.log(JSON.stringify({ C, opened, story, scard, letter, todo: todo.replace(/\s+/g, ' ').slice(0, 90), items: n, end: end.trim(), back, weekTodo, week, head, cards, row1, strip, wkPanel, give: { gsent, gcard, gdone, gres, lad, fixEnc }, paper: { psel, pmsg, kid2, moved2, moved1 }, ai, errs }, null, 1));
   await b.close();
 })().catch((e) => { console.error('ERR', e.message); process.exit(1); });
