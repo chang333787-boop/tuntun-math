@@ -7,7 +7,7 @@ import { kidReport, bugName, ST } from '../../paper/js/judge.js';
 import { mascot } from '../../paper/js/mascot.js';
 import { rng } from '../../engine/math.js';
 import { toText, toHTML } from '../../engine/tokens.js';
-import { RO } from '../../engine/concepts/kit.js';
+import { RO, P } from '../../engine/concepts/kit.js';
 import * as db from './db.js';
 import * as KS from './kidstore.js';
 import { prepPlan } from './prep.js';
@@ -325,6 +325,29 @@ function nowText(n) {
 // 지도를 바꾼 때 — 서버엔 이 칩만(자유 글 X)
 const NOTE_K = { group: '소집단', tool: '검산 도구 연습', model: '모형 · 그림', form: '다른 문제 꼴', time: '시간 더 줌', pair: '짝 활동', sheet: '보충지', home: '가정 연계' };
 // 아이 자세히 — 종이와 같은 판정 · 원인은 '한 번 보임'(가설) / '되풀이됨'(서로 다른 문항 둘 이상) [A-R11][A-R12]
+/* 다음 할 것 — 아이 하나의 기록 · 받은 과제 · 지금 하는 것으로 선생님이 바로 할 일 하나(아이 자세히 맨 위 · 반 화면과 같은 말) */
+export function nextOf({ C, no, rep, st, inbox = {}, now = null, recs = {} }) {
+  const MODE = { prep: '오늘 단원 점검', fix: '배우기', run: '매일 연습', story: '이야기 문제', week: '이번 주 점검', give: '선생님이 준 문제', check: '점검지', back: '거꾸로 찾기' };
+  const L = rep && rep.L ? rep.L : {}, cs = Object.keys(L);
+  if (now && now.mode && now.mode !== 'home' && Date.now() - (Number(now.t) || 0) < 5 * 60e3) return { t: `지금 <b>${esc(MODE[now.mode] || '앱')}</b> 하는 중이에요 — 끝나면 이 화면이 바뀌어요.` };
+  if (!cs.length) return { t: '아직 점검을 하지 않았어요.', a: '점검 내기', href: `#/t/c/${C}/check` };
+  const gives = Object.entries(inbox).filter(([id, x]) => x && x.kind === 'give' && SKILL[x.sk]);
+  const open = gives.filter(([id]) => !recs[id]), done = gives.filter(([id]) => recs[id]);
+  if (st && st.prep && st.prep.why === 'teacher') return { t: '앱이 막힌 곳이 많아 점검을 일찍 멈췄어요. <b>선생님과 같이</b> 먼저 봐 주세요.', a: '10분 카드 보기', href: `#/t/c/${C}` };
+  const fixed = (st && st.fixed) || {};
+  const byG = (a, b) => (a < b ? -1 : 1);   /* 차시 번호 차례 = 낮은 학년부터 */
+  const start = (rep.start || []).map((x) => x.c).find((c) => !fixed[c]) || cs.filter((c) => L[c].st === 'stuck' && !fixed[c]).sort(byG)[0];   /* 여기서부터 → 없으면 부족(막힌) 차시 중 가장 아래 */
+  if (start) {
+    const sk = skillsOf(start)[0], lead = (rep.start || []).some((x) => x.c === start) ? '여기서부터 배울 것' : '부족한 것';
+    if (sk && open.some(([, x]) => x.sk === sk.id)) return { t: `보낸 보충 <b>${esc(sk.name)}</b>${P(sk.name.replace(/\s*\([^)]*\)\s*$/, '') || sk.name, '을', '를')} 아직 푸는 중이에요 — 다 풀면 '보낸 보충'에 결과가 떠요.` };
+    const g = sk && done.map(([id, x]) => ({ x, r: st && st.gv && st.gv[id] })).find((y) => y.x.sk === sk.id && y.r);
+    if (g && g.r[0] / g.r[1] >= 0.8) return { t: `<b>${esc(sk.name)}</b> 보충에서 ${g.r[0]}/${g.r[1]} 맞혔어요. 며칠 뒤 매일 연습에서 저절로 다시 확인해요 — 따로 할 것 없어요.` };
+    if (sk) return { t: `${lead}: <b>${esc(sk.name)}</b>${g ? ` (지난 보충 ${g.r[0]}/${g.r[1]})` : ''}`, a: '이 아이에게 보충 주기', href: `#/t/c/${C}/give?sk=${sk.id}&who=${no}` };
+  }
+  const shaky = cs.filter((c) => L[c].st === 'shaky').sort(byG).map((c) => skillsOf(c)[0]).filter(Boolean);
+  if (shaky.length) return { t: `가끔 틀리는 것: <b>${esc(shaky[0].name)}</b> — 매일 연습에 저절로 섞여요. 더 다지려면 보충을 줘도 돼요.`, a: '보충 주기', href: `#/t/c/${C}/give?sk=${shaky[0].id}&who=${no}` };
+  return { t: '지금은 따로 할 것이 없어요 — 매일 연습만 이어 가면 돼요.' };
+}
 export async function kidDetailView(root, C, no) {
   const K = cls(C); if (!K) return go('#/t');
   root.innerHTML = '<div class="card">불러오는 중…</div>';
@@ -356,6 +379,7 @@ export async function kidDetailView(root, C, no) {
   const swList = Object.entries(cal.sureWrong);
   root.innerHTML = `<div class="card kd"><h2>${esc(nm(K, no))} <small>지금까지 푼 문제 ${recs.reduce((n, x) => n + x.s.it.length, 0)}개</small></h2>
     ${intro('이 아이가 푼 문제를 모아 본 화면이에요. 맨 위 <b>부족 · 가끔 틀림</b> 목록에서 바로 보충을 줄 수 있어요. 아래는 차시마다 자세히 — 카드를 누르면 어떤 생각으로 틀렸을지와 도와주는 법이 나와요.', 'no-print')}
+    ${(() => { const nx = nextOf({ C, no, rep, st, inbox: Object.fromEntries(Object.entries((raw && raw.in) || {}).map(([id, v]) => [id, db.dec(v)])), now: raw && raw.now ? db.dec(raw.now) : null, recs: KK.recs }); return `<div class="next-box"><span class="nb-k">다음 할 것</span><span class="nb-v">${nx.t}</span>${nx.a ? `<a class="btn pri" href="${esc(nx.href)}">${esc(nx.a)}</a>` : ''}</div>`; })()}
     ${lackHTML}
     <div class="acts no-print"><a class="btn" href="#/t/c/${C}">반 화면으로</a><button onclick="print()">인쇄</button><button type="button" class="teal" id="ksheet" title="배울 것 · 막힌 칸 · 흔들리는 칸만 골라 둔 맞춤 연습지">이 아이 연습지</button></div>
     <div class="kd-grid"><div class="kd-a">

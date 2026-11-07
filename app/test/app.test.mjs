@@ -347,5 +347,16 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   const plain = GV.giveSheet('gvZZTRAP2', { ...task, want: undefined });
   ok(!plain.items.some((x) => x.tr) && !('tr' in KS9.pack(plain)), '함정을 안 섞은 보충은 tr 없음');
 }
+// ㉗ 아이 자세히 '다음 할 것'(11-07 '교사도 안 헷갈리고 바로 다음 거') — 기록 없음 → 점검 · 막힌 차시 → 그 기능 보충 · 보낸 보충 푸는 중
+{
+  const T9 = await import('../js/teacher.js');
+  const none = T9.nextOf({ C: 'ZZ', no: '3', rep: { L: {}, start: [] } });
+  ok(/점검을 하지 않았어요/.test(none.t) && /check$/.test(none.href), `기록 없음 → 점검 내기 — ${none.t}`);
+  const rep = { L: { '1-2-6:4': { c: '1-2-6:4', st: 'stuck' }, '2-1-3:7': { c: '2-1-3:7', st: 'stuck' } }, start: [] };
+  const a = T9.nextOf({ C: 'ZZ', no: '3', rep });
+  ok(/부족한 것/.test(a.t) && /give\?sk=/.test(a.href) && /who=3/.test(a.href), `막힌 차시 중 가장 아래 → 보충 주기 — ${a.t}`);
+  const sk = a.href.match(/sk=([^&]+)/)[1], b = T9.nextOf({ C: 'ZZ', no: '3', rep, inbox: { gvZZ1: { kind: 'give', sk } } });
+  ok(/푸는 중/.test(b.t) && !b.href, `보낸 보충을 푸는 중이면 기다림 — ${b.t}`);
+}
 console.log(fail ? `FAIL ${fail}` : 'PASS');
 process.exitCode = fail ? 1 : 0;
