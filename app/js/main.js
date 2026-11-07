@@ -10,6 +10,8 @@ import { stopSpeak } from './speak.js';
 import { tryView, tryInfo } from './try.js';
 import { sheetView } from './sheet.js';
 import { teacherHome, newClassView, openClassView, cardsView, namesView, classView, kidDetailView, groupCardView, guideView, mindCardView, paperImportView, storyCardView, homeLetterView } from './teacher.js';
+import { checkRunView } from './check.js';
+import { checkView, checkPrintView } from './tcheck.js';
 import { lsGet, esc } from './local.js';
 import { flush, pending } from './db.js';
 import { icon, tile } from './icons.js';
@@ -68,6 +70,9 @@ const ROUTES = [
   [/^#\/t\/c\/(\w+)\/cards$/, (m) => cardsView(root, m[1])],
   [/^#\/t\/c\/(\w+)\/names$/, (m) => namesView(root, m[1])],
   [/^#\/t\/c\/(\w+)\/paper$/, (m) => paperImportView(root, m[1])],
+  [/^#\/check\/([A-Za-z0-9-]{1,24})$/, (m) => checkRunView(root, m[1])],
+  [/^#\/t\/c\/(\w+)\/check$/, (m) => checkView(root, m[1])],
+  [/^#\/t\/c\/(\w+)\/check\/([A-Za-z0-9-]{1,24})\/print$/, (m) => checkPrintView(root, m[1], m[2])],
   [/^#\/t\/c\/(\w+)\/s\/(\w+)$/, (m) => storyCardView(root, m[1], m[2])],
   [/^#\/t\/c\/(\w+)\/k\/(\d+)$/, (m) => kidDetailView(root, m[1], m[2])],
   [/^#\/t\/c\/(\w+)\/g\/(.+)$/, (m) => groupCardView(root, m[1], decodeURIComponent(m[2]))],
@@ -78,7 +83,7 @@ function route() {
   stopSpeak();
   cleanup = null;
   const h = location.hash || '#/';
-  const kid = /^#\/(me|prep|fix|review|join|stages|drill|back|retry|run|story|week)/.test(h);
+  const kid = /^#\/(me|prep|fix|review|join|stages|drill|back|retry|run|story|week|check)/.test(h);
   document.body.classList.toggle('kid', kid);
   document.body.classList.toggle('wide', /^#\/t\/c\/\w+$/.test(h));   /* 반 화면은 넓게(1440) */
   const me = meOf();

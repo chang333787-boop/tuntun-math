@@ -9,12 +9,12 @@ import { makeSheet, closure, LES, itemOf } from '../../paper/js/gen.js';
 import { kidReport } from '../../paper/js/judge.js';
 import { mindsOf, wantFor } from '../../engine/mis.js';
 
-//  한 판 = 선생님이 고른 길이(기본 24문제 · 약 10분 · 40분 수업에서 준비 다리가 수업을 먹지 않게 — 혹평 10-31) · 못 찾으면 다음 시간에 지난 기록(14일)과 함께 이어서
+//  한 판 = 선생님이 고른 길이(기본 18문제 · 약 8분 · 교사 11-05 '36개면 애들이 지치려나' → 길게 36 없앰 · 12 · 18 · 24) · 못 찾으면 다음 시간에 지난 기록(14일)과 함께 이어서
 //  첫 묶음은 바깥 칸 넷까지(12문제) · 그다음 묶음은 칸 셋까지(9문제) — 묶음이 작을수록 막힌 곳 아래로 빨리 내려감
 //  서로 다른 뿌리의 막힌 칸이 넷 이상이면 일찍 멈추고 '선생님과 같이'(why 'teacher') · 한 판을 다 묻고도 막힌 칸 넷 이상인데 못 좁혔어도 — 틀리는 문제만 이어 풀게 두지 않음
-export const PREP = { n: 3, first: 4, cap: 3, budget: 24, rounds: 8, fresh: 14, stuck: 4 };
-// 한 판 길이 — 선생님이 단원을 열 때 고름(짧게 18 · 약 8분 / 보통 24 · 약 10분 / 길게 36 · 약 15분) · 가까운 학기 빈 곳 모의: 하루 39 · 63 · 80% · 이틀 87 · 92.5 · 94.5%(10-31)
-export const LEN = [18, 24, 36];
+export const PREP = { n: 3, first: 4, cap: 3, budget: 18, rounds: 8, fresh: 14, stuck: 4 };
+// 한 판 길이 — 선생님이 단원을 열 때 고름(짧게 12 · 약 5분 / 보통 18 · 약 8분 / 길게 24 · 약 10분 · 11-05) · 모의 숫자는 app/test/prep.sim.mjs 끝 주석
+export const LEN = [12, 18, 24];
 const KID = 'me', DAY = 864e5;
 const gi = (c) => { const x = LES(c); return x ? Number(x.g[0]) * 10 + Number(x.g[2]) : 99; };
 const SEEN = new Set(['ok', 'pass', 'near', 'stuck', 'shaky']);
