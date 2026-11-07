@@ -166,7 +166,8 @@ export async function homeView(root) {
   const lpN = K.lastPrep, classRest = !doneOne && !!(ct && Date.now() - ct.t < 3 * 3600e3 && lpN && lpN.unit === ct.unit && lpN.t >= ct.t && lpN.why !== 'found' && lpN.why !== 'teacher') && !prac.some((x) => x.kind === 'help' || x.kind === 'give');
   const firstDay = !Object.keys(K.recs || {}).length, hasHelp = prac.some((x) => x.kind === 'help');
   const resN = [chk, prac, daily].findIndex((l) => l[0] && l[0].resume);   /* 하던 것이 있으면 그 카드가 주황 단추(수업 중 선생님이 연 점검만 그보다 앞 · 11-07 '다시 들어와도 이어서') */
-  const nowNo = doneOne || classRest ? 0 : classPrep ? 1 : resN >= 0 ? resN + 1 : prac.some((x) => x.kind === 'help' || x.kind === 'give') ? 2 : chk.some((x) => x.kind === 'check') ? 1 : prac.length ? 2 : chk.length ? 1 : daily.length ? 3 : 0;
+  const classFix = !doneOne && !!(ct && Date.now() - ct.t < 3 * 3600e3 && lpN && lpN.unit === ct.unit && lpN.t >= ct.t && lpN.why === 'found') && prac.some((x) => x.kind === 'fix');   /* 수업 중 점검으로 찾은 배울 것 = 점검 끝 화면이 '지금 하나 배우고'라 한 것 — 하다 만 매일 연습 · 이번 주 점검 이어서보다 먼저(11-08) */
+  const nowNo = doneOne || classRest ? 0 : classPrep ? 1 : classFix ? 2 : resN >= 0 ? resN + 1 : prac.some((x) => x.kind === 'help' || x.kind === 'give') ? 2 : chk.some((x) => x.kind === 'check') ? 1 : prac.length ? 2 : chk.length ? 1 : daily.length ? 3 : 0;
   if (hasHelp && nowNo === 2 && prac[0].kind === 'help' && Date.now() - KS.lastAsk(me) > 15 * 60e3) KS.setNow(me, { mode: 'home', c: prac[0].cs[0] || '', ask: Date.now() });   /* 처음 화면 '선생님과 같이 봐요'가 지금 할 것 = 손 든 아이 → 선생님 반 화면 맨 위(이 아이가 15분 안에 손 든 게 없을 때만 · 다른 것을 시작하면 풀리고 돌아오면 다시) */
   const lists = [chk, prac, daily];
   const head = doneOne ? say('cheer', '하나 배웠어요! 이제 <b>선생님 수업</b>으로 가요. 남은 것은 다음 시간에 해요.', 88)
