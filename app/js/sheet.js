@@ -20,7 +20,7 @@ const CUR = 'tt.sheet.cur', PRE = 'tt.sheet.pre', SAVED = 'tt.sheets';
 const ssGet = (k) => { try { return JSON.parse(sessionStorage.getItem(k) || 'null'); } catch (e) { return null; } };
 const ssSet = (k, v) => { try { sessionStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* 사생활 창 등 — 이 화면 안에서만 */ } };
 const ssDel = (k) => { try { sessionStorage.removeItem(k); } catch (e) { /* */ } };
-const WHY = { start: '고칠 판자', stuck: '막힌 칸', shaky: '흔들리는 칸', mind: '틀린 방법이 되풀이됨' };
+const WHY = { start: '배울 것', stuck: '막힌 칸', shaky: '흔들리는 칸', mind: '틀린 방법이 되풀이됨' };
 const GL = (g) => g.replace(/^(\d)-(\d)$/, '$1학년 $2학기');
 const gLong = (s) => (s.g === s.g2 ? GL(s.g) : `${GL(s.g)} ~ ${GL(s.g2)}`);
 const newSeed = () => 1 + Math.floor(Math.random() * 99998);
@@ -165,7 +165,7 @@ export function sheetView(root) {
     const saved = lsGet(SAVED, []) || [];
     return `<h2>고른 기능</h2>
       <p class="sh-sum" aria-live="polite">${cfg.sel.length ? `모두 <b>${total}</b>문제 · <b>${pages}</b>쪽${cfg.key ? '<span> + 정답</span>' : ''}` : '<span>아직 고른 기능이 없어요</span>'}</p>
-      ${K ? `<div class="panel sh-kid"><b>${esc(K.label || '이 아이')}</b> — ${K.none ? '아직 고칠 판자 · 막힌 칸 · 흔들리는 칸이 없어요. 카드를 눌러 골라 주세요.' : '아이 자세히에서 고칠 판자 · 막힌 칸 · 흔들리는 칸을 기능으로 찾아 미리 골라 두었어요. 기능마다 그 아이 칸 위주로 10문제예요.'}${K.chkWhy ? `<br><span class="small">${esc(K.chkWhy)} — 확인 동그라미를 켜 두었어요.</span>` : ''}${K.more.length ? `<br><span class="small muted">더 있는 칸 ${K.more.length}개(${K.more.map((id) => esc(SKILL[id].name)).join(', ')})는 '${KTAB}' 탭 아래쪽에 있어요 — 한 번에 여섯 기능까지 골랐어요.</span>` : ''}</div>` : ''}
+      ${K ? `<div class="panel sh-kid"><b>${esc(K.label || '이 아이')}</b> — ${K.none ? '아직 배울 것 · 막힌 칸 · 흔들리는 칸이 없어요. 카드를 눌러 골라 주세요.' : '아이 자세히에서 배울 것 · 막힌 칸 · 흔들리는 칸을 기능으로 찾아 미리 골라 두었어요. 기능마다 그 아이 칸 위주로 10문제예요.'}${K.chkWhy ? `<br><span class="small">${esc(K.chkWhy)} — 확인 동그라미를 켜 두었어요.</span>` : ''}${K.more.length ? `<br><span class="small muted">더 있는 칸 ${K.more.length}개(${K.more.map((id) => esc(SKILL[id].name)).join(', ')})는 '${KTAB}' 탭 아래쪽에 있어요 — 한 번에 여섯 기능까지 골랐어요.</span>` : ''}</div>` : ''}
       <div class="field sh-who"><label for="swho">종이에 쓸 이름</label><input id="swho" maxlength="24" value="${esc(cfg.who)}" placeholder="아이 번호나 별명 (예: 3번)" autocomplete="off"><span class="small muted">이 기기에만 두고 서버로 보내지 않아요.</span></div>
       ${cfg.sel.length ? `<ol class="sh-sel">${cfg.sel.map(row).join('')}</ol>` : '<p class="muted sh-empty">카드를 눌러 기능을 골라 주세요. 고른 차례대로 종이가 한 쪽씩 나와요.</p>'}
       <div class="sh-opts">${optHTML('o-chk', cfg.chk, '확인 동그라미')}${optHTML('o-ex', cfg.ex, '보기')}${optHTML('o-key', cfg.key, '정답 쪽')}</div>

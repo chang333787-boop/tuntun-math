@@ -100,7 +100,7 @@ function run(root, me, K, S, SK) {
     let head, acts;
     if (root0) { head = say('fix', `찾았어요! <b>${esc(S.problem.text)}</b>${P(S.problem.text, '이', '가')} 어려웠던 까닭은 <b>${esc(plank(root0))}</b>에서 끊겨서예요.<br>여기부터 고치면 처음 문제도 풀려요.`, 104); acts = `<a class="btn pri big" href="#/fix/${root0}">여기부터 고치기</a>`; }
     else if (st0 && st0.s === 'bridge') { head = say('think', `쪼갠 단계는 다 알아요! <b>합쳐서 한 번에 풀기</b>가 빈칸이에요. ${esc(st0.note || '')}`, 104); acts = `<a class="btn pri big" href="#/fix/${C0}">합쳐 풀기 연습</a>`; }
-    else if (st0 && ['known', 'auto', 'slow'].includes(st0.s)) { head = say('cheer', `이 문제는 이미 튼튼해요! 새 숫자로도 다 맞혔어요.${st0.s === 'slow' ? ' 조금 느려요 — 다듬기로 빠르게 해 볼까요?' : ''}`, 104); acts = `<a class="btn pri big" href="#/drill/${C0}">다듬기</a>`; }
+    else if (st0 && ['known', 'auto', 'slow'].includes(st0.s)) { head = say('cheer', `이 문제는 이미 튼튼해요! 새 숫자로도 다 맞혔어요.${st0.s === 'slow' ? ' 조금 느려요 — 매일 연습에서 자주 만나면 빨라져요.' : ''}`, 104); acts = `<a class="btn pri big" href="#/run">매일 연습</a>`; }   /* 다듬기 · 스테이지는 메뉴에서 뺌(docs/what.md 11-05) */
     else { head = say('think', '오늘은 여기까지 찾았어요. 조금 흔들리는 곳이 있어요 — 선생님과 함께 보거나 다음에 이어서 찾아요.', 104); acts = res.shaky.length ? `<a class="btn pri big" href="#/fix/${res.shaky[0]}">${esc(kid(res.shaky[0]))} 다지기</a>` : ''; }
     root.innerHTML = `<div class="card msg act-back"><p class="eyebrow">${tile('back', 22)}거꾸로 찾기</p>${head}${chainHTML}<div class="acts">${acts}<a class="btn big" href="#/back">다른 문제 찾기</a><a class="btn" href="#/me">처음 화면으로</a></div></div>`;
   };
@@ -118,6 +118,6 @@ export function retryView(root) {
     let ok = false; if (!a.idk) { try { ok = !!it.check(a.vals, a.raws).ok; } catch (e) { ok = false; } }
     if (ok) { K.back = { ...B, solved: Date.now() }; KS.save(me, K); }
     root.innerHTML = `<div class="card msg act-back"><p class="eyebrow">${tile('retry', 22)}처음 문제 다시</p>${ok ? say('cheer', `풀었어요! <b>${esc(B.text)}</b> — 처음엔 막혔던 문제예요. 끊긴 곳을 고치니 이어졌어요.`, 104) : say('think', `${ansSay(it)}<br>아직 한 군데가 더 끊겼을 수 있어요. 거꾸로 한 번 더 찾아봐요.`, 104)}
-      <div class="acts">${ok ? `<a class="btn pri big" href="#/drill/${B.c}">이 문제 다듬기</a>` : `<a class="btn pri big" href="#/back">다시 거꾸로 찾기</a>`}<a class="btn big" href="#/me">처음 화면으로</a></div></div>`;
+      <div class="acts">${ok ? '<a class="btn pri big" href="#/me">처음 화면으로</a>' : '<a class="btn pri big" href="#/back">다시 거꾸로 찾기</a><a class="btn big" href="#/me">처음 화면으로</a>'}</div></div>`;
   } });
 }

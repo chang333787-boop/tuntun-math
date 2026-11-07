@@ -188,7 +188,7 @@ export function storyView(root, arg) {
     S = { v: 1, id: `s${rand(6)}`, cs, made: Date.now(), i: 0, res: {}, items: planOf(cs, { seed: (Math.random() * 2 ** 31) >>> 0, log: storyLog(K) }) };
     lsSet(SK, S);
   }
-  if (!S.items.length) { root.innerHTML = `<div class="card msg">${say('think', '지금은 이야기를 만들지 못했어요. 다른 이야기를 골라 봐요.', 104)}<div class="acts"><a class="btn" href="#/story">이야기 다리로</a></div></div>`; return; }
+  if (!S.items.length) { root.innerHTML = `<div class="card msg">${say('think', '지금은 이야기를 만들지 못했어요. 다른 이야기를 골라 봐요.', 104)}<div class="acts"><a class="btn" href="#/story">이야기 문제로</a></div></div>`; return; }
   let rush = 0, pr = null, st = null;
   KS.setNow(me, { mode: 'story', n: S.i });
 

@@ -214,7 +214,7 @@ export function misCard(m, tag = '', label = '') {
 }
 const CELL = { ok: ['c-ok', '✓'], pass: ['c-pass', '✓'], near: ['c-near', '○'], shaky: ['c-shaky', '△'], stuck: ['c-stuck', '✕'], need: ['c-need', '?'], none: ['c-none', '·'] };
 // 표 읽는 법(반 화면 · 한 장 안내) — 칸 색 그대로
-const LEGEND = [['c-ok', '✓', '됨'], ['c-near', '○', '거의'], ['c-shaky', '△', '흔들림'], ['c-stuck', '✕', '막힘'], ['c-start', '★', '고칠 판자(여기서부터)'], ['c-need', '?', '더 볼 것'], ['c-none', '·', '아직 안 봄'], ['c-t2', '✓', "다듬기 '빠르게'까지"], ['c-t3', '✓', "다듬기 '오래'까지"]];
+const LEGEND = [['c-ok', '✓', '됨'], ['c-near', '○', '거의'], ['c-shaky', '△', '흔들림'], ['c-stuck', '✕', '막힘'], ['c-start', '★', '여기서부터 배울 것'], ['c-need', '?', '더 볼 것'], ['c-none', '·', '아직 안 봄'], ['c-t2', '✓', '빠르게도 됨'], ['c-t3', '✓', '며칠 뒤에도 됨']];
 
 // 틀린 뒤 고친 힘(도움 사다리 · 교사 11-07 '단계적으로 하나씩 해내는 힘') — 주 [주, 떠올려 고침, 풀이 순서로 고침, 답 봄, 보기 다시 고름]
 //  스스로 = (떠올려 + 풀이 순서로) ÷ (떠올려 + 풀이 순서로 + 답 봄) · 보기 다시 고르기는 빼고 셈(찍어도 맞을 수 있음 · docs/hint_ladder.md)
@@ -266,7 +266,7 @@ export function classView(root, C) {
     </div>
     <div class="trow">${first.length ? `<div class="card first"><h2>먼저 봐 줄 아이 <small>${first.length}명</small></h2>${intro('앱이 혼자 고치기 어려워 보이는 아이예요. 수업 중에 먼저 들러 주세요. 이름을 누르면 자세히 봐요.')}<ul class="who">${first.map((x) => `<li><a href="#/t/c/${C}/k/${x.no}">${esc(nm(K, x.no))}</a><span class="whys">${x.why.map((w) => `<span class="pill">${esc(w)}</span>`).join('')}</span></li>`).join('')}</ul></div>` : ''}
     ${(() => { const today = K.today && K.today.unit === unit ? K.today : null, fresh = (n) => n && n.t && Date.now() - n.t < 3 * 60000;
-      const MODE = { prep: '오늘 단원 점검', fix: '배우는 중', drill: '다듬기', run: '매일 연습', back: '거꾸로 찾기', story: '이야기 문제', week: '이번 주 점검', review: '다시 보기', give: '선생님이 준 문제', check: '점검지' };
+      const MODE = { prep: '오늘 단원 점검', fix: '배우는 중', drill: '빠르게 풀기', run: '매일 연습', back: '거꾸로 찾기', story: '이야기 문제', week: '이번 주 점검', review: '다시 보기', give: '선생님이 준 문제', check: '점검지' };
       const g = { out: [], in: [], doing: [], done: [], fix: [], help: [], more: [] };
       rows.forEach((no) => { const x = S[no] || {}, st = x.st, n = x.now;
         if (!st && !fresh(n)) return g.out.push(no);
@@ -340,7 +340,7 @@ export async function kidDetailView(root, C, no) {
   const msOf = {}; for (const x of Object.values(KK.recs)) { if (!KS.okRec(x)) continue; for (const [k, c] of x.s.it) { const r = x.r.it[k], t = x.ms ? Number(x.ms[k]) : 0; if (r && r.s === 'ok' && t > 0) (msOf[c] = msOf[c] || []).push(t); } }
   const medOf = (c) => { const a = (msOf[c] || []).slice().sort((p, q) => p - q); return a.length ? a[Math.floor(a.length / 2)] : null; };
   const mxK = obj(raw && raw.mx ? db.dec(raw.mx) : null);
-  const tm = (c) => { const m = medOf(c), t = mxK[c] ? Number(mxK[c].tier) || 0 : 0; return `${m ? ` <span class="small muted">한 문제 ${(m / 1000).toFixed(1)}초${byId[c] ? `(기준 ${byId[c].sec}초)` : ''}</span>` : ''}${t ? ` <span class="pill">다듬기 ${['', '정확', '정확 · 빠르게', '정확 · 빠르게 · 오래'][Math.min(t, 3)]}</span>` : ''}`; };
+  const tm = (c) => { const m = medOf(c), t = mxK[c] ? Number(mxK[c].tier) || 0 : 0; return `${m ? ` <span class="small muted">한 문제 ${(m / 1000).toFixed(1)}초${byId[c] ? `(기준 ${byId[c].sec}초)` : ''}</span>` : ''}${t ? ` <span class="pill">${['', '정확하게 됨', '빠르게도 됨', '며칠 뒤에도 됨'][Math.min(t, 3)]}</span>` : ''}`; };
   const cards = (c) => { const x = rep.L[c]; if (!x) return ''; const seen = new Set(), out = []; const add = (m, tag) => { if (!seen.has(m.id)) { seen.add(m.id); out.push(misCard(m, tag)); } };
     if (x.why) { x.why.sure.forEach((h) => misFor({ bug: h.id, lesson: c }).forEach((m) => add(m, '여러 번 보임'))); x.why.maybe.forEach((h) => misFor({ bug: h.id, lesson: c }).forEach((m) => add(m, '한 번 보임'))); }
     if (!out.length && (x.st === 'stuck' || x.st === 'shaky')) misFor({ lesson: c }).slice(0, 2).forEach((m) => add(m, '이 칸에서 흔함'));
@@ -356,7 +356,7 @@ export async function kidDetailView(root, C, no) {
   root.innerHTML = `<div class="card kd"><h2>${esc(nm(K, no))} <small>지금까지 푼 문제 ${recs.reduce((n, x) => n + x.s.it.length, 0)}개</small></h2>
     ${intro('이 아이가 푼 문제를 모아 본 화면이에요. 맨 위 <b>부족 · 가끔 틀림</b> 목록에서 바로 보충을 줄 수 있어요. 아래는 차시마다 자세히 — 카드를 누르면 어떤 생각으로 틀렸을지와 도와주는 법이 나와요.', 'no-print')}
     ${lackHTML}
-    <div class="acts no-print"><a class="btn" href="#/t/c/${C}">반 화면으로</a><button onclick="print()">인쇄</button><button type="button" class="teal" id="ksheet" title="고칠 판자 · 막힌 칸 · 흔들리는 칸만 골라 둔 맞춤 연습지">이 아이 연습지</button></div>
+    <div class="acts no-print"><a class="btn" href="#/t/c/${C}">반 화면으로</a><button onclick="print()">인쇄</button><button type="button" class="teal" id="ksheet" title="배울 것 · 막힌 칸 · 흔들리는 칸만 골라 둔 맞춤 연습지">이 아이 연습지</button></div>
     <div class="kd-grid"><div class="kd-a">
     ${rep.start.length ? `<h3>먼저 배울 차시 <small>더 아래 차시는 다 맞혔어요 — 여기부터 보충하면 돼요</small></h3><ul class="lines">${rep.start.map((s) => line(s.c)).join('')}</ul>` : ''}
     ${rep.below.length ? `<h3>더 아래 차시도 알아봐야 해요 <small>틀렸는데 그 아래 차시를 아직 안 풀었어요 — <a href="#/t/c/${C}/check">점검 내기</a>에서 오늘 단원 점검이나 점검지로</small></h3><ul class="lines">${rep.below.map((b) => line(b.c, `아직 안 푼 아래 차시: ${b.check.map((x) => esc(lessonName(x))).join(', ')}`)).join('')}</ul>` : ''}
@@ -403,14 +403,14 @@ export function groupCardView(root, C, c) {
   let cmp = '';
   if (ex && ms.length) { const ids = (() => { try { return testable(ex); } catch (e) { return []; } })(); const id = ms.flatMap((m) => m.bugs || []).find((b) => ids.includes(b)); if (id) { let v = null; try { v = __predict(ex, id); } catch (e) { v = null; } if (v) cmp = `${askP('두 풀이 가운데 어느 쪽이 맞을까? 틀린 쪽은 어디서 어긋났을까?')}${pairBox(staticHTML(ex.prompt, ex.sol), staticHTML(ex.prompt, v))}${KIDSAY[id] ? `<p class="note"><b>틀린 친구는</b> ${esc(KIDSAY[id])}</p>` : ''}`; } }
   root.innerHTML = `<div class="card tcard"><h2>10분 소집단 카드 <small>${esc(lessonName(c))}</small></h2>
-    ${intro('같은 칸(판자)을 고쳐야 하는 아이 2~4명과 10분 동안 할 활동이에요. 차례대로 진행하고, 선생님 말은 그대로 읽어도 돼요. 문제는 열 때마다 새 숫자로 바뀌어요.', 'no-print')}
+    ${intro('같은 칸을 배워야 하는 아이 2~4명과 10분 동안 할 활동이에요. 차례대로 진행하고, 선생님 말은 그대로 읽어도 돼요. 문제는 열 때마다 새 숫자로 바뀌어요.', 'no-print')}
     <div class="acts no-print"><button class="pri" onclick="print()">인쇄</button><a class="btn" href="#/t/c/${C}">반 보기로</a></div>
     <dl class="lead"><dt>오늘 목표</dt><dd>${esc(LES(c).kid)}</dd>${hintOf(c) ? `<dt>핵심</dt><dd>${esc(hintOf(c))}</dd>` : ''}</dl>
     <ol class="plan">
     ${stepBox(1, '선생님이 먼저 풀어 보이기', 2, `${askP('선생님이 먼저 풀어 볼게. 머릿속 생각을 말로 할 테니 잘 들어 봐.')}${ex ? `<div class="qline">${staticHTML(ex.prompt, null)}<span class="ans">답 ${ansHTML(ex)}</span></div>${modelHTML(ex)}${steps.length ? `<ol class="steps">${steps.map((s) => stepHTML(s)).join('')}</ol>` : ''}` : ''}<p class="note">모형이 있으면 모형으로 먼저(낱개 10개 → 십 막대 1개로 바꾸기), 그다음 그림, 그다음 식으로 보여 줘요.</p>`)}
     ${stepBox(2, '함께 풀기', 3, `${askP('첫 단계는 뭐부터 할까? 말해 주면 선생님이 받아 적을게.')}${qGrid(together)}`)}
     ${stepBox(3, '혼자 풀기', 3, `${askP('이번엔 혼자 풀어 봐. 막히면 어느 단계에서 막혔는지 짚어 줘.')}${qGrid(solo)}<p class="note">틀리면 바로 그 단계로 돌아가 같이 고쳐요.</p>`)}
-    ${stepBox(4, '마무리', 2, `${askP('어느 단계가 가장 어려웠어? 한 가지씩 말해 볼까?')}<p class="note">그다음 아이마다 앱에서 <b>판자 고치기</b>의 확인 3문제를 풀게 하면 기록이 남아요.</p>`)}
+    ${stepBox(4, '마무리', 2, `${askP('어느 단계가 가장 어려웠어? 한 가지씩 말해 볼까?')}<p class="note">그다음 아이마다 앱에서 <b>배우기</b>의 확인 3문제를 풀게 하면 기록이 남아요.</p>`)}
     </ol>
     ${ms.length ? `<h3>알아 두기 — 이 칸에서 자주 보이는 틀린 생각</h3>${cmp}<div class="misrow">${ms.slice(0, 3).map((m) => misCard(m)).join('')}</div>` : ''}
     <p class="small muted foot">이 묶음은 앱의 제안이에요. 경계에 있는 아이는 선생님이 보고 넣거나 빼 주세요.</p></div>`;
@@ -442,7 +442,7 @@ export function mindCardView(root, C, id) {
       <dt>왜 그럴까요</dt><dd>${esc(whyOf(m))}</dd>
       <dt>오늘 목표</dt><dd>이 생각을 지우려 하기보다, 이 방법이 <b>언제 맞고 언제 안 맞는지</b> 아이 입으로 가르게 해요.</dd></dl>
     <ol class="plan">
-    ${stepBox(1, '맞는 풀이와 틀린 풀이 견주기', 3, `${askP(pairAsk)}${pair || `<p class="note">칠판에 맞는 풀이와 이 생각대로 한 풀이를 나란히 써 주세요. 예: ${esc(m.shows)}</p>`}`)}
+    ${stepBox(1, '맞는 풀이와 틀린 풀이 비교하기', 3, `${askP(pairAsk)}${pair || `<p class="note">칠판에 맞는 풀이와 이 생각대로 한 풀이를 나란히 써 주세요. 예: ${esc(m.shows)}</p>`}`)}
     ${stepBox(2, '도구로 확인하기', 2, t ? `${askP(t.how)}<p>${icon('search', 18)} <b>${esc(t.name)}</b> — 아이마다 아까 틀린 답에 직접 써 보게 해요. 앱에서도 틀리면 같은 도구가 나와요.</p>` : '<p>이 생각은 아직 앱 도구가 없어요. 그림(수 모형 · 막대 · 수직선)으로 함께 확인해요.</p>')}
     ${stepBox(3, '이 생각대로 풀면 틀리는 문제', 3, `${askP(m.ask || '아까 그 방법으로 풀면 답이 어떻게 될까? 정말 맞는지 확인해 볼까?')}${traps.length ? qGrid(traps) : ''}<p class="note">답은 문제 옆 연한 글씨예요. 다 풀면 함께 맞춰 보고, 틀린 문제는 2번 도구로 확인해요.</p>`)}
     ${stepBox(4, '마무리', 2, `${askP('이 방법은 언제는 맞고, 언제는 안 맞을까? 한 줄로 말해 볼까?')}<p class="note"><b>더 도와줄 때</b> ${esc(easy(m.fix))}</p>`)}
@@ -458,8 +458,8 @@ export const csvText = (rows) => '\ufeff' + rows.map((r) => r.map((v) => { const
 export function csvRows(C, K, S, unit) {
   const loc = (t) => new Date(t).toLocaleString('sv-SE').slice(0, 16);   /* 이 기기 시각(한국 시간) · 2026-10-31 16:12 */
   const P = prepPlan(unit);
-  const rows1 = [['반', '번호', '마지막 기록', '오늘 단원', '준비 칸 수', '준비 칸 확인', '준비 칸 막힘', '고칠 판자', '여러 번 보인 생각', '고친 생각', '짐작 맞은 정도', "'자신 있어요'인데 틀림", '정확 표', '빠르게 표', '오래 표', '고친 판자 수', '구보(7일)', '도구로 스스로 고침', '빨리 넘김', '이번 주 점검(주 · 10점 · 최근 8주)']];
-  const rows2 = [['반', '번호', '차시', '칸 이름', '학기', '상태', '다듬기 표(0~3)', '오늘 단원 준비 칸']];
+  const rows1 = [['반', '번호', '마지막 기록', '오늘 단원', '점검 칸 수', '점검 칸 확인', '점검 칸 막힘', '배울 것', '여러 번 보인 생각', '고친 생각', '짐작 맞은 정도', "'자신 있어요'인데 틀림", '정확하게 됨', '빠르게도 됨', '며칠 뒤에도 됨', '배워서 고친 것 수', '매일 연습(7일)', '도구로 스스로 고침', '빨리 넘김', '이번 주 점검(주 · 10점 · 최근 8주)']];
+  const rows2 = [['반', '번호', '차시', '칸 이름', '학기', '상태', '빠르기 단계(0~3)', '오늘 단원 점검 칸']];
   for (let i = 1; i <= K.n; i++) {
     const no = String(i), st = S[no] && S[no].st; if (!st) { rows1.push([C, no]); continue; }
     const pre = P.pre.filter((c) => LES(c)), ok = pre.filter((c) => ['ok', 'pass'].includes(st.L[c])).length, bad = pre.filter((c) => st.L[c] === 'stuck').length;

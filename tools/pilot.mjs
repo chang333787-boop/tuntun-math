@@ -25,20 +25,23 @@ const slope = (ys) => { const n = ys.length; if (n < 2) return null; const mx = 
 const weekPts = (s) => String(s || '').split('/').map((x) => x.trim().split(/\s+/)).filter((p) => p.length === 2 && num(p[1]) != null).map((p) => num(p[1]));
 
 // 장 하나(날짜 · 줄들) → 반 숫자
+/* CSV 머리 이름 — 11-07 말 바꾸기 뒤 이름(앞) · 그 전에 받아 둔 CSV 이름(뒤)도 읽음 */
+const OLD = { '점검 칸 수': '준비 칸 수', '점검 칸 확인': '준비 칸 확인', '점검 칸 막힘': '준비 칸 막힘', '배울 것': '고칠 판자', '배워서 고친 것 수': '고친 판자 수', '정확하게 됨': '정확 표', '빠르게도 됨': '빠르게 표', '며칠 뒤에도 됨': '오래 표', '매일 연습(7일)': '구보(7일)' };
+export const col = (r, k) => (r[k] !== undefined ? r[k] : OLD[k] ? r[OLD[k]] : undefined);
 export function classNums(rows) {
   const has = rows.filter((r) => r['마지막 기록']);
-  const g = (k) => has.map((r) => num(r[k]));
-  const pre = has.map((r) => (num(r['준비 칸 수']) ? num(r['준비 칸 확인']) / num(r['준비 칸 수']) : null));
+  const g = (k) => has.map((r) => num(col(r, k)));
+  const pre = has.map((r) => (num(col(r, '점검 칸 수')) ? num(col(r, '점검 칸 확인')) / num(col(r, '점검 칸 수')) : null));
   return {
     n: rows.length, active: has.length,
     준비칸확인: mean(pre) == null ? null : mean(pre) * 100,
-    막힘: mean(g('준비 칸 막힘')),
-    고칠판자있음: has.filter((r) => r['고칠 판자']).length,
-    고친판자: mean(g('고친 판자 수')),
+    막힘: mean(g('점검 칸 막힘')),
+    고칠판자있음: has.filter((r) => col(r, '배울 것')).length,
+    고친판자: mean(g('배워서 고친 것 수')),
     짐작: mean(g('짐작 맞은 정도')),
     자신있는데틀림: mean(g("'자신 있어요'인데 틀림")),
-    정확: mean(g('정확 표')), 빠르게: mean(g('빠르게 표')), 오래: mean(g('오래 표')),
-    구보: mean(g('구보(7일)')), 스스로: has.reduce((a, r) => a + (num(r['도구로 스스로 고침']) || 0), 0), 빨리넘김: has.reduce((a, r) => a + (num(r['빨리 넘김']) || 0), 0),
+    정확: mean(g('정확하게 됨')), 빠르게: mean(g('빠르게도 됨')), 오래: mean(g('며칠 뒤에도 됨')),
+    구보: mean(g('매일 연습(7일)')), 스스로: has.reduce((a, r) => a + (num(r['도구로 스스로 고침']) || 0), 0), 빨리넘김: has.reduce((a, r) => a + (num(r['빨리 넘김']) || 0), 0),
   };
 }
 
@@ -47,7 +50,7 @@ export function report(files, formative = null) {
   const out = [];
   out.push(`# 시범 운영 숫자(${sheets.length}장 · ${sheets[0] ? sheets[0].date : ''} ~ ${sheets.length ? sheets[sheets.length - 1].date : ''})`);
   out.push('', '앱 안 숫자는 **과정 지표**예요. 효과는 앱 밖 형성평가로 봐요(docs/pilot.md). 한 반 · 대조군 없음.', '');
-  const cols = [['active', '기록 있는 아이'], ['준비칸확인', '준비 칸 확인 %'], ['막힘', '준비 칸 막힘(평균)'], ['고칠판자있음', '고칠 판자 있는 아이'], ['고친판자', '고친 판자(평균)'], ['짐작', '짐작 맞은 정도 %'], ['자신있는데틀림', '자신 있었는데 틀림(평균)'], ['정확', '정확 표'], ['빠르게', '빠르게 표'], ['오래', '오래 표'], ['구보', '구보 날(7일)'], ['스스로', '도구로 스스로 고침(합)'], ['빨리넘김', '빨리 넘김(합)']];
+  const cols = [['active', '기록 있는 아이'], ['준비칸확인', '점검 칸 확인 %'], ['막힘', '점검 칸 막힘(평균)'], ['고칠판자있음', '배울 것이 있는 아이'], ['고친판자', '배워서 고친 것(평균)'], ['짐작', '짐작 맞은 정도 %'], ['자신있는데틀림', '자신 있었는데 틀림(평균)'], ['정확', '정확하게 됨(평균)'], ['빠르게', '빠르게도 됨(평균)'], ['오래', '며칠 뒤에도 됨(평균)'], ['구보', '매일 연습 한 날(7일)'], ['스스로', '도구로 스스로 고침(합)'], ['빨리넘김', '빨리 넘김(합)']];
   const nums = sheets.map((s) => ({ date: s.date, ...classNums(s.rows) }));
   out.push(`| 날짜 | ${cols.map((c) => c[1]).join(' | ')} |`, `|---|${cols.map(() => '---').join('|')}|`);
   for (const x of nums) out.push(`| ${x.date} | ${cols.map(([k]) => f1(x[k])).join(' | ')} |`);
@@ -64,14 +67,14 @@ export function report(files, formative = null) {
       out.push('', `## 이번 주 점검 선(${lines.length}명 · 점 둘 이상)`, `- 주당 기울기 평균 ${f1(mean(sl))}점 · 오르는 아이(+0.5 넘게) ${sl.filter((v) => v > 0.5).length}명 · 그대로 ${sl.filter((v) => v >= -0.5 && v <= 0.5).length}명 · 내리는 아이(−0.5 넘게) ${sl.filter((v) => v < -0.5).length}명`, `- 첫 점 평균 ${f1(mean(lines.map((x) => x.ys[0])))} → 마지막 점 평균 ${f1(mean(lines.map((x) => x.ys[x.ys.length - 1])))}(10점)`);
     }
   }
-  // 형성평가(앱 밖) — 고칠 판자를 찾고 고친 아이 vs 아닌 아이
+  // 형성평가(앱 밖) — 배울 것을 찾고 배워서 고친 아이 vs 아닌 아이
   if (formative && last) {
     const F = Object.fromEntries(parseCSV(formative).map((r) => [String(r['번호']), { pre: num(r['사전']), post: num(r['사후']) }]));
-    const fixedBy = Object.fromEntries(last.rows.map((r) => [String(r['번호']), num(r['고친 판자 수']) || 0]));
+    const fixedBy = Object.fromEntries(last.rows.map((r) => [String(r['번호']), num(col(r, '배워서 고친 것 수')) || 0]));
     const grp = (f) => Object.entries(F).filter(([no, v]) => v.post != null && f(fixedBy[no] || 0)).map(([, v]) => v);
     const A = grp((n) => n > 0), B = grp((n) => n === 0);
     const gain = (xs) => mean(xs.map((v) => (v.pre != null ? v.post - v.pre : null)));
-    out.push('', '## 형성평가(앱 밖 · 정본)', `- 판자를 고친 아이 ${A.length}명: 사후 평균 ${f1(mean(A.map((v) => v.post)))} · 오른 폭 ${f1(gain(A))}`, `- 고친 판자가 없는 아이 ${B.length}명: 사후 평균 ${f1(mean(B.map((v) => v.post)))} · 오른 폭 ${f1(gain(B))}`, '- ⚠️ 두 무리는 무작위로 나뉜 것이 아님(고칠 판자가 있던 아이 = 처음에 더 어려웠던 아이) — 사후 점수보다 **오른 폭**을 보고, 그래도 인과로 쓰지 않음.');
+    out.push('', '## 형성평가(앱 밖 · 정본)', `- 배워서 고친 것이 있는 아이 ${A.length}명: 사후 평균 ${f1(mean(A.map((v) => v.post)))} · 오른 폭 ${f1(gain(A))}`, `- 배워서 고친 것이 없는 아이 ${B.length}명: 사후 평균 ${f1(mean(B.map((v) => v.post)))} · 오른 폭 ${f1(gain(B))}`, '- ⚠️ 두 무리는 무작위로 나뉜 것이 아님(고칠 판자가 있던 아이 = 처음에 더 어려웠던 아이) — 사후 점수보다 **오른 폭**을 보고, 그래도 인과로 쓰지 않음.');
   }
   return out.join('\n');
 }

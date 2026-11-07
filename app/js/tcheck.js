@@ -89,7 +89,7 @@ export function checkCard(C, K, S = {}) {
 function prePost(K, S, list) {
   const pre = list.find(([, x]) => x.lab === 'pre'), post = pre ? list.find(([, x]) => x.lab === 'post' && Number(x.t) > Number(pre[1].t)) : null;
   if (!pre) return '';
-  const head = `<section class="card ck-pp"><h2>사전 · 사후 견주기 <small>시범 운영 기록</small></h2>`;
+  const head = `<section class="card ck-pp"><h2>사전 · 사후 비교 <small>시범 운영 기록</small></h2>`;
   if (!post) return `${head}<p class="muted">사전 점검(${esc(day(Number(pre[1].t)))} · ${esc(gl(pre[1].from))} ~ ${esc(gl(pre[1].to))})을 냈어요. 몇 주 뒤 같은 범위로 <b>사후 점검</b>을 내면 여기에서 아이마다 전 → 후를 견줘요.</p></section>`;
   if (!S) return `${head}<p class="muted">불러오는 중…</p></section>`;
   const [pid, px] = pre, [qid, qx] = post;
