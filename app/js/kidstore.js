@@ -15,7 +15,7 @@ export const DAY = 864e5;
 export const REVIEW_DAYS = [1, 3, 7];
 const KID = 'me';
 
-export function pack(sh) { return { id: sh.id, kind: sh.kind, made: sh.made, unit: sh.unit || null, it: sh.items.map((it) => (it.form === 'w' && it.word ? [it.k, it.c, it.p, 0, it.ch, it.word.ws] : it.gate && Array.isArray(it.covers) && it.covers.length !== closure(it.c).size ? [it.k, it.c, it.p, 1, it.ch, null, it.covers] : [it.k, it.c, it.p, it.gate ? 1 : 0, it.ch])) }; }   /* 문장제(이야기 다리)는 여섯째에 이야기 seed · 일곱째 = 관문이 덮는 칸(아래 전부와 다를 때만 · 종이 관문은 구간만 덮음) */
+export function pack(sh) { return { id: sh.id, kind: sh.kind, made: sh.made, unit: sh.unit || null, ...(Array.isArray(sh.tr) ? { tr: sh.tr.slice(0, 2).map((v) => Number(v) || 0) } : {}), it: sh.items.map((it) => (it.form === 'w' && it.word ? [it.k, it.c, it.p, 0, it.ch, it.word.ws] : it.gate && Array.isArray(it.covers) && it.covers.length !== closure(it.c).size ? [it.k, it.c, it.p, 1, it.ch, null, it.covers] : [it.k, it.c, it.p, it.gate ? 1 : 0, it.ch])) }; }   /* 문장제(이야기 다리)는 여섯째에 이야기 seed · 일곱째 = 관문이 덮는 칸(아래 전부와 다를 때만 · 종이 관문은 구간만 덮음) */
 export function unpack(o) {
   const items = [], chs = new Map();
   for (const [k, c, p, g, ch, ws, cov] of o.it) {
@@ -127,7 +127,7 @@ export function summaryOf(K) {
   const prep = K.lastPrep && K.lastPrep.unit ? { u: K.lastPrep.unit, why: K.lastPrep.why || '', t: K.lastPrep.t || 0 } : null;
   /* 선생님이 낸 점검지(ck · 기록 id = <점검 id>_<번째> · 푼 문항 수)와 보충(gv · 기록 id = 과제 id · [맞힘, 문제 수, 때]) — 반 화면 '다 푼 아이' · '보충 결과' */
   const ck = {}, cko = {}, gv = {};   /* cko = 점검지마다 맞힌 수(사전 · 사후 비교하기 · 11-07) */
-  for (const [id, x] of Object.entries(K.recs)) { if (!okRec(x)) continue; if (x.s.kind === 'ck') { const cid = String(id).split('_')[0]; ck[cid] = (ck[cid] || 0) + x.s.it.length; cko[cid] = (cko[cid] || 0) + x.s.it.filter((i) => x.r.it[i[0]] && x.r.it[i[0]].s === 'ok').length; } else if (x.s.kind === 'gv') gv[id] = [x.s.it.filter((i) => x.r.it[i[0]] && x.r.it[i[0]].s === 'ok').length, x.s.it.length, Math.round(x.s.made)]; }
+  for (const [id, x] of Object.entries(K.recs)) { if (!okRec(x)) continue; if (x.s.kind === 'ck') { const cid = String(id).split('_')[0]; ck[cid] = (ck[cid] || 0) + x.s.it.length; cko[cid] = (cko[cid] || 0) + x.s.it.filter((i) => x.r.it[i[0]] && x.r.it[i[0]].s === 'ok').length; } else if (x.s.kind === 'gv') gv[id] = [x.s.it.filter((i) => x.r.it[i[0]] && x.r.it[i[0]].s === 'ok').length, x.s.it.length, Math.round(x.s.made), ...(Array.isArray(x.s.tr) ? x.s.tr.slice(0, 2) : [])]; }   /* [맞힘, 문제 수, 때, 함정 맞힘, 함정 수] */
   /* 틀린 뒤 도움 사다리 결과 — 주마다 [주, 떠올려 고침, 풀이 순서로 고침, 답 봄, 보기 다시 골라 맞힘](교사 11-07 '단계적으로 하나씩 해내는 힘'의 기록) */
   const lad = Object.entries(K.lad || {}).sort((p, q) => (p[0] < q[0] ? -1 : 1)).slice(-8).map(([w, v]) => [w, v.r || 0, v.s || 0, v.x || 0, v.p || 0]);
   return { t: now, last, mis, L, sw14, rush14, prep, start: rep.start.map((s) => s.c), below: rep.below.map((b) => b.c), under: rep.under.map((u) => u.c), sw: cal.sureWrong, cal: { n: cal.n, m: cal.match }, fixed: K.fixed, due, help: K.help || {}, rush: K.rush || 0, jog: (K.jog || []).slice(-14), tools: K.tools || {}, ck, cko, gv, lad, story: storySum(K), wk: weeksOf(K.recs).slice(-12).map((w) => [w.wk, w.ok, w.n, w.term]), mx: Object.fromEntries(Object.entries(K.mx || {}).filter(([c]) => c !== '_jog' && c !== '_tools').map(([c, x]) => [c, x.tier || 0])) };

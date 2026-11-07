@@ -333,5 +333,19 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   for (let k = 0; k < 30; k++) { const F = FX8.newFix({ c: '2-1-3:7', id: `zz${k}` }), A = TK8.toText(F.ex.prompt).match(/\d+/g) || []; if (A.length >= 2 && String(F.ex.sol[0]).length !== Math.max(A[0].length, A[1].length)) odd++; }
   ok(odd === 0, `배우기 시범 문제는 보통 꼴(답의 맨 앞 0 · 자리 늘어남 X) — 30번 중 ${odd}번`);
 }
+// ㉖ 차별점을 증거로(11-07) — 보충에 섞은 함정 문항(그 생각으로 풀면 틀리는 꼴)을 첫 답에 몇 개 맞혔나가 기록 · 요약까지 감
+{
+  const GV = await import('../js/give.js'), KS9 = await import('../js/kidstore.js');
+  const task = { kind: 'give', sk: 's.d22', n: 10, seed: 7, t: Date.now(), want: { '2-1-3:7': 'sub.borrow' } };
+  const sh = GV.giveSheet('gvZZTRAP1', task), T = sh.items.filter((x) => x.tr);
+  ok(T.length >= 1 && T.length < sh.items.length, `함정 꼴이 섞임(${T.length}/${sh.items.length})`);
+  const R = { done: { G: true }, it: Object.fromEntries(sh.items.map((x) => [x.k, { s: 'ok' }])) };
+  sh.tr = [T.length, T.length];
+  const K = { recs: { gvZZTRAP1: { s: KS9.pack(sh), r: R, cf: {}, ms: {} } }, fixed: {}, rv: {}, inbox: {}, mx: {}, lad: {} };
+  const g = KS9.summaryOf(K).gv.gvZZTRAP1;
+  ok(Array.isArray(g) && g.length === 5 && g[3] === T.length && g[4] === T.length, `요약 gv에 함정 맞힘 · 수 — ${JSON.stringify(g)}`);
+  const plain = GV.giveSheet('gvZZTRAP2', { ...task, want: undefined });
+  ok(!plain.items.some((x) => x.tr) && !('tr' in KS9.pack(plain)), '함정을 안 섞은 보충은 tr 없음');
+}
 console.log(fail ? `FAIL ${fail}` : 'PASS');
 process.exitCode = fail ? 1 : 0;

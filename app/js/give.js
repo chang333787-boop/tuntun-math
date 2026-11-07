@@ -23,7 +23,7 @@ export function giveSheet(id, task) {
   const n = Math.max(1, Math.min(20, Number(task.n) || 10));
   const want = task.want && typeof task.want === 'object' ? Object.fromEntries(Object.entries(task.want).filter(([c, m]) => typeof c === 'string' && typeof m === 'string')) : {};   /* 그 생각으로 풀면 틀리는 함정 꼴을 절반(선생님이 고름 · 아이 화면엔 표시 X) */
   const [sec] = buildSheet({ v: 2, seed: Number(task.seed) || 1, s: [secOf(s, n, { want })] });
-  const items = sec.items.map((it, i) => ({ k: i + 1, c: it.c, p: it.p, form: formOf(it), cls: '', ch: 'G', snap: { prompt: it.prompt, sol: it.sol, choices: it.choices || null } }));
+  const items = sec.items.map((it, i) => ({ k: i + 1, c: it.c, p: it.p, form: formOf(it), cls: '', ch: 'G', tr: it.trap ? 1 : 0, snap: { prompt: it.prompt, sol: it.sol, choices: it.choices || null } }));   /* tr = 그 생각으로 풀면 틀리는 함정 꼴(아이 화면엔 표시 X) */
   return { v: 1, id, kind: 'gv', made: Date.now(), items, chapters: [{ key: 'G', ks: items.map((x) => x.k) }], note: sec.note };
 }
 // 아이 화면에 보일 예시 한 줄(기능 이름 대신 — 낮은 학년 이름이 크게 보이지 않게 · kid.js plank와 같은 생각)
@@ -68,6 +68,7 @@ export function giveView(root, id) {
   };
   const fin = () => {
     sh.chapters.forEach((ch) => (S.R.done[ch.key] = true));
+    { const T = sh.items.filter((x) => x.tr); if (T.length) sh.tr = [T.filter((x) => S.R.it[x.k] && S.R.it[x.k].s === 'ok').length, T.length]; }   /* 함정 문항을 첫 답에 몇 개 맞혔나 → 선생님 '보낸 보충'에 '그 생각을 고쳤나' */
     KS.addSheet(me, K, sh, S.R, {}, S.ms);
     const fixd = S.fixd || 0; lsDel(SK); KS.setNow(me, { mode: 'home' });
     const ok = sh.items.filter((x) => S.R.it[x.k] && S.R.it[x.k].s === 'ok').length, n = sh.items.length;
