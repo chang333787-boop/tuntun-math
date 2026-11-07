@@ -70,9 +70,10 @@ export function mxOut(K, max = 56000) {
 }
 export function pushMastery(me, K) { db.queuePut(`${base(me)}/mx`, mxOut(K)); }
 export function setReview(me, K) { save(me, K); db.queuePut(`${base(me)}/rv`, db.enc(K.rv)); }   // 규칙에 rv 칸 있음
-let lastNow = { mode: 'home' };
-export const lastAsk = () => Number(lastNow && lastNow.ask) || 0;   /* 방금 손 든 때(배우기 · 점검 끝 화면) — 처음 화면이 덮어쓰지 않게 */
-export function setNow(me, now) { lastNow = now; db.put(`${base(me)}/now`, db.enc({ ...now, t: Date.now() })).catch(() => {}); }
+let lastNow = { mode: 'home' }, lastWho = '';   /* 마지막으로 보낸 now와 그 아이(같은 크롬북에서 다른 아이로 바꿔도 섞이지 않게 · 코덱스 11-07) */
+const nowOf = (me) => (lastWho === base(me) ? lastNow : { mode: 'home' });
+export const lastAsk = (me) => Number(nowOf(me).ask) || 0;   /* 이 아이가 방금 손 든 때(배우기 · 점검 끝 화면) — 처음 화면이 덮어쓰지 않게 · 다른 것을 시작하면 0 */
+export function setNow(me, now) { lastNow = now; lastWho = base(me); db.put(`${base(me)}/now`, db.enc({ ...now, t: Date.now() })).catch(() => {}); }
 
 // 모든 기록 → 종이와 같은 판정
 export function history(K) {
@@ -151,7 +152,7 @@ export function selfFix(me, K, tool) { K.tools = K.tools || {}; const x = (K.too
 // 도움 사다리 한 번의 결과(hint.js onEnd how) — 이번 주 칸에 하나 더 · 요약은 다음 pushSummary 때
 export function ladLog(me, K, how) {
   const k = { recall: 'r', steps: 's', shown: 'x', pick: 'p' }[how]; if (!k) return;
-  if (how === 'shown') setNow(me, { ...lastNow, sos: Date.now() });   /* 도움을 다 쓰고 답을 봄 → 선생님 '지금 우리 반'에 '막혀서 답을 봤어요'(10분) */
+  if (how === 'shown') setNow(me, { ...nowOf(me), sos: Date.now() });   /* 도움을 다 쓰고 답을 봄 → 선생님 '지금 우리 반'에 '막혀서 답을 봤어요'(10분) */
   const w = weekKey(); K.lad = K.lad || {}; const v = (K.lad[w] = K.lad[w] || {}); v[k] = (v[k] || 0) + 1;
   const ws = Object.keys(K.lad).sort(); if (ws.length > 12) ws.slice(0, ws.length - 12).forEach((x) => delete K.lad[x]);
   save(me, K);

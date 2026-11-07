@@ -254,10 +254,11 @@ export function classView(root, C) {
     const keep = { open: [...root.querySelectorAll('details')].map((d) => d.open), sx: (root.querySelector('.ctab') || {}).scrollLeft || 0, y: window.scrollY };
     const card3 = (k, no, t, what, body, href, btn, ic) => `<section class="c3 t3 act-${k}"><div class="c3-h"><span class="c3-no">${no}</span><span class="ico act-${k}">${icon(ic, 30)}</span><h2>${t}</h2></div><p class="c3-what">${what}</p><div class="c3-body">${body}</div><a class="btn big c3-go" href="${href}">${btn}</a></section>`;
     const gvSent = rows.reduce((a, no) => a + Object.keys((S[no] && S[no].st && S[no].st.gv) || {}).length, 0);
-    const waitOf = (no) => { const n = S[no] && S[no].now; return !n ? '' : n.ask && Date.now() - n.ask < 15 * 60e3 ? askWhy(n.mode) : n.sos && Date.now() - n.sos < 10 * 60e3 ? '도움을 다 쓰고 답을 봄' : ''; }, waitL = rows.filter(waitOf), first2 = first.filter((x) => !waitOf(x.no));   /* 선생님을 기다리는 아이(손 듦 15분 · 답을 봄 10분) — '먼저 봐 줄 아이'에는 겹쳐 쓰지 않음 */
+    const wseen = lsGet(`tt.wseen.${C}`, {}) || {}, gone = (no, t) => Number(wseen[no]) >= t;   /* '다녀왔어요'를 누른 때(이 기기에만) — 그 뒤에 새로 손 들면 다시 뜸 */
+    const waitOf = (no) => { const n = S[no] && S[no].now; return !n ? '' : n.ask && Date.now() - n.ask < 15 * 60e3 && !gone(no, n.ask) ? askWhy(n.mode) : n.sos && Date.now() - n.sos < 10 * 60e3 && !gone(no, n.sos) ? '도움을 다 쓰고 답을 봄' : ''; }, waitL = rows.filter(waitOf), first2 = first.filter((x) => !waitOf(x.no));   /* 선생님을 기다리는 아이(손 듦 15분 · 답을 봄 10분) — '먼저 봐 줄 아이'에는 겹쳐 쓰지 않음 */
     const waitSk = (no) => { const n = S[no] && S[no].now; return n && n.ask && n.c ? (skillsOf(n.c)[0] || {}).name || lessonName(n.c) : ''; }, waitGo = (no) => { const n = S[no] && S[no].now; return n && n.ask && n.c ? [`#/t/c/${C}/g/${encodeURIComponent(n.c)}?no=${no}`, '10분 카드 보기'] : [`#/t/c/${C}/k/${no}`, '자세히 보기']; };
     root.innerHTML = `<div class="card hub-h no-print"><h2>${esc(C)} <small>${esc(gl(K.g))} · ${K.n}명 · 기록 있는 아이 ${seen}명</small></h2>
-      ${waitL.length ? `<div class="hub-wait">${waitL.map((no) => { const [h, a] = waitGo(no); return `<p><b class="sos">선생님을 기다려요</b> <a href="#/t/c/${C}/k/${no}"><b>${esc(nm(K, no))}</b></a> — ${esc(waitOf(no))}${waitSk(no) ? ` · <b>${esc(waitSk(no))}</b>` : ''} <a class="btn pri" href="${esc(h)}">${a}</a></p>`; }).join('')}</div>` : ''}
+      ${waitL.length ? `<div class="hub-wait">${waitL.map((no) => { const [h, a] = waitGo(no); return `<p><b class="sos">선생님을 기다려요</b> <a href="#/t/c/${C}/k/${no}"><b>${esc(nm(K, no))}</b></a> — ${esc(waitOf(no))}${waitSk(no) ? ` · <b>${esc(waitSk(no))}</b>` : ''} <a class="btn pri" href="${esc(h)}">${a}</a><button type="button" class="btn mini" data-seen="${no}">다녀왔어요</button></p>`; }).join('')}</div>` : ''}
       ${seen ? `<p class="hub-now"><button type="button" class="btn mini" id="gonx">아이마다 다음 할 것 보기 ↓</button></p>` : ''}
             ${!seen ? `<div class="first-day"><b>처음이세요? 이 차례로 시작해요</b><ol>
         <li><a href="#/t/c/${C}/cards">아이 카드 인쇄</a> — 잘라서 나눠 주고, 아이들은 카드의 QR을 크롬북 카메라로 비추거나 반 코드 · 번호 · 핀을 써서 들어와요.</li>
@@ -319,6 +320,7 @@ export function classView(root, C) {
     root.querySelectorAll('details').forEach((d, i) => { if (keep.open[i]) d.open = true; });
     if (data) window.scrollTo(0, keep.y);
     root.querySelector('#re').addEventListener('click', refresh);
+    root.querySelectorAll('[data-seen]').forEach((b) => b.addEventListener('click', () => { const w = lsGet(`tt.wseen.${C}`, {}) || {}; w[b.dataset.seen] = Date.now(); lsSet(`tt.wseen.${C}`, w); render(); }));
     document.title = waitL.length ? `(${waitL.length}) 선생님을 기다려요 · 튼튼 수 다리` : '튼튼 수 다리';   /* 다른 탭을 보고 있어도 손 든 아이가 보이게 */
     { const gx = root.querySelector('#gonx'); if (gx) gx.addEventListener('click', () => { const n = root.querySelector('.nexts'); if (n) { n.open = true; n.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }); }
     root.querySelector('#csv').addEventListener('click', () => exportCSV(C, K, S, unit));
