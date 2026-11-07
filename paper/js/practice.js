@@ -13,7 +13,9 @@ const chHTML = (it, mark = null) => `<div class="ch">${it.choices.map((ch, k) =>
 let CHK = false;   /* 실수가 잦은 아이 — 문제마다 '확인' 동그라미(풀고 거꾸로 셈으로 확인하면 ✓) */
 const qHTML = (it, i) => { const long = toText(it.prompt).length > 22; return `<div class="q"><span class="n">${i + 1}</span>${CHK ? '<span class="ck"><i></i>확인</span>' : ''}<div class="p${long ? ' long' : ''}">${toHTML(it.prompt, { static: true })}</div>${it.choices ? chHTML(it) : ''}</div>`; };
 const exHTML = (it) => `<div class="ex"><b>보기</b><div>${toHTML(it.prompt, { static: true, vals: it.choices ? null : it.sol })}${it.choices ? chHTML(it, Number(it.sol[0])) : ''}</div></div>`;
-const ansText = (it) => (it.choices ? `${NUM[Number(it.sol[0])]} ${toText(it.choices[Number(it.sol[0])] || [])}` : it.sol.join(', '));
+const hasB = (t) => t && typeof t === 'object' && ('b' in t || ['f', 'm'].some((k) => Array.isArray(t[k]) && t[k].some((x) => x && typeof x === 'object' && 'b' in x)));
+/* 정답 = 빈칸이 든 토막만 값을 채워 글로(분수는 17/18 · 대분수는 1 5/18 — 쉼표로 늘어놓으면 '1, 5, 18'로 읽힘 · 11-07) */
+const ansText = (it) => (it.choices ? `${NUM[Number(it.sol[0])]} ${toText(it.choices[Number(it.sol[0])] || [])}` : (it.prompt || []).filter(hasB).map((t) => toText([t], it.sol)).join(', ') || it.sol.join(', '));
 const foot = '<div class="foot"><span>맞춤 연습지</span><span class="pg"></span></div>';
 
 const spec = (() => { try { return JSON.parse(decodeURIComponent(location.hash.slice(1))); } catch (e) { return null; } })();

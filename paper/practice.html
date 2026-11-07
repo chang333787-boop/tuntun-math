@@ -33,6 +33,11 @@ body{margin:0;background:#e9e4dc;color:#1f1b16;font:12pt/1.5 'Noto Sans KR','App
 .pic{display:flex;justify-content:center}.pic svg{max-height:calc(20mm * var(--k,1));max-width:100%;height:auto;width:auto}
 .pic .dot{fill:#444}.pic .grp{fill:none;stroke:#555;stroke-width:2;stroke-dasharray:4 3}.pic .cell{fill:#fff;stroke:#222;stroke-width:2}.pic .cell.on{fill:#9a9a9a}
 .tx.kr{letter-spacing:-.2px}
+/* 분수 · 대분수(11-07 — 이 쪽엔 빠져 있어 5/8이 '58'로 인쇄되던 것 · 점검지 paper.css와 같은 모양) */
+.fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 1mm;line-height:1.05}.fr-t{border-bottom:1.6px solid currentColor;padding:0 1.2mm .6mm;min-width:5mm;text-align:center}.fr-b{padding:.6mm 1.2mm 0;min-width:5mm;text-align:center}
+.mx{display:inline-flex;align-items:center;gap:.5mm;vertical-align:middle}
+.fr .blank-s{min-width:10mm;height:calc(7.5mm * var(--k,1));margin:.6mm 0}
+.ex .fr .blank-s,.key .fr .blank-s{min-width:8mm;height:6.5mm;font-size:12pt}
 .foot{display:flex;justify-content:space-between;font-size:10pt;color:#7a7067;margin-top:4mm}
 .key h1{font-size:19pt;margin:0 0 4mm}.key .foot{margin-top:auto}
 .key section{border-left:1.2mm solid var(--c);padding:1.5mm 0 1.5mm 4mm;margin-bottom:3.5mm;break-inside:avoid}

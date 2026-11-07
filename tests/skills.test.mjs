@@ -163,5 +163,10 @@ ok(skillsOf('2-1-3:7')[0].id === 's.d22' && skillsOf('2-2-2:4')[0].id === 'm.k36
   }
   info(`카드 예시 ${SKILLS.length * 2}개 만들기 ${Date.now() - t1}ms(두 번씩)`); }
 
+// 종이 맞춤 연습지 — 문제 글이 쓰는 모양(분수 · 대분수)이 이 쪽 CSS에도 있음 · 정답 쪽 분수는 17/18 꼴(11-07 '58 + 16'으로 인쇄되던 것)
+{ const fs = await import('node:fs'), html = fs.readFileSync(new URL('../paper/practice.html', import.meta.url), 'utf8'), js = fs.readFileSync(new URL('../paper/js/practice.js', import.meta.url), 'utf8');
+  for (const cls of ['fr', 'fr-t', 'fr-b', 'mx', 'pic']) ok(new RegExp(`\\.${cls}[{ ,]`).test(html), `맞춤 연습지 CSS에 .${cls}가 없음(분수 · 그림이 깨져 인쇄됨)`);
+  ok(/filter\(hasB\)/.test(js), '맞춤 연습지 정답이 빈칸 토막 글(분수 17/18)이 아님'); }
+
 console.log(`기능 ${SKILLS.length}개 · 갈래 ${GROUPS.length}개 — ${checks}개 확인 · ${fails ? `실패 ${fails}` : '모두 통과'}`);
 process.exit(fails ? 1 : 0);
