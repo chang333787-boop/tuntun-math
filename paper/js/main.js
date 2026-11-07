@@ -48,8 +48,8 @@ function home() {
   const prog = (s) => (s.kids || []).map((k) => `<a class="pill ${S.hasResult(s.id, k) ? 'done' : ''}" href="#/r/${s.id}/${k}">${esc((S.kid(k) || {}).label || '?')}${S.hasResult(s.id, k) ? ' ✓' : ''}</a>`).join('');
   view.innerHTML = `
   <section class="intro">
-    ${say('hi', '<b>안녕하세요, 튼튼이예요!</b> 아이들과 수 다리를 건너며 어디서 끊겼는지 같이 찾아요.')}
-    <ol class="flow4"><li><span class="st">1</span><b>선별 점검지</b>를 인쇄해 풀게 해요<small>학기마다 관문 차시만 · 9쪽 안팎</small></li><li><span class="st">2</span>장마다 <b>틀린 문제만</b> 눌러요<small>아이 답을 넣으면 그 숫자로 가능한 원인을 찾아요</small></li><li><span class="st">3</span>아이 보기에서 <b>여기서부터</b>를 봐요<small>아래 먼저 확인할 곳도 함께</small></li><li><span class="st">4</span><b>확인지 · 보충지 · 다리 편지</b>를 뽑아요<small>새 숫자로 다시 보기까지</small></li></ol>
+    ${say('hi', '<b>안녕하세요, 튼튼이예요!</b> 아이마다 어디서 끊겼는지 종이로 같이 찾아요.')}
+    <ol class="flow4"><li><span class="st">1</span><b>선별 점검지</b>를 인쇄해 풀게 해요<small>학기마다 관문 차시만 · 9쪽 안팎</small></li><li><span class="st">2</span>장마다 <b>틀린 문제만</b> 눌러요<small>아이 답을 넣으면 그 숫자로 가능한 원인을 찾아요</small></li><li><span class="st">3</span>아이 보기에서 <b>여기서부터</b>를 봐요<small>아래 먼저 확인할 곳도 함께</small></li><li><span class="st">4</span><b>확인지 · 보충지 · 결과 편지</b>를 뽑아요<small>새 숫자로 다시 보기까지</small></li></ol>
   </section>
   <section class="card">
     <h2>우리 반 아이 <small>이름 대신 번호나 별명 · 이 기기에만 저장돼요</small></h2>
@@ -193,7 +193,7 @@ function kidView(kidId) {
   nav('home');
   const k = S.kid(kidId); if (!k) { view.innerHTML = '<div class="card">아이를 찾지 못했어요.</div>'; return; }
   const shs = kidSheets(kidId), range = rangeOf(shs);
-  if (!shs.length) { view.innerHTML = `<section class="card"><h2>${esc(k.label)}</h2>${say('think', '아직 결과가 없어요. 점검지를 만들고 <b>결과 넣기</b>에서 채점 끝을 켜면 여기에 다리가 그려져요.')}<a class="btn pri" href="#/new/gate">선별 점검지 만들기</a></section>`; return; }
+  if (!shs.length) { view.innerHTML = `<section class="card"><h2>${esc(k.label)}</h2>${say('think', '아직 결과가 없어요. 점검지를 만들고 <b>결과 넣기</b>에서 채점 끝을 켜면 여기에 결과가 그려져요.')}<a class="btn pri" href="#/new/gate">선별 점검지 만들기</a></section>`; return; }
   const rep = kidReport(shs, S.results(), kidId, range);
   const evTxt = (h) => h.ev.slice(0, 3).map((e) => { const sh = S.sheet(e.sheet), it = sh && sh.items.find((x) => x.k === e.k); return it ? `${shs.length > 1 ? `판 ${e.sheet} ` : ''}${e.k}번 ${toText(it.snap.prompt).replace(/= □.*$/, '').replace('[그림]', '').trim()} → ${(e.a || []).join(' … ')}` : ''; }).filter(Boolean).join(' · ');
   const whyRows = Object.values(rep.L).filter((x) => x.why && (x.why.sure.length || x.why.maybe.length || x.why.slips)).sort((a, b) => ord(a.c) - ord(b.c));
@@ -212,7 +212,7 @@ function kidView(kidId) {
       <button data-mk="practice" ${rep.teach.length ? '' : 'disabled'}>보충지 인쇄 (${rep.teach.length}차시)</button>
       <button data-mk="retest" ${Object.values(rep.L).some((x) => x.st === 'stuck' || x.st === 'shaky') ? '' : 'disabled'}>다시 보기 만들기</button>
       ${rep.wordCheck.length ? `<button data-mk="words">이야기 문제 다시 보기 (${rep.wordCheck.map((w) => esc(KIND[w[1]] || w[1])).join(' · ')})</button>` : ''}
-      <button data-mk="letter">아이에게 줄 다리 편지 인쇄</button>
+      <button data-mk="letter">아이에게 줄 결과 편지 인쇄</button>
       <button data-mk="sum">한 쪽 요약 인쇄(선생님용)</button>
     </div>
     ${rep.thin.length ? `<p class="muted">한두 문제만 보고 맞힌 차시 ${rep.thin.length}개는 더 확인하지 않아도 되지만, 걱정되면 확인지에 넣을 수 있어요. <button class="link" data-mk="thin">넣어서 만들기</button></p>` : ''}

@@ -5,8 +5,8 @@ import { toHTML, toText } from '../../engine/tokens.js';
 import { readExpr } from '../../engine/errors.js';
 import { LES, lessonName, STRAND, GL, KIND, strandOf } from './gen.js';
 import { mascot, plankStrip, STRAND_ICON } from './mascot.js';
-// 아이에게 보이는 영역 이름 — '○○ 다리'
-const BRIDGE = { N: '수 다리', A: '덧셈 · 뺄셈 다리', M: '곱셈 다리', D: '나눗셈 다리', F: '분수 · 소수 다리', R: '규칙 다리' };
+// 아이에게 보이는 영역 이름
+const BRIDGE = { N: '수', A: '덧셈 · 뺄셈', M: '곱셈', D: '나눗셈', F: '분수 · 소수', R: '규칙' };   /* '○○ 다리' 비유는 뺌(11-05 말 바꾸기 · 11-07) */
 const POSES = ['point', 'think', 'hi', 'fix'];
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -123,12 +123,12 @@ export function paginate(host, sheet, { kidLabel = '' } = {}) {
 function headHTML(sheet, n, key, kidLabel) {
   const first = n === 1;
   const ttl = key ? `정답 겹쳐 보기 · 판 ${sheet.id}` : '';
-  return `<header><div class="hm">${mascot(first ? 'hi' : POSES[n % POSES.length], 44)}</div><div class="hb"><b class="brand">튼튼 수 다리</b>${ttl ? ` <span class="kt">${ttl}</span>` : ''}</div><div class="hn">이름 <u>${esc(kidLabel || '')}</u></div><div class="hc">판 ${sheet.id} · ${n}쪽</div></header>${first ? `<div class="lead"${key ? ' style="visibility:hidden"' : ''}><span class="bub">시험이 아니야! 수 다리가 어디까지 튼튼한지 같이 건너 보자. 모르는 문제는 <b>?</b>를 쓰고 지나가도 돼. 고르는 문제는 번호에 ○ 해 줘.</span></div>` : ''}`;
+  return `<header><div class="hm">${mascot(first ? 'hi' : POSES[n % POSES.length], 44)}</div><div class="hb"><b class="brand">튼튼 수 다리</b>${ttl ? ` <span class="kt">${ttl}</span>` : ''}</div><div class="hn">이름 <u>${esc(kidLabel || '')}</u></div><div class="hc">판 ${sheet.id} · ${n}쪽</div></header>${first ? `<div class="lead"${key ? ' style="visibility:hidden"' : ''}><span class="bub">시험이 아니에요. 어디까지 아는지 알아보는 점검이에요. 모르는 문제는 <b>?</b>를 쓰고 넘어가도 돼요. 고르는 문제는 번호에 ○ 해요.</span></div>` : ''}`;
 }
-const footHTML = (n, total, key) => `<footer>${key ? '정답 겹쳐 보기 — 아이 종이와 같은 자리' : `<span class="pl">${plankStrip(total, n)}</span><span class="pt">다 풀면 판자를 색칠해요</span>`}</footer>`;
+const footHTML = (n, total, key) => `<footer>${key ? '정답 겹쳐 보기 — 아이 종이와 같은 자리' : `<span class="pl">${plankStrip(total, n)}</span><span class="pt">한 쪽을 다 풀면 한 칸 색칠해요</span>`}</footer>`;
 function rowEl(r, key) {
   const el = document.createElement('div');
-  if (r.head) { el.className = 'chh'; const W = r.head.s === 'W', E = r.head.key === 'END'; const s = W ? '이야기 다리 — 식을 먼저 쓰고, 계산해서 답을 써요' : E ? '마지막 칸 — 쉬운 문제로 마무리!' : BRIDGE[r.head.s] || STRAND[r.head.s] || ''; el.innerHTML = `<span class="ci">${STRAND_ICON[E ? 'END' : W ? 'W' : r.head.s] || ''}</span><span>${esc(s)}</span>${E ? `<span class="em">${mascot('cheer', 30)}</span>` : ''}${key && !E && !W ? `<em>${esc(GL(r.head.g))}</em>` : ''}`; return el; }
+  if (r.head) { el.className = 'chh'; const W = r.head.s === 'W', E = r.head.key === 'END'; const s = W ? '이야기 문제 — 식을 먼저 쓰고, 계산해서 답을 써요' : E ? '마지막 — 쉬운 문제로 마무리해요' : BRIDGE[r.head.s] || STRAND[r.head.s] || ''; el.innerHTML = `<span class="ci">${STRAND_ICON[E ? 'END' : W ? 'W' : r.head.s] || ''}</span><span>${esc(s)}</span>${E ? `<span class="em">${mascot('cheer', 30)}</span>` : ''}${key && !E && !W ? `<em>${esc(GL(r.head.g))}</em>` : ''}`; return el; }
   el.className = `row r-${r.cls}`; el.style.gridTemplateColumns = `repeat(${r.cols}, minmax(0, 1fr))`; el.style.minHeight = `${MINH[r.cls] || 14}mm`;
   el.innerHTML = r.items.map((it) => cellHTML(it, { key })).join('');
   return el;
@@ -159,7 +159,7 @@ export function practiceHTML({ id, lessons }) {
       <div class="pq">${items.map((it, i) => `<div class="q c-${it.cls} f-${it.form}"><span class="no">${i + 1}</span>${it.form === 'v' ? vertical(it, false) : it.form === 'd' ? longDiv(it, false) : plain(it, false)}</div>`).join('')}</div></section>`;
   }).join('');
   const keys = lessons.map(({ c, items }, li) => `<div class="pak"><b>${NUMS[li]} ${esc(LES(c).kid)}</b> ${items.map((it, i) => `<span>${i + 1}) ${esc(ansStr(it))}</span>`).join(' ')}</div>`).join('');
-  return `<article class="page flow"><header><div class="hm">${mascot('fix', 44)}</div><div class="hb"><b class="brand">튼튼이와 판자 고치기</b> <span class="kt">판 ${id}</span></div><div class="hn">이름 <u></u></div><div class="hc">날짜 <u></u></div></header><div class="lead"><span class="bub">같은 숫자로 한 단계씩 보고, 아래 문제로 판자를 튼튼하게 고쳐 보자!</span></div>${parts}<section class="pans"><h2>정답(다 풀고 맞춰 봐요)</h2>${keys}</section></article>`;
+  return `<article class="page flow"><header><div class="hm">${mascot('fix', 44)}</div><div class="hb"><b class="brand">튼튼이와 배우기</b> <span class="kt">판 ${id}</span></div><div class="hn">이름 <u></u></div><div class="hc">날짜 <u></u></div></header><div class="lead"><span class="bub">같은 숫자로 한 단계씩 보고, 아래 문제를 풀어 봐요!</span></div>${parts}<section class="pans"><h2>정답(다 풀고 맞춰 봐요)</h2>${keys}</section></article>`;
 }
 // 아이에게 주는 한 쪽 — 「○○의 수 다리」: 영역마다 판자(차시) · 튼튼한 판자는 색칠 · 고칠 판자는 망치 표시 · 학년 표시 없음
 export function letterHTML(label, rep) {
@@ -169,11 +169,11 @@ export function letterHTML(label, rep) {
   const fix = new Set([...rep.start.map((s) => s.c), ...rep.below.map((b) => b.c), ...rep.under.map((u) => u.c)]);
   const rows = ['N', 'A', 'M', 'D', 'F', 'R'].map((s) => { const ys = xs.filter((x) => strandOf(x.c) === s); return ys.length ? `<div class="lrow"><span class="ln1">${STRAND_ICON[s]} ${BRIDGE[s]}</span><span class="lps">${ys.map((x) => `<i class="pk ${good(x) ? 'g' : fix.has(x.c) ? 'f' : 'm'}" title="${esc(lessonName(x.c))}"></i>`).join('')}</span></div>` : ''; }).join('');
   const nGood = xs.filter(good).length, fixes = [...fix].filter((c) => LES(c));
-  return `<article class="page letter"><header><div class="hm">${mascot('cheer', 52)}</div><div class="hb"><b class="brand">${esc(label)}의 수 다리</b></div><div class="hc">${new Date().toLocaleDateString('ko-KR')}</div></header>
-    <div class="lead"><span class="bub">${esc(label)}, 다리를 끝까지 같이 건너 줘서 고마워! 튼튼한 판자가 <b>${nGood}개</b>였어. 색이 칠해진 판자를 보면 돼.</span></div>
+  return `<article class="page letter"><header><div class="hm">${mascot('cheer', 52)}</div><div class="hb"><b class="brand">${esc(label)}의 점검 결과</b></div><div class="hc">${new Date().toLocaleDateString('ko-KR')}</div></header>
+    <div class="lead"><span class="bub">${esc(label)}, 끝까지 풀어 줘서 고마워요! 잘 아는 것이 <b>${nGood}개</b>예요. 칸 색을 보면 알 수 있어요.</span></div>
     <div class="lbr">${rows}</div>
-    <div class="lkey"><span><i class="pk g"></i> 튼튼한 판자</span><span><i class="pk f"></i> 같이 고칠 판자</span><span><i class="pk m"></i> 한 번 더 볼 판자</span></div>
-    ${fixes.length ? `<h2>${mascot('fix', 34)} 다음에 튼튼이랑 같이 고칠 판자</h2><ul class="lfix">${fixes.map((c) => `<li>${esc(lessonName(c))}</li>`).join('')}</ul>` : `<h2>${mascot('hi', 34)} 고칠 판자가 없어! 다음 다리도 같이 건너 보자.</h2>`}
+    <div class="lkey"><span><i class="pk g"></i> 잘 아는 것</span><span><i class="pk f"></i> 같이 배울 것</span><span><i class="pk m"></i> 한 번 더 볼 것</span></div>
+    ${fixes.length ? `<h2>${mascot('fix', 34)} 다음에 튼튼이랑 같이 배울 것</h2><ul class="lfix">${fixes.map((c) => `<li>${esc(lessonName(c))}</li>`).join('')}</ul>` : `<h2>${mascot('hi', 34)} 같이 배울 것이 없어요! 다음 점검도 같이 해요.</h2>`}
     <div class="lnote"><b>선생님 한마디</b><div class="lline"></div><div class="lline"></div></div>
     <div class="lme"><b>내가 해낸 것 한 가지</b><div class="lline"></div></div></article>`;
 }
