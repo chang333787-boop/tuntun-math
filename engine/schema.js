@@ -18,7 +18,7 @@ import { P } from './concepts/kit.js';
 //  kid = 아이 카드 이름 · short = 선생님 프로필 이름(st.story 열쇠) · say = 카드 아래 한 줄(상황을 말함 — 연산 이름 X)
 //  FAMILY.kid = 처음 고르는 큰 갈래 카드 — 이것도 상황 말로(연산 이름 X)
 export const TYPES = {
-  change: { fam: 'as', kid: '더해지거나 덜어지는 이야기', short: '변화', say: '처음 수에서 무엇이 생기거나 없어져서 수가 바뀌어요.' },
+  change: { fam: 'as', kid: '늘어나거나 줄어드는 이야기', short: '변화', say: '처음 수에서 무엇이 생기거나 없어져서 수가 바뀌어요.' },
   combine: { fam: 'as', kid: '여러 부분이 모여 전체가 되는 이야기', short: '부분과 전체', say: '몇 부분이 모여 전체가 돼요.' },
   compare: { fam: 'as', kid: '두 수를 비교하는 이야기', short: '비교', say: '두 수 가운데 어느 쪽이 얼마나 더 많은지 봐요.' },
   groups: { fam: 'md', kid: '같은 수씩 묶는 이야기', short: '같은 묶음', say: '같은 수씩 든 묶음이 여러 개 있어요.' },
@@ -38,7 +38,7 @@ export const famOfLesson = (L) => (L && AS_FAMS.has(L.fam) ? 'as' : 'md');
 
 // 틀의 자리 이름 — 그림 아래 · 옆에 쓰는 말
 export const ROLES = {
-  change: { start: '처음', chg: '바뀐 양', res: '결과' },
+  change: { start: '처음', chg: '바뀐 수', res: '결과' },
   combine: { whole: '전체', p0: '부분', p1: '부분', p2: '부분' },
   compare: { big: '큰 쪽', small: '작은 쪽', diff: '차' },
   groups: { total: '전체', size: '한 묶음', count: '묶음 수' },
@@ -173,11 +173,11 @@ export function whyOf(sc) {
     case 'join+': return '처음 수에 더 생겼어요. 생긴 뒤의 수를 물으니 <b class="q">?</b>는 <b>결과</b> 자리예요.';
     case 'take−': return '처음 수에서 덜어 냈어요. 남은 수를 물으니 <b class="q">?</b>는 <b>결과</b> 자리예요.';
     case 'start+': return '덜어 내고 남은 수는 알아요. 처음에 있던 수를 물으니 <b class="q">?</b>는 <b>처음</b> 자리예요.';
-    case 'change−': return '처음 수와 남은 수는 알아요. 덜어 낸 수를 물으니 <b class="q">?</b>는 <b>바뀐 양</b> 자리예요.';
+    case 'change−': return '처음 수와 남은 수는 알아요. 덜어 낸 수를 물으니 <b class="q">?</b>는 <b>바뀐 수</b> 자리예요.';
     case 'combine+': return '부분을 다 알아요. 모두 합한 것을 물으니 <b class="q">?</b>는 <b>전체</b> 자리예요.';
     case 'add3+': return '세 부분을 다 알아요. 모두 합한 것을 물으니 <b class="q">?</b>는 <b>전체</b> 자리예요.';
     case 'part−': return '전체와 한 부분을 알아요. 나머지 한 부분을 물으니 <b class="q">?</b>는 <b>부분</b> 자리예요.';
-    case 'diff−': return '두 양을 다 알아요. 얼마나 차이 나는지 물으니 <b class="q">?</b>는 <b>차</b> 자리예요.';
+    case 'diff−': return '두 수를 다 알아요. 얼마나 차이 나는지 물으니 <b class="q">?</b>는 <b>차</b> 자리예요.';
     case 'more+': return `묻는 쪽이 아는 쪽보다 더 ${L ? '길어요' : '많아요'}. 그래서 <b class="q">?</b>는 <b>긴 막대</b>예요.`;
     case 'less+': return `아는 쪽이 더 ${L ? '짧아요' : '적어요'}. 그러니 묻는 쪽이 더 ${L ? '길어요' : '많아요'} — <b class="q">?</b>는 <b>긴 막대</b>예요.`;
     case 'more−': return `아는 쪽이 더 ${L ? '길어요' : '많아요'}. 그러니 묻는 쪽이 더 ${L ? '짧아요' : '적어요'} — <b class="q">?</b>는 <b>짧은 막대</b>예요.`;

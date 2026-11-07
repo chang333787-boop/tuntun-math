@@ -23,7 +23,9 @@ import { speakButton, stopSpeak } from './speak.js';
 import { icon, tile } from './icons.js';
 
 const say = (pose, html, size = 60) => `<div class="say">${mascot(pose, size)}<div class="bub">${html}</div></div>`;
-const STEPS = ['무슨 이야기?', '막대 그림', '식 고르기', '답 쓰기'];   /* 첫 화면 '네 단계'와 같은 말(11-07) */
+const STEPS = ['무슨 이야기?', '그림 고르기', '식 고르기', '답 쓰기'];   /* 첫 화면 '네 단계'와 같은 말 · '막대 그림'은 아이에게 낯설어 '그림'(11-08 처음 보는 눈) */
+/* 고른 카드가 틀렸을 때 — 그 카드가 말하는 이야기인지 되묻기(질문 넷을 한꺼번에 던지던 것 · 11-08 처음 보는 눈) */
+const NOQ = { change: '이 이야기에서 처음 수가 늘거나 줄었나요?', combine: '이 이야기에 처음부터 따로 있던 무리를 모으나요?', compare: '이 이야기는 두 수 가운데 어느 쪽이 더 많은지 비교하나요?', groups: '같은 수씩 든 묶음이 여러 개 있나요?', times: '한 수가 다른 수의 몇 배인지 비교하나요?', share: '전체를 똑같이 나누어 한 몫을 묻나요?', pack: '전체에서 같은 수씩 덜어 내어 몇 번인지 묻나요?' };
 const LETTER = ['가', '나', '다', '라'];
 const ye = (w) => P(w, '이에요', '예요');
 
@@ -63,15 +65,15 @@ export function frameSVG(sc, f) {
   const RL = ROLES[ty], X0 = 86, X1 = 330;
   const label = Object.keys(f.R).map((r) => `${RL[r]} ${v(r)}`).join(', ');
   if (ty === 'change') {
-    /* 늘어남 = 결과 칸이 처음 칸보다 높고, 줄어듦 = 낮아요(글자를 안 읽어도 · 흑백에서도) */
+    /* 늘어요 = 결과 칸이 처음 칸보다 높고, 줄어요 = 낮아요(글자를 안 읽어도 · 흑백에서도 · '줄어듦'은 3학년에게 어려워 해요체로 11-08) */
     const up = f.dir === '+', rh = up ? 66 : 32, ry = 49 - rh / 2;
     const b = (x, y, h, role) => cell(x, y, 88, h, q(role)) + numG(v(role), x + 44, 49);
     const body = b(6, 25, 48, 'start') + b(246, ry, rh, 'res')
       + `<path d="M100 49 H236 M226 42 L238 49 L226 56" fill="none" stroke="${INK}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`
       + `<rect x="138" y="10" width="62" height="30" rx="4" fill="#fff" stroke="${INK}" stroke-width="${q('chg') ? 2.2 : 1.4}"${q('chg') ? ' stroke-dasharray="6 4"' : ''}/>` + numG(v('chg'), 169, 25, { size: 16 })
-      + T(169, 70, up ? '늘어남' : '줄어듦', { size: 18, bold: true })
+      + T(169, 70, up ? '늘어요' : '줄어요', { size: 18, bold: true })
       + T(50, 96, RL.start, { size: 13.5, fill: '#6f6355' }) + T(169, 96, RL.chg, { size: 13.5, fill: '#6f6355' }) + T(290, 96, RL.res, { size: 13.5, fill: '#6f6355' });
-    return svg(106, body, `${label}, ${up ? '늘어남' : '줄어듦'}`);
+    return svg(106, body, `${label}, ${up ? '늘어요' : '줄어요'}`);
   }
   if (ty === 'combine') {
     const ps = ['p0', 'p1', 'p2'].filter((p) => p in f.R), w = (X1 - X0) / ps.length, cx = (X0 + X1) / 2;
@@ -198,6 +200,7 @@ export function storyView(root, arg) {
     root.innerHTML = `<div class="card sb"><div class="sb-head">${tagHTML('이야기 문제', 'story')}<ol class="sb-steps" aria-label="걸음">${chips}</ol>${progHTML([S.i, S.items.length])}</div>
       <div class="sb-grid"><div class="sb-left"><div class="sb-story">${storyHTML(pr.s.story, mode)}</div>${ref}</div>
       <div class="sb-right">${say(pose, bub)}<div id="b">${body}</div></div></div></div>`;
+    { const bb = root.querySelector('#b'); bb.style.pointerEvents = 'none'; setTimeout(() => { bb.style.pointerEvents = ''; }, 350); }   /* 다음 단추 자리에 새 화면 첫 보기가 떠서 두 번 톡톡이 보기를 고르던 것(11-08 처음 보는 눈) */
     stopSpeak(); speakButton(root.querySelector('.sb-story'), () => { const m = root.querySelector('.sb-say'); if (m) m.textContent = '이 기기엔 한국어 목소리가 없어요'; });
     return root.querySelector('#b');
   };
@@ -206,7 +209,8 @@ export function storyView(root, arg) {
     rush = !ok && ms < 1500 ? rush + 1 : 0;
     if (rush < 3) return false;
     rush = 0; K.rush = (K.rush || 0) + 1; KS.save(me, K);
-    root.innerHTML = `<div class="card msg">${say('think', '잠깐! 조금 빨라요. 이야기를 <b>끝까지 읽고</b> 골라요.', 104)}<div class="acts"><button class="pri big" id="r" disabled>다시 해 볼게요</button></div></div>`;
+    const host = root.querySelector('.sb-right'), html = `${say('think', '잠깐! 조금 빨라요. 이야기를 <b>끝까지 읽고</b> 골라요.', host ? 60 : 104)}<div class="acts"><button class="pri big" id="r" disabled>다시 해 볼게요</button></div>`;
+    if (host) host.innerHTML = html; else root.innerHTML = `<div class="card msg">${html}</div>`;   /* 이야기는 그대로 보이게 — '끝까지 읽고'라면서 이야기를 가리던 것(11-08 처음 보는 눈) */
     const b = root.querySelector('#r'); waitBtn(b);
     b.addEventListener('click', then);
     return true;
@@ -224,7 +228,7 @@ export function storyView(root, arg) {
   // ① 무슨 이야기?
   function stepType(lead, again = false, wrong = null) {
     const types = FAMILY[famOfLesson(byId[pr.c])].types;
-    const bub = again ? `문장을 나눠 읽어 봐요. 아는 것과 <b>묻는 것</b>은 무엇인가요?<br><span class="small">${esc(FAMILY[famOfLesson(byId[pr.c])].ask)}</span>` : `${lead}어떤 이야기일까요? 알맞은 카드를 골라요.`;
+    const bub = again ? (wrong && NOQ[wrong] ? `<b>‘${esc(TYPES[wrong].kid)}’</b>${P(TYPES[wrong].kid, '을', '를')} 골랐어요. ${NOQ[wrong]}<br><span class="small">문장을 나눠 놓았어요. 아는 것과 <b>묻는 것</b>을 다시 읽어 봐요.</span>` : `문장을 나눠 읽어 봐요. 아는 것과 <b>묻는 것</b>은 무엇인가요?<br><span class="small">${esc(FAMILY[famOfLesson(byId[pr.c])].ask)}</span>`) : `${lead}어떤 이야기일까요? 알맞은 카드를 골라요.`;
     const b = shell(0, again ? 'think' : 'point', bub, `<div class="sb-types">${types.map((t) => `<button type="button" class="sb-ty${t === wrong ? ' no' : ''}" data-t="${t}"${t === wrong ? ' disabled' : ''}>${iconSVG(t)}<span><b>${esc(TYPES[t].kid)}</b><small>${esc(TYPES[t].say)}</small>${t === wrong ? '<em class="sb-x">✕ 고른 카드 — 아니에요</em>' : ''}</span></button>`).join('')}</div>`, again ? 'split' : 'plain');
     const t0 = performance.now();
     b.querySelectorAll('.sb-ty').forEach((btn) => btn.addEventListener('click', () => {
@@ -233,44 +237,45 @@ export function storyView(root, arg) {
       if (ok) { if (st.s[0] == null) st.s[0] = again ? 0 : 1; return stepFrame(`맞아요! <b>${esc(nm)}</b>${ye(nm)}. `); }
       st.s[0] = 0;
       if (!again) return stepType('', true, t);
-      const b2 = shell(0, 'point', `아직 아니에요. 이 이야기는 <b>${esc(nm)}</b>${ye(nm)}.<br>${esc(TYPES[pr.sc.type].say)}`, '', 'split');
-      next(b2, '막대 그림 보기', () => stepFrame(''));
+      const b2 = shell(0, 'point', `이번에도 아니에요. 이 이야기는 <b>${esc(nm)}</b>${ye(nm)}.<br>${esc(TYPES[pr.sc.type].say)}`, `<div class="sb-types">${types.map((x) => `<button type="button" class="sb-ty ${x === pr.sc.type ? 'right' : x === t || x === wrong ? 'no' : 'dim'}" disabled>${iconSVG(x)}<span><b>${esc(TYPES[x].kid)}</b><small>${esc(TYPES[x].say)}</small>${x === pr.sc.type ? '<em class="sb-ok">✓ 맞는 카드</em>' : ''}</span></button>`).join('')}</div>`, 'split');   /* 답을 말만 하고 카드는 사라지던 것 — 맞는 카드를 초록으로 남김(11-08 처음 보는 눈) */
+      next(b2, '그림 보기', () => stepFrame(''));
     }));
   }
   // ② 막대 틀
-  const frames = (pick = null) => `<div class="sb-frames">${pr.fr.list.map((f, i) => `<button type="button" class="sb-fr${pick == null ? '' : i === pr.fr.right ? ' right' : i === pick ? ' no' : ' dim'}" data-i="${i}"${pick == null ? '' : ' disabled'}><span class="sb-l">${LETTER[i]}</span>${frameSVG(pr.sc, f)}</button>`).join('')}</div>`;
+  const frames = (pick = null, off = null) => `<div class="sb-frames">${pr.fr.list.map((f, i) => `<button type="button" class="sb-fr${pick == null ? (i === off ? ' no' : '') : i === pr.fr.right ? ' right' : i === pick || i === off ? ' no' : ' dim'}" data-i="${i}"${pick == null && i !== off ? '' : ' disabled'}><span class="sb-l">${LETTER[i]}</span>${frameSVG(pr.sc, f)}</button>`).join('')}</div>`;
   const rightFrame = () => `<div class="sb-ref">${frameSVG(pr.sc, pr.fr.list[pr.fr.right])}</div>`;
-  function stepFrame(lead) {
-    const b = shell(1, 'point', `${lead}이야기에 맞는 <b>막대 그림</b>을 골라요.<br><span class="small"><b class="q">?</b>는 묻는 수예요.</span>`, frames());
+  function stepFrame(lead, off = null) {   /* 처음 틀리면 그 그림만 막고 한 번 더(① · ③과 같게 · 바로 답을 주던 것 11-08 처음 보는 눈) */
+    const b = shell(1, off == null ? 'point' : 'think', off == null ? `${lead}이야기에 맞는 <b>그림</b>을 골라요.<br><span class="small"><b class="q">?</b>는 묻는 수예요.</span>` : `아직 아니에요. 다른 그림을 골라요.<br>${whyOf(pr.sc)}`, frames(null, off));
     const t0 = performance.now();
     b.querySelectorAll('.sb-fr').forEach((btn) => btn.addEventListener('click', () => {
       const i = Number(btn.dataset.i), ok = i === pr.fr.right;
-      if (quick(performance.now() - t0, ok, () => stepFrame(lead))) return;
-      st.s[1] = ok ? 1 : 0;
+      if (quick(performance.now() - t0, ok, () => stepFrame(lead, off))) return;
+      if (st.s[1] == null) st.s[1] = ok ? 1 : 0;
       if (ok) return stepEq('맞아요! 그림이 이야기와 같아요. ');
-      const L = LETTER[pr.fr.right], b2 = shell(1, 'think', `맞는 틀은 <b>‘${L}’ 틀</b>이에요.<br>${whyOf(pr.sc)}`, frames(i));
+      if (off == null) return stepFrame(lead, i);
+      const L = LETTER[pr.fr.right], b2 = shell(1, 'think', `맞는 그림은 <b>‘${L}’</b>예요.<br>${whyOf(pr.sc)}`, frames(i, off));
       next(b2, '식 고르기', () => stepEq(''));
     }));
   }
   // ③ 식
-  function stepEq(lead, tries = 0, off = []) {
+  function stepEq(lead, tries = 0, off = [], bub = '') {   /* bub = 다시 고를 때 힌트(그 화면에 그대로 남게) */
     const pk = pr.s.steps[0].item;
-    const b = shell(2, 'point', `${lead}이제 이야기를 <b>식</b>으로 나타내 봐요.`, '<div id="slot"></div>', 'plain', st.skip ? '' : rightFrame());
+    const b = shell(2, bub ? 'think' : 'point', bub || `${lead}이제 이야기를 <b>식</b>으로 나타내 봐요.`, '<div id="slot"></div>', 'plain', st.skip && !bub ? '' : rightFrame());
     draw(b.querySelector('#slot'), { prompt: pk.prompt, choices: pk.choices, conf: false, idk: false, onAnswer: (a, cf, ms) => {
       const k = a.vals[0], res = pk.check([k]);
-      if (quick(ms, res.ok, () => stepEq(lead, tries, off))) return;
+      if (quick(ms, res.ok, () => stepEq(lead, tries, off, bub))) return;
       if (res.ok) { if (tries === 0) st.s[2] = 1; return stepCalc(); }
       if (tries === 0) {
         st.s[2] = 0;
         const cue = cueOf(pr.sc, res.bug && res.bug.name, toText(pr.s.story));
         if (cue) return wordPick(cue, [k]);
-        const b2 = shell(2, 'think', `그림을 다시 봐요. ${whyOf(pr.sc)}`, '', 'plain', rightFrame());
-        return next(b2, '식 다시 고르기', () => stepEq('', 1, [k]));
+        const sz = sizeOf();   /* 그림 말만 되풀이하던 것 — 식과 잇는 크기 힌트 · 단추 한 번 더 없이 그 자리에서 다시(11-08 처음 보는 눈) */
+        return stepEq('', 1, [k], sz ? `아직 아니에요. 답은 <b>${sz.M}보다 ${sz.up ? '커요' : '작아요'}</b>.<br>어느 식으로 구해야 ${sz.M}보다 ${sz.up ? '큰' : '작은'} 수가 나올까요?` : `아직 아니에요. 그림을 다시 봐요.<br>${whyOf(pr.sc)}`);
       }
       const rt = pk.choices[pk.sol[0]], b3 = shell(2, 'point', `맞는 식은 <b class="sb-eq">${toHTML(rt, { static: true })}</b>${ye(toText(rt))}.`, '', 'plain', rightFrame());
       next(b3, '계산하기', stepCalc);
     } });
-    off.forEach((k) => { const x = b.querySelector(`[data-k="${k}"]`); if (x) x.disabled = true; });
+    if (pk.choices.length > 2) off.forEach((k) => { const x = b.querySelector(`[data-k="${k}"]`); if (x) x.disabled = true; });   /* 보기가 둘이면 막지 않음 — 남은 하나만 누르면 끝나던 것(11-08 처음 보는 눈) */
   }
   // 헷갈린 낱말이 있었나요? — 이야기에서 눌러 보거나 '없어요' · 아이 생각을 단정하지 않음
   //  헷갈리기 쉬운 낱말을 누르면 그 낱말 이야기 · 다른 낱말이면 한 번 더 찾아보게 · 두 번째에도 아니거나 '없어요'면 이야기에 그 낱말이 있다고만 알려 줌
@@ -295,10 +300,22 @@ export function storyView(root, arg) {
     if (!Array.isArray(it.sol) || !Array.isArray(calc.sol) || it.sol.length !== calc.sol.length || !it.sol.every((x, i) => String(x) === String(calc.sol[i]))) return false;
     try { return !!it.check(calc.sol.map(Number), calc.sol.map(String)).ok; } catch (e) { return false; }
   };
+  // 크기로 먼저 — 이야기 수 가운데 가장 큰 것보다 답이 큰가 작은가(식 고르기) · 쓴 답이 더하면 · 빼면 · 곱하면 나와야 할 크기인가(계산)
+  const sizeOf = () => { const tx = toText(pr.s.story); if (/\//.test(tx)) return null; const ns = (tx.match(/\d+(?:\.\d+)?/g) || []).map(Number), xf = Number(pr.sc.xf); if (ns.length < 2 || !Number.isFinite(xf)) return null; const M = Math.max(...ns); return xf === M ? null : { M, up: xf > M }; };
+  const senseOf = (calc, vals) => {
+    const m = toText(calc.prompt).match(/(\d+(?:\.\d+)?)\s*([+−×-])\s*(\d+(?:\.\d+)?)/), v = vals && vals.length === 1 ? Number(vals[0]) : NaN;
+    if (!m || !Number.isFinite(v)) return '';
+    const A = Number(m[1]), B = Number(m[3]), M = Math.max(A, B), vs = String(v);
+    if (m[2] === '+' && v <= M) return `더하면 ${M}보다 커져야 해요. 쓴 답 ${vs}${P(vs, '은', '는')} ${M}보다 ${v < M ? '작아요' : '크지 않아요'}. `;
+    if ((m[2] === '−' || m[2] === '-') && v >= A) return `${A}에서 빼면 ${A}보다 작아져야 해요. 쓴 답 ${vs}${P(vs, '은', '는')} ${A}보다 ${v > A ? '커요' : '작지 않아요'}. `;
+    if (m[2] === '×' && A >= 2 && B >= 2 && v <= M) return `곱하면 ${M}보다 커져야 해요. 쓴 답 ${vs}${P(vs, '은', '는')} ${M}보다 ${v < M ? '작아요' : '크지 않아요'}. `;
+    return '';
+  };
   const ansLine = () => `<div class="sb-ansbox"><p class="sb-ask"><span class="sb-tag">묻는 것</span> ${askOf(pr.s.story)}</p><p class="sb-ans">${staticHTML(pr.s.item.prompt, pr.s.item.sol)}</p></div>`;
-  function stepCalc() {
+  function stepCalc(prev = null) {
+    if (typeof prev !== 'string') prev = null;   /* 단추에 바로 물린 곳은 누름 이벤트가 들어옴 */
     const calc = pr.s.steps[1].item, one = oneAns();
-    const b = shell(3, 'point', one ? '고른 식을 계산해요. 칸에는 <b>수만</b> 써요.' : '고른 식을 계산해요.', '<div id="slot"></div>');
+    const b = shell(3, 'point', `${one ? '고른 식을 계산해요. 칸에는 <b>수만</b> 써요.' : '고른 식을 계산해요.'}${prev ? `<br><span class="small">아까 쓴 답: ${esc(prev)}</span>` : ''}`, '<div id="slot"></div>');
     draw(b.querySelector('#slot'), { prompt: calc.prompt, conf: false, idk: false, onAnswer: (a) => {
       let ok = false; try { ok = !!calc.check(a.vals, a.raws).ok; } catch (e) { ok = false; }
       if (!pr.ct) { st.s[3] = ok ? 1 : 0; if (one) st.s[4] = st.s[3]; }   /* 걸음 기록은 첫 번에 맞혔나 */
@@ -307,8 +324,9 @@ export function storyView(root, arg) {
       card.querySelectorAll('.qact button, input.blank').forEach((x) => (x.disabled = true));
       fbSlot(b).appendChild(box);
       if (ok) { box.className = 'fb ok'; box.innerHTML = `<p class="sb-okmsg">맞아요.</p>${ansLine()}`; return finish(box); }
-      if (!pr.ct) { pr.ct = 1; box.className = 'fb no'; box.innerHTML = '계산이 맞지 않아요. 고른 식을 <b>한 번 더</b> 계산해 봐요.'; try { toolBox(box, { it: calc, vals: a.vals, c: pr.c, onSelfFix: (t) => KS.selfFix(me, K, t), onDone: (ok2) => { if (!ok2) return; if (!one) return stepAns(true); box.querySelectorAll('.qact').forEach((x) => x.remove()); box.insertAdjacentHTML('beforeend', ansLine()); finish(box); } }); } catch (e) { /* 도구 없는 식 */ }   /* 도구로 바르게 고쳐 쓰면 바로 다음으로 */ return next(box, '다시 계산하기', stepCalc); }   /* 처음 틀려도 확인 도구를 같이(말만 있던 것) */   /* 처음 틀리면 다시 계산 — 바로 '답 보기'로 가 고칠 길이 없던 것(처음 보는 눈 11-08) */
-      box.className = 'fb no'; box.innerHTML = '계산이 달라요.';
+      const sense = senseOf(calc, a.vals);
+      if (!pr.ct) { pr.ct = 1; box.className = 'fb no'; box.innerHTML = `${sense || '계산이 맞지 않아요. '}고른 식을 <b>한 번 더</b> 계산해 봐요.`; try { toolBox(box, { it: calc, vals: a.vals, c: pr.c, onSelfFix: (t) => KS.selfFix(me, K, t), onDone: (ok2) => { if (!ok2) return; if (!one) return stepAns(true); box.querySelectorAll('.qact').forEach((x) => x.remove()); box.insertAdjacentHTML('beforeend', ansLine()); finish(box); } }); } catch (e) { /* 도구 없는 식 */ }   /* 도구로 바르게 고쳐 쓰면 바로 다음으로 */ return next(box, '다시 계산하기', () => stepCalc(a.raws.join(', '))); }   /* 처음 틀려도 확인 도구를 같이(말만 있던 것) */   /* 처음 틀리면 다시 계산 — 바로 '답 보기'로 가 고칠 길이 없던 것(처음 보는 눈 11-08) */
+      box.className = 'fb no'; box.innerHTML = sense || '계산이 달라요.';
       let T0 = null; try { T0 = toolBox(box, { it: calc, vals: a.vals, c: pr.c, onSelfFix: (t) => KS.selfFix(me, K, t), onDone: (ok2) => { if (!ok2) return; if (!one) return stepAns(true); box.querySelectorAll('.qact').forEach((x) => x.remove()); box.insertAdjacentHTML('beforeend', ansLine()); finish(box); } }); } catch (e) { T0 = null; }
       if (!T0) box.innerHTML += ` 바르게 계산하면 ${staticHTML(calc.prompt, calc.sol)}`;
       if (!one) return next(box, '답 쓰기', () => stepAns(false));
@@ -375,7 +393,7 @@ export function storyView(root, arg) {
     const hard = Object.entries(lastOf).filter(([, x]) => x.s[0] === 0 || x.s[1] === 0).map(([t]) => TYPES[t].kid);
     const word = mine.some((p, i) => rs[i] && p.sc.inc && rs[i].s[2] === 0);
     const here = new Set(mine.map((p) => p.sc.type)), known = familiarTypes(log).filter((t) => here.has(t)).map((t) => TYPES[t].kid);
-    const tip = hard.length ? `다음엔 <b>${esc(hard[0])}</b>${P(hard[0], '을', '를')} 막대 그림으로 먼저 나타내 보고 식을 세워요.` : word ? '낱말 하나만 보지 말고, <b>묻는 것</b>을 끝까지 읽고 식을 세워요.' : '이야기를 나눠 읽고 틀을 먼저 세웠어요.';
+    const tip = hard.length ? `다음엔 <b>${esc(hard[0])}</b>${P(hard[0], '을', '를')} 그림으로 먼저 나타내 보고 식을 세워요.` : word ? '낱말 하나만 보지 말고, <b>묻는 것</b>을 끝까지 읽고 식을 세워요.' : '이야기를 나눠 읽고 틀을 먼저 세웠어요.';
     /* 걸음마다 — 바로(첫 번에) · 다시(다시 보고) · 건너뜀(익숙해서) */
     const rows = STEPS.map((nm, j) => { const xs = rs.map((x) => (j < 3 ? x.s[j] : x.s[3] === 1 && x.s[4] === 1 ? 1 : 0)); return { nm, j, a: xs.filter((x) => x === 1).length, b: xs.filter((x) => x === 0).length, c: xs.filter((x) => x == null).length }; });
     const cnt = (w, k) => (k ? `${w} ${k}개` : '');
@@ -386,7 +404,7 @@ export function storyView(root, arg) {
       <div class="acts"><a class="btn pri big" href="#/story/${encodeURIComponent(S.cs.join(','))}?${Date.now()}">한 판 더</a><a class="btn big" href="#/story">다른 이야기 고르기</a><a class="btn big" href="#/me">처음 화면으로</a></div></div>`;
   }
   if (S.i === 0 && !Object.keys(S.res).length) {
-    root.innerHTML = `<div class="card msg act-story"><p class="eyebrow">${tile('story', 22)}이야기 문제</p>${say('point', `이야기 ${S.items.length}개를 풀어요. 문제마다 <b>네 단계</b>예요.<br>① 무슨 이야기인지 고르기 ② 막대 그림 고르기 ③ 식 고르기 ④ 계산해서 답 쓰기`, 104)}<div class="acts"><button class="pri big" id="s">시작</button><a class="btn" href="#/story">이야기 종류 다시 고르기</a></div></div>`;
+    root.innerHTML = `<div class="card msg act-story"><p class="eyebrow">${tile('story', 22)}이야기 문제</p>${say('point', `이야기 ${S.items.length}개를 풀어요. 문제마다 <b>네 단계</b>예요.<br>① 무슨 이야기인지 고르기 ② 그림 고르기 ③ 식 고르기 ④ 계산해서 답 쓰기`, 104)}<div class="acts"><button class="pri big" id="s">시작</button><a class="btn" href="#/story">이야기 종류 다시 고르기</a></div></div>`;
     root.querySelector('#s').addEventListener('click', start);
   } else start();
 }
