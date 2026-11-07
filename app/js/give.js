@@ -21,7 +21,8 @@ const short = (t, n = 22) => (t.length > n ? `${t.slice(0, n - 1)}…` : t);
 export function giveSheet(id, task) {
   const s = SKILL[task && task.sk]; if (!s) return null;
   const n = Math.max(1, Math.min(20, Number(task.n) || 10));
-  const [sec] = buildSheet({ v: 2, seed: Number(task.seed) || 1, s: [secOf(s, n)] });
+  const want = task.want && typeof task.want === 'object' ? Object.fromEntries(Object.entries(task.want).filter(([c, m]) => typeof c === 'string' && typeof m === 'string')) : {};   /* 그 생각으로 풀면 틀리는 함정 꼴을 절반(선생님이 고름 · 아이 화면엔 표시 X) */
+  const [sec] = buildSheet({ v: 2, seed: Number(task.seed) || 1, s: [secOf(s, n, { want })] });
   const items = sec.items.map((it, i) => ({ k: i + 1, c: it.c, p: it.p, form: formOf(it), cls: '', ch: 'G', snap: { prompt: it.prompt, sol: it.sol, choices: it.choices || null } }));
   return { v: 1, id, kind: 'gv', made: Date.now(), items, chapters: [{ key: 'G', ks: items.map((x) => x.k) }], note: sec.note };
 }
@@ -62,7 +63,7 @@ export function giveView(root, id) {
       S.ms[it.k] = Math.max(0, Math.round(t || 0)); S.i++; keep();
       if (ok) return one();
       /* 틀리면 넘어가지 않고 떠올리기 → 한 단계씩 → 처음 문제 다시(hint.js · 기록은 첫 답 그대로) */
-      ladder(root, { it: itemOf(it.c, it.p), c: it.c, raws: a.idk ? null : a.raws, tag: '선생님이 준 문제', act: 'give', dots: [S.i - 1, sh.items.length], budget, onEnd: (r) => { if (r.how === 'recall' || r.how === 'steps') KS.selfFix(me, K, r.how); one(); } });
+      ladder(root, { it: itemOf(it.c, it.p), c: it.c, raws: a.idk ? null : a.raws, tag: '선생님이 준 문제', act: 'give', dots: [S.i - 1, sh.items.length], budget, onEnd: (r) => { KS.ladLog(me, K, r.how); if (r.how === 'recall' || r.how === 'steps') KS.selfFix(me, K, r.how); one(); } });
     } });
   };
   const fin = () => {

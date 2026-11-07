@@ -9,7 +9,7 @@ import { mindsOf } from '../../engine/mis.js';
 import { sheetOf, storySum } from './storylog.js';
 import { lsGet, lsSet } from './local.js';
 import * as db from './db.js';
-import { weeksOf } from './weekcore.js';
+import { weeksOf, weekKey } from './weekcore.js';
 
 export const DAY = 864e5;
 export const REVIEW_DAYS = [1, 3, 7];
@@ -124,9 +124,11 @@ export function summaryOf(K) {
   const rush14 = (K.rushLog || []).filter((t) => now - t < 14 * DAY).length;
   const prep = K.lastPrep && K.lastPrep.unit ? { u: K.lastPrep.unit, why: K.lastPrep.why || '', t: K.lastPrep.t || 0 } : null;
   /* 선생님이 낸 점검지(ck · 기록 id = <점검 id>_<번째> · 푼 문항 수)와 보충(gv · 기록 id = 과제 id · [맞힘, 문제 수, 때]) — 반 화면 '다 푼 아이' · '보충 결과' */
-  const ck = {}, gv = {};
-  for (const [id, x] of Object.entries(K.recs)) { if (!okRec(x)) continue; if (x.s.kind === 'ck') { const cid = String(id).split('_')[0]; ck[cid] = (ck[cid] || 0) + x.s.it.length; } else if (x.s.kind === 'gv') gv[id] = [x.s.it.filter((i) => x.r.it[i[0]] && x.r.it[i[0]].s === 'ok').length, x.s.it.length, Math.round(x.s.made)]; }
-  return { t: now, last, mis, L, sw14, rush14, prep, start: rep.start.map((s) => s.c), below: rep.below.map((b) => b.c), under: rep.under.map((u) => u.c), sw: cal.sureWrong, cal: { n: cal.n, m: cal.match }, fixed: K.fixed, due, help: K.help || {}, rush: K.rush || 0, jog: (K.jog || []).slice(-14), tools: K.tools || {}, ck, gv, story: storySum(K), wk: weeksOf(K.recs).slice(-12).map((w) => [w.wk, w.ok, w.n, w.term]), mx: Object.fromEntries(Object.entries(K.mx || {}).filter(([c]) => c !== '_jog' && c !== '_tools').map(([c, x]) => [c, x.tier || 0])) };
+  const ck = {}, cko = {}, gv = {};   /* cko = 점검지마다 맞힌 수(사전 · 사후 견주기 · 11-07) */
+  for (const [id, x] of Object.entries(K.recs)) { if (!okRec(x)) continue; if (x.s.kind === 'ck') { const cid = String(id).split('_')[0]; ck[cid] = (ck[cid] || 0) + x.s.it.length; cko[cid] = (cko[cid] || 0) + x.s.it.filter((i) => x.r.it[i[0]] && x.r.it[i[0]].s === 'ok').length; } else if (x.s.kind === 'gv') gv[id] = [x.s.it.filter((i) => x.r.it[i[0]] && x.r.it[i[0]].s === 'ok').length, x.s.it.length, Math.round(x.s.made)]; }
+  /* 틀린 뒤 도움 사다리 결과 — 주마다 [주, 떠올려 고침, 풀이 순서로 고침, 답 봄, 보기 다시 골라 맞힘](교사 11-07 '단계적으로 하나씩 해내는 힘'의 기록) */
+  const lad = Object.entries(K.lad || {}).sort((p, q) => (p[0] < q[0] ? -1 : 1)).slice(-8).map(([w, v]) => [w, v.r || 0, v.s || 0, v.x || 0, v.p || 0]);
+  return { t: now, last, mis, L, sw14, rush14, prep, start: rep.start.map((s) => s.c), below: rep.below.map((b) => b.c), under: rep.under.map((u) => u.c), sw: cal.sureWrong, cal: { n: cal.n, m: cal.match }, fixed: K.fixed, due, help: K.help || {}, rush: K.rush || 0, jog: (K.jog || []).slice(-14), tools: K.tools || {}, ck, cko, gv, lad, story: storySum(K), wk: weeksOf(K.recs).slice(-12).map((w) => [w.wk, w.ok, w.n, w.term]), mx: Object.fromEntries(Object.entries(K.mx || {}).filter(([c]) => c !== '_jog' && c !== '_tools').map(([c, x]) => [c, x.tier || 0])) };
 }
 export function pushSummary(me, K) { db.queuePut(`${base(me)}/st`, db.enc(summaryOf(K))); }
 
@@ -141,3 +143,11 @@ export async function join(C, no, pin) {
 // 내 도구함 — 배운 도구(t) · 스스로 고친 횟수(self)
 export function learnTool(me, K, tool) { K.tools = K.tools || {}; if (!K.tools[tool]) K.tools[tool] = { t: Date.now(), self: 0 }; save(me, K); pushMastery(me, K); }
 export function selfFix(me, K, tool) { K.tools = K.tools || {}; const x = (K.tools[tool] = K.tools[tool] || { t: Date.now(), self: 0 }); x.self = (x.self || 0) + 1; save(me, K); pushMastery(me, K); }
+
+// 도움 사다리 한 번의 결과(hint.js onEnd how) — 이번 주 칸에 하나 더 · 요약은 다음 pushSummary 때
+export function ladLog(me, K, how) {
+  const k = { recall: 'r', steps: 's', shown: 'x', pick: 'p' }[how]; if (!k) return;
+  const w = weekKey(); K.lad = K.lad || {}; const v = (K.lad[w] = K.lad[w] || {}); v[k] = (v[k] || 0) + 1;
+  const ws = Object.keys(K.lad).sort(); if (ws.length > 12) ws.slice(0, ws.length - 12).forEach((x) => delete K.lad[x]);
+  save(me, K);
+}

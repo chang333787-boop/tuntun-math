@@ -6,6 +6,7 @@
 //    같은 씨앗으로 종이 맞춤 연습지(paper/practice.html)도 같은 문제 · 아이 화면은 app/js/give.js · 결과는 요약 gv
 import { SKILLS, SKILL, GROUPS, COUNTS, gText, skillsOf, secOf } from '../../engine/skills.js';
 import { examplesOf } from '../../paper/js/pick.js';
+import { MIS, WANT } from '../../engine/mis.js';
 import { LES } from '../../paper/js/gen.js';
 import * as db from './db.js';
 import { prepPlan } from './prep.js';
@@ -32,6 +33,23 @@ export function skillState(st, s) {
     any = true; if (v === 'stuck') bad = true; else if (v === 'shaky' || v === 'need') sh = true;
   }
   return !any ? '' : root ? 'root' : bad ? 'bad' : sh ? 'shaky' : 'ok';
+}
+// 이 기능에서 보인 틀린 생각(engine/mis.js 카드 — 카드 차시가 기능 갈래와 겹침) · 아이 요약 mis: s = 여러 번 보임 · m = 한 번 · r = 고침(뺌)
+//  다른 프로그램에 없는 것(교사 11-07 '경쟁력') — '얘가 이걸 못하네'에 '이렇게 생각해서 틀리네'를 붙여 보여 줌
+export function skillMinds(K, S, s) {
+  const cs = new Set(s.parts.map((p) => p.c)), nos = Array.from({ length: K.n }, (_, i) => String(i + 1));
+  return MIS.filter((m) => m.lessons.some((c) => cs.has(c))).map((m) => {
+    const rep = [], once = [];
+    for (const no of nos) { const v = S && S[no] && S[no].st && S[no].st.mis ? S[no].st.mis[m.id] : null; if (v === 's') rep.push(no); else if (v === 'm') once.push(no); }
+    return { m, rep, once };
+  }).filter((x) => x.rep.length || x.once.length).sort((a, b) => b.rep.length - a.rep.length || b.once.length - a.once.length);
+}
+const kidMinds = (st, s) => { const cs = new Set(s.parts.map((p) => p.c)); return st && st.mis ? MIS.filter((m) => (st.mis[m.id] === 's' || st.mis[m.id] === 'm') && m.lessons.some((c) => cs.has(c))) : []; };
+// 함정 꼴(그 생각으로 풀면 틀리는 문제) — 기능 갈래 차시마다 보인 생각 하나(engine/mis.js WANT) · 보충 · 종이 연습지에 절반 섞음(pick.js)
+export function wantOf(minds, s) {
+  const want = {};
+  for (const x of minds) for (const p of s.parts) if (!want[p.c] && WANT[x.m.id] && WANT[x.m.id][p.c]) want[p.c] = x.m.id;
+  return want;
 }
 // 반 표의 줄 — 기록에 나온 차시마다 가장 좁은 기능 · 오늘 단원만이면 그 단원 준비 칸 · 아래 칸에 든 기능만
 export function skillRows(K, S, { unit = null } = {}) {
@@ -63,11 +81,12 @@ export function tableView(root, C) {
     const rows = S ? skillRows(K, S, { unit }) : [], open = rows.filter((r) => r.lack.length || r.shaky.length), fine = rows.filter((r) => !r.lack.length && !r.shaky.length);
     const sx = (root.querySelector('.stab') || {}).scrollLeft || 0;
     const head = `<tr><th class="sk">기능</th>${nos.map((no) => `<th class="kn"><a href="#/t/c/${C}/k/${no}" title="${esc(nm(K, no))} 자세히">${no}${K.names && K.names[no] ? `<small>${esc(String(K.names[no]).slice(0, 3))}</small>` : ''}</a></th>`).join('')}<th class="lack">부족한 아이</th></tr>`;
-    const row = (r) => `<tr><th class="sk"><b>${esc(r.s.name)}</b><small>${esc(gText(r.s))}</small></th>${r.cells.map((v, i) => { const [c, t] = SIGN[v]; return `<td class="${c}"><a href="#/t/c/${C}/k/${nos[i]}" aria-label="${esc(nm(K, nos[i]))} ${esc(r.s.name)} ${{ root: '부족(여기서부터)', bad: '부족', shaky: '흔들', ok: '됨', '': '안 봄' }[v]}">${t}</a></td>`; }).join('')}
-      <td class="lack"><div class="lk">${r.lack.length ? `<span>${r.lack.map((no) => esc(no)).join(' · ')}번</span><a class="btn teal mini" href="#/t/c/${C}/give?sk=${r.s.id}&who=${r.lack.join(',')}">${icon('send', 16)}보충 주기</a>` : r.shaky.length ? `<span class="muted">흔들 ${r.shaky.length}명</span><a class="btn mini" href="#/t/c/${C}/give?sk=${r.s.id}&who=${r.shaky.join(',')}">보충 주기</a>` : ''}</div></td></tr>`;
+    const row = (r) => { const md = S ? skillMinds(K, S, r.s).slice(0, 2) : [];
+      return `<tr><th class="sk"><b>${esc(r.s.name)}</b><small>${esc(gText(r.s))}</small>${md.length ? `<span class="sk-m">${md.map((x) => `<a href="#/t/c/${C}/m/${x.m.id}" title="${esc(x.m.plain || x.m.title)}">생각: ${esc(x.m.title)} <b>${x.rep.length + x.once.length}</b></a>`).join('')}</span>` : ''}</th>${r.cells.map((v, i) => { const [c, t] = SIGN[v], km = S ? kidMinds(S[nos[i]] && S[nos[i]].st, r.s) : [], lab = `${nm(K, nos[i])} ${r.s.name} ${{ root: '부족(여기서부터)', bad: '부족', shaky: '흔들', ok: '됨', '': '안 봄' }[v]}${km.length ? ` · 생각: ${km.map((m) => m.title).join(', ')}` : ''}`; return `<td class="${c}${km.length ? ' has-m' : ''}"><a href="#/t/c/${C}/k/${nos[i]}" title="${esc(lab)}" aria-label="${esc(lab)}">${t}</a></td>`; }).join('')}
+      <td class="lack"><div class="lk">${r.lack.length ? `<span>${r.lack.map((no) => esc(no)).join(' · ')}번</span><a class="btn teal mini" href="#/t/c/${C}/give?sk=${r.s.id}&who=${r.lack.join(',')}">${icon('send', 16)}보충 주기</a>` : r.shaky.length ? `<span class="muted">흔들 ${r.shaky.length}명</span><a class="btn mini" href="#/t/c/${C}/give?sk=${r.s.id}&who=${r.shaky.join(',')}">보충 주기</a>` : ''}</div></td></tr>`; };
     root.innerHTML = `<div class="card tview">
       <div class="tv-h"><h2>반 표 <small>${esc(C)} · ${K.n}명 · 기능 × 아이</small></h2><a class="btn" href="#/t/c/${C}">반 화면으로</a></div>
-      ${intro('줄은 <b>기능</b>, 칸은 <b>아이 번호</b>예요. ✕가 있는 줄 끝 <b>[보충 주기]</b>를 누르면 그 아이들에게 그 기능 문제를 바로 보내요. 칸이나 번호를 누르면 그 아이를 자세히 봐요.')}
+      ${intro('줄은 <b>기능</b>, 칸은 <b>아이 번호</b>예요. ✕가 있는 줄 끝 <b>[보충 주기]</b>를 누르면 그 아이들에게 그 기능 문제를 바로 보내요. 기능 이름 아래 <b>생각:</b>은 틀린 답 숫자로 찾은 \'이렇게 생각해서 틀림\'이에요(오른쪽 위 점 = 그 생각이 보인 아이). 칸이나 번호를 누르면 그 아이를 자세히 봐요.')}
       <div class="tv-bar"><div class="legend2"><span><i class="c-root">✕</i>부족 — 여기서부터</span><span><i class="c-stuck">✕</i>부족</span><span><i class="c-shaky">△</i>흔들</span><span><i class="c-ok">○</i>됨</span><span><i class="c-none"></i>아직 안 봄</span></div>
         ${K.today && K.today.unit ? `<div class="seg"><a class="${only ? '' : 'on'}" href="#/t/c/${C}/table">모든 기능</a><a class="${only ? 'on' : ''}" href="#/t/c/${C}/table?u=1">오늘 단원(${esc(unitLabel(K.today.unit))})에 필요한 것</a></div>` : ''}</div>
       ${!S ? '<p class="muted">불러오는 중…</p>' : !rows.length ? '<p class="muted">아직 기록이 없어요. 아이들이 점검을 하면 여기에 떠요.</p>'
@@ -88,7 +107,7 @@ const dayKey = (t = Date.now()) => new Date(t).toISOString().slice(0, 10).replac
 export function giveTView(root, C) {
   const K = cls(C); if (!K) { location.hash = '#/t'; return; }
   const q = qs(), nos = Array.from({ length: K.n }, (_, i) => String(i + 1));
-  let sk = SKILL[q.get('sk')] ? q.get('sk') : null, n = 10, S = null, sent = [], alive = true;
+  let sk = SKILL[q.get('sk')] ? q.get('sk') : null, n = 10, S = null, sent = [], alive = true, trap = true;
   let who = new Set((q.get('who') || '').split(',').filter((x) => nos.includes(x)));
   const exHTML = (s) => { let xs = []; try { xs = examplesOf(s); } catch (e) { xs = []; } return xs.map((e) => `<span class="gx">${staticHTML(e.it.prompt, null)}</span>`).join(''); };
   function render(msg = '') {
@@ -99,6 +118,7 @@ export function giveTView(root, C) {
       ${!S ? '<p class="muted">불러오는 중…</p>' : lackRows.length ? `<p class="small muted">우리 반에서 부족하거나 흔들리는 아이가 있는 기능이에요.</p><div class="gpick">${lackRows.slice(0, 12).map((r) => `<a class="gcard" href="#/t/c/${C}/give?sk=${r.s.id}&who=${(r.lack.length ? r.lack : r.shaky).join(',')}"><b>${esc(r.s.name)}</b><span class="gex">${exHTML(r.s)}</span><span class="small">${r.lack.length ? `부족 ${r.lack.length}명` : ''}${r.lack.length && r.shaky.length ? ' · ' : ''}${r.shaky.length ? `흔들 ${r.shaky.length}명` : ''}</span></a>`).join('')}</div>` : '<p class="muted">부족한 기능이 아직 없어요. 아래에서 직접 골라도 돼요.</p>'}
       <div class="row"><label for="sel">다른 기능</label><select id="sel" class="sel"><option value="">기능 고르기</option>${GROUPS.map((g) => `<optgroup label="${esc(g)}">${SKILLS.filter((x) => x.group === g).map((x) => `<option value="${x.id}">${esc(x.name)} (${esc(gText(x))})</option>`).join('')}</optgroup>`).join('')}</select></div>`
       : `<div class="gsel"><div><span class="small muted">고른 기능</span><h3>${esc(s.name)} <small>${esc(gText(s))}</small></h3><div class="gex">${exHTML(s)}</div></div><a class="btn mini" href="#/t/c/${C}/give">다른 기능</a></div>
+      ${(() => { const md = S ? skillMinds(K, S, s) : [], wt = wantOf(md, s); return md.length ? `<div class="gmind"><h3>이 기능에서 보인 틀린 생각</h3><ul>${md.slice(0, 3).map((x) => `<li><b>${esc(x.m.title)}</b><span class="small">${esc(x.m.plain || '')}</span><span class="small muted">${x.rep.length ? `여러 번 ${x.rep.map((no) => esc(nm(K, no))).join(' · ')}` : ''}${x.rep.length && x.once.length ? ' · ' : ''}${x.once.length ? `한 번 ${x.once.map((no) => esc(nm(K, no))).join(' · ')}` : ''}</span></li>`).join('')}</ul>${Object.keys(wt).length ? `<label class="gtrap"><input type="checkbox" id="trap" ${trap ? 'checked' : ''}> 이 생각으로 풀면 틀리는 문제를 절반 섞어요 <span class="small muted">(종이에도 같이 · 아이 화면엔 표시 없음)</span></label>` : ''}</div>` : ''; })()}
       <h3>누구에게 <small>${who.size}명</small></h3>
       <div class="kchips">${nos.map((no) => { const v = r0 ? r0.cells[nos.indexOf(no)] : ''; return `<label class="kchip ${SIGN[v][0]}${who.has(no) ? ' on' : ''}"><input type="checkbox" value="${no}" ${who.has(no) ? 'checked' : ''}><b>${no}</b>${K.names && K.names[no] ? `<small>${esc(String(K.names[no]).slice(0, 3))}</small>` : ''}<i>${SIGN[v][1]}</i></label>`; }).join('')}</div>
       <div class="acts sub">${r0 && r0.lack.length ? `<button type="button" data-w="lack">부족한 아이(${r0.lack.length})</button>` : ''}${r0 && r0.shaky.length ? `<button type="button" data-w="shaky">흔들 아이까지</button>` : ''}<button type="button" data-w="all">모두</button><button type="button" data-w="none">지우기</button></div>
@@ -115,13 +135,15 @@ export function giveTView(root, C) {
     root.querySelectorAll('[data-w]').forEach((b) => b.addEventListener('click', () => { const w = b.dataset.w; who = new Set(w === 'all' ? nos : w === 'none' ? [] : w === 'lack' ? r0.lack : [...r0.lack, ...r0.shaky]); render(); }));
     root.querySelectorAll('[data-n]').forEach((b) => b.addEventListener('click', () => { n = Number(b.dataset.n); render(); }));
     const sb = root.querySelector('#send'); if (sb) sb.addEventListener('click', send);
-    const pb = root.querySelector('#paper'); if (pb) pb.addEventListener('click', () => { const seed = Math.floor(Math.random() * 1e9); window.open(`../paper/practice.html#${encodeURIComponent(JSON.stringify({ v: 2, seed, who: '', s: [secOf(SKILL[sk], n)] }))}`, '_blank', 'noopener'); });
+    const tb = root.querySelector('#trap'); if (tb) tb.addEventListener('change', () => { trap = tb.checked; });
+    const pb = root.querySelector('#paper'); if (pb) pb.addEventListener('click', () => { const seed = Math.floor(Math.random() * 1e9); window.open(`../paper/practice.html#${encodeURIComponent(JSON.stringify({ v: 2, seed, who: '', s: [secOf(SKILL[sk], n, { want: wantNow() })] }))}`, '_blank', 'noopener'); });
   }
+  const wantNow = () => { const s = SKILL[sk]; if (!s || !trap || !S) return {}; return wantOf(skillMinds(K, S, s), s); };
   async function send() {
     const s = SKILL[sk]; if (!s || !who.size) return;
     const m = root.querySelector('#msg'); m.textContent = '보내는 중…';
     const t = Date.now(), id = `gv${dayKey(t)}${rand(4)}`, seed = Math.floor(Math.random() * 1e9), list = [...who].sort((a, b) => a - b);
-    const task = { kind: 'give', sk: s.id, n, seed, t }, up = {};
+    const w = wantNow(), task = { kind: 'give', sk: s.id, n, seed, t, ...(Object.keys(w).length ? { want: w } : {}) }, up = {};
     for (const no of list) up[`k/${C}/${no}/${K.pins[no]}/in/${id}`] = db.enc(task);
     up[`tc/${C}/${K.T}/tasks/${id}`] = db.enc({ ...task, who: list });
     try { await db.patch('', up); sent = [{ id, ...task, who: list }, ...sent]; render(`보냈어요! ${list.length}명의 처음 화면 2번 카드에 30초 안에 떠요.`); }

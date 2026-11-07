@@ -16,7 +16,7 @@ import { lsGet, lsSet, lsDel, esc, rand } from './local.js';
 import { flush, get as dbGet, dec } from './db.js';
 import { runPlan, weekHTML, today } from './run.js';
 import { toolFor, nextStep } from './tools.js';
-import { lineOf, weekTerm, weekPlan, doneThisWeek } from './weekcore.js';
+import { lineOf, weekTerm, weekPlan, doneThisWeek, weekKey } from './weekcore.js';
 import { makeItem as mkItem } from '../../engine/lessons/index.js';
 import { icon, tile, ACT } from './icons.js';
 import { giveTasks } from './give.js';
@@ -153,6 +153,8 @@ export async function homeView(root) {
   // 내 기록 — 나하고만 견줌 · 사실만(점검 맞힌 수 · 연습한 날 · 배워서 고친 것)
   const ws = lineOf(K.recs, weekTerm(K)), wl = ws[ws.length - 1], wb = ws[ws.length - 2];
   const fixedN = Object.keys(K.fixed || {}).length, cal = KS.calOf(K);
+  const ladW = Object.keys(K.lad || {}).sort(), lw = (w) => (w && K.lad[w] ? (K.lad[w].r || 0) + (K.lad[w].s || 0) : 0), thisW = weekKey();   /* 떠올리기 · 풀이 순서로 고친 것(나하고만 견줌) */
+  const selfWk = lw(thisW), prevW = ladW.filter((w) => w < thisW).pop(), selfLast = prevW ? lw(prevW) : null;
   const weekLine = wl ? `${wb ? `지난번 ${wb.ok}개 → ` : ''}이번 ${wl.ok}개 <small>(${wl.n}문제 중)</small>` : '<small>아직 안 했어요</small>';
   const tok = rand(4); root.dataset.home = tok;
   root.innerHTML = `<div class="home3">
@@ -162,6 +164,7 @@ export async function homeView(root) {
       <div class="mine-row">
         <div class="mine-c"><span class="k">이번 주 점검 맞힌 수</span><span class="v">${weekLine}</span></div>
         <div class="mine-c"><span class="k">튼튼이와 배워서 고친 것</span><span class="v">${fixedN}개</span>${fixedN ? `<details class="more"><summary>보기</summary><p class="small">${names(Object.keys(K.fixed))}</p></details>` : ''}</div>
+        <div class="mine-c"><span class="k">이번 주 틀린 뒤 스스로 고친 문제</span><span class="v">${selfWk}개${selfLast != null ? ` <small>(지난주 ${selfLast}개)</small>` : ''}</span></div>
         <div class="mine-c"><span class="k">풀기 전 짐작이 맞은 정도</span><span class="v">${cal.n ? `${Math.round(cal.match * 100)}% <small>(${cal.n}문제)</small>` : '<small>아직 없어요</small>'}</span></div>
       </div>
       <p class="mine-links small"><a href="#/story">이야기 문제 풀기</a><a href="#/back">막힌 문제 거꾸로 찾기</a><button class="link" id="out">이 기기에서 나가기</button></p></section>
@@ -324,7 +327,7 @@ export function fixView(root, c) {
   // 혼자에서 틀린 뒤 — 세 번 내리 틀림이면 같이 한 번 더 / 선생님과 · 아니면 다음에 할 한 가지: 검산 도구(답 보기 전에) → 같은 숫자로 나눠 보기 → 방법 한 줄
   function soloBack(r, it0, a) {
     /* 틀리면(세 번 내리 · 선생님과가 아니면) 도움 사다리 — 떠올리기 → 한 단계씩 → 처음 문제 다시(hint.js · 교사 11-07) · 혼자 풀기 맞힌 수는 첫 답 그대로 */
-    if (!r.ok && !r.back && !r.help) return ladder(slot(), { it: mkItem(it0.c || c, it0.p), c: it0.c || c, raws: a.raws, tag: '혼자 풀기', act: 'fix', onEnd: (x) => { if (x.how === 'recall' || x.how === 'steps') KS.selfFix(me, K, x.how); if (F.reStep) afterReStep(F); route(); } });
+    if (!r.ok && !r.back && !r.help) return ladder(slot(), { it: mkItem(it0.c || c, it0.p), c: it0.c || c, raws: a.raws, tag: '혼자 풀기', act: 'fix', onEnd: (x) => { KS.ladLog(me, K, x.how); if (x.how === 'recall' || x.how === 'steps') KS.selfFix(me, K, x.how); if (F.reStep) afterReStep(F); route(); } });
     const box = fbBox(r.ok);
     let selfFixed = false;
     if (r.ok) box.innerHTML = '맞았어요! 혼자서 풀었어요.';

@@ -48,8 +48,9 @@ const latest = (checks) => Object.entries(checks || {}).filter(([id, x]) => okTa
 const normLite = (st) => {
   if (!st || typeof st !== 'object') return null;
   const ck = {}; if (st.ck && typeof st.ck === 'object') for (const [k, v] of Object.entries(st.ck)) if (/^[A-Za-z0-9-]{1,30}$/.test(k) && Number.isFinite(Number(v))) ck[k] = Number(v);
+  const cko = {}; if (st.cko && typeof st.cko === 'object') for (const [k, v] of Object.entries(st.cko)) if (/^[A-Za-z0-9-]{1,30}$/.test(k) && Number.isFinite(Number(v))) cko[k] = Number(v);   /* 점검지마다 맞힌 수(사전 · 사후) */
   const prep = st.prep && typeof st.prep === 'object' && typeof st.prep.u === 'string' ? { u: st.prep.u, why: String(st.prep.why || ''), t: Number(st.prep.t) || 0 } : null;
-  return { ck, prep };
+  return { ck, cko, prep };
 };
 // 아이 요약 모으기(8개씩 · 짧은 요청만 — teacher.js pullAll과 같은 방법)
 async function pullSt(C, K) {
@@ -82,13 +83,33 @@ export function checkCard(C, K, S = {}) {
   return `<div class="ckc"><p class="ckc-r"><span class="ckc-k">오늘 단원 점검</span><span class="ckc-v">${today}</span></p><p class="ckc-r"><span class="ckc-k">점검지</span><span class="ckc-v">${sheet}</span></p></div>`;   /* 단추는 반 화면 카드 ①의 [점검 내기] 하나만 */
 }
 
+// 사전 · 사후 견주기(시범 운영 · 연구 기록) — 가장 최근 '사전'과 그 뒤 가장 최근 '사후' · 아이마다 맞힌 비율(푼 문제 기준) 전 → 후 · 반 평균 · 사전 아래 30% 아이들 평균
+//  같은 범위일 때 견주기가 바로 됨(다르면 한 줄 알림) · 종이로 푼 것은 세지 않음(화면에서 푼 것만 — 종이는 반 표에 들어감)
+function prePost(K, S, list) {
+  const pre = list.find(([, x]) => x.lab === 'pre'), post = pre ? list.find(([, x]) => x.lab === 'post' && Number(x.t) > Number(pre[1].t)) : null;
+  if (!pre) return '';
+  const head = `<section class="card ck-pp"><h2>사전 · 사후 견주기 <small>시범 운영 기록</small></h2>`;
+  if (!post) return `${head}<p class="muted">사전 점검(${esc(day(Number(pre[1].t)))} · ${esc(gl(pre[1].from))} ~ ${esc(gl(pre[1].to))})을 냈어요. 몇 주 뒤 같은 범위로 <b>사후 점검</b>을 내면 여기에서 아이마다 전 → 후를 견줘요.</p></section>`;
+  if (!S) return `${head}<p class="muted">불러오는 중…</p></section>`;
+  const [pid, px] = pre, [qid, qx] = post;
+  const pc = (no, id) => { const st = S[no] && S[no].st, n = st && st.ck ? st.ck[id] || 0 : 0, o = st && st.cko ? st.cko[id] || 0 : 0; return n ? { o, n, p: Math.round((o / n) * 100) } : null; };
+  const rows = nos(K).map((no) => ({ no, a: pc(no, pid), b: pc(no, qid) }));
+  const both = rows.filter((r) => r.a && r.b), avg = (xs) => (xs.length ? Math.round(xs.reduce((t, v) => t + v, 0) / xs.length) : null);
+  const low = both.slice().sort((x, y) => x.a.p - y.a.p).slice(0, Math.max(1, Math.round(both.length * 0.3)));
+  const cell = (v) => (v ? `${v.p}% <span class="small muted">(${v.o}/${v.n})</span>` : '<span class="muted">—</span>');
+  const same = px.from === qx.from && px.to === qx.to;
+  return `${head}<p class="intro">사전 ${esc(day(Number(px.t)))}(${esc(gl(px.from))} ~ ${esc(gl(px.to))}) → 사후 ${esc(day(Number(qx.t)))}(${esc(gl(qx.from))} ~ ${esc(gl(qx.to))})${same ? '' : ' · <b>범위가 달라요</b> — 같은 범위로 내야 바로 견줄 수 있어요'}. 맞힌 비율은 화면에서 푼 문제 기준이에요.</p>
+    ${both.length ? `<p class="ck-pps">둘 다 푼 아이 <b>${both.length}</b>명 · 반 평균 <b>${avg(both.map((r) => r.a.p))}% → ${avg(both.map((r) => r.b.p))}%</b> · 사전 아래 30%(${low.length}명) <b>${avg(low.map((r) => r.a.p))}% → ${avg(low.map((r) => r.b.p))}%</b></p>` : ''}
+    <div class="ck-tw"><table class="list ck-t"><thead><tr><th>아이</th><th>사전</th><th>사후</th><th>변화</th></tr></thead><tbody>${rows.map((r) => `<tr><td>${esc(nm(K, r.no))}</td><td>${cell(r.a)}</td><td>${cell(r.b)}</td><td>${r.a && r.b ? `<b class="${r.b.p >= r.a.p ? 'okc' : ''}">${r.b.p - r.a.p >= 0 ? '+' : ''}${r.b.p - r.a.p}</b>` : ''}</td></tr>`).join('')}</tbody></table></div></section>`;
+}
+
 export function checkView(root, C) {
   const K0 = cls(C); if (!K0) return go('#/t');
   let K = K0, S = null, alive = true, timer = null;
   const us = units(K);
   let unit = (K.today && K.today.unit) || (us.find((u) => u.g === K.g) || us[us.length - 1] || {}).id || '';
   let len = LEN.includes(Number(K.len)) ? Number(K.len) : PREP.budget;
-  let range = defaultRange(K.g);
+  let range = defaultRange(K.g), lab = '';   /* 쓰임 — '' 보통 · pre 사전 · post 사후(시범 운영 · 연구 기록 · 11-07) */
   const upto = GRADES.slice(0, Math.max(1, gradeIdx(K.g) + 1));
   const cntOf = (r) => { const sh = checkSheet('ckCOUNT', { kind: 'check', from: r.from, to: r.to, n: 1 }); return sh ? sh.items.length : 0; };
   let cnt = cntOf(range);
@@ -99,7 +120,7 @@ export function checkView(root, C) {
     const list = latest(K.checks);
     const rows = list.map(([id, x]) => {
       const n = Number(x.n), g = S ? progressOf(K, S, id, n) : null, who = (xs, cnt) => xs.map((no) => `${esc(nm(K, no))}${cnt ? ` ${(S[no].st.ck || {})[id] || 0}/${n}` : ''}`).join(' · ');
-      return `<tr><td class="ck-d">${esc(day(Number(x.t) || Date.now()))}<span class="small muted">${esc(id)}</span></td><td><span class="ck-rgt">${esc(gl(x.from))} ~ ${esc(gl(x.to))}</span><span class="small muted">${n}문제</span></td>
+      return `<tr><td class="ck-d">${esc(day(Number(x.t) || Date.now()))}<span class="small muted">${esc(id)}</span></td><td>${x.lab ? `<span class="pill ck-lab">${x.lab === 'pre' ? '사전' : '사후'}</span>` : ''}<span class="ck-rgt">${esc(gl(x.from))} ~ ${esc(gl(x.to))}</span><span class="small muted">${n}문제</span></td>
         <td class="ck-n">${g ? `<b>${g.done.length}</b>/${K.n}` : '…'}</td><td class="ck-n">${g ? `<b>${g.doing.length}</b>${g.doing.length ? `<span class="small muted">${who(g.doing, true)}</span>` : ''}` : '…'}</td><td class="ck-n">${g ? `<b>${g.none.length}</b>${g.none.length && g.none.length < K.n ? `<span class="small muted">${who(g.none)}</span>` : ''}` : '…'}</td>
         <td><a class="btn ck-pr" href="#/t/c/${esc(C)}/check/${esc(id)}/print">같은 문제 인쇄</a></td></tr>`;
     }).join('');
@@ -115,6 +136,7 @@ export function checkView(root, C) {
       <section class="card ck-c"><h3><span class="ck-no">2</span>점검지 — 종이와 같은 문제</h3>
         <p class="intro">종이 점검지와 <b>같은 문제 · 같은 판정</b>이에요. 화면에서 풀면 결과가 바로 반 표에 들어가요.</p>
         <div class="ck-f"><span>범위</span><span class="ck-rg"><select id="from" class="sel" aria-label="범위 시작">${opt(range.from)}</select> ~ <select id="to" class="sel" aria-label="범위 끝">${opt(range.to)}</select></span></div>
+        <label class="ck-f"><span>쓰임</span><select id="lab" class="sel"><option value="">보통 점검</option><option value="pre"${lab === 'pre' ? ' selected' : ''}>사전 점검(시작할 때)</option><option value="post"${lab === 'post' ? ' selected' : ''}>사후 점검(몇 주 뒤 · 같은 범위)</option></select></label>
         <p class="ck-cnt" id="cnt">${cntLine()}</p>
         <div class="acts"><button class="pri" id="give"${cnt ? '' : ' disabled'}>아이들에게 내기</button></div>
         <p class="small muted">종이로 푼 아이는 반 화면의 <a href="#/t/c/${esc(C)}/paper">종이 결과 가져오기</a>로 넣어요.</p>
@@ -124,7 +146,8 @@ export function checkView(root, C) {
     </div>
     <section class="card ck-list"><h2>낸 점검지 <small>${list.length}개</small><button class="mini" id="re" type="button">새로 보기</button></h2>
       ${list.length ? `<div class="ck-tw"><table class="list ck-t"><thead><tr><th>낸 날</th><th>범위</th><th>다 푼 아이</th><th>하는 중</th><th>안 함</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
-        <p class="small muted">${S ? '화면에서 푼 문제만 세요. 30초마다 새로 봐요(이 화면이 열려 있을 때만).' : '아이 기록을 불러오는 중…'}</p>` : '<p class="muted">아직 낸 점검지가 없어요. 위 2에서 범위를 고르고 내면 여기에 나와요.</p>'}</section>`;
+        <p class="small muted">${S ? '화면에서 푼 문제만 세요. 30초마다 새로 봐요(이 화면이 열려 있을 때만).' : '아이 기록을 불러오는 중…'}</p>` : '<p class="muted">아직 낸 점검지가 없어요. 위 2에서 범위를 고르고 내면 여기에 나와요.</p>'}</section>
+    ${prePost(K, S, list)}`;
     if (S) window.scrollTo(0, keepY);
     root.querySelector('#u').addEventListener('change', (e) => { unit = e.target.value; });
     root.querySelector('#len').addEventListener('change', (e) => { len = LEN.includes(Number(e.target.value)) ? Number(e.target.value) : PREP.budget; });
@@ -138,6 +161,7 @@ export function checkView(root, C) {
     };
     root.querySelector('#from').addEventListener('change', () => pickR('from'));
     root.querySelector('#to').addEventListener('change', () => pickR('to'));
+    root.querySelector('#lab').addEventListener('change', (e) => { lab = e.target.value; });
     root.querySelector('#give').addEventListener('click', give);
     root.querySelector('#re').addEventListener('click', refresh);
   }
@@ -157,7 +181,7 @@ export function checkView(root, C) {
     const msg = root.querySelector('#m2'), b = root.querySelector('#give'); b.disabled = true; msg.textContent = '내는 중…';
     const t = Date.now(), id = `ck${ymd(t)}${rand(4)}`, sh = checkSheet(id, { kind: 'check', from: range.from, to: range.to, n: 1 });
     if (!sh) { msg.textContent = '범위를 다시 골라 주세요.'; b.disabled = false; return; }
-    const task = { kind: 'check', id, from: range.from, to: range.to, words: false, n: sh.items.length, seed: sh.seed, t }, v = db.enc(task), up = {};
+    const task = { kind: 'check', id, from: range.from, to: range.to, words: false, n: sh.items.length, seed: sh.seed, t, ...(lab ? { lab } : {}) }, v = db.enc(task), up = {};
     for (const no of nos(K)) up[`k/${C}/${no}/${K.pins[no]}/in/${id}`] = v;
     up[`tc/${C}/${K.T}/tasks/${id}`] = v;
     try {

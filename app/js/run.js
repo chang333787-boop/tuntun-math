@@ -72,7 +72,7 @@ export function runView(root) {
       ms[it.k] = t; i++;
       if (ok) return one();
       /* 틀리면 넘어가지 않고 떠올리기 → 한 단계씩 → 처음 문제 다시(hint.js · 판정 · 내일 다시는 첫 답으로) */
-      ladder(root, { it: itemOf(it.c, it.p), c: it.c, raws: a.idk ? null : a.raws, tag: '매일 연습', act: 'daily', dots: [i - 1, sh.items.length], budget, onEnd: (r) => { if (r.how === 'recall' || r.how === 'steps') KS.selfFix(me, K, r.how); one(); } });
+      ladder(root, { it: itemOf(it.c, it.p), c: it.c, raws: a.idk ? null : a.raws, tag: '매일 연습', act: 'daily', dots: [i - 1, sh.items.length], budget, onEnd: (r) => { KS.ladLog(me, K, r.how); if (r.how === 'recall' || r.how === 'steps') KS.selfFix(me, K, r.how); one(); } });
     } });
   };
   const fin = () => {

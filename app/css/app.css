@@ -241,7 +241,7 @@ div.cmpc{box-shadow:none}
 .c3-days{margin:2px 0 0;font-size:15px;color:var(--mute)}
 .c3-done{margin:0;font-weight:700;color:var(--ok-ink)}
 .t-lines a b{font-size:16.5px}
-.mine{margin:0 0 8px}.mine-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.mine{margin:0 0 8px}.mine-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
 .mine-c{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 18px;display:flex;flex-direction:column;gap:4px;min-width:0}
 .mine-c .k{font-size:14.5px;color:var(--mute)}.mine-c .v{font-size:22px;font-weight:800;line-height:1.35}.mine-c .v small{font-size:14px;font-weight:400;color:var(--mute)}
 .mine-links{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:center;margin:16px 0 0}.mine-links a{color:var(--teal);font-weight:700}
@@ -264,6 +264,11 @@ div.cmpc{box-shadow:none}
 .stab td.c-root{background:var(--stuck);color:#fff}.stab td.c-stuck{color:var(--stuck)}.stab td.c-shaky{color:var(--shaky)}.stab td.c-ok{color:var(--ok-ink);font-weight:600}
 .stab th.lack,.stab td.lack{position:sticky;right:0;text-align:left;padding:4px 10px;min-width:220px;white-space:nowrap}.stab td.lack{background:#fff}
 .stab td.lack .lk{display:flex;align-items:center;justify-content:space-between;gap:10px}.stab td.lack span{font-weight:700;font-size:14.5px}.stab td.lack .btn{min-height:34px;flex:none}
+.stab th.sk .sk-m{display:flex;flex-wrap:wrap;gap:3px 6px;margin-top:4px}.stab th.sk .sk-m a{white-space:nowrap;font-size:12.5px;font-weight:600;color:var(--pri-ink);background:var(--pri-t);border-radius:999px;padding:0 8px;text-decoration:none;line-height:1.7}
+.stab td.has-m{position:relative}.stab td.has-m::after{content:'';position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--pri)}
+.gmind{margin:14px 0 4px;padding:12px 16px;border:2px solid var(--pri-t);border-radius:16px;background:#FFFBF7}.gmind h3{margin:0 0 6px}.gmind ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}.gmind li{display:flex;flex-direction:column;gap:2px}.gmind li b{color:var(--pri-ink)}
+.gtrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;font-weight:700}.gtrap input{width:20px;height:20px}
+.klist .km{font-size:13.5px;color:var(--pri-ink);background:var(--pri-t);border-radius:999px;padding:0 10px}
 .btn.mini{min-height:36px;padding:3px 12px;font-size:14px;border-radius:999px;border-width:1.5px;box-shadow:0 3px 0 var(--line2);gap:5px;font-family:var(--num)}
 .btn.teal.mini{box-shadow:0 3px 0 var(--teal-l)}
 .legend2 i.c-root{background:var(--stuck);color:#fff;border-color:var(--stuck)}.legend2 i.c-stuck{color:var(--stuck)}.legend2 i.c-shaky{color:var(--shaky)}.legend2 i.c-ok{color:var(--ok-ink)}
@@ -769,3 +774,7 @@ body.tv main{max-width:none}body.tv .ctab table{font-size:18px}body.tv .ctab td,
   .ck-t .ck-n::before{display:block;font-size:13px;color:var(--mute)}.ck-t td:nth-child(3)::before{content:'다 푼 아이'}.ck-t td:nth-child(4)::before{content:'하는 중'}.ck-t td:nth-child(5)::before{content:'안 함'}
   .paper.preview.ckp-pv{zoom:.42}
 }
+/* 사전 · 사후 견주기(tcheck.js prePost) · 틀린 뒤 고친 힘 표(teacher.js) */
+.ck-lab{margin-right:6px;border-color:var(--teal);color:var(--teal-d);background:var(--teal-t)}
+.ck-pps{font-size:16px;margin:0 0 10px}
+.list.lad{font-size:14.5px}.list.lad td,.list.lad th{text-align:center;padding:4px 8px}
