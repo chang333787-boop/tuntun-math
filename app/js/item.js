@@ -15,7 +15,7 @@ import { icon, ACT } from './icons.js';
 export const CONF = [[2, '자신 있어요'], [1, '조금 헷갈려요'], [0, '잘 모르겠어요']];
 // 진행 — 카드 오른쪽 위 같은 자리 · dots = [지금까지 푼 수, 모두] · 12개까지 칸 막대 · 넘으면 긴 막대(준비 다리는 판 전체 · 많아야 18 · 24 · 36) · 새로 찬 만큼만 200ms
 export function progHTML([i, n]) {
-  if (!n) return `<span class="qprog" role="img" aria-label="${i + 1}번째 문제"><span class="cnt">문제 <b>${i + 1}</b></span></span>`;   /* 끝이 정해지지 않은 판(오늘 단원 점검 — 찾으면 일찍 끝남)은 분모 없이(11-07 '1 / 18인데 12에서 끝남') */
+  if (!n || n < 0) return `<span class="qprog" role="img" aria-label="${i + 1}번째 문제"><span class="cnt">문제 <b>${i + 1}</b>${n < 0 ? ` <small>· 많아야 ${-n}문제</small>` : ''}</span></span>`;   /* n < 0 = 많아야 |n|문제(일찍 끝날 수 있음) */   /* 끝이 정해지지 않은 판(오늘 단원 점검 — 찾으면 일찍 끝남)은 분모 없이(11-07 '1 / 18인데 12에서 끝남') */
   const k = Math.min(i + 1, n), lab = `${n}문제 가운데 ${k}번째`, pc = (x) => Math.round((Math.max(0, Math.min(x, n)) / n) * 100);
   const show = n > 12 ? `<span class="pbar"><i style="width:${pc(i)}%;--p0:${pc(i - 1)}%"></i></span>` : `<span class="pseg">${Array.from({ length: n }, (_, j) => `<i class="${j < i ? 'on' : ''}${j === i - 1 ? ' nw' : ''}"></i>`).join('')}</span>`;
   return `<span class="qprog" role="img" aria-label="${lab}">${show}<span class="cnt"><b>${k}</b> / ${n}</span></span>`;
@@ -25,7 +25,7 @@ export const tagHTML = (tag, act = '') => { const a = ACT[act]; return tag ? `<s
 // 되먹임 상자를 붙일 자리(오른쪽 칸) · 답한 뒤 쓴 단추 줄 숨김
 export const fbSlot = (root) => { const c = root.querySelector('.qcard'); if (c) c.classList.add('answered'); return root.querySelector('.qside') || c || root; };
 
-export function draw(root, { prompt, choices = null, tag = '', act = '', dots = null, conf = true, idk = true, extra = '', lead = '', given = null, hide = null, say = null, onAnswer }) {
+export function draw(root, { prompt, choices = null, tag = '', act = '', dots = null, conf = true, idk = true, extra = '', lead = '', given = null, hide = null, say = null, okLabel = '다 풀었어요', onAnswer }) {
   const t0 = performance.now();
   let cf = null;
   const gone = new Set((hide || []).map(Number));
@@ -41,9 +41,9 @@ export function draw(root, { prompt, choices = null, tag = '', act = '', dots = 
       ${say && say.length ? `<div class="tsay">${say.map((x) => `<p>${esc(x)}</p>`).join('')}</div>` : ''}
       ${choices ? `<div class="choices">${choices.map((ch, k) => `<button type="button" data-k="${k}"${gone.has(k) ? ' class="gone" aria-label="튼튼이가 지운 보기"' : ''}><span class="math">${toHTML(ch, { static: true })}</span></button>`).join('')}</div>` : ''}
       <div class="qmsg" id="msg" role="alert"></div>
-      ${conf ? `<div class="conf"><p>${choices ? '보기를 골랐으면 아래 하나를 눌러 내요 — 얼마나 자신 있어요?' : '다 풀었으면 아래 하나를 눌러 내요 — 얼마나 자신 있어요?'}</p><div class="row">${CONF.map(([v, t]) => `<button type="button" class="cfs" data-cf="${v}">${t}</button>`).join('')}</div></div>` : ''}
+      ${conf ? `<div class="conf"><p><b>답 내기</b> — ${choices ? '보기를 고르고' : '답을 쓰고'} 얼마나 자신 있는지 하나 눌러요</p><div class="row">${CONF.map(([v, t]) => `<button type="button" class="cfs" data-cf="${v}">${icon('send', 16)}${t}</button>`).join('')}</div></div>` : ''}
       <div class="qact">
-        ${choices || conf ? '' : '<button class="pri big" id="ok">다 풀었어요</button>'}
+        ${choices || conf ? '' : `<button class="pri big" id="ok">${esc(okLabel)}</button>`}
         ${idk ? '<button id="idk">몰라서 넘어갈래요</button>' : ''}
       </div>
     </div>

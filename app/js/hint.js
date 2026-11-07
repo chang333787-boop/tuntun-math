@@ -14,6 +14,7 @@ import { draw, staticHTML, ansSay, fbSlot } from './item.js';
 import { stepsOf } from './fix.js';
 import { colOf, colView, tenFrameHTML, modelHTML } from './model.js';
 import { esc } from './local.js';
+import { P } from '../../engine/concepts/kit.js';
 import { mascot } from '../../paper/js/mascot.js';
 import { speakButton } from './speak.js';
 
@@ -29,10 +30,10 @@ export function cueFor(c, p) {
 // 풀이 순서(교사 11-07 '알고리즘적 사고 — 아이한테 알고리즘이란 말은 안 하지만 단계적으로 하나씩') — 아이 말로는 '풀이 순서'
 //  names = 숫자 없는 단계 이름(engine/hints plan) · 없으면 단계 글에서 숫자를 ○로 가림(아직 안 한 단계의 숫자 = 앞 단계 답이 샘)
 export const planNames = (c, p, steps) => planOf(c, p, steps.length);
-export function planHTML(steps, names, cur, shown = new Set()) {
+export function planHTML(steps, names, cur, shown = new Set(), lastLabel = '처음 문제의 답 쓰기') {
   const nm = (i) => (names ? names[i] : i <= cur ? steps[i].why : String(steps[i].why).replace(/\d+(?:\.\d+)?/g, '○'));   /* 이름이 있으면 늘 짧은 이름(지금 단계 글은 말풍선에 — 같은 글 두 번 X · 11-07) */
   const li = (cls, mark, t) => `<li class="${cls}"><i>${mark}</i><span>${esc(t)}</span></li>`;
-  return `<div class="plan"><p class="plan-h">풀이 순서</p><ol>${steps.map((s, i) => li(i < cur ? (shown.has(i) ? 'done shown' : 'done') : i === cur ? 'now' : 'yet', i < cur ? '✓' : String(i + 1), nm(i))).join('')}${li(cur >= steps.length ? 'now' : 'yet', String(steps.length + 1), '처음 문제의 답 쓰기')}</ol></div>`;
+  return `<div class="plan"><p class="plan-h">풀이 순서</p><ol>${steps.map((s, i) => li(i < cur ? (shown.has(i) ? 'done shown' : 'done') : i === cur ? 'now' : 'yet', i < cur ? '✓' : String(i + 1), nm(i))).join('')}${li(cur >= steps.length ? 'now' : 'yet', String(steps.length + 1), lastLabel)}</ol></div>`;
 }
 
 // 단계 풀 때 왼쪽 위 — 처음 문제(작게) · 세로셈(덧셈 · 뺄셈 두 자리 넘으면) · 그림 · 채운 단계(맞음 ✓ · 답을 본 단계는 옅게 · 방금 채운 줄만 살짝 나타남 fresh)
@@ -53,6 +54,7 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
   const base = { tag, act, dots, conf: false, idk: false };
   const head = (k, html, pose = 'think', after = '') => `<div class="hl hl-${k}"><div class="say">${mascot(pose, 60)}<div class="bub">${html}</div></div>${after}</div>`;
   const last = steps.length - 1;
+  const pt = toText(it.prompt).replace(/\s*=\s*□.*$/, '').replace(/\s+/g, ' ').trim(), qName = pt && pt.length <= 16 && !/□/.test(pt) ? `${pt}의 답` : '처음 문제의 답';   /* '처음 문제'를 '1번 문제'로 읽던 것 — 짧은 식이면 식 그대로(11-07 처음 쓰는 아이) */
   const names = steps.length ? planNames(c, it.p, steps) : null;
   /* 그림 — 10칸 틀(한 자리 10 만들기 · 10에서 빼기): 마지막 단계는 옮긴 모습(방금 앞 단계를 마쳤으면 옮기는 모습 한 번) · 그 앞은 한 번 틀렸을 때만 처음 모습
      자릿값 모형(두 자리 넘는 덧셈 · 뺄셈): 한 번 틀렸을 때만(세로셈은 늘 있음) */
@@ -83,7 +85,7 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
     if (!raws) return toSteps();   /* '몰라서 넘어갈래요' = 떠올리기 없이 바로 단계로(모른다는 아이에게 '떠올려 봐요' X · 11-07 사용감 점검) */
     const canStep = steps.length && !(budget && budget.left <= 0);
     draw(root, { ...base, prompt: it.prompt, choices: ch, hide: picked,
-      lead: head('cue', `<span class="hl-was">내 답 <b>${esc(mine(it, raws))}</b> — 아직 아니에요. ${nudge || '생각을 떠올려 다시 풀어 봐요.'}</span>${cue ? `<span class="hl-cue-t">${esc(cue)}</span>` : ''}<span class="hl-ans">이 생각으로 <b>처음 문제의 답</b>을 써요.</span>`, 'think', `<button type="button" class="hl-go" id="hs">${canStep ? '모르겠어요 — 한 단계씩 같이 풀기' : '모르겠어요 — 같이 보기'}</button>`),   /* 늘 나가는 길 하나(아무 수나 써야 빠져나가던 것 · 11-07) */
+      lead: head('cue', `<span class="hl-was">내 답 <b>${esc(mine(it, raws))}</b> — 아직 아니에요. ${nudge || '생각을 떠올려 다시 풀어 봐요.'}</span>${cue ? `<span class="hl-cue-t">${esc(cue)}</span>` : ''}<span class="hl-ans">이 생각으로 <b>${esc(qName)}</b>${P(qName.slice(-1), '을', '를')} 써요.</span>`, 'think', `<button type="button" class="hl-go" id="hs">${canStep ? '모르겠어요 — 한 단계씩 같이 풀기' : '모르겠어요 — 같이 보기'}</button>`),   /* 늘 나가는 길 하나(아무 수나 써야 빠져나가던 것 · 11-07) */
       onAnswer: (a, cf, t) => {
         if (sameAns(it, a)) return finish(true, ch ? 'pick' : 'recall', ch ? '맞았어요!' : '맞았어요! 생각을 떠올려서 스스로 고쳤어요.');
         if (t < RUSH && !ch) return recall('조금 빨라요. 끝까지 읽고 다시 풀어 봐요.');
@@ -99,7 +101,8 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
     let sit = null; try { sit = makeItem(s.c, s.p); } catch (e) { sit = null; }
     draw(root, { ...base, prompt: s.prompt, choices: sit && sit.choices ? sit.choices : null,
       extra: stepCtx(it, steps, i, { shown, C, pic: pic(i, tries, fresh && !tries), fresh: fresh && !tries ? i - 1 : -1 }),
-      lead: head('step', `<span class="hl-k">${i + 1}단계</span><span class="hl-why">${esc(s.why)}</span>${tries === 1 ? '<span class="hl-re">아직 아니에요. 그림을 보고 한 번 더 해 봐요.</span>' : tries === -1 ? '<span class="hl-re">조금 빨라요. 천천히 다시 풀어 봐요.</span>' : ''}`, tries ? 'think' : 'point', planHTML(steps, names, i, shown)),
+      okLabel: '이 단계 내기',
+      lead: head('step', `<span class="hl-k">${i + 1}단계</span><span class="hl-why">${esc(s.why)}</span>${tries === 1 ? '<span class="hl-re">아직 아니에요. 그림을 보고 한 번 더 해 봐요.</span>' : tries === -1 ? '<span class="hl-re">조금 빨라요. 천천히 다시 풀어 봐요.</span>' : ''}`, tries ? 'think' : 'point', planHTML(steps, names, i, shown, `${qName} 쓰기`)),
       onAnswer: (a, cf, t) => {
         const ok = sit ? sameAns(sit, a) : s.sol.every((v, k) => Number(a.vals[k]) === Number(v));
         if (ok) return step(i + 1, 0, shown, true);
@@ -118,7 +121,7 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
   function again(shown, nudge = '') {
     draw(root, { ...base, prompt: it.prompt, choices: it.choices || null,
       extra: stepCtx(it, steps, steps.length, { shown, C, head: false, pic: C ? '' : tenFrameHTML(it, { moved: true }), fresh: nudge ? -1 : last }),
-      lead: head('again', `<span class="hl-k">마지막</span><span class="hl-why">단계를 다 했어요. 이제 처음 문제의 답을 써요.</span>${nudge ? `<span class="hl-re">${nudge}</span>` : ''}`, 'point', planHTML(steps, names, steps.length, shown)),
+      lead: head('again', `<span class="hl-k">마지막</span><span class="hl-why">단계를 다 했어요. 이제 <b>${esc(qName)}</b>${P(qName.slice(-1), '을', '를')} 써요.</span>${nudge ? `<span class="hl-re">${nudge}</span>` : ''}`, 'point', planHTML(steps, names, steps.length, shown, `${qName} 쓰기`)),
       onAnswer: (a, cf, t) => {
         if (sameAns(it, a)) return finish(true, 'steps', `맞았어요! 풀이 순서대로 하나씩 풀었어요.${names ? `<br><span class="small">${names.map(esc).join(' → ')}</span>` : ''}`);   /* 순서를 한 번 더 짚음 */
         if (t < RUSH && !it.choices) return again(shown, '조금 빨라요. 단계를 보고 천천히 써 봐요.');

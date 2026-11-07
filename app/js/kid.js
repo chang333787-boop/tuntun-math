@@ -216,7 +216,7 @@ export function prepView(root, unit) {
     if (!it) return finished();
     const sh = S.sheets.find((x) => x.id === S.at.sheet);
     if (Date.now() - lastNow > 5000) { lastNow = Date.now(); KS.setNow(me, { mode: 'prep', unit, n: asked(S) }); }
-    draw(root, { prompt: it.snap.prompt, choices: it.snap.choices, tag: '오늘 단원 점검', act: 'chk', dots: [asked(S), 0], onAnswer: (a, cf, ms) => {
+    draw(root, { prompt: it.snap.prompt, choices: it.snap.choices, tag: '오늘 단원 점검', act: 'chk', dots: [asked(S), -(S.budget || PREP.budget)], onAnswer: (a, cf, ms) => {
       const r = answer(S, a, { conf: cf, ms }); store();
       if (rush(ms, a, r && r.ok) && current(S)) { K.rush = (K.rush || 0) + 1; KS.save(me, K); return rushPause(root, step); }
       step();
