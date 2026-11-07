@@ -307,9 +307,9 @@ export function storyView(root, arg) {
       card.querySelectorAll('.qact button, input.blank').forEach((x) => (x.disabled = true));
       fbSlot(b).appendChild(box);
       if (ok) { box.className = 'fb ok'; box.innerHTML = `<p class="sb-okmsg">맞아요.</p>${ansLine()}`; return finish(box); }
-      if (!pr.ct) { pr.ct = 1; box.className = 'fb no'; box.innerHTML = '계산이 맞지 않아요. 고른 식을 <b>한 번 더</b> 계산해 봐요.'; try { toolBox(box, { it: calc, vals: a.vals, c: pr.c, onSelfFix: (t) => KS.selfFix(me, K, t) }); } catch (e) { /* 도구 없는 식 */ } return next(box, '다시 계산하기', stepCalc); }   /* 처음 틀려도 확인 도구를 같이(말만 있던 것) */   /* 처음 틀리면 다시 계산 — 바로 '답 보기'로 가 고칠 길이 없던 것(처음 보는 눈 11-08) */
+      if (!pr.ct) { pr.ct = 1; box.className = 'fb no'; box.innerHTML = '계산이 맞지 않아요. 고른 식을 <b>한 번 더</b> 계산해 봐요.'; try { toolBox(box, { it: calc, vals: a.vals, c: pr.c, onSelfFix: (t) => KS.selfFix(me, K, t), onDone: (ok2) => { if (!ok2) return; if (!one) return stepAns(true); box.querySelectorAll('.qact').forEach((x) => x.remove()); box.insertAdjacentHTML('beforeend', ansLine()); finish(box); } }); } catch (e) { /* 도구 없는 식 */ }   /* 도구로 바르게 고쳐 쓰면 바로 다음으로 */ return next(box, '다시 계산하기', stepCalc); }   /* 처음 틀려도 확인 도구를 같이(말만 있던 것) */   /* 처음 틀리면 다시 계산 — 바로 '답 보기'로 가 고칠 길이 없던 것(처음 보는 눈 11-08) */
       box.className = 'fb no'; box.innerHTML = '계산이 달라요.';
-      let T0 = null; try { T0 = toolBox(box, { it: calc, vals: a.vals, c: pr.c, onSelfFix: (t) => KS.selfFix(me, K, t) }); } catch (e) { T0 = null; }
+      let T0 = null; try { T0 = toolBox(box, { it: calc, vals: a.vals, c: pr.c, onSelfFix: (t) => KS.selfFix(me, K, t), onDone: (ok2) => { if (!ok2) return; if (!one) return stepAns(true); box.querySelectorAll('.qact').forEach((x) => x.remove()); box.insertAdjacentHTML('beforeend', ansLine()); finish(box); } }); } catch (e) { T0 = null; }
       if (!T0) box.innerHTML += ` 바르게 계산하면 ${staticHTML(calc.prompt, calc.sol)}`;
       if (!one) return next(box, '답 쓰기', () => stepAns(false));
       if (!T0) { box.insertAdjacentHTML('beforeend', ansLine()); return finish(box); }

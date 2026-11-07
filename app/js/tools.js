@@ -30,7 +30,7 @@ const valOfChoice = (ch) => { const t = (ch || []).find((x) => x && typeof x ===
 
 function inv(X, A, B, w, vals) {
   if (X.op === '−') { const s = w + B; return s === A ? null : { html: `${w} + ${B} = <b>${s}</b> → 처음 수 ${A}${josa(A, '이', '가')} 나와야 해요!` }; }
-  if (X.op === '+') { const s = w - B; return s === A ? null : { html: `${w} − ${B} = <b>${s}</b> → 처음 수 ${A}${josa(A, '이', '가')} 나와야 해요!` }; }
+  if (X.op === '+') { const s = w - B; if (s < 0) return { html: `${w}에서 ${B}${josa(B, '을', '를')} 뺄 수 없어요 → 더한 답은 처음 수 ${A}보다 커야 해요!` }; return s === A ? null : { html: `${w} − ${B} = <b>${s}</b> → 처음 수 ${A}${josa(A, '이', '가')} 나와야 해요!` }; }   /* 음수(안 배움)를 보이지 않게 */
   if (X.op === '×') { if (w % B) return { html: `${w} ÷ ${B}${josa(B, '은', '는')} 나누어떨어지지 않아요 → ${A} × ${B}의 답이 아니에요!` }; const q = w / B; return q === A ? null : { html: `${w} ÷ ${B} = <b>${q}</b> → ${A}${josa(A, '이', '가')} 나와야 해요!` }; }
   if (X.op === '÷' && vals.length >= 2) { const r = Number(vals[1]) || 0, s = B * w + r; if (r >= B) return { html: `남은 수 ${r}${josa(r, '이', '가')} 나누는 수 ${B}보다 크거나 같아요 → 한 번 더 나눌 수 있어요!` }; return s === A ? null : { html: `${B} × ${w} + ${r} = <b>${s}</b> → 처음 수 ${A}${josa(A, '이', '가')} 나와야 해요!` }; }
   if (X.op === '÷') { const s = B * w; return s === A ? null : { html: `${B} × ${w} = <b>${s}</b> → ${A}${josa(A, '이', '가')} 나와야 해요!` }; }
