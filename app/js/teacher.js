@@ -346,7 +346,7 @@ export function nextOf({ C, no, rep, st, inbox = {}, now = null, recs = {} }) {
   if (start) {
     const sk = skillsOf(start)[0], lead = (rep.start || []).some((x) => x.c === start) ? '여기서부터 배울 것' : '부족한 것';
     if (sk && open.some(([, x]) => x.sk === sk.id)) return { t: `보낸 보충 <b>${esc(sk.name)}</b>${P(sk.name.replace(/\s*\([^)]*\)\s*$/, '') || sk.name, '을', '를')} 아직 푸는 중이에요 — 다 풀면 '보낸 보충'에 결과가 떠요.` };
-    const g = sk && done.map(([id, x]) => ({ x, r: st && st.gv && st.gv[id] })).find((y) => y.x.sk === sk.id && y.r);
+    const g = sk && done.map(([id, x]) => ({ x, r: st && st.gv && st.gv[id] })).filter((y) => y.x.sk === sk.id && y.r).sort((p, q) => (Number(q.r[2]) || 0) - (Number(p.r[2]) || 0))[0];   /* 같은 기능 보충이 여럿이면 가장 최근 결과로(코덱스 11-07) */
     const hp = st && st.help ? Number(st.help[start]) || 0 : 0;
     if (hp && hp > (g ? Number(g.r[2]) || 0 : 0)) return { t: `<b>${esc(lessonName(start))}</b> — 배우기를 해 봤지만 혼자서는 아직 어려워요. 선생님과 같이 10분 봐 주세요.`, a: '10분 카드 보기', href: `#/t/c/${C}/g/${encodeURIComponent(start)}?no=${no}` };   /* 배우기를 못 넘은 뒤로 보충을 안 풀었으면 또 혼자 하기보다 선생님과 */
     if (g && g.r[0] / g.r[1] < 0.5) return { t: `<b>${esc(sk.name)}</b> 보충에서 ${g.r[0]}/${g.r[1]} — 혼자 연습으로는 아직 어려워요. 선생님과 같이 10분 봐 주세요.`, a: '10분 카드 보기', href: `#/t/c/${C}/g/${encodeURIComponent(start)}?no=${no}` };   /* 보충 절반 못 맞힘 → 또 보충보다 선생님 먼저 [A-R27] */
