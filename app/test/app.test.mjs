@@ -235,7 +235,7 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
 // ⑲ 시범 · 함께 · 틀린 뒤 말은 그 문제 숫자로 — 힌트의 다른 숫자 예('3씩 4묶음' · '한 명이 4개씩')를 붙이지 않음 · 셈 사실은 그 문제 수로 이어 세기 · 뺄셈에 '받아올림'이라 하지 않음
 {
   const FX = await import('../js/fix.js'), LX = await import('../../engine/lessons/index.js'), G9 = await import('../../paper/js/gen.js'), M9 = await import('../../engine/math.js'), TK = await import('../../engine/tokens.js');
-  const KEEP = new Set(['0', '1', '2', '10', '100', '1000', '10000', '0.1', '0.01', '0.001']);
+  const KEEP = new Set(['0', '1', '2', '10', '100', '1000', '10000', '0.1', '0.01', '0.001', '60']);   /* fix.js KEEPN과 같게 — 60 = 1시간 · 1분 */
   const bad = [];
   for (const n of LX.NODES) {
     if (!LX.byId[n.id]) continue;

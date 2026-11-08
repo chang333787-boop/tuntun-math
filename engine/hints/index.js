@@ -8,8 +8,9 @@
 //  정본 설계: docs/hint_ladder.md · 화면: app/js/hint.js(떠올리기 → 한 단계씩 → 처음 문제 다시)
 import NA from './na.js';
 import MDF from './mdf.js';
+import ME from './me.js';
 
-export const HINTS = { ...NA, ...MDF };
+export const HINTS = { ...NA, ...MDF, ...ME };   /* ME = 측정(11-08~) */
 export function cueOf(c, p) {
   const h = HINTS[c];
   if (!h || !h.cue) return '';

@@ -1,5 +1,5 @@
 {
- "v": "626eaf21572d",
+ "v": "5a5eb0977277",
  "files": [
   "css/app.css",
   "js/ai.js",
@@ -45,6 +45,7 @@
   "../engine/errors.js",
   "../engine/hints/index.js",
   "../engine/hints/mdf.js",
+  "../engine/hints/me.js",
   "../engine/hints/na.js",
   "../engine/lessons/catalog.js",
   "../engine/lessons/g1.js",
@@ -54,6 +55,7 @@
   "../engine/lessons/g5.js",
   "../engine/lessons/g6.js",
   "../engine/lessons/index.js",
+  "../engine/lessons/me.js",
   "../engine/lessons/ops.js",
   "../engine/lessons/read.js",
   "../engine/math.js",

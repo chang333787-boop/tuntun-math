@@ -5,7 +5,7 @@
 //  ⑥ 예전 설정(want · dup · mix 없음)은 예전 뽑기와 같은 문제 ⑦ 메인이 손으로 만든 설정 둘을 기능 이름으로 그대로 만들 수 있음
 //  ⑧ 이 아이 칸 위주(focusShares) — 그 칸은 두 몫 · 앞 갈래는 한 몫 · 뒤 갈래는 뺌 · 어느 칸에 맞춰도 10문제가 다 나옴
 //  ⑨ 기능 카드 예시 둘(examplesOf) — 늘 둘 · 서로 다름 · 늘 같음 · 첫 갈래 → 끝 갈래 · 거르기 지킴
-import { NODES, byId } from '../engine/lessons/index.js';
+import { NODES, byId, CATALOG } from '../engine/lessons/index.js';
 import { SKILLS, SKILL, GROUPS, COUNTS, LEFT, secOf, noteOf, splitN, skillsOf, partsText, focusShares } from '../engine/skills.js';
 import { WANT, wantFor } from '../engine/mis.js';
 import { buildSheet, examplesOf } from '../paper/js/pick.js';
@@ -32,14 +32,14 @@ for (const s of SKILLS) {
   ok(/^\d-\d$/.test(s.g) && /^\d-\d$/.test(s.g2), `${s.id}: 학기 g`);
   ok(!/학년|학기/.test(s.name + s.note), `${s.id}: 아이 종이에 학년 · 학기 글`);
 }
-ok(SKILLS.length >= 60 && SKILLS.length <= 80, `기능 수 60~80 — 지금 ${SKILLS.length}`);
+ok(SKILLS.length >= 60 && SKILLS.length <= 120, `기능 수 60~120(영역이 늘면 늘어남) — 지금 ${SKILLS.length}`);
 
 // ② 모든 차시가 한 기능 이상에
 const covered = new Set(SKILLS.flatMap((s) => s.parts.map((p) => p.c)));
 const missing = NODES.map((n) => n.id).filter((c) => !covered.has(c));
 for (const c of missing) ok(!!LEFT[c], `기능에 없는 차시 ${c} ${byId[c].kid} — 기능에 넣거나 LEFT에 까닭`);
 for (const [c, why] of Object.entries(LEFT)) info(`넣지 않은 차시 ${c}: ${why}`);
-ok(NODES.length === 229, `차시 수 ${NODES.length}`);
+ok(NODES.length === CATALOG.filter((l) => l.test).length, `차시 수 ${NODES.length} = 목록의 잴 차시`);
 
 // ③ 뽑기 — 10문제는 반드시 · 15 · 20은 max까지
 const SEEDS = [1, 7, 20261105];

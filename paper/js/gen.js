@@ -44,7 +44,7 @@ export const unitName = (c) => { const L = LES(c); const u = L && unitById[L.u];
 // ── 범위 안 차시 · 장 묶음(학기 × 영역) ──
 export function lessonsIn(from, to) {
   const a = gradeIdx(from), b = gradeIdx(to);
-  const ids = NODES.filter((n) => gradeIdx(n.g) >= a && gradeIdx(n.g) <= b).map((n) => n.id);
+  const ids = NODES.filter((n) => gradeIdx(n.g) >= a && gradeIdx(n.g) <= b && n.s !== 'ME').map((n) => n.id);   /* 종이 점검지는 '수와 연산 끊긴 곳 찾기' 그대로 — 측정(11-08~)이 끼면 같은 씨앗으로 다시 만든 이미 낸 점검지의 문제가 바뀜 · 측정은 새 판(ENG)에서 */
   for (const e of Object.values(EST)) if (gradeIdx(e.g) >= a && gradeIdx(e.g) <= b) ids.push(e.id);
   return ids;
 }

@@ -18,8 +18,9 @@ import G3 from './g3.js';
 import G4 from './g4.js';
 import G5 from './g5.js';
 import G6 from './g6.js';
+import ME from './me.js';
 
-const GRADEFILES = { g1: G1, g2: G2, g3: G3, g4: G4, g5: G5, g6: G6 };
+const GRADEFILES = { g1: G1, g2: G2, g3: G3, g4: G4, g5: G5, g6: G6, me: ME };   /* me = 측정(도형과 측정 · 11-08~) */
 
 // 가족
 export const FAM = Object.fromEntries(BASE.map((c) => [c.id, c]));
@@ -29,7 +30,7 @@ for (const g of [{ FAMS: OPS }, ...Object.values(GRADEFILES)]) for (const f of g
 }
 
 export const STRANDS = [
-  ['N', '수'], ['A', '덧셈·뺄셈'], ['M', '곱셈'], ['D', '나눗셈'], ['X', '혼합 계산'], ['F', '분수'], ['DEC', '소수'], ['G', '약수·배수'], ['R', '규칙·대응·비'],
+  ['N', '수'], ['A', '덧셈·뺄셈'], ['M', '곱셈'], ['D', '나눗셈'], ['X', '혼합 계산'], ['F', '분수'], ['DEC', '소수'], ['G', '약수·배수'], ['R', '규칙·대응·비'], ['ME', '측정'],
 ];
 export const GRADES = ['1-1', '1-2', '2-1', '2-2', '3-1', '3-2', '4-1', '4-2', '5-1', '5-2', '6-1', '6-2'];
 export const gradeIdx = (g) => GRADES.indexOf(g);
