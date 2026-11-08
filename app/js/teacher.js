@@ -225,7 +225,7 @@ export function misCard(m, tag = '', label = '') {
 }
 const CELL = { ok: ['c-ok', '✓'], pass: ['c-pass', '✓'], near: ['c-near', '○'], shaky: ['c-shaky', '△'], stuck: ['c-stuck', '✕'], need: ['c-need', '?'], none: ['c-none', '·'] };
 // 표 읽는 법(반 화면 · 한 장 안내) — 칸 색 그대로
-const LEGEND = [['c-ok', '✓', '됨'], ['c-near', '○', '거의'], ['c-shaky', '△', '흔들림'], ['c-stuck', '✕', '막힘'], ['c-start', '★', '여기서부터 배울 것'], ['c-need', '?', '더 볼 것'], ['c-none', '·', '아직 안 봄'], ['c-t2', '✓', '빠르게도 됨'], ['c-t3', '✓', '며칠 뒤에도 됨']];
+const LEGEND = [['c-ok', '✓', '됨'], ['c-near', '○', '거의'], ['c-shaky', '△', '흔들림'], ['c-stuck', '✕', '막힘'], ['c-start', '★', '여기서부터 배울 것'], ['c-need', '?', '더 볼 것'], ['c-none', '·', '아직 안 봄']];   /* '빠르게도 됨 · 며칠 뒤에도 됨'은 지금 칸이 나오지 않아 범례에서 뺌(숙련 축을 되살릴 때 다시 · 2라운드 재반박 11-08) */
 
 // 틀린 뒤 고친 힘(도움 사다리 · 교사 11-07 '단계적으로 하나씩 해내는 힘') — 주 [주, 떠올려 고침, 풀이 순서로 고침, 답 봄, 보기 다시 고름]
 //  스스로 = (떠올려 + 풀이 순서로) ÷ (떠올려 + 풀이 순서로 + 답 봄) · 보기 다시 고르기는 빼고 셈(찍어도 맞을 수 있음 · docs/hint_ladder.md)
@@ -305,7 +305,7 @@ export function classView(root, C) {
       const bySk = {}; items.forEach(({ no, nx }) => { const m = /give\?sk=([^&]+)&who=/.exec(nx.href || ''); if (m && SKILL[m[1]] && /부족한 것|여기서부터/.test(nx.t)) (bySk[m[1]] = bySk[m[1]] || []).push(no); });   /* 가끔 틀림(더 다지기)은 묶지 않음 — '필요'와 '줘도 돼요'가 섞이지 않게 */
       const grp = Object.entries(bySk).filter(([, ns]) => ns.length >= 2).map(([sk, ns]) => [sk, ns.slice().sort((p, q) => p - q)]).map(([sk, ns]) => `<p class="nx-grp">다음 할 것이 같은 아이 <b>${ns.length}명</b> — <b>${esc(SKILL[sk].name)}</b> 보충: ${ns.map((no) => `<a href="#/t/c/${C}/k/${no}">${esc(nm(K, no))}</a>`).join(' · ')} <a class="btn mini teal" href="#/t/c/${C}/give?sk=${sk}&who=${ns.join(',')}">${ns.length}명에게 한꺼번에 보내기</a></p>`).join('');   /* 아이마다 따로 누르지 않게 */
       return `<details class="card nexts" open><summary><b>아이마다 다음 할 것</b> <span class="small muted">${items.length}명 · 번호를 누르면 자세히</span></summary>${waiting.length ? `<p class="small">보낸 보충 푸는 중: <b>${waiting.map((no) => esc(nm(K, no))).join(' · ')}</b> — 다 풀면 결과에 따라 이 목록에 다시 떠요.</p>` : ''}${busy.length ? `<p class="small">지금 하는 중: ${busy.map(([no, m]) => `<b>${esc(nm(K, no))}</b>${m ? `(${esc(m)})` : ''}`).join(' · ')} — 끝나면 할 일이 이 목록에 떠요.</p>` : ''}${notYet.length ? `<p class="small">오늘 단원 점검을 아직 안 푼 아이: <b>${notYet.map((no) => esc(nm(K, no))).join(' · ')}</b> — 아이 처음 화면 '점검' 카드에서 시작하라고 알려 주세요.</p>` : ''}${grp}${(() => { const inGrp = new Set(Object.values(bySk).filter((ns) => ns.length >= 2).flat()), li = ({ no, nx }) => `<li><a class="nx-no" href="#/t/c/${C}/k/${no}">${esc(nm(K, no))}</a><span class="nx-t">${nx.t}</span><a class="btn mini" href="${esc(nx.href)}">${esc(nx.a)}</a></li>`;
-        const main = items.filter((y) => !inGrp.has(y.no) && !/^가끔 틀리는 것/.test(y.nx.t)), soft = items.filter((y) => !inGrp.has(y.no) && /^가끔 틀리는 것/.test(y.nx.t));   /* 묶음에 든 아이는 묶음 줄에만 · 가끔 틀림은 접어 둠(28명 반에서 27줄이 되던 것) */
+        const main = items.filter((y) => !inGrp.has(y.no) && !/^가끔 틀리는 것/.test(y.nx.t.replace(/^<span class="chip-now">[^<]*<\/span> /, ''))), soft = items.filter((y) => !inGrp.has(y.no) && /^가끔 틀리는 것/.test(y.nx.t.replace(/^<span class="chip-now">[^<]*<\/span> /, '')));   /* 묶음에 든 아이는 묶음 줄에만 · 가끔 틀림은 접어 둠(28명 반에서 27줄이 되던 것) */
         return `${main.length ? `<ul class="nx-list">${main.map(li).join('')}</ul>` : ''}${soft.length ? `<details class="nx-soft"><summary>가끔 틀리는 아이 <b>${soft.length}명</b> <span class="small muted">— 매일 연습에 저절로 섞여요 · 더 다지려면 보충</span></summary><ul class="nx-list">${soft.map(li).join('')}</ul></details>` : ''}`; })()}</details>`; })()}
     <details class="card more-all"><summary><b>더 보기</b> <span class="small muted">틀린 뒤 스스로 고친 비율 · 같은 생각끼리 · 이야기 문제 · 이번 주 점검 맞힌 수 · 같은 칸을 배울 아이끼리 · 기록 내려받기 · 종이 결과</span></summary>
       <div class="acts sub"><button id="csv" class="btn" title="효과를 재거나 기록해 둘 때 — 번호만 들어가요(이름 X)">기록 내려받기(CSV)</button><a class="btn" href="#/t/c/${C}/paper" title="종이로 푼 점검 결과를 아이 기록에 넣어요">종이 결과 가져오기</a><a class="btn" href="#/t/sheet?c=${C}" title="기능 이름으로 골라 한 아이에게 그 칸만 연습시키는 종이">맞춤 연습지</a></div>
@@ -351,15 +351,22 @@ function nowText(n) {
 const NOTE_K = { group: '소집단', tool: '검산 도구 연습', model: '모형 · 그림', form: '다른 문제 꼴', time: '시간 더 줌', pair: '짝 활동', sheet: '보충지', home: '가정 연계' };
 // 아이 자세히 — 종이와 같은 판정 · 원인은 '한 번 보임'(가설) / '되풀이됨'(서로 다른 문항 둘 이상) [A-R11][A-R12]
 /* 다음 할 것 — 아이 하나의 기록 · 받은 과제 · 지금 하는 것으로 선생님이 바로 할 일 하나(아이 자세히 맨 위 · 반 화면과 같은 말) */
-export function nextOf({ C, no, rep, st, inbox = {}, now = null, recs = {}, opened = false, seen = 0 }) {
+/* 아이가 지금 앱을 하고 있어도 '다음 할 것'은 그대로 보이고 앞에 '지금 ○○ 하는 중'만 붙임 — 수업 중 28명이 앱을 쓰는 동안 핵심 칸이 비던 것(비판 토론 C1 11-08) · 도움을 다 쓰고 답을 본 때만 그 말이 먼저 */
+export function nextOf(o) {
+  const n0 = nextCore(o), now = o.now;
+  if (!(now && now.mode && now.mode !== 'home' && Date.now() - (Number(now.t) || 0) < 5 * 60e3) || n0.busy) return n0;
+  const MODE = { prep: '오늘 단원 점검', fix: '배우기', run: '매일 연습', story: '이야기 문제', week: '이번 주 점검', give: '선생님이 준 문제', check: '점검지', back: '거꾸로 찾기' };
+  return { ...n0, t: `<span class="chip-now">지금 ${esc(MODE[now.mode] || '앱')} 하는 중</span> ${n0.t}` };
+}
+function nextCore({ C, no, rep, st, inbox = {}, now = null, recs = {}, opened = false, seen = 0 }) {
   const MODE = { prep: '오늘 단원 점검', fix: '배우기', run: '매일 연습', story: '이야기 문제', week: '이번 주 점검', give: '선생님이 준 문제', check: '점검지', back: '거꾸로 찾기' };
   const L = rep && rep.L ? rep.L : {}, cs = Object.keys(L);
   if (now && now.ask && Date.now() - now.ask < 15 * 60e3 && now.c && !(Number(seen) >= now.ask)) return { t: `<b>선생님을 기다려요</b> — ${askWhy(now.mode)} · ${esc((skillsOf(now.c)[0] || {}).name || lessonName(now.c))}`, a: '10분 카드 보기', href: `#/t/c/${C}/g/${encodeURIComponent(now.c)}?no=${no}` };
-  if (now && now.mode && now.mode !== 'home' && Date.now() - (Number(now.t) || 0) < 5 * 60e3) return now.sos && Date.now() - now.sos < 10 * 60e3 ? { t: `지금 <b>${esc(MODE[now.mode] || '앱')}</b> 하는 중 — 도움을 다 쓰고 <b>답을 본 문제</b>가 있어요. 지금 들러 보세요.` } : { t: `지금 <b>${esc(MODE[now.mode] || '앱')}</b> 하는 중이에요 — 끝나면 이 화면이 바뀌어요.` };
+  if (now && now.mode && now.mode !== 'home' && Date.now() - (Number(now.t) || 0) < 5 * 60e3 && now.sos && Date.now() - now.sos < 10 * 60e3) return { busy: true, t: `지금 <b>${esc(MODE[now.mode] || '앱')}</b> 하는 중 — 도움을 다 쓰고 <b>답을 본 문제</b>가 있어요. 지금 들러 보세요.` };;
   if (!cs.length) return opened ? { t: '아직 점검을 풀지 않았어요 — 오늘 단원 점검은 열려 있어요. 아이 처음 화면 <b>점검</b> 카드에서 시작하라고 알려 주세요.' } : { t: '아직 점검을 하지 않았어요.', a: '점검 내기', href: `#/t/c/${C}/check` };   /* opened = 오늘 연 단원 점검이 있음(또 내지 않게) */
   const gives = Object.entries(inbox).filter(([id, x]) => x && x.kind === 'give' && SKILL[x.sk]);
   const open = gives.filter(([id]) => !recs[id]), done = gives.filter(([id]) => recs[id]);
-  if (st && st.prep && st.prep.why === 'teacher' && helpLeft(st)) return { t: '앱이 막힌 곳이 많아 점검을 일찍 멈췄어요. <b>선생님과 같이</b> 먼저 봐 주세요.', a: '10분 카드 보기', href: `#/t/c/${C}` };
+  if (st && st.prep && st.prep.why === 'teacher' && helpLeft(st)) return { t: '앱이 막힌 곳이 많아 점검을 일찍 멈췄어요. <b>선생님과 같이</b> 먼저 봐 주세요.', a: '같이 볼 곳 보기', href: `#/t/c/${C}/k/${no}` };   /* 반 화면 자기 자신으로 가던 단추 → 그 아이 자세히(막힌 칸 · 10분 카드가 거기에 · 비판 토론 C3) */
   const fixed = (st && st.fixed) || {};
   const byG = (a, b) => (a < b ? -1 : 1);   /* 차시 번호 차례 = 낮은 학년부터 */
   const again = (c) => !fixed[c] || (L[c] && L[c].st === 'stuck');   /* 고친 뒤 다시 막히면 다시 후보(아이 홈의 '다시 배우기'와 맞게 · 코덱스 11-08) */
@@ -710,7 +717,7 @@ export function homeLetterView(root) {
     ${intro('인쇄해서 나눠 주세요. 아이 이름 · 기록은 들어가지 않아요. 문장은 선생님 말투로 고쳐 써도 좋아요.', 'no-print')}
     <div class="acts no-print"><button class="pri" onclick="print()">인쇄</button><a class="btn" href="#/t">처음으로</a></div>
     <p>우리 반은 수학 시간에 <b>튼튼 수 다리</b>를 써요. 점검으로 아이에게 빠진 앞 학년 셈을 찾고, 그것만 배우고 연습해요. 화면은 카드 셋(점검 · 배울 것 · 매일 연습)이에요. 집에서도 같은 카드로 들어갈 수 있어요.</p>
-    <h3>들어가는 법</h3><ol class="easy"><li>주소: <b>${esc(url)}</b></li><li>아이 카드에 적힌 <b>반 코드 · 번호 · 핀</b>을 넣어요. 이름은 어디에도 저장하지 않아요.</li><li>학교에서 푼 것과 집에서 푼 것이 이어져요. 하다가 나간 것은 같은 기기로 다시 들어오면 그 자리부터 이어서 풀어요.</li></ol>
+    <h3>들어가는 법</h3><ol class="easy"><li>주소: <b>${esc(url)}</b></li><li>아이 카드에 적힌 <b>반 코드 · 번호 · 핀</b>을 넣어요. 아이 이름은 서버에 올리지 않아요(선생님 기기에만 남아요).</li><li>학교에서 푼 것과 집에서 푼 것이 이어져요. 하다가 나간 것은 같은 기기로 다시 들어오면 그 자리부터 이어서 풀어요.</li></ol>
     <h3>집에서 이렇게 도와주세요</h3><ul class="easy">
       <li><b>하루 5분이면 충분해요.</b> 처음 화면의 '매일 연습'이나 주황 단추 하나만 해도 돼요. 길게 한 번보다 짧게 자주가 오래 남아요.</li>
       <li><b>답을 알려 주지 말아 주세요.</b> 틀리면 튼튼이가 그 문제 숫자로 떠올릴 것을 말해 주고, 그래도 어려우면 한 단계씩 같이 풀어 줘요. "어디서 달라졌어?" 한마디면 돼요.</li>

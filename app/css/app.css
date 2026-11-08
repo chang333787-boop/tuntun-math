@@ -850,3 +850,4 @@ body.tv main{max-width:none}body.tv .ctab table{font-size:18px}body.tv .ctab td,
 .say>.art.say-art{flex:none;width:96px;height:96px}
 .card.msg>.say>.art.say-art{width:110px;height:110px}
 @media (max-width:700px){.c3-h .art.c3-art{width:60px;height:60px}}
+.chip-now{display:inline-block;font-size:13px;font-weight:700;color:var(--teal-d);background:var(--teal-t);border-radius:999px;padding:1px 10px;margin-right:6px;vertical-align:1px}   /* 반 화면 '다음 할 것' 앞 — 아이가 지금 앱을 하는 중(teacher.js nextOf) */

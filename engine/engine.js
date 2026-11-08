@@ -116,11 +116,17 @@ export function answer(S, a) {
 
   // check
   const cur = S.cur;
-  if (cur.mode === 'slip') {   /* 실수였나 — 같은 꼴 새 숫자 한 문제: 맞히면 처음 오답은 실수(앎) · 틀리면 합치기 빈칸 그대로 */
-    const r0 = S.res[cur.c], it = { ok: res.ok, ms: a.ms || 0, idk: !!a.idk, bug: res.bug || null, p: q.p };
-    r0.items = [...(r0.items || []), it];
-    if (res.ok) { r0.st = 'pass'; r0.slip = true; }
-    return pickNext(S);
+  if (cur.mode === 'slip') {   /* 실수였나 — 같은 꼴 새 숫자로 엔진의 실수 규칙 그대로(K문제 다 맞으면 실수 · K−1이면 불안정 · 둘 틀리면 합치기 빈칸) — 한 문제로 정하면 '앎' 비율이 그 아이 정답률과 같아 동전 던지기였음(2라운드 재반박 11-08 · 교사 10-10 '한 문제 맞으니 안다고 판단?') */
+    const r0 = S.res[cur.c];
+    cur.items.push({ ok: res.ok, ms: a.ms || 0, idk: !!a.idk, bug: res.bug || null, p: q.p });
+    const K = S.opts.confirmN || 3, okC = cur.items.filter((x) => x.ok).length, badC = cur.items.length - okC;
+    if (badC >= 2 || cur.items.length >= K) {
+      r0.items = [...(r0.items || []), ...cur.items];
+      if (okC === K) { r0.st = 'pass'; r0.slip = true; } else if (badC < 2) r0.st = 'unstable';
+      return pickNext(S);
+    }
+    cur.p = likeGen(cur.c, S.res[cur.c].lastP || S.problem.p, S);
+    return S;
   }
   cur.items.push({ ok: res.ok, ms: a.ms || 0, idk: !!a.idk, bug: res.bug || null, p: q.p });
   if (!res.ok) cur.lastBadP = q.p;

@@ -277,6 +277,7 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
     const Kp = K0({ recs }), tp = KD.todoOf(Kp, KS9.reportOf(Kp)).filter((x) => x.kind === 'prep');
     ok(tp.length === 1 && tp[0].title === '오늘 단원 점검 — 이어서' && tp[0].resume, "이 기기 하던 판이 없어도(다른 기기 · 3시간 뒤) '오늘 단원 점검 — 이어서'가 남음");
     ok(!KD.todoOf(K0({ recs, lastPrep: { unit: '4-1-3', why: 'found', t: now - 1000 } }), rep0).some((x) => x.kind === 'prep'), '끝낸 점검(lastPrep)이 있으면 카드 없음');
+    { const S2 = P7.newPrep({ unit: '4-1-3', id: 'SV2', budget: 18, done: 12 }); ok(S2.budget === 6, `다른 기기에서 12문제 푼 뒤 새 판은 남은 6문제만(${S2.budget}) — 18문제를 다시 받던 것(2라운드 재반박)`); }
   }
   const S = P7.newPrep({ unit: '2-1-3', id: 'TD' }); let it;
   while ((it = P7.current(S))) P7.answer(S, { vals: it.snap.sol.map((v) => Number(v) + 7), raws: it.snap.sol.map((v) => String(Number(v) + 7)) });

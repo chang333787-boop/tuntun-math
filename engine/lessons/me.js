@@ -72,16 +72,17 @@ function subMake(p) {
   return nums(head, [a, b], {
     bugs: borrow ? [
       { test: (v) => v[0] === a && v[1] === p.b1 + 100 - p.b2, name: `1${U.big}${P(U.big, '을', '를')} 100${U.small}${P(U.small, '으로', '로')} 받아내림`, to: p.u === 'hm' ? '2-2-4:5' : '3-1-5:5' },
-      { test: (v) => v[0] === p.a1 - p.a2 && v[1] === p.b2 - p.b1, name: '큰 수에서 작은 수를 뺌', to: '2-1-3:7' },
-      { test: (v) => v[0] === p.a1 - p.a2 && v[1] === b, name: `받아내린 1${U.big}${P(U.big, '을', '를')} 빼지 않음`, to: '2-1-3:7' },
+      { test: (v) => v[0] === p.a1 - p.a2 && v[1] === p.b2 - p.b1, name: '큰 수에서 작은 수를 뺌', to: p.u === 'hm' ? '2-2-4:5' : '3-1-5:5' },   /* 두 자리 받아내림은 이미 하는 학년 — 원인은 60에서 받아내리는 시간 개념(도입안 비판 11-08 · [K1] 3~5학년 내내 그대로) */
+      { test: (v) => v[0] === p.a1 - p.a2 && v[1] === b, name: `받아내린 1${U.big}${P(U.big, '을', '를')} 빼지 않음`, to: p.u === 'hm' ? '2-2-4:5' : '3-1-5:5' },
     ] : [],
   });
 }
 const subSteps = (p) => {
   const U = TU[p.u];
   if (p.b1 >= p.b2) return [{ c: 'SUB', p: { a: p.b1, b: p.b2 }, why: `${U.small}끼리 빼요.` }];
+  /* 첫 단계는 개념(1시간 20분 = □분) — 계산 단계만 두면 '1시간 = 100분'인 아이도 단계를 다 맞혀 '합치기 빈칸'으로 읽힘(도입안 비판 11-08) */
   return [
-    { c: 'ADD', p: { a: p.b1, b: 60 }, why: `${U.small}끼리 뺄 수 없으니 1${U.big}${P(U.big, '을', '를')} 60${U.small}${P(U.small, '으로', '로')} 바꿔 ${p.b1}${U.small}에 더해요.` },
+    { c: p.u === 'hm' ? '2-2-4:5' : '3-1-5:5', p: { u: p.u, v: 'join', a: 1, b: p.b1 }, why: `${U.small}끼리 뺄 수 없으니 1${U.big}${P(U.big, '을', '를')} ${U.small}${P(U.small, '으로', '로')} 바꿔요. 1${U.big} ${p.b1}${U.small}${P(U.small, '은', '는')} 몇 ${U.small}인가요?` },
     { c: 'SUB', p: { a: p.b1 + 60, b: p.b2 }, why: `이제 ${U.small}끼리 빼요.` },
   ];
 };

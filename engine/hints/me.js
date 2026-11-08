@@ -28,6 +28,6 @@ export default {
   },
   '3-1-5:7': {
     cue: (p) => { const [big, small] = U[p.u]; return p.b1 < p.b2 ? `${small}끼리 뺄 수 없으면 한 ${big === '시간' ? '시간' : '분'}을 60${small}${P(small, '으로', '로')} 바꿔 ${small}에 더한 뒤 빼요.` : `${small}${P(small, '은', '는')} ${small}끼리, ${big}${P(big, '은', '는')} ${big}끼리 빼요.`; },
-    plan: (p) => { const [big, small] = U[p.u]; return p.b1 < p.b2 ? [`${big}${P(big, '을', '를')} ${small}${P(small, '으로', '로')} 바꿔 더하기`, `${small}끼리 빼기`] : [`${small}끼리 빼기`]; },
+    plan: (p) => { const [big, small] = U[p.u]; return p.b1 < p.b2 ? [`한 ${big}${P(big, '과', '와')} ${small}${P(small, '을', '를')} ${small}${P(small, '으로', '로')} 바꾸기`, `${small}끼리 빼기`] : [`${small}끼리 빼기`]; },
   },
 };

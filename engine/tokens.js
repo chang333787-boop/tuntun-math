@@ -15,7 +15,7 @@ function partHTML(p, opt) {
 function blankHTML(i, opt, ph = '') {
   if (opt.static) {
     const v = opt.vals && opt.vals[i];
-    return `<span class="blank-s${opt.marks && opt.marks[i] === false ? ' wrong' : ''}">${v == null || Number.isNaN(v) ? '□' : esc(v)}</span>`;
+    return `<span class="blank-s${opt.marks && opt.marks[i] === false ? ' wrong' : ''}">${v == null || Number.isNaN(v) ? '□' : esc(v)}</span>${ph && (v == null || Number.isNaN(v)) ? `<span class="ph-s">(${esc(ph)})</span>` : ''}`;   /* 종이 · 정답 없는 그림에도 칸 안내(소수로) — 화면에만 있고 종이엔 없던 것(2라운드 재반박) */
   }
   return `<input class="blank" data-i="${i}" inputmode="decimal" autocomplete="off" spellcheck="false" aria-label="빈칸 ${i + 1}${ph ? ` (${esc(ph)})` : ''}"${ph ? ` placeholder="${esc(ph)}"` : ''}>`;   /* ph = 칸 안 흐린 안내(소수로 쓰는 칸) */
 }

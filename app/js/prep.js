@@ -36,10 +36,10 @@ const allRes = (S) => ({ ...(S.prior ? S.prior.res : {}), ...S.res });
 export const report = (S) => kidReport(allSheets(S), allRes(S), KID, { from: '1-1', to: '6-2' });
 
 // prior = { sheets, res } — res[묶음 id] = { me: 결과 } · 오래된 것(14일 넘음)은 뺀다
-export function newPrep({ unit, id, now = Date.now(), prior = null, budget = null }) {
+export function newPrep({ unit, id, now = Date.now(), prior = null, budget = null, done = 0 }) {   /* done = 다른 기기 · 지난 판에서 이 과제로 이미 푼 문제 수(남은 만큼만 — 18문제 중 12개를 푼 아이가 18개를 더 풀던 것 · 2라운드 재반박 11-08) */
   const P = prepPlan(unit);
   const keep = prior ? prior.sheets.filter((sh) => now - sh.made < PREP.fresh * DAY && prior.res[sh.id]) : [];
-  const S = { v: 1, id, unit, made: now, budget: LEN.includes(Number(budget)) ? Number(budget) : PREP.budget, sheets: [], res: {}, conf: {}, ms: {}, at: null, done: false, why: '', plan: { fringe: P.fringe, below: P.below },
+  const S = { v: 1, id, unit, made: now, budget: Math.max(PREP.n, (LEN.includes(Number(budget)) ? Number(budget) : PREP.budget) - Math.max(0, Number(done) || 0)), sheets: [], res: {}, conf: {}, ms: {}, at: null, done: false, why: '', plan: { fringe: P.fringe, below: P.below },
     prior: keep.length ? { sheets: keep, res: Object.fromEntries(keep.map((sh) => [sh.id, prior.res[sh.id]])) } : null };
   if (!P.fringe.length) return finish(S, 'none');
   const rep = S.prior ? report(S) : null;
