@@ -268,6 +268,16 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
     ok(!KD.todoOf(K0({ lastPrep: { unit: '4-1-3', why: 'clear', t: now - 1000 } }), rep0).some((x) => x.kind === 'prep'), '다른 기기에서 끝낸 점검은 이어서로 다시 뜨지 않음');
     L9.lsDel('tt.prep.ZZT.1'); L9.lsDel('tt.me');
   }
+  {   /* 반쯤 하다 나간 점검(묶음 하나만 기록) — 3시간 뒤 · 다른 기기에서도 카드가 남아 '이어서'(묶음 기록만으로 '했음'으로 보아 사라지던 것 · 비판 A 11-08) */
+    const KS9 = await import('../js/kidstore.js');
+    const sp = P7.newPrep({ unit: '4-1-3', id: 'SV' }), first = sp.sheets[0].id; let n = 0;
+    while (P7.current(sp) && sp.at.sheet === first && n < 80) { P7.answer(sp, { vals: [7], raws: ['7'] }); n++; }
+    const recs = {}; for (const sh of sp.sheets) { const R = sp.res[sh.id].me; if (sh.chapters.length && sh.chapters.every((c) => R.done[c.key])) { sh.unit = '4-1-3'; recs[sh.id] = { s: KS9.pack(sh), r: R }; } }
+    ok(Object.keys(recs).length >= 1 && !sp.done, '시험 준비: 묶음 하나만 기록되고 판은 안 끝남');
+    const Kp = K0({ recs }), tp = KD.todoOf(Kp, KS9.reportOf(Kp)).filter((x) => x.kind === 'prep');
+    ok(tp.length === 1 && tp[0].title === '오늘 단원 점검 — 이어서' && tp[0].resume, "이 기기 하던 판이 없어도(다른 기기 · 3시간 뒤) '오늘 단원 점검 — 이어서'가 남음");
+    ok(!KD.todoOf(K0({ recs, lastPrep: { unit: '4-1-3', why: 'found', t: now - 1000 } }), rep0).some((x) => x.kind === 'prep'), '끝낸 점검(lastPrep)이 있으면 카드 없음');
+  }
   const S = P7.newPrep({ unit: '2-1-3', id: 'TD' }); let it;
   while ((it = P7.current(S))) P7.answer(S, { vals: it.snap.sol.map((v) => Number(v) + 7), raws: it.snap.sol.map((v) => String(Number(v) + 7)) });
   const recs = {}; for (const sh of S.sheets) { sh.unit = '2-1-3'; recs[sh.id] = { s: KS5.pack(sh), r: S.res[sh.id].me, cf: {}, ms: {} }; }
