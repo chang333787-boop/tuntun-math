@@ -372,10 +372,11 @@ export function storyView(root, arg) {
         const raws = [...box.querySelectorAll('.blank')].sort((x, y) => x.dataset.i - y.dataset.i).map((x) => x.value.trim().replace(/,/g, ''));
         let ok = false; try { ok = !!it.check(raws.map(Number), raws).ok; } catch (e) { ok = false; }
         if (ok) KS.selfFix(me, K, 'reread');
+        { const kp = box.querySelector('.kpad'); if (kp) kp.remove(); }
         box.querySelector('.retry').innerHTML = ok ? '<b>스스로 고쳤어요!</b> 다시 읽기 도구가 도왔어요.' : `아직 아니에요. ${ansSay(it)}`;
       });
       finish(box);
-      const bl = [...box.querySelectorAll('.blank')].sort((x, y) => x.dataset.i - y.dataset.i); wireBlanks(bl, { prompt: it.prompt, sol: it.sol, onDone: () => { const r = box.querySelector('#rt'); if (r) r.click(); } }); if (bl[0]) bl[0].focus();
+      const bl = [...box.querySelectorAll('.blank')].sort((x, y) => x.dataset.i - y.dataset.i); wireBlanks(bl, { prompt: it.prompt, sol: it.sol, onDone: () => { const r = box.querySelector('#rt'); if (r) r.click(); }, place: (kp) => box.querySelector('#rt').before(kp) }); if (bl[0]) bl[0].focus();
     });
     finish(box);
   }

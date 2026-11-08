@@ -31,9 +31,11 @@ export const fbSlot = (root) => { const c = root.querySelector('.qcard'); if (c)
 //  ③ Enter = 다음 빈 칸 → 다 차면 onDone · 빈 칸에서 ⌫ = 앞 칸 · 글자 끝에서 ← → = 앞 · 뒤 칸 · 칸은 쓴 글자만큼 넓어짐(아홉 자리도 다 보이게)
 const SEP = /^[\s+\-−*xX×÷/=:;…]$/;
 export const fitBlank = (b) => { const n = b.value.length; b.style.width = n > 3 ? `${(0.56 * n + 0.9).toFixed(2)}em` : ''; };
-export function wireBlanks(open, { prompt = null, sol = null, onDone = null } = {}) {
-  const txt = `${toText(prompt || [])} ${(sol || []).join(' ')}`, nums = txt.match(/\d+/g) || [];
-  const cap = !sol || /\d\.\d/.test(txt) ? 0 : Math.max(0, ...nums.map((x) => x.length)), big = nums.some((x) => x.length >= 4);
+//  ④ 손가락만 쓰는 기기(휴대폰 · 태블릿)는 앱 숫자판 — place(숫자판)로 놓을 자리를 받음 · 기기 자판은 숨김(문제와 단추를 반쯤 가리고 아이폰 숫자판엔 '다음 칸' 키가 없음)
+export const touchOnly = () => typeof matchMedia === 'function' && matchMedia('(hover: none) and (pointer: coarse)').matches;
+export function wireBlanks(open, { prompt = null, sol = null, onDone = null, onEnd = null, place = null } = {}) {
+  const txt = `${toText(prompt || [])} ${(sol || []).join(' ')}`, nums = txt.match(/\d+/g) || [], dec = /\d\.\d/.test(txt);
+  const cap = !sol || dec ? 0 : Math.max(0, ...nums.map((x) => x.length)), big = nums.some((x) => x.length >= 4);
   const go = (b, end = false) => { b.focus(); if (end) { const n = b.value.length; b.setSelectionRange(n, n); } else b.select(); };
   const nextEmpty = (i) => open.slice(i + 1).find((x) => !x.value.trim()) || open.slice(0, i).find((x) => !x.value.trim());
   open.forEach((b, i) => {
@@ -56,6 +58,24 @@ export function wireBlanks(open, { prompt = null, sol = null, onDone = null } = 
       else if (e.key === 'ArrowRight' && !last && b.selectionStart === b.value.length) { e.preventDefault(); go(open[i + 1], true); }
     });
   });
+  if (place && open.length && touchOnly()) numPad(open, { dec, go, nextEmpty, onEnd, place });
+}
+function numPad(open, { dec, go, nextEmpty, onEnd, place }) {
+  let cur = open.find((x) => !x.value.trim()) || open[0];
+  const kp = document.createElement('div'), many = open.length > 1, key = (d) => `<button type="button" data-d="${d}">${d}</button>`;
+  kp.className = `kpad${dec ? ' dec' : ''}${many ? '' : ' one'}`; kp.setAttribute('role', 'group'); kp.setAttribute('aria-label', '숫자판');
+  kp.innerHTML = `${[...'12345'].map(key).join('')}${dec ? key('.') : ''}<button type="button" class="kp-bs" data-a="bs">지우기</button>${[...'67890'].map(key).join('')}${many ? `<button type="button" class="kp-nx" data-a="nx">다음 칸${icon('arrow', 18)}</button>` : ''}`;
+  open.forEach((b) => { b.inputMode = 'none'; b.addEventListener('focus', () => { cur = b; }); });
+  kp.addEventListener('pointerdown', (e) => { if (e.target.closest('button')) e.preventDefault(); });   /* 누르는 동안 칸이 포커스를 잃지 않게 */
+  kp.addEventListener('click', (e) => {
+    const k = e.target.closest('button'), b = cur; if (!k || k.disabled || !b || b.disabled) return;
+    if (document.activeElement !== b) { b.focus(); const n = b.value.length; b.setSelectionRange(n, n); }
+    const s0 = b.selectionStart ?? b.value.length, s1 = b.selectionEnd ?? s0, i = open.indexOf(b);
+    if (k.dataset.d) { b.setRangeText(k.dataset.d, s0, s1, 'end'); b.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: k.dataset.d })); return; }
+    if (k.dataset.a === 'bs') { if (s1 > s0) b.setRangeText('', s0, s1, 'end'); else if (s0 > 0) b.setRangeText('', s0 - 1, s0, 'end'); else { if (i > 0) go(open[i - 1], true); return; } b.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'deleteContentBackward' })); return; }
+    if (i < open.length - 1) go(open[i + 1]); else { const x = nextEmpty(i); if (x) go(x); else if (onEnd) onEnd(); }
+  });
+  place(kp);
 }
 
 export function draw(root, { prompt, sol = null, choices = null, tag = '', act = '', dots = null, conf = true, idk = true, extra = '', lead = '', given = null, hide = null, say = null, okLabel = '다 풀었어요', onAnswer }) {
@@ -92,6 +112,7 @@ export function draw(root, { prompt, sol = null, choices = null, tag = '', act =
     card.classList.toggle('locked', on);
     open.forEach((b) => (b.disabled = on));
     root.querySelectorAll('[data-k]').forEach((b) => (b.disabled = on || gone.has(Number(b.dataset.k))));
+    root.querySelectorAll('.kpad button').forEach((b) => (b.disabled = on));
     if (ok) ok.disabled = on;
   };
   lock(false);
@@ -120,7 +141,9 @@ export function draw(root, { prompt, sol = null, choices = null, tag = '', act =
     const a = readBlanks(); if (!a) return;
     cf = Number(b.dataset.cf); done(a);
   }));
-  wireBlanks(open, { prompt, sol, onDone: () => { if (ok) ok.click(); else { const c1 = root.querySelector('[data-cf="2"]'); if (c1) c1.focus(); } } });
+  wireBlanks(open, { prompt, sol, onDone: () => { if (ok) ok.click(); else { const c1 = root.querySelector('[data-cf="2"]'); if (c1) c1.focus(); } },
+    onEnd: () => { const c = root.querySelector('.conf') || ok; if (c) { c.classList.add('wake'); c.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } },   /* 숫자판 '다음 칸'은 내지 않고 내는 자리만 보여 줌 */
+    place: (kp) => { const at = root.querySelector('.qside > .conf, .qside > .qact'); if (at) at.before(kp); } });
   root.querySelectorAll('[data-k]').forEach((b) => b.addEventListener('click', () => {
     if (b.disabled) return;
     if (!conf) return done({ vals: [Number(b.dataset.k)], raws: [b.dataset.k] });
@@ -136,7 +159,7 @@ export function draw(root, { prompt, sol = null, choices = null, tag = '', act =
 //  '넘어가기'는 솔직한 모름이라 세지 않음(찍은 오답만) · 준비 다리 · 다듬기에서 같이 씀(선생님 화면의 K.rush는 부르는 쪽이 셈)
 // 맞았을 때 잠깐 ✓ — 맞혀도 아무 말이 없으면 틀릴 때만 화면이 말을 거는 꼴(벌 받는 느낌 · '맞은 거야 넘어간 거야?' — 11-07 사용감 점검) · 0.6초 뒤 저절로 다음
 export function okFlash(root, then, ms = 650) {
-  root.querySelectorAll('.qcard input, .qcard .qact button, .qcard .choices button, .qcard .conf button').forEach((x) => (x.disabled = true));
+  root.querySelectorAll('.qcard input, .qcard .qact button, .qcard .choices button, .qcard .conf button, .qcard .kpad button').forEach((x) => (x.disabled = true));
   const box = document.createElement('div'); box.className = 'fb ok flash'; box.textContent = '맞았어요!';
   fbSlot(root).appendChild(box); setTimeout(() => { if (box.isConnected) then(); }, ms);   /* 0.6초 안에 '처음 화면'을 누르면 그 화면에 지난 활동의 다음 문제를 덮어 그리던 것(코덱스 11-07) */
 }

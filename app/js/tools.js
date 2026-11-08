@@ -111,13 +111,14 @@ export function toolBox(box, { it, vals, c, bug = null, onSelfFix, onDone, seen 
   b.querySelector('.tbtn').addEventListener('click', () => {
     b.innerHTML = `<p class="small muted">${esc(T.how)}</p><p class="tcheck">${T.html}</p>${it.choices ? '' : `<div class="retry"><span class="math">${toHTML(it.prompt)}</span><button type="button" class="pri" id="rt">다시 써 보기</button></div>`}`;
     const rt = b.querySelector('#rt');
-    if (rt) { const bl = [...b.querySelectorAll('.blank')].sort((x, y) => x.dataset.i - y.dataset.i); wireBlanks(bl, { prompt: it.prompt, sol: it.sol, onDone: () => rt.click() }); if (bl[0]) bl[0].focus(); }   /* Enter로 '다시 써 보기'(전엔 Enter가 아무 일도 안 함) */
+    if (rt) { const bl = [...b.querySelectorAll('.blank')].sort((x, y) => x.dataset.i - y.dataset.i); wireBlanks(bl, { prompt: it.prompt, sol: it.sol, onDone: () => rt.click(), place: (kp) => rt.before(kp) }); if (bl[0]) bl[0].focus(); }   /* Enter로 '다시 써 보기'(전엔 Enter가 아무 일도 안 함) */
     if (!rt && onDone) onDone(null);
     if (rt) rt.addEventListener('click', () => {
       const raws = [...b.querySelectorAll('.blank')].sort((x, y) => x.dataset.i - y.dataset.i).map((x) => x.value.trim());
       if (raws.some((x) => !x)) return;
       let ok = false; try { ok = !!it.check(raws.map(Number), raws).ok; } catch (e) { ok = false; }
       const self = ok && !seen();
+      { const kp = b.querySelector('.kpad'); if (kp) kp.remove(); }
       b.querySelector('.retry').innerHTML = self ? `<b>스스로 고쳤어요!</b> ${esc(T.name)} 도구로 찾아서 고쳤어요.` : ok ? '맞게 고쳐 썼어요.' : `아직 아니에요. ${ansSay(it)}`;
       if (self && onSelfFix) onSelfFix(T.tool);
       if (onDone) onDone(ok);
