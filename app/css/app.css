@@ -663,7 +663,7 @@ body.tv main{max-width:none}body.tv .ctab table{font-size:18px}body.tv .ctab td,
   .fxs-side{flex-direction:column;align-items:stretch}.fxs-side>.model.rg+.plan{flex:none}   /* 시범 모형 옆 '풀이 순서'가 한 줄에 두 낱말씩 끼던 것 — 모형 아래로 */
   .steps.eq>li.ph{visibility:hidden}}   /* 시범 단계 자리를 미리 잡음 — '다음 단계' 단추가 누를 때마다 아래로 내려가던 것 */
 @media (min-width:761px){.steps.eq>li.ph,.steps.eq0{display:none}}
-@media (max-width:480px){.sb-say{float:none;display:flex;width:fit-content;margin:0 0 8px auto}}   /* 좁은 말풍선에서 '읽어 주기'가 글을 한두 낱말 폭으로 누르던 것 — 제 줄로 */   /* 휴대폰 세로에서 '조금 헷갈려요'가 단추 밖으로 넘치던 것(보내기 그림 빼고 글만) */
+@media (max-width:480px){.sb-say{float:none;display:flex;width:fit-content;margin:0 0 8px auto}.choices.n3 button{flex-basis:90px}.hl-go{text-wrap:balance}}   /* 좁은 말풍선에서 '읽어 주기'가 글을 한두 낱말 폭으로 누르던 것 — 제 줄로 · 보기 셋은 한 줄에(2 + 1로 셋째만 넓던 것) · '모르겠어요 — 한 단계씩 같이 풀기'가 '풀기'만 꺾이던 것 */   /* 좁은 말풍선에서 '읽어 주기'가 글을 한두 낱말 폭으로 누르던 것 — 제 줄로 */   /* 휴대폰 세로에서 '조금 헷갈려요'가 단추 밖으로 넘치던 것(보내기 그림 빼고 글만) */
 @media (prefers-reduced-motion:reduce){.shake{animation:none}}
 
 /* ── 인쇄 — 10분 카드 · 아이 카드 · 안내 · 가정 안내문 · 아이 자세히(1차와 같은 모양) ── */

@@ -71,11 +71,11 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
     if (i === 1 && fresh && !seen) return rg({ anim: true });
     return tries ? rg({}) : { html: '' };
   };
-  const lock = () => root.querySelectorAll('.qcard input, .qcard .qact button, .qcard .choices button').forEach((x) => (x.disabled = true));
+  const lock = () => root.querySelectorAll('.qcard input, .qcard .qact button, .qcard .choices button, .qcard .hl-go').forEach((x) => (x.disabled = true));   /* 맞힌 뒤에도 '모르겠어요 — 한 단계씩'이 살아 있던 것(처음 보는 눈 11-08) */
   const finish = (ok, how, msg, calm = false) => {
     const box = document.createElement('div'); box.className = `fb ${ok ? 'ok' : calm ? 'see' : 'no'}`;   /* calm = 도움을 다 쓴 뒤 '같이 봐요'(빨간 ✕ X) */
     lock(); box.innerHTML = msg;
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'pri'; b.textContent = '다음'; box.appendChild(b);
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'pri big'; b.textContent = '다음'; box.appendChild(b);   /* 내는 단추와 같은 크기(작은 단추가 왼쪽 가운데에 있어 찾던 것) */
     fbSlot(root).appendChild(box); b.focus();
     b.addEventListener('click', () => onEnd && onEnd({ how }));
   };

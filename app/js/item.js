@@ -99,7 +99,7 @@ export function draw(root, { prompt, sol = null, choices = null, tag = '', act =
     <div class="qside">
       ${lead ? `<div class="qlead">${lead}</div>` : ''}
       ${say && say.length ? `<div class="tsay">${say.map((x) => `<p>${esc(x)}</p>`).join('')}</div>` : ''}
-      ${choices ? `<div class="choices">${choices.map((ch, k) => `<button type="button" data-k="${k}"${gone.has(k) ? ' class="gone" aria-label="튼튼이가 지운 보기"' : ''}><span class="math">${toHTML(ch, { static: true })}</span></button>`).join('')}</div>` : ''}
+      ${choices ? `<div class="choices n${choices.length}">${choices.map((ch, k) => `<button type="button" data-k="${k}"${gone.has(k) ? ' class="gone" aria-label="튼튼이가 지운 보기"' : ''}><span class="math">${toHTML(ch, { static: true })}</span></button>`).join('')}</div>` : ''}
       <div class="qmsg" id="msg" role="alert"></div>
       ${conf ? `<div class="conf"><p><b>답 내기</b> — ${choices ? '보기를 고르고' : '답을 쓰고'} 얼마나 자신 있는지 하나 눌러요</p><div class="row">${CONF.map(([v, t]) => `<button type="button" class="cfs" data-cf="${v}">${icon('send', 16)}${t}</button>`).join('')}</div></div>` : ''}
       <div class="qact">
