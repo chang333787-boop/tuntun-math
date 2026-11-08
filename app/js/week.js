@@ -42,7 +42,7 @@ export function weekView(root) {
   const one = () => {
     if (i >= sh.items.length) return fin();
     const it = sh.items[i];
-    draw(root, { prompt: it.snap.prompt, choices: it.snap.choices, tag: '이번 주 점검', act: 'week', dots: [i, sh.items.length], conf: false, onAnswer: (a, cf, t) => {
+    draw(root, { prompt: it.snap.prompt, sol: it.snap.sol, choices: it.snap.choices, tag: '이번 주 점검', act: 'week', dots: [i, sh.items.length], conf: false, onAnswer: (a, cf, t) => {
       let ok = false;
       if (a.idk) R.it[it.k] = { s: 'q' };
       else { try { ok = !!itemOf(it.c, it.p).check(a.vals, a.raws).ok; } catch (e) { ok = false; } R.it[it.k] = ok ? { s: 'ok' } : { s: 'x', a: a.raws }; }

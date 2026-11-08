@@ -241,7 +241,7 @@ export function prepView(root, unit) {
     if (!it) return finished();
     const sh = S.sheets.find((x) => x.id === S.at.sheet);
     if (Date.now() - lastNow > 5000) { lastNow = Date.now(); KS.setNow(me, { mode: 'prep', unit, n: asked(S) }); }
-    draw(root, { prompt: it.snap.prompt, choices: it.snap.choices, tag: '오늘 단원 점검', act: 'chk', dots: [asked(S), -(S.budget || PREP.budget)], onAnswer: (a, cf, ms) => {
+    draw(root, { prompt: it.snap.prompt, sol: it.snap.sol, choices: it.snap.choices, tag: '오늘 단원 점검', act: 'chk', dots: [asked(S), -(S.budget || PREP.budget)], onAnswer: (a, cf, ms) => {
       const r = answer(S, a, { conf: cf, ms }); store();
       if (rush(ms, a, r && r.ok) && current(S)) { K.rush = (K.rush || 0) + 1; KS.save(me, K); return rushPause(root, step); }
       step();
@@ -348,22 +348,22 @@ export function fixView(root, c, opt = {}) {
     if (F.assist) return assist();
     const st = F.curSteps[F.si];
     if (!st) {   // 단계 다 함 → 원래 문제
-      draw(slot(), { lead: head('think', F.tw ? (colFor(F.cur, F.curSteps) ? '아직 아니에요. 세로셈 아래에 모인 수를 <b>차례로</b> 한 번 더 써 봐요.' : '아직 아니에요. 위에 채운 단계의 답을 보고 <b>한 번 더</b> 써 봐요.') : '단계를 다 했어요. 이제 이 문제의 답을 써요.') + planHTML(F.curSteps, planNames(F.cur.c || c, F.cur.p, F.curSteps), F.curSteps.length), prompt: F.cur.prompt, choices: F.cur.choices, conf: false, idk: false, extra: stepCtx(F.cur, F.curSteps, F.curSteps.length, { C: colFor(F.cur, F.curSteps), head: false, fresh: F.curSteps.length - 1 }), onAnswer: (a) => { const it0 = F.cur; const r = answerItem(F, a.vals, a.raws); if (r.retry) return feedback({ ok: false, msg: colFor(it0, F.curSteps) ? '아직 아니에요. 세로셈 맨 아래 줄을 <b>차례로</b> 읽어 한 번 더 써 봐요.' : '아직 아니에요. 채운 단계의 답을 보고 <b>한 번 더</b> 써 봐요.', label: '다시 써 보기' }, together);   /* 세로셈이 없는 문제(분수 · 곱셈)에 '세로셈'이라 하던 것(코덱스 r12) */ feedback({ ...r, it0, how: 'steps' }, route); } });
+      draw(slot(), { lead: head('think', F.tw ? (colFor(F.cur, F.curSteps) ? '아직 아니에요. 세로셈 아래에 모인 수를 <b>차례로</b> 한 번 더 써 봐요.' : '아직 아니에요. 위에 채운 단계의 답을 보고 <b>한 번 더</b> 써 봐요.') : '단계를 다 했어요. 이제 이 문제의 답을 써요.') + planHTML(F.curSteps, planNames(F.cur.c || c, F.cur.p, F.curSteps), F.curSteps.length), prompt: F.cur.prompt, sol: F.cur.sol, choices: F.cur.choices, conf: false, idk: false, extra: stepCtx(F.cur, F.curSteps, F.curSteps.length, { C: colFor(F.cur, F.curSteps), head: false, fresh: F.curSteps.length - 1 }), onAnswer: (a) => { const it0 = F.cur; const r = answerItem(F, a.vals, a.raws); if (r.retry) return feedback({ ok: false, msg: colFor(it0, F.curSteps) ? '아직 아니에요. 세로셈 맨 아래 줄을 <b>차례로</b> 읽어 한 번 더 써 봐요.' : '아직 아니에요. 채운 단계의 답을 보고 <b>한 번 더</b> 써 봐요.', label: '다시 써 보기' }, together);   /* 세로셈이 없는 문제(분수 · 곱셈)에 '세로셈'이라 하던 것(코덱스 r12) */ feedback({ ...r, it0, how: 'steps' }, route); } });
       return;
     }
     /* 왼쪽 위 = 같이 풀 문제 · 세로셈 · 채운 단계(도움 사다리와 같은 모양 hint.js stepCtx) · 오른쪽 튼튼이 말 = 몇 단계 · 할 일 */
-    draw(slot(), { lead: head('point', `<span class="hl-k">${F.si + 1}단계</span> 이번엔 같이 풀어요. <b>${esc(st.why)}</b>${(() => { if (!F.tw) return ''; let t = ''; try { t = cueOf(st.c, st.p) || factTalk({ c: st.c, p: st.p, prompt: st.prompt, sol: st.sol }, false); } catch (e) { t = ''; } return t ? `<br><span class="small">도움: ${esc(t)}</span>` : ''; })()}`)   /* 다시 쓸 때는 그 단계 차시의 첫 도움말을 한 줄 더(답 숫자 X — 엄격 시험 · 같은 말만 다시 보이던 것) */ + planHTML(F.curSteps, planNames(F.cur.c || c, F.cur.p, F.curSteps), F.si), extra: stepCtx(F.cur, F.curSteps, F.si, { C: colFor(F.cur, F.curSteps), label: '같이 풀 문제', fresh: F.si - 1 }), prompt: st.prompt, conf: false, idk: false, onAnswer: (a) => { const r = togetherStep(F, a.vals); if (r.ok) together(); else if (r.retry) feedback({ ok: false, msg: '아직 아니에요. 위 튼튼이 말을 다시 읽고 <b>한 번 더</b> 써 봐요.', label: '다시 써 보기' }, together); else feedback({ ok: false, msg: ansSay({ sol: r.sol }, '이 단계의 답은') }, together); }   /* 까닭 글은 말풍선 · 왼쪽 기록에 이미 있음 — 같은 긴 문단이 세 번 나와 화면이 넘치던 것(11-08 처음 보는 눈 3차) */, okLabel: F.si + 1 < F.curSteps.length ? '이 단계 다 했어요' : '다 풀었어요' });
+    draw(slot(), { lead: head('point', `<span class="hl-k">${F.si + 1}단계</span> 이번엔 같이 풀어요. <b>${esc(st.why)}</b>${(() => { if (!F.tw) return ''; let t = ''; try { t = cueOf(st.c, st.p) || factTalk({ c: st.c, p: st.p, prompt: st.prompt, sol: st.sol }, false); } catch (e) { t = ''; } return t ? `<br><span class="small">도움: ${esc(t)}</span>` : ''; })()}`)   /* 다시 쓸 때는 그 단계 차시의 첫 도움말을 한 줄 더(답 숫자 X — 엄격 시험 · 같은 말만 다시 보이던 것) */ + planHTML(F.curSteps, planNames(F.cur.c || c, F.cur.p, F.curSteps), F.si), extra: stepCtx(F.cur, F.curSteps, F.si, { C: colFor(F.cur, F.curSteps), label: '같이 풀 문제', fresh: F.si - 1 }), prompt: st.prompt, sol: st.sol, conf: false, idk: false, onAnswer: (a) => { const r = togetherStep(F, a.vals); if (r.ok) together(); else if (r.retry) feedback({ ok: false, msg: '아직 아니에요. 위 튼튼이 말을 다시 읽고 <b>한 번 더</b> 써 봐요.', label: '다시 써 보기' }, together); else feedback({ ok: false, msg: ansSay({ sol: r.sol }, '이 단계의 답은') }, together); }   /* 까닭 글은 말풍선 · 왼쪽 기록에 이미 있음 — 같은 긴 문단이 세 번 나와 화면이 넘치던 것(11-08 처음 보는 눈 3차) */, okLabel: F.si + 1 < F.curSteps.length ? '이 단계 다 했어요' : '다 풀었어요' });
   }
   function assist() {
     const A = F.assist;
     const top = A.kind === 'given' ? '이번엔 같이 풀어요. 앞 빈칸은 튼튼이가 채웠어요 — <b>마지막 빈칸</b>을 채워요.'
       : A.kind === 'pick' ? '이번엔 같이 풀어요. 튼튼이가 <b>답이 아닌 보기</b>를 지웠어요. 남은 것 중에서 골라요.'
       : A.say.length ? '이번엔 같이 풀어요. 튼튼이가 <b>첫 생각</b>을 말해 줄게요. 그다음은 내가 풀어요.' : '이번엔 같이 풀어요. 천천히 풀어 봐요 — 틀려도 튼튼이가 바로 알려 줘요.';
-    draw(slot(), { lead: head('point', top), prompt: F.cur.prompt, choices: F.cur.choices, conf: false, idk: false, given: A.given, hide: A.hide, say: A.say, onAnswer: (a) => { const it0 = F.cur; const r = answerItem(F, a.vals, a.raws); feedback({ ...r, it0, how: A.kind }, route); } });
+    draw(slot(), { lead: head('point', top), prompt: F.cur.prompt, sol: F.cur.sol, choices: F.cur.choices, conf: false, idk: false, given: A.given, hide: A.hide, say: A.say, onAnswer: (a) => { const it0 = F.cur; const r = answerItem(F, a.vals, a.raws); feedback({ ...r, it0, how: A.kind }, route); } });
   }
   function solo() {
     if (F.reStep) return reStep();
-    draw(slot(), { lead: head('hi', `이제 혼자 풀어 봐요. <span class="muted small">(3개 맞히면 확인으로 · 지금 ${F.solo.ok}개)</span>`), prompt: F.cur.prompt, choices: F.cur.choices, conf: false, idk: false, onAnswer: (a) => { const it0 = F.cur; const r = answerItem(F, a.vals, a.raws); soloBack(r, it0, a); } });
+    draw(slot(), { lead: head('hi', `이제 혼자 풀어 봐요. <span class="muted small">(3개 맞히면 확인으로 · 지금 ${F.solo.ok}개)</span>`), prompt: F.cur.prompt, sol: F.cur.sol, choices: F.cur.choices, conf: false, idk: false, onAnswer: (a) => { const it0 = F.cur; const r = answerItem(F, a.vals, a.raws); soloBack(r, it0, a); } });
   }
   // 혼자에서 틀린 뒤 — 세 번 내리 틀림이면 같이 한 번 더 / 선생님과 · 아니면 다음에 할 한 가지: 검산 도구(답 보기 전에) → 같은 숫자로 나눠 보기 → 방법 한 줄
   function soloBack(r, it0, a) {
@@ -394,7 +394,7 @@ export function fixView(root, c, opt = {}) {
         b.querySelector('#n').addEventListener('click', () => { afterReStep(F); route(); });
         return;
       }
-      draw(slot(), { lead: head('think', '어디서 어긋났는지 같은 숫자로 나눠서 풀어 봐요.'), extra: `${i ? `<ol class="steps">${steps.slice(0, i).map((s, k) => stepHTML(s, { cls: k === miss ? 'miss' : '' })).join('')}</ol>` : ''}<p class="stepwhy"><b>${esc(steps[i].why)}</b></p>`, prompt: steps[i].prompt, conf: false, idk: false, onAnswer: (a) => { const ok = steps[i].sol.every((s, k) => Number(a.vals[k]) === Number(s)); if (!ok && miss == null) miss = i; i++; one(); } });
+      draw(slot(), { lead: head('think', '어디서 어긋났는지 같은 숫자로 나눠서 풀어 봐요.'), extra: `${i ? `<ol class="steps">${steps.slice(0, i).map((s, k) => stepHTML(s, { cls: k === miss ? 'miss' : '' })).join('')}</ol>` : ''}<p class="stepwhy"><b>${esc(steps[i].why)}</b></p>`, prompt: steps[i].prompt, sol: steps[i].sol, conf: false, idk: false, onAnswer: (a) => { const ok = steps[i].sol.every((s, k) => Number(a.vals[k]) === Number(s)); if (!ok && miss == null) miss = i; i++; one(); } });
     };
     one();
   }
@@ -421,7 +421,7 @@ export function fixView(root, c, opt = {}) {
   function check() {
     const it = checkItem(F);
     if (!it) return done();
-    draw(slot(), { lead: head('point', F.extra && F.ci >= FIX.check ? '거의 다 됐어요! <b>한 문제만 더</b> — 새 숫자예요. 맞히면 통과해요.' : '마지막! 새 숫자 3문제를 <b>도움 없이</b> 풀어요. 답을 쓰고 자신 있는 만큼 단추를 눌러요.'), prompt: it.snap.prompt, choices: it.snap.choices, tag: '확인', act: 'fix', dots: [F.ci, F.check.items.length], onAnswer: (a, cf, ms) => { answerCheck(F, a, { conf: cf, ms }); route(); } });
+    draw(slot(), { lead: head('point', F.extra && F.ci >= FIX.check ? '거의 다 됐어요! <b>한 문제만 더</b> — 새 숫자예요. 맞히면 통과해요.' : '마지막! 새 숫자 3문제를 <b>도움 없이</b> 풀어요. 답을 쓰고 자신 있는 만큼 단추를 눌러요.'), prompt: it.snap.prompt, sol: it.snap.sol, choices: it.snap.choices, tag: '확인', act: 'fix', dots: [F.ci, F.check.items.length], onAnswer: (a, cf, ms) => { answerCheck(F, a, { conf: cf, ms }); route(); } });
   }
   function done() {
     const now = Date.now();

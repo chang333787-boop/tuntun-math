@@ -1,5 +1,5 @@
 // 문제 카드 하나 — 자신감 세 칸(풀기 전 짐작 [D-1][D-3]) · 빈칸 · 보기 · '못 풀겠어요 · 넘어가기'
-//  draw(root, { prompt, choices, tag, dots, conf, onAnswer, given, hide, say }) — onAnswer({ vals, raws } | { idk:true }, conf, ms)
+//  draw(root, { prompt, sol, choices, tag, dots, conf, onAnswer, given, hide, say }) — sol은 칸 넘기기 자리 수에만(wireBlanks) — onAnswer({ vals, raws } | { idk:true }, conf, ms)
 //  짐작은 정말 '풀기 전'에 — 문제를 보인 뒤 짐작을 고르기 전에는 답 칸 · 보기가 잠겨 있음(답을 먼저 쓰고 고르거나 보기를 눌렀다 무시되지 않게 · 혹평 11-01)
 //  given = { 빈칸 번호: 값 } 튼튼이가 채워 둔 빈칸(함께) · hide = [보기 번호] 튼튼이가 지운 보기(함께) · say = 카드 위 튼튼이 말(그 문제 숫자로)
 //  틀렸는지는 이 카드가 말하지 않는다(점검은 담담하게) — 되먹임은 부르는 쪽이 정함
@@ -25,7 +25,40 @@ export const tagHTML = (tag, act = '') => { const a = ACT[act]; return tag ? `<s
 // 되먹임 상자를 붙일 자리(오른쪽 칸) · 답한 뒤 쓴 단추 줄 숨김
 export const fbSlot = (root) => { const c = root.querySelector('.qcard'); if (c) c.classList.add('answered'); return root.querySelector('.qside') || c || root; };
 
-export function draw(root, { prompt, choices = null, tag = '', act = '', dots = null, conf = true, idk = true, extra = '', lead = '', given = null, hide = null, say = null, okLabel = '다 풀었어요', onAnswer }) {
+// 빈칸 오가기 — 여러 칸 문제를 손 덜 쓰고 풀게(11-08 교사 '하나 누르면 다음 칸으로')
+//  ① 문제 · 답의 수가 모두 두 자리까지(소수 X · 답을 모르면 X — 3, 6, 9, □의 12)면 그 자리 수만큼 쓰면 다음 빈 칸 — 마지막 칸 · 분수 칸은 X(틀린 답이 더 길 수 있음: 8 + 1 = 10 · 6 10/8)
+//  ② 칸 사이 기호(+ − × ÷ / = : 띄어쓰기)를 치면 다음 칸 — 식을 쓰듯 '8 + 1 = 9' · 빈 칸에서 친 기호는 버림 · 쉼표는 큰 수(1,000)가 없는 문제에서만
+//  ③ Enter = 다음 빈 칸 → 다 차면 onDone · 빈 칸에서 ⌫ = 앞 칸 · 글자 끝에서 ← → = 앞 · 뒤 칸 · 칸은 쓴 글자만큼 넓어짐(아홉 자리도 다 보이게)
+const SEP = /^[\s+\-−*xX×÷/=:;…]$/;
+export const fitBlank = (b) => { const n = b.value.length; b.style.width = n > 3 ? `${(0.56 * n + 0.9).toFixed(2)}em` : ''; };
+export function wireBlanks(open, { prompt = null, sol = null, onDone = null } = {}) {
+  const txt = `${toText(prompt || [])} ${(sol || []).join(' ')}`, nums = txt.match(/\d+/g) || [];
+  const cap = !sol || /\d\.\d/.test(txt) ? 0 : Math.max(0, ...nums.map((x) => x.length)), big = nums.some((x) => x.length >= 4);
+  const go = (b, end = false) => { b.focus(); if (end) { const n = b.value.length; b.setSelectionRange(n, n); } else b.select(); };
+  const nextEmpty = (i) => open.slice(i + 1).find((x) => !x.value.trim()) || open.slice(0, i).find((x) => !x.value.trim());
+  open.forEach((b, i) => {
+    const last = i === open.length - 1, auto = cap > 0 && cap <= 2 && !last && !b.closest('.fr, .mx');
+    b.enterKeyHint = last ? 'done' : 'next';   /* 휴대폰 숫자판의 Enter 자리에 '다음' · '완료' */
+    b.addEventListener('beforeinput', (e) => {
+      if (open.length < 2 || e.inputType !== 'insertText' || !e.data || !(SEP.test(e.data) || (e.data === ',' && !big))) return;
+      e.preventDefault(); if (!last && b.value.trim()) go(open[i + 1]);
+    });
+    b.addEventListener('input', (e) => {
+      if (/[０-９．]/.test(b.value)) b.value = b.value.replace(/[０-９．]/g, (d) => String.fromCharCode(d.charCodeAt(0) - 0xFEE0));   /* 전각 숫자(한글 자판 설정) */
+      fitBlank(b);
+      if (auto && e.inputType === 'insertText' && /^\d+$/.test(b.value) && b.value.length === cap && b.selectionEnd === b.value.length) { const nx = open.slice(i + 1).find((x) => !x.value.trim()); if (nx) go(nx); }
+    });
+    b.addEventListener('keydown', (e) => {
+      if (e.isComposing) return;
+      if (e.key === 'Enter') { e.preventDefault(); if (!b.value.trim()) return; const nx = nextEmpty(i); if (nx) go(nx); else if (onDone) onDone(); return; }   /* 빈 칸에서 Enter는 그대로(저절로 넘어온 칸을 건너뛰지 않게) */
+      if (e.key === 'Backspace' && !b.value && i > 0) { e.preventDefault(); go(open[i - 1], true); }
+      else if (e.key === 'ArrowLeft' && i > 0 && b.selectionStart === 0 && b.selectionEnd === 0) { e.preventDefault(); go(open[i - 1], true); }
+      else if (e.key === 'ArrowRight' && !last && b.selectionStart === b.value.length) { e.preventDefault(); go(open[i + 1], true); }
+    });
+  });
+}
+
+export function draw(root, { prompt, sol = null, choices = null, tag = '', act = '', dots = null, conf = true, idk = true, extra = '', lead = '', given = null, hide = null, say = null, okLabel = '다 풀었어요', onAnswer }) {
   const t0 = performance.now();
   let cf = null;
   const gone = new Set((hide || []).map(Number));
@@ -50,7 +83,7 @@ export function draw(root, { prompt, choices = null, tag = '', act = '', dots = 
   </div></div>`;
   const msg = root.querySelector('#msg'), card = root.querySelector('.qcard');
   const blanks = [...root.querySelectorAll('.blank')].sort((a, b) => a.dataset.i - b.dataset.i);
-  if (given) blanks.forEach((b) => { const v = given[b.dataset.i]; if (v != null) { b.value = String(v); b.readOnly = true; b.classList.add('given'); b.tabIndex = -1; b.setAttribute('aria-label', `튼튼이가 채운 빈칸 ${v}`); } });
+  if (given) blanks.forEach((b) => { const v = given[b.dataset.i]; if (v != null) { b.value = String(v); b.readOnly = true; b.classList.add('given'); b.tabIndex = -1; b.setAttribute('aria-label', `튼튼이가 채운 빈칸 ${v}`); fitBlank(b); } });
   const open = blanks.filter((b) => !b.readOnly);
   if (blanks.length === 2 && /÷.*…/.test(toText(prompt || [])) && !given) { blanks[0].placeholder = '몫'; blanks[1].placeholder = '나머지'; }   /* □ … □ 두 칸이 무엇인지(처음 보는 눈 11-08) */
   const nudge = (t, el) => { msg.classList.remove('soft'); msg.textContent = t; card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); if (el) el.focus(); };
@@ -87,11 +120,7 @@ export function draw(root, { prompt, choices = null, tag = '', act = '', dots = 
     const a = readBlanks(); if (!a) return;
     cf = Number(b.dataset.cf); done(a);
   }));
-  open.forEach((b, i) => b.addEventListener('keydown', (e) => {
-    if (e.key !== 'Enter') return;
-    e.preventDefault();
-    if (i < open.length - 1 && !open[i + 1].value) open[i + 1].focus(); else if (ok) ok.click(); else { const c1 = root.querySelector('[data-cf="2"]'); if (c1) c1.focus(); }
-  }));
+  wireBlanks(open, { prompt, sol, onDone: () => { if (ok) ok.click(); else { const c1 = root.querySelector('[data-cf="2"]'); if (c1) c1.focus(); } } });
   root.querySelectorAll('[data-k]').forEach((b) => b.addEventListener('click', () => {
     if (b.disabled) return;
     if (!conf) return done({ vals: [Number(b.dataset.k)], raws: [b.dataset.k] });

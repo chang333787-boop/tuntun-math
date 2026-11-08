@@ -6,7 +6,7 @@ import { misFor } from '../../engine/mis.js';
 import { toText, toHTML } from '../../engine/tokens.js';
 import { icon } from './icons.js';
 import { esc } from './local.js';
-import { ansSay, stepHTML } from './item.js';
+import { ansSay, stepHTML, wireBlanks } from './item.js';
 import { stepsOf, ruleFor } from './fix.js';
 
 export const TOOLS = {
@@ -111,7 +111,7 @@ export function toolBox(box, { it, vals, c, bug = null, onSelfFix, onDone, seen 
   b.querySelector('.tbtn').addEventListener('click', () => {
     b.innerHTML = `<p class="small muted">${esc(T.how)}</p><p class="tcheck">${T.html}</p>${it.choices ? '' : `<div class="retry"><span class="math">${toHTML(it.prompt)}</span><button type="button" class="pri" id="rt">다시 써 보기</button></div>`}`;
     const rt = b.querySelector('#rt');
-    if (rt) { const f = b.querySelector('.blank'); if (f) f.focus(); }
+    if (rt) { const bl = [...b.querySelectorAll('.blank')].sort((x, y) => x.dataset.i - y.dataset.i); wireBlanks(bl, { prompt: it.prompt, sol: it.sol, onDone: () => rt.click() }); if (bl[0]) bl[0].focus(); }   /* Enter로 '다시 써 보기'(전엔 Enter가 아무 일도 안 함) */
     if (!rt && onDone) onDone(null);
     if (rt) rt.addEventListener('click', () => {
       const raws = [...b.querySelectorAll('.blank')].sort((x, y) => x.dataset.i - y.dataset.i).map((x) => x.value.trim());

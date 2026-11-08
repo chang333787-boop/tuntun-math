@@ -14,7 +14,7 @@ import { mascot } from '../../paper/js/mascot.js';
 import { P } from '../../engine/concepts/kit.js';
 import { TYPES, FAMILY, ROLES, show, implied, whyOf, cueOf, isCue, cueWhy, rereadOf, splitStory, famOfLesson, familiar, familiarTypes } from '../../engine/schema.js';
 import * as KS from './kidstore.js';
-import { draw, staticHTML, ansSay, progHTML, tagHTML, fbSlot, waitBtn } from './item.js';
+import { draw, staticHTML, ansSay, progHTML, tagHTML, fbSlot, waitBtn, wireBlanks } from './item.js';
 import { toolBox } from './tools.js';
 import { cueOf as stepCue } from '../../engine/hints/index.js';
 import { lsGet, lsSet, lsDel, esc, rand } from './local.js';
@@ -274,7 +274,7 @@ export function storyView(root, arg) {
   function stepEq(lead, tries = 0, off = [], bub = '') {   /* bub = 다시 고를 때 힌트(그 화면에 그대로 남게) */
     const pk = pr.s.steps[0].item;
     const b = shell(2, bub ? 'think' : 'point', bub || `${lead}이제 이야기를 <b>식</b>으로 나타내 봐요.`, '<div id="slot"></div>', 'plain', st.skip && !bub ? '' : rightFrame());
-    draw(b.querySelector('#slot'), { prompt: pk.prompt, choices: pk.choices, conf: false, idk: false, onAnswer: (a, cf, ms) => {
+    draw(b.querySelector('#slot'), { prompt: pk.prompt, sol: pk.sol, choices: pk.choices, conf: false, idk: false, onAnswer: (a, cf, ms) => {
       const k = a.vals[0], res = pk.check([k]);
       if (quick(ms, res.ok, () => stepEq(lead, tries, off, bub), '식을 하나씩 <b>읽어 보고</b> 골라요.')) return;
       if (res.ok) { if (tries === 0) st.s[2] = 1; return stepCalc(); }
@@ -329,7 +329,7 @@ export function storyView(root, arg) {
     if (typeof prev !== 'string') prev = null;   /* 단추에 바로 물린 곳은 누름 이벤트가 들어옴 */
     const calc = pr.s.steps[1].item, one = oneAns(), cue = stepCue(calc.c, calc.p);   /* 그 셈의 첫 단계 도움(같은 숫자 · 답은 없음) */
     const b = shell(3, 'point', `${one ? '고른 식을 계산해요. 칸에는 <b>수만</b> 써요.' : '고른 식을 계산해요.'}${prev ? `<br><span class="small">아까 쓴 답: ${esc(prev)}${cue ? `<br>도움: ${esc(cue)}` : ''}</span>` : ''}`, '<div id="slot"></div>', 'plain', st.skip ? '' : rightFrame());   /* 그림을 계산까지 남김 · 다시 계산할 때 실마리가 사라지던 것(11-08 처음 보는 눈) */
-    draw(b.querySelector('#slot'), { prompt: calc.prompt, conf: false, idk: false, onAnswer: (a) => {
+    draw(b.querySelector('#slot'), { prompt: calc.prompt, sol: calc.sol, conf: false, idk: false, onAnswer: (a) => {
       let ok = false; try { ok = !!calc.check(a.vals, a.raws).ok; } catch (e) { ok = false; }
       if (!pr.ct) { st.s[3] = ok ? 1 : 0; if (one) st.s[4] = st.s[3]; }   /* 걸음 기록은 첫 번에 맞혔나 */
       if (ok && !one) return stepAns(true);
@@ -351,7 +351,7 @@ export function storyView(root, arg) {
   function stepAns(calcOk) {
     const it = pr.s.item, calc = pr.s.steps[1].item;
     const b = shell(3, 'point', '<b>묻는 것</b>을 다시 읽고, 답을 써요.', '<div id="slot"></div>', 'plain', `<div class="panel"><p class="sb-ask"><span class="sb-tag">묻는 것</span> ${askOf(pr.s.story)}</p><p class="sb-calc small">${calcOk ? '계산' : '바르게 계산하면'} ${staticHTML(calc.prompt, calc.sol)}</p></div>`);
-    draw(b.querySelector('#slot'), { prompt: it.prompt, conf: false, idk: false, onAnswer: (a) => {
+    draw(b.querySelector('#slot'), { prompt: it.prompt, sol: it.sol, conf: false, idk: false, onAnswer: (a) => {
       let ok = false; try { ok = !!it.check(a.vals, a.raws).ok; } catch (e) { ok = false; }
       st.s[4] = ok ? 1 : 0;
       const card = b.querySelector('.qcard'), box = document.createElement('div');
@@ -375,7 +375,7 @@ export function storyView(root, arg) {
         box.querySelector('.retry').innerHTML = ok ? '<b>스스로 고쳤어요!</b> 다시 읽기 도구가 도왔어요.' : `아직 아니에요. ${ansSay(it)}`;
       });
       finish(box);
-      const f0 = box.querySelector('.blank'); if (f0) f0.focus();
+      const bl = [...box.querySelectorAll('.blank')].sort((x, y) => x.dataset.i - y.dataset.i); wireBlanks(bl, { prompt: it.prompt, sol: it.sol, onDone: () => { const r = box.querySelector('#rt'); if (r) r.click(); } }); if (bl[0]) bl[0].focus();
     });
     finish(box);
   }

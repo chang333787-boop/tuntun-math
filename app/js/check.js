@@ -98,7 +98,7 @@ export function checkRunView(root, id) {
         if (i >= items.length) return endBatch();
         const it = items[i];
         if (Date.now() - lastNow > 5000) { lastNow = Date.now(); KS.setNow(me, { mode: 'check', n: total - leftNow() + i }); }
-        draw(root, { prompt: it.snap.prompt, choices: it.snap.choices, tag: '점검지', act: 'chk', dots: [i, items.length], conf: false, onAnswer: (a, cf, ms) => {
+        draw(root, { prompt: it.snap.prompt, sol: it.snap.sol, choices: it.snap.choices, tag: '점검지', act: 'chk', dots: [i, items.length], conf: false, onAnswer: (a, cf, ms) => {
           let ok = false;
           if (a.idk) wip.R[it.k] = { s: 'q' };
           else { try { ok = !!itemOf(it.c, it.p).check(a.vals, a.raws).ok; } catch (e) { ok = false; } wip.R[it.k] = ok ? { s: 'ok' } : { s: 'x', a: a.raws }; }

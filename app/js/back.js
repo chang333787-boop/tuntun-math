@@ -84,7 +84,7 @@ function run(root, me, K, S, SK) {
       : S.verifying ? '맞혔어요! 새 숫자로 몇 개 더 풀어서 정말 아는지 봐요.'
       : `${last && !last.ok ? '더 쉬운 문제로 어디서 막혔는지 볼게요' : '여기서 막혔는지 알아봐요'} — <b>새 숫자</b>로 풀어요.<br><b>${esc(kid(q.c))}</b>`);
     root.innerHTML = `<div class="card fx">${trailHTML(S, q)}<div id="slot"></div></div>`;
-    draw(root.querySelector('#slot'), { lead: say(q.role === 'step' ? 'point' : 'think', top, 64), prompt: q.item.prompt, choices: q.item.choices || null, tag: '', act: 'back',   /* 꼬리표 X — 위 길 칩과 '처음 문제'가 둘로 보이고 ↩ 표지가 뒤로 가기처럼 보이던 것 */ conf: false, onAnswer: (a, cf, ms) => { engAnswer(S, { ...a, ms, t: Date.now() }); lsSet(SK, S); step(); } });
+    draw(root.querySelector('#slot'), { lead: say(q.role === 'step' ? 'point' : 'think', top, 64), prompt: q.item.prompt, sol: q.item.sol, choices: q.item.choices || null, tag: '', act: 'back',   /* 꼬리표 X — 위 길 칩과 '처음 문제'가 둘로 보이고 ↩ 표지가 뒤로 가기처럼 보이던 것 */ conf: false, onAnswer: (a, cf, ms) => { engAnswer(S, { ...a, ms, t: Date.now() }); lsSet(SK, S); step(); } });
   };
   const done = (early = false) => {
     lsDel(SK);
@@ -120,7 +120,7 @@ export function retryView(root) {
   if (!B || !byId[B.c]) return go('#/me');
   const it = makeItem(B.c, B.p);
   root.innerHTML = `<div class="card fx"><div id="slot"></div></div>`;
-  draw(root.querySelector('#slot'), { lead: say('point', `처음에 막혔던 문제예요. 이제 풀어 볼까요?`, 64), prompt: it.prompt, choices: it.choices || null, tag: '처음 문제 다시', act: 'retry', conf: false, onAnswer: (a) => {
+  draw(root.querySelector('#slot'), { lead: say('point', `처음에 막혔던 문제예요. 이제 풀어 볼까요?`, 64), prompt: it.prompt, sol: it.sol, choices: it.choices || null, tag: '처음 문제 다시', act: 'retry', conf: false, onAnswer: (a) => {
     let ok = false; if (!a.idk) { try { ok = !!it.check(a.vals, a.raws).ok; } catch (e) { ok = false; } }
     if (ok) { K.back = { ...B, solved: Date.now() }; KS.save(me, K); }
     root.innerHTML = `<div class="card msg act-back"><p class="eyebrow">${tile('retry', 22)}처음 문제 다시</p>${ok ? say('cheer', `풀었어요! <b>${esc(B.text)}</b> — 처음엔 막혔던 문제예요. 끊긴 곳을 고치니 이어졌어요.`, 104) : say('think', `${ansSay(it)}<br>아직 한 군데가 더 끊겼을 수 있어요. 거꾸로 한 번 더 찾아봐요.`, 104)}

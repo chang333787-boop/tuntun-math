@@ -58,7 +58,7 @@ export function giveView(root, id) {
   const one = () => {
     if (S.i >= sh.items.length) return fin();
     const it = sh.items[S.i];
-    draw(root, { prompt: it.snap.prompt, choices: it.snap.choices, tag: '선생님이 준 문제', act: 'give', dots: [S.i, sh.items.length], conf: false, onAnswer: (a, cf, t) => {
+    draw(root, { prompt: it.snap.prompt, sol: it.snap.sol, choices: it.snap.choices, tag: '선생님이 준 문제', act: 'give', dots: [S.i, sh.items.length], conf: false, onAnswer: (a, cf, t) => {
       let ok = false;
       if (a.idk) S.R.it[it.k] = { s: 'q' };
       else { try { ok = !!itemOf(it.c, it.p).check(a.vals, a.raws).ok; } catch (e) { ok = false; } S.R.it[it.k] = ok ? { s: 'ok' } : { s: 'x', a: a.raws }; }
