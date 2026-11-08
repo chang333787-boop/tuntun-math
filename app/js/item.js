@@ -9,7 +9,7 @@ import { toHTML, toText } from '../../engine/tokens.js';
 import { parseNum } from '../../engine/math.js';
 import { P } from '../../engine/concepts/kit.js';
 import { mascot } from '../../paper/js/mascot.js';
-import { esc } from './local.js';
+import { esc, lsGet, lsSet } from './local.js';
 import { icon, ACT } from './icons.js';
 
 export const CONF = [[2, '자신 있어요'], [1, '조금 헷갈려요'], [0, '자신 없어요']];   /* '잘 모르겠어요'는 '못 풀겠어요 · 넘어가기'와 뜻이 겹쳐 답을 안 쓰고 누르기 쉬움(처음 보는 눈 11-07) */
@@ -66,9 +66,9 @@ export function wireBlanks(open, { prompt = null, sol = null, onDone = null, onE
 function numPad(open, { dec, go, nextEmpty, onEnd, place }) {
   let cur = open.find((x) => !x.value.trim()) || open[0];
   const kp = document.createElement('div'), many = open.length > 1, key = (d) => `<button type="button" data-d="${d}"${d === '.' ? ' class="kp-dot"' : ''}>${d}</button>`, born = performance.now();
-  /* 모양은 늘 같게(처음 보는 눈 11-08 — 문제마다 '지우기' 자리 · 크기가 바뀌어 잘못 누름) — 1~5 · 지우기 / 6~0 · 다음 칸(칸이 하나면 꺼짐) · 소수 문제만 0 밑에 '.' */
+  /* 모양은 늘 같게(처음 보는 눈 11-08 — 문제마다 '지우기' 자리 · 크기가 바뀌어 잘못 누름) — 1~5 · 지우기 / 6~0 · 다음 칸(칸이 하나면 꺼짐) · 소수 문제만 위에 '.' */
   kp.className = 'kpad'; kp.setAttribute('role', 'group'); kp.setAttribute('aria-label', '숫자판');
-  kp.innerHTML = `${[...'12345'].map(key).join('')}<button type="button" class="kp-bs" data-a="bs">지우기</button>${[...'67890'].map(key).join('')}<button type="button" class="kp-nx" data-a="nx"${many ? '' : ' disabled'}>다음 칸${icon('arrow', 18)}</button>${dec ? key('.') : ''}`;
+  kp.innerHTML = `${dec ? `<div class="kp-row dot">${key('.')}</div>` : ''}<div class="kp-row">${[...'12345'].map(key).join('')}<button type="button" class="kp-bs" data-a="bs">지우기</button></div><div class="kp-row">${[...'67890'].map(key).join('')}<button type="button" class="kp-nx" data-a="nx"${many ? '' : ' disabled'}>다음 칸${icon('arrow', 18)}</button></div>`;   /* 소수의 '.'은 맨 위 줄 — 숫자판이 화면 아래에 붙어 있어 아래 두 줄은 늘 같은 자리(0 밑에 두면 숫자판 전체가 한 줄 올라가던 것 · 처음 보는 눈 2차) */
   open.forEach((b) => { b.inputMode = 'none'; b.addEventListener('focus', () => { cur = b; }); });
   kp.addEventListener('pointerdown', (e) => { if (e.target.closest('button')) e.preventDefault(); });   /* 누르는 동안 칸이 포커스를 잃지 않게 */
   kp.addEventListener('click', (e) => {
@@ -150,9 +150,10 @@ export function draw(root, { prompt, sol = null, choices = null, tag = '', act =
     const a = readBlanks(); if (!a) return;
     cf = Number(b.dataset.cf); done(a);
   }));
+  if (open.length > 1 && !touchOnly() && lsGet('tt.khint', 0) < 4) { lsSet('tt.khint', lsGet('tt.khint', 0) + 1); root.querySelector('#q').insertAdjacentHTML('beforeend', '<p class="khint">칸을 채우고 Enter를 누르면 다음 칸으로 가요.</p>'); }   /* 크롬북에서 칸 사이를 터치패드로 옮겨 다니던 것(처음 보는 눈 2차) — 칸이 여럿일 때 · 이 기기에서 네 번까지만 */
   wireBlanks(open, { prompt, sol, onDone: () => { if (ok) ok.click(); else { const c1 = root.querySelector('[data-cf="2"]'); if (c1) c1.focus(); } },
     onEnd: () => { const c = root.querySelector('.conf') || ok; if (c) { c.classList.add('wake'); c.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } },   /* 숫자판 '다음 칸'은 내지 않고 내는 자리만 보여 줌 */
-    place: (kp) => { const at = root.querySelector('.qside > .conf, .qside > .qact'); if (at) at.before(kp); } });
+    place: (kp) => { const at = root.querySelector('.qside > .conf, .qside > .qact'); if (at) at.before(kp); const ik = root.querySelector('.qact > #idk'); if (ik) { ik.classList.add('up'); kp.before(ik); } } });   /* 숫자판을 쓰는 휴대폰에선 '넘어가기'를 숫자판 위로 — 아래에 붙은 숫자판 · 내는 단추가 넘어가기가 있든 없든(도움 화면) 같은 자리 · 내는 단추 바로 밑에서 잘못 누르던 것(처음 보는 눈 2차) */
   root.querySelectorAll('[data-k]').forEach((b) => b.addEventListener('click', (e) => {
     if (b.disabled || early(e)) return;
     if (!conf) return done({ vals: [Number(b.dataset.k)], raws: [b.dataset.k] });
@@ -168,7 +169,7 @@ export function draw(root, { prompt, sol = null, choices = null, tag = '', act =
 //  '넘어가기'는 솔직한 모름이라 세지 않음(찍은 오답만) · 준비 다리 · 다듬기에서 같이 씀(선생님 화면의 K.rush는 부르는 쪽이 셈)
 // 맞았을 때 잠깐 ✓ — 맞혀도 아무 말이 없으면 틀릴 때만 화면이 말을 거는 꼴(벌 받는 느낌 · '맞은 거야 넘어간 거야?' — 11-07 사용감 점검) · 0.6초 뒤 저절로 다음
 export function okFlash(root, then, ms = 650) {
-  root.querySelectorAll('.qcard input, .qcard .qact button, .qcard .choices button, .qcard .conf button, .qcard .kpad button').forEach((x) => (x.disabled = true));
+  root.querySelectorAll('.qcard input, .qcard .qact button, .qcard .choices button, .qcard .conf button, .qcard .kpad button, .qcard #idk').forEach((x) => (x.disabled = true));
   const box = document.createElement('div'); box.className = 'fb ok flash'; box.textContent = '맞았어요!';
   fbSlot(root).appendChild(box); setTimeout(() => { if (box.isConnected) then(); }, ms);   /* 0.6초 안에 '처음 화면'을 누르면 그 화면에 지난 활동의 다음 문제를 덮어 그리던 것(코덱스 11-07) */
 }

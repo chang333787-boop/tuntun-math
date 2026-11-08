@@ -26,6 +26,6 @@ export function speakButton(box, onNoVoice = null) {
     u.onend = u.onerror = () => { b.innerHTML = SAY; };
     b.innerHTML = `${icon('stop', 18)} 멈추기`; speechSynthesis.speak(u);
   });
-  box.prepend(b);
+  box.prepend(b); box.classList.add('has-say');   /* 좁은 화면에서 단추를 말풍선 오른쪽 위 작은 소리 그림으로(app.css) */
   return b;
 }
