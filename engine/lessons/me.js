@@ -53,7 +53,7 @@ function addMake(p) {
   const head = p.v === 'clock' ? [`${p.a1}시 ${p.b1}분에서 ${span('hm', p.a2, p.b2)} 뒤는 `, B(0), '시 ', B(1), '분이에요.'] : [`${span(p.u, p.a1, p.b1)} + ${span(p.u, p.a2, p.b2)} = `, B(0), `${U.big} `, B(1), U.small];
   return nums(head, [a, b], {
     bugs: [
-      { test: (v) => s >= 60 && v[0] === p.a1 + p.a2 && v[1] === s, name: `60${U.small}${P(U.small, '이', '가')} 넘어도 1${U.big}${P(U.big, '으로', '로')} 바꾸지 않음`, to: p.u === 'hm' ? '2-2-4:5' : '3-1-5:5' },
+      { test: (v) => s >= 60 && v[0] === p.a1 + p.a2 && v[1] === s, name: `60${U.small}${P(U.small, '이', '가')} 넘어도 1${U.big}${P(U.big, '으로', '로')} 바꾸지 않음(꼴)`, to: null },   /* 양은 맞고 꼴만 안 바꾼 답 — 개념 빈칸으로 보내지 않음(도입안 비판 · 심판 차례 2) */
       { test: (v) => s >= 60 && v[0] === p.a1 + p.a2 + 1 && v[1] === s, name: `1${U.big}${P(U.big, '을', '를')} 올리고 60${U.small}${P(U.small, '을', '를')} 빼지 않음`, to: p.u === 'hm' ? '2-2-4:5' : '3-1-5:5' },
       { test: (v) => s >= 100 && v[0] === p.a1 + p.a2 + 1 && v[1] === s - 100, name: `100${U.small}${P(U.small, '을', '를')} 1${U.big}${P(U.big, '으로', '로')} 봄`, to: p.u === 'hm' ? '2-2-4:5' : '3-1-5:5' },
     ],
@@ -91,11 +91,11 @@ const subSteps = (p) => {
 function kmMake(p) {
   const T = p.k * 1000 + p.m;
   if (p.v === 'split') return nums([`${T} m = `, B(0), ' km ', B(1), ' m'], [p.k, p.m], {
-    bugs: [{ test: (v) => v[0] === Math.floor(T / 100) && v[1] === T % 100, name: '1 km를 100 m로 봄', to: '2-2-3:2' }],
+    bugs: [{ test: (v) => v[0] === Math.floor(T / 100) && v[1] === T % 100, name: '1 km를 100 m로 봄', to: null }],
   });
   return nums([`${p.k} km ${p.m} m = `, B(0), ' m'], T, {
     bugs: [{ test: (v) => v[0] === Number(`${p.k}${p.m}`), name: '빈 자리에 0을 쓰지 않음', to: '2-2-1:5' },
-      { test: (v) => v[0] === p.k * 100 + p.m, name: '1 km를 100 m로 봄', to: '2-2-3:2' },
+      { test: (v) => v[0] === p.k * 100 + p.m, name: '1 km를 100 m로 봄', to: null },
       { test: (v) => v[0] === p.k + p.m, name: '단위를 생각하지 않고 더함', to: '2-2-1:5' }],
   });
 }
@@ -144,13 +144,13 @@ export default {
     {
       id: '3-1-5:2', name: '1 km = 1000 m', kid: 'km와 m 바꾸기', s: 'ME', sec: 15,
       gen: (r) => ({ v: r.pick(['join', 'join', 'split']), k: r.int(1, 9), m: r.int(1, 9) }),
-      make: kmMake, prev: null, pre: ['2-2-1:5', '2-2-3:2'],
+      make: kmMake, prev: null, pre: ['2-2-1:3', '2-2-1:5'],
       hint: '1 km는 1000 m예요. 3 km 5 m는 3000 m와 5 m라서 3005 m예요. 빈 자리에는 0을 써요.',
       tip: '1 m = 100 cm와 헷갈려 1 km를 100 m로 쓰는 아이가 많아요. 1000 m가 모여 1 km가 되는 것을 수 모형(천)과 이어 줘요.',
     },
     {
       id: '3-1-5:5', name: '1분 = 60초', kid: '몇 분 몇 초를 몇 초로', s: 'ME', sec: 20,
-      gen: genConv('ms'), make: convMake, steps: convSteps, prev: '3-1-5:2', pre: ['2-2-4:5'],
+      gen: genConv('ms'), make: convMake, steps: convSteps, prev: null, pre: ['2-2-4:5'],   /* 앞 차시를 km(3-1-5:2)로 이어 시간을 맞히면 자릿값 · 1 m = 100 cm까지 '앎'이 되던 것(심판 차례 2) */
       hint: '1분은 60초예요. 2분 10초는 120초와 10초를 더해 130초예요.',
       tip: '1시간 = 60분과 같은 꼴이에요. 1분을 100초로 생각해 210초라고 쓰는지 봐요.',
     },
@@ -178,14 +178,14 @@ export default {
     {
       id: '3-2-5:3', name: '1 L = 1000 mL', kid: 'L와 mL 바꾸기', s: 'ME', sec: 15,
       gen: (r) => ({ u: 'L', v: r.pick(['join', 'join', 'split']), k: r.int(1, 9), m: r.int(1, 9) }),
-      make: bigMake, prev: null, pre: ['3-1-5:2'],
+      make: bigMake, prev: null, pre: ['2-2-1:3', '2-2-1:5'],
       hint: '1 L는 1000 mL예요. 2 L 7 mL는 2000 mL와 7 mL라서 2007 mL예요. 빈 자리에는 0을 써요.',
       tip: '1 km = 1000 m와 같은 꼴이에요. 우유갑 1 L와 200 mL 컵 다섯 개로 1000 mL를 보여 줘요.',
     },
     {
       id: '3-2-5:6', name: '1 kg = 1000 g', kid: 'kg과 g 바꾸기', s: 'ME', sec: 15,
       gen: (r) => ({ u: 'kg', v: r.pick(['join', 'join', 'split']), k: r.int(1, 9), m: r.int(1, 9) }),
-      make: bigMake, prev: '3-2-5:3', pre: ['3-1-5:2'],
+      make: bigMake, prev: null, pre: ['2-2-1:3', '2-2-1:5'],
       hint: '1 kg은 1000 g이에요. 3 kg 5 g은 3000 g과 5 g이라서 3005 g이에요.',
       tip: '저울 눈금으로 1000 g이 1 kg이 되는 것을 보여 줘요. 1 kg을 100 g으로 쓰는지 봐요.',
     },
