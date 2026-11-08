@@ -660,11 +660,20 @@ body.tv main{max-width:none}body.tv .ctab table{font-size:18px}body.tv .ctab td,
   .conf button{min-width:0;padding:6px 4px;font-size:15px;white-space:nowrap}
 }
 @media (max-width:480px){.conf .cfs .ic{display:none}.conf .cfs{gap:0}}
-@media (max-width:760px){#view>.qcard.kp-on{min-height:calc(100vh - 160px);min-height:calc(100dvh - 160px)}.qcard.kp-on .qside>.kpad{margin-top:auto}   /* 휴대폰: 숫자판 · 내는 단추는 화면 아래 같은 자리(엄지 닿는 곳 · 틀린 뒤 도움말이 위에 생겨도 안 뜀) */
+@media (max-width:760px){
   .fxs-side{flex-direction:column;align-items:stretch}.fxs-side>.model.rg+.plan{flex:none}   /* 시범 모형 옆 '풀이 순서'가 한 줄에 두 낱말씩 끼던 것 — 모형 아래로 */
   .steps.eq>li.ph{visibility:hidden}
-  .fxs-say .bub{min-height:5.2em}.fb>button.pri.big{width:100%}.qcard.kp-on .qside>.qact{gap:18px}
-  .qcard.kp-on.cue-below .qlead{order:0}.qcard.kp-on.answered .qside>.fb{margin-top:auto}}   /* 도움 말풍선은 문제 아래 빈자리(문제가 제자리) · 낸 뒤 되먹임 · '다음'은 아래(내는 단추가 있던 자리) */   /* 시범 말풍선 높이를 미리 잡아 '다음 단계'가 글 길이에 따라 뛰지 않게 · 고쳐 맞힌 뒤 '다음'은 내는 단추처럼 넓게 · '넘어가기'를 '다 풀었어요'에서 조금 떼어 놓음 */   /* 시범 단계 자리를 미리 잡음 — '다음 단계' 단추가 누를 때마다 아래로 내려가던 것 */
+  .fxs-say .bub{min-height:5.2em}.fb>button.pri.big{width:100%}
+}   /* 시범 말풍선 높이를 미리 잡아 '다음 단계'가 글 길이에 따라 뛰지 않게 · 고쳐 맞힌 뒤 '다음'은 내는 단추처럼 넓게 */
+/* 숫자판을 쓰는 손가락 기기(휴대폰 · 태블릿 세로 — 1000px까지)는 한 줄: 문제 → (넘어가기) → 숫자판 · 내는 단추를 화면 아래 같은 자리에(엄지 닿는 곳 · 틀린 뒤 도움말이 생겨도 안 뜀) · 태블릿 세로에서 두 칸으로 나뉘어 숫자 단추가 34px로 작아지던 것 */
+@media (min-width:761px) and (max-width:1000px){.qcard.kp-on .qmain>#q{font-size:50px}}   /* 태블릿 세로: 문제를 크게(가운데가 비어 보이던 것) */
+@media (max-width:1000px){
+  .qcard.kp-on>.qgrid{display:flex;flex-direction:column;gap:16px}.qcard.kp-on .qside{display:contents}.qcard.kp-on .qlead{order:-1}.qcard.kp-on.cue-below .qlead{order:0}
+  .qcard.kp-on .qside>#idk.up{order:1}.qcard.kp-on .qside>.kpad,.qcard.kp-on .qside>.conf,.qcard.kp-on .qside>.qact,.qcard.kp-on .qside>.fb{order:2}
+  .qcard.kp-on .qside>.kpad,.qcard.kp-on .qside>.conf,.qcard.kp-on .qside>.qact{width:100%;max-width:560px;align-self:center}
+  .qcard.kp-on .qside>.conf{background:var(--panel);padding:14px 16px;border-radius:16px;border-bottom:0}.qcard.kp-on .qside>.qact{flex-direction:row;gap:18px}
+  #view>.qcard.kp-on{min-height:min(calc(100vh - 160px),860px);min-height:min(calc(100dvh - 160px),860px)}.qcard.kp-on .qside>.kpad{margin-top:auto}.qcard.kp-on.answered .qside>.fb{margin-top:auto}
+}
 @media (min-width:761px){.steps.eq>li.ph,.steps.eq0{display:none}}
 @media (max-width:480px){.bub.has-say>.sb-say{float:right;width:44px;height:44px;min-height:44px;padding:0;margin:-4px -6px 4px 8px;font-size:0;gap:0}.hl .bub.has-say,.fxs-say .bub.has-say{position:relative}.hl .bub.has-say>.sb-say,.fxs-say .bub.has-say>.sb-say{position:absolute;top:6px;right:6px;margin:0}.hl .bub.has-say>.sb-say+*,.fxs-say .bub.has-say>.sb-say+*{padding-right:44px}.choices.n3 button{flex-basis:90px}.hl-go{text-wrap:balance}}   /* 좁은 말풍선의 '읽어 주기'는 오른쪽 위 소리 그림만(글을 한두 낱말 폭으로 누르거나 제 줄을 차지해 숫자판을 밀던 것) · 보기 셋은 한 줄에(2 + 1로 셋째만 넓던 것) · '모르겠어요 — 한 단계씩 같이 풀기'가 '풀기'만 꺾이던 것 */   /* 좁은 말풍선에서 '읽어 주기'가 글을 한두 낱말 폭으로 누르던 것 — 제 줄로 */   /* 휴대폰 세로에서 '조금 헷갈려요'가 단추 밖으로 넘치던 것(보내기 그림 빼고 글만) */
 @media (prefers-reduced-motion:reduce){.shake{animation:none}}

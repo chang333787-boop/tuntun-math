@@ -166,7 +166,7 @@ export function draw(root, { prompt, sol = null, choices = null, tag = '', act =
   }
   wireBlanks(open, { prompt, sol, onDone: () => { if (ok) ok.click(); else { const c1 = root.querySelector('[data-cf="2"]'); if (c1) c1.focus(); } },
     onEnd: () => { const c = root.querySelector('.conf') || ok; if (c) { c.classList.add('wake'); c.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } },   /* 숫자판 '다음 칸'은 내지 않고 내는 자리만 보여 줌 */
-    place: (kp) => { const at = root.querySelector('.qside > .conf, .qside > .qact'); if (at) at.before(kp); const ik = root.querySelector('.qact > #idk'); if (ik) { ik.classList.add('up'); kp.before(ik); } } });   /* 숫자판을 쓰는 휴대폰에선 '넘어가기'를 숫자판 위로 — 아래에 붙은 숫자판 · 내는 단추가 넘어가기가 있든 없든(도움 화면) 같은 자리 · 내는 단추 바로 밑에서 잘못 누르던 것(처음 보는 눈 2차) */
+    place: (kp) => { const at = root.querySelector('.qside > .conf, .qside > .qact'); if (at) at.before(kp); const ik = root.querySelector('.qact > #idk'); if (ik) { ik.classList.add('up'); root.querySelector('.qside > .qact').after(ik); } } });   /* '넘어가기'를 내는 단추 줄에서 빼 둠 — 한 줄 화면(휴대폰 · 태블릿 세로)은 CSS order로 숫자판 위(아래에 붙은 숫자판 · 내는 단추가 넘어가기가 있든 없든 같은 자리 · 내는 단추 바로 밑에서 잘못 누르던 것) · 넓은 화면은 판 맨 아래 그대로 */
   root.querySelectorAll('[data-k]').forEach((b) => b.addEventListener('click', (e) => {
     if (b.disabled || early(e)) return;
     if (!conf) return done({ vals: [Number(b.dataset.k)], raws: [b.dataset.k] });
