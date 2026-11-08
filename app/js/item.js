@@ -48,7 +48,7 @@ export function wireBlanks(open, { prompt = null, sol = null, onDone = null, onE
       e.preventDefault(); if (!last && tp && b.value.trim()) go(open[i + 1]);
     });
     b.addEventListener('input', (e) => {
-      if (e.inputType === 'insertText') tp = true;
+      if (/^insert/.test(e.inputType || '') && b.value.trim()) tp = true;   /* 붙여 넣기 · 한글 자판 조합으로 들어온 숫자도(코덱스 r14) */
       if (/[０-９．]/.test(b.value)) b.value = b.value.replace(/[０-９．]/g, (d) => String.fromCharCode(d.charCodeAt(0) - 0xFEE0));   /* 전각 숫자(한글 자판 설정) */
       fitBlank(b);
       if (auto && e.inputType === 'insertText' && /^\d+$/.test(b.value) && b.value.length === cap && b.selectionEnd === b.value.length) { const nx = open.slice(i + 1).find((x) => !x.value.trim()); if (nx) go(nx); }

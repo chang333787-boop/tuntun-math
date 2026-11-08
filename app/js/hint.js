@@ -93,7 +93,7 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
     if (!raws) return toSteps();   /* '못 풀겠어요 · 넘어가기' = 떠올리기 없이 바로 단계로(모른다는 아이에게 '떠올려 봐요' X · 11-07 사용감 점검) */
     const canStep = steps.length && !(budget && budget.left <= 0);
     draw(root, { ...base, prompt: it.prompt, sol: it.sol, choices: ch, hide: picked,
-      lead: head('cue', `<span class="hl-was">내 답 <b>${esc(mine(it, raws))}</b> — 아직 아니에요. ${nudge || '튼튼이 말을 읽고 다시 풀어 봐요.'}</span>${cue ? `<span class="hl-cue-t">${esc(cue)}</span>` : ''}<span class="hl-ans">이 생각으로 <b>${esc(qName)}</b>${P(qName.slice(-1), '을', '를')} 써요.</span>`, 'think', `<button type="button" class="hl-go" id="hs"><span>모르겠어요 — <span class="nw">${canStep ? '한 단계씩 같이 풀기' : '같이 보기'}</span></span></button>`),   /* 늘 나가는 길 하나(아무 수나 써야 빠져나가던 것 · 11-07) */
+      lead: head('cue', `<span class="hl-was">내 답 <b>${esc(mine(it, raws))}</b> — 아직 아니에요. ${nudge || '튼튼이 말을 읽고 다시 풀어 봐요.'}</span>${cue ? `<span class="hl-cue-t">${esc(cue)}</span>` : ''}<span class="hl-ans">이 생각으로 <b>${esc(qName)}</b>${P(qName.slice(-1), '을', '를')} 써요.</span>`, 'think', `<button type="button" class="hl-go" id="hs"><span>모르겠어요 — <span class="nobr">${canStep ? '한 단계씩 같이 풀기' : '같이 보기'}</span></span></button>`),   /* 늘 나가는 길 하나(아무 수나 써야 빠져나가던 것 · 11-07) */
       onAnswer: (a, cf, t) => {
         if (sameAns(it, a)) return finish(true, ch ? 'pick' : 'recall', ch ? '맞았어요!' : '맞았어요! 생각을 떠올려서 스스로 고쳤어요.');
         if (t < RUSH && !ch && ++rushN < 2) return recall('조금 빨라요. 끝까지 읽고 다시 풀어 봐요.');
