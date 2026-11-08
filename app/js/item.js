@@ -85,8 +85,11 @@ function numPad(open, { dec, go, nextEmpty, onEnd, place }) {
   { const qc = kp.closest('.qcard'); if (qc) qc.classList.add('kp-on'); }   /* 휴대폰에선 숫자판 · 내는 단추를 화면 아래에 붙임(틀린 뒤 도움말이 위에 생겨도 같은 자리) */
 }
 
+// 크롬북 첫 몇 번만 — 자판으로 하는 법 한 줄(이 기기에서 네 번까지 · 손가락 기기 X)
+const onceHint = (root, key, text) => { if (touchOnly() || lsGet(key, 0) >= 4) return; lsSet(key, lsGet(key, 0) + 1); const q = root.querySelector('#q'); if (q) q.insertAdjacentHTML('beforeend', `<p class="khint">${text}</p>`); };
+
 export function draw(root, { prompt, sol = null, choices = null, tag = '', act = '', dots = null, conf = true, idk = true, extra = '', lead = '', given = null, hide = null, say = null, okLabel = '다 풀었어요', onAnswer }) {
-  const t0 = performance.now();
+  const t0 = performance.now(), keys = !!choices && !touchOnly();   /* 크롬북 보기 — ①②③ 번호 + 숫자 키(교과서 · 시험지 객관식 번호와 같은 꼴 · 처음 보는 눈 2 · 3차 '보기 문제만 터치패드') */
   let cf = null;
   const gone = new Set((hide || []).map(Number));
   /* 자신감(conf) = 답을 쓰고 '얼마나 자신 있는지' 단추 셋 가운데 하나로 냄(처음 쓰는 아이 셋 모두 '먼저 짐작 고르기 → 답 칸 열림'에서 막힘 — 11-07 사용감 점검 · 고르기 문항은 보기를 고른 뒤 단추) */
@@ -99,7 +102,7 @@ export function draw(root, { prompt, sol = null, choices = null, tag = '', act =
     <div class="qside">
       ${lead ? `<div class="qlead">${lead}</div>` : ''}
       ${say && say.length ? `<div class="tsay">${say.map((x) => `<p>${esc(x)}</p>`).join('')}</div>` : ''}
-      ${choices ? `<div class="choices n${choices.length}">${choices.map((ch, k) => `<button type="button" data-k="${k}"${gone.has(k) ? ' class="gone" aria-label="튼튼이가 지운 보기"' : ''}><span class="math">${toHTML(ch, { static: true })}</span></button>`).join('')}</div>` : ''}
+      ${choices ? `<div class="choices n${choices.length}">${choices.map((ch, k) => `<button type="button" data-k="${k}"${gone.has(k) ? ' class="gone" aria-label="튼튼이가 지운 보기"' : ''}>${keys ? `<span class="ck" aria-hidden="true">${k + 1}</span>` : ''}<span class="math">${toHTML(ch, { static: true })}</span></button>`).join('')}</div>` : ''}
       <div class="qmsg" id="msg" role="alert"></div>
       ${conf ? `<div class="conf"><p><b>답 내기</b> — ${choices ? '보기를 고르고' : '답을 쓰고'} 얼마나 자신 있는지 하나 눌러요</p><div class="row">${CONF.map(([v, t]) => `<button type="button" class="cfs" data-cf="${v}">${icon('send', 16)}${t}</button>`).join('')}</div></div>` : ''}
       <div class="qact">
@@ -150,7 +153,17 @@ export function draw(root, { prompt, sol = null, choices = null, tag = '', act =
     const a = readBlanks(); if (!a) return;
     cf = Number(b.dataset.cf); done(a);
   }));
-  if (open.length > 1 && !touchOnly() && lsGet('tt.khint', 0) < 4) { lsSet('tt.khint', lsGet('tt.khint', 0) + 1); root.querySelector('#q').insertAdjacentHTML('beforeend', '<p class="khint">칸을 채우고 Enter를 누르면 다음 칸으로 가요.</p>'); }   /* 크롬북에서 칸 사이를 터치패드로 옮겨 다니던 것(처음 보는 눈 2차) — 칸이 여럿일 때 · 이 기기에서 네 번까지만 */
+  if (open.length > 1) onceHint(root, 'tt.khint', '칸을 채우고 Enter를 누르면 다음 칸으로 가요.');   /* 크롬북에서 칸 사이 · 내는 단추까지 터치패드로 옮겨 다니던 것(처음 보는 눈 2 · 3차) */
+  else if (open.length === 1 && ok) onceHint(root, 'tt.khint1', '답을 쓰고 Enter를 누르면 내요.');
+  if (keys) { onceHint(root, 'tt.khintc', '숫자 키(1, 2, 3 …)로도 고를 수 있어요.');
+    const onKey = (e) => {
+      if (!card.isConnected) return removeEventListener('keydown', onKey);
+      if (e.altKey || e.ctrlKey || e.metaKey || e.repeat || /^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || '') || performance.now() - t0 < 400) return;
+      const b = root.querySelector(`.choices [data-k="${Number(e.key) - 1}"]`); if (!b || b.disabled || !/^[1-9]$/.test(e.key)) return;
+      e.preventDefault(); b.click(); b.focus();
+    };
+    addEventListener('keydown', onKey);
+  }
   wireBlanks(open, { prompt, sol, onDone: () => { if (ok) ok.click(); else { const c1 = root.querySelector('[data-cf="2"]'); if (c1) c1.focus(); } },
     onEnd: () => { const c = root.querySelector('.conf') || ok; if (c) { c.classList.add('wake'); c.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } },   /* 숫자판 '다음 칸'은 내지 않고 내는 자리만 보여 줌 */
     place: (kp) => { const at = root.querySelector('.qside > .conf, .qside > .qact'); if (at) at.before(kp); const ik = root.querySelector('.qact > #idk'); if (ik) { ik.classList.add('up'); kp.before(ik); } } });   /* 숫자판을 쓰는 휴대폰에선 '넘어가기'를 숫자판 위로 — 아래에 붙은 숫자판 · 내는 단추가 넘어가기가 있든 없든(도움 화면) 같은 자리 · 내는 단추 바로 밑에서 잘못 누르던 것(처음 보는 눈 2차) */

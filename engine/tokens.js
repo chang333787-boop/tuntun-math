@@ -20,16 +20,26 @@ function blankHTML(i, opt) {
   return `<input class="blank" data-i="${i}" inputmode="decimal" autocomplete="off" spellcheck="false" aria-label="빈칸 ${i + 1}">`;
 }
 
+// 빈칸 + 바로 뒤 짧은 글(단위 · 조사: cm · 개 · 묶음이에요)은 한 덩이로 — 줄이 바뀔 때 'cm'만 다음 줄에 혼자 떨어지지 않게(처음 보는 눈 11-08)
+const glueable = (t) => typeof t === 'string' && /^\s?\S{1,6}\s?$/.test(t);
 export function toHTML(tokens, opt = {}) {
-  return (tokens || []).map((t) => {
-    if (typeof t === 'string' || typeof t === 'number') return `<span class="tx${/[가-힣]/.test(String(t)) ? ' kr' : ''}">${esc(t)}</span>`;
-    if ('f' in t) return `<span class="fr"><span class="fr-t">${partHTML(t.f[0], opt)}</span><span class="fr-b">${partHTML(t.f[1], opt)}</span></span>`;
-    if ('m' in t) return `<span class="mx">${partHTML(t.m[0], opt)}<span class="fr"><span class="fr-t">${partHTML(t.m[1], opt)}</span><span class="fr-b">${partHTML(t.m[2], opt)}</span></span></span>`;
-    if ('b' in t) return blankHTML(t.b, opt);
-    if ('svg' in t) return `<div class="pic">${t.svg}</div>`;
-    if ('br' in t) return '<span class="br"></span>';
-    return '';
-  }).join('');
+  const ts = tokens || [], out = [];
+  for (let i = 0; i < ts.length; i++) {
+    const t = ts[i];
+    if (t && typeof t === 'object' && 'b' in t && glueable(ts[i + 1])) { out.push(`<span class="glue">${tokHTML(t, opt)}${tokHTML(ts[i + 1], opt)}</span>`); i++; continue; }
+    out.push(tokHTML(t, opt));
+  }
+  return out.join('');
+}
+function tokHTML(t, opt) {
+  if (typeof t === 'string' || typeof t === 'number') return `<span class="tx${/[가-힣]/.test(String(t)) ? ' kr' : ''}">${esc(t)}</span>`;
+  if (!t || typeof t !== 'object') return '';
+  if ('f' in t) return `<span class="fr"><span class="fr-t">${partHTML(t.f[0], opt)}</span><span class="fr-b">${partHTML(t.f[1], opt)}</span></span>`;
+  if ('m' in t) return `<span class="mx">${partHTML(t.m[0], opt)}<span class="fr"><span class="fr-t">${partHTML(t.m[1], opt)}</span><span class="fr-b">${partHTML(t.m[2], opt)}</span></span></span>`;
+  if ('b' in t) return blankHTML(t.b, opt);
+  if ('svg' in t) return `<div class="pic">${t.svg}</div>`;
+  if ('br' in t) return '<span class="br"></span>';
+  return '';
 }
 
 function partText(p, vals) {

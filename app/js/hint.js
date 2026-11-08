@@ -77,7 +77,8 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
     lock(); box.innerHTML = msg;
     const b = document.createElement('button'); b.type = 'button'; b.className = 'pri big'; b.textContent = '다음'; box.appendChild(b);   /* 내는 단추와 같은 크기(작은 단추가 왼쪽 가운데에 있어 찾던 것) */
     fbSlot(root).appendChild(box); b.focus();
-    b.addEventListener('click', () => onEnd && onEnd({ how }));
+    const born = performance.now();
+    b.addEventListener('click', (e) => { if (e.detail > 0 && performance.now() - born < 400) return; if (onEnd) onEnd({ how }); });   /* '다 풀었어요'를 두 번 누른 손가락이 '다음'으로 칭찬을 건너뛰지 않게 */
   };
   /* 같이 봐요 — 답 + 풀이 순서(이름이 있으면)를 평서문으로 · 물음 X · 지킬 수 있는 말만(again) */
   const seeIt = () => finish(false, 'shown', `<b>같이 봐요.</b> ${ansSay(it)}${names ? `<br><span class="small">풀이 순서: ${names.map(esc).join(' → ')}</span>` : ''}${againLine ? `<br><span class="small">${esc(againLine)}</span>` : ''}`, true);
@@ -100,6 +101,7 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
         toSteps();
       } });
     const hs = root.querySelector('#hs'); if (hs) hs.addEventListener('click', toSteps);
+    { const qc = root.querySelector('.qcard'); if (qc) qc.classList.add('cue-below'); }   /* 휴대폰: 도움 말풍선을 문제 아래 빈자리로(문제가 320px 밀려 내려가던 것 · 처음 보는 눈 3차) */
     talk();
   }
   // ② 한 단계씩 — tries = 이 단계에서 틀린 수 · shown = 답을 보여 준 단계 · fresh = 방금 앞 단계를 마치고 들어옴
