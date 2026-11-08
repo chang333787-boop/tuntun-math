@@ -100,6 +100,29 @@ function kmMake(p) {
   });
 }
 
+// ── 3-2-5:3 1 L = 1000 mL · 3-2-5:6 1 kg = 1000 g(km와 같은 꼴 · 작은 단위는 한 자리)
+const BIG = { L: ['L', 'mL', '2-2-1:5'], kg: ['kg', 'g', '2-2-1:5'] };
+function bigMake(p) {
+  const [B1, S1, to] = BIG[p.u], T = p.k * 1000 + p.m;
+  if (p.v === 'split') return nums([`${T} ${S1} = `, B(0), ` ${B1} `, B(1), ` ${S1}`], [p.k, p.m], {
+    bugs: [{ test: (v) => v[0] === Math.floor(T / 100) && v[1] === T % 100, name: `1 ${B1}${P(B1, '을', '를')} 100 ${S1}${P(S1, '으로', '로')} 봄`, to }],
+  });
+  return nums([`${p.k} ${B1} ${p.m} ${S1} = `, B(0), ` ${S1}`], T, {
+    bugs: [{ test: (v) => v[0] === Number(`${p.k}${p.m}`), name: '빈 자리에 0을 쓰지 않음', to },
+      { test: (v) => v[0] === p.k * 100 + p.m, name: `1 ${B1}${P(B1, '을', '를')} 100 ${S1}${P(S1, '으로', '로')} 봄`, to },
+      { test: (v) => v[0] === p.k + p.m, name: '단위를 생각하지 않고 더함', to }],
+  });
+}
+// ── 5-1-6:4 직사각형의 둘레와 넓이(한 문제에 칸 둘) — 넓이 = 둘레인 크기(3 × 6 · 4 × 4) · 넓이 = 가로 + 세로(2 × 2) 피함
+function rectMake(p) {
+  const per = 2 * (p.a + p.b), area = p.a * p.b, shape = p.a === p.b ? `한 변이 ${p.a} cm인 정사각형` : `가로 ${p.a} cm, 세로 ${p.b} cm인 직사각형`;
+  return nums([`${shape}의 둘레는 `, B(0), ' cm, 넓이는 ', B(1), ' cm²예요.'], [per, area], {
+    bugs: [{ test: (v) => v[0] === area && v[1] === per, name: '넓이와 둘레를 바꿔 답함', to: null },
+      { test: (v) => v[0] === p.a + p.b, name: '둘레를 가로 + 세로로만 셈', to: null },
+      { test: (v) => v[1] === per || v[1] === p.a + p.b, name: '넓이 자리에 변의 길이를 더함', to: null }],
+  });
+}
+
 export default {
   FAMS: [],
   LESSONS: [
@@ -150,6 +173,35 @@ export default {
       make: subMake, steps: subSteps, prev: '3-1-5:6', pre: ['2-2-4:5', '2-1-3:7'],
       hint: '분끼리 뺄 수 없으면 1시간을 60분으로 바꿔 분에 더한 뒤 빼요. 5시간 20분 − 2시간 45분은 4시간 80분 − 2시간 45분이라서 2시간 35분이에요.',
       tip: '100분을 받아내리거나(2시간 75분), 분끼리 큰 수에서 작은 수를 빼는(3시간 25분) 실수를 봐요. 받아내림 뺄셈의 60진법판이에요.',
+    },
+    // ── 3-2-5 들이와 무게
+    {
+      id: '3-2-5:3', name: '1 L = 1000 mL', kid: 'L와 mL 바꾸기', s: 'ME', sec: 15,
+      gen: (r) => ({ u: 'L', v: r.pick(['join', 'join', 'split']), k: r.int(1, 9), m: r.int(1, 9) }),
+      make: bigMake, prev: null, pre: ['3-1-5:2'],
+      hint: '1 L는 1000 mL예요. 2 L 7 mL는 2000 mL와 7 mL라서 2007 mL예요. 빈 자리에는 0을 써요.',
+      tip: '1 km = 1000 m와 같은 꼴이에요. 우유갑 1 L와 200 mL 컵 다섯 개로 1000 mL를 보여 줘요.',
+    },
+    {
+      id: '3-2-5:6', name: '1 kg = 1000 g', kid: 'kg과 g 바꾸기', s: 'ME', sec: 15,
+      gen: (r) => ({ u: 'kg', v: r.pick(['join', 'join', 'split']), k: r.int(1, 9), m: r.int(1, 9) }),
+      make: bigMake, prev: '3-2-5:3', pre: ['3-1-5:2'],
+      hint: '1 kg은 1000 g이에요. 3 kg 5 g은 3000 g과 5 g이라서 3005 g이에요.',
+      tip: '저울 눈금으로 1000 g이 1 kg이 되는 것을 보여 줘요. 1 kg을 100 g으로 쓰는지 봐요.',
+    },
+    // ── 5-1-6 다각형의 둘레와 넓이
+    {
+      id: '5-1-6:4', name: '직사각형의 둘레와 넓이', kid: '직사각형의 둘레와 넓이', s: 'ME', sec: 30,
+      gen: (r) => until(r, (r) => { const sq = r.chance(0.2), a = r.int(3, 12), b = sq ? a : r.int(2, 9); return { a, b }; }, (p) => p.a * p.b !== 2 * (p.a + p.b) && p.a * p.b !== p.a + p.b && !(p.a === p.b && p.a > 9)),
+      make: rectMake,
+      steps: (p) => [
+        { c: 'ADD', p: { a: p.a, b: p.b }, why: '둘레는 네 변의 길이의 합이에요. 먼저 가로와 세로를 더해요.' },
+        { c: 'MUL', p: { a: p.a + p.b, b: 2 }, why: '마주 보는 변은 길이가 같아서 가로 + 세로가 두 번 있어요.' },
+        { c: 'MUL', p: { a: p.a, b: p.b }, why: '넓이는 1 cm² 칸이 몇 개인지예요. 가로 × 세로로 구해요.' },
+      ],
+      prev: null, pre: ['3-1-4:5', '2-2-2:9'],
+      hint: '둘레는 네 변의 길이를 모두 더한 것이고, 넓이는 1 cm² 칸이 몇 개인지예요. 가로 7 cm, 세로 4 cm면 둘레는 (7 + 4) × 2 = 22 cm, 넓이는 7 × 4 = 28 cm²예요.',
+      tip: '모눈종이에 직사각형을 그리고 테두리를 따라 세기(둘레)와 칸 세기(넓이)를 따로 해 봐요. 둘을 바꿔 쓰거나 둘레를 가로 + 세로로만 쓰는지 봐요.',
     },
   ],
 };
