@@ -40,12 +40,15 @@ export function wireBlanks(open, { prompt = null, sol = null, onDone = null, onE
   const nextEmpty = (i) => open.slice(i + 1).find((x) => !x.value.trim()) || open.slice(0, i).find((x) => !x.value.trim());
   open.forEach((b, i) => {
     const last = i === open.length - 1, auto = cap > 0 && cap <= 2 && !last && !b.closest('.fr, .mx');
+    let tp = false;   /* 이 칸에 들어온 뒤 숫자를 쳤나 — 기호는 숫자 다음에 한 번만 칸을 넘김('6 + 1 = 7'을 찬 칸 위에 다시 쳐도 칸마다 하나씩 · 코덱스 r13) */
     b.enterKeyHint = last ? 'done' : 'next';   /* 휴대폰 숫자판의 Enter 자리에 '다음' · '완료' */
+    b.addEventListener('focus', () => { tp = false; });
     b.addEventListener('beforeinput', (e) => {
       if (open.length < 2 || e.inputType !== 'insertText' || !e.data || !(SEP.test(e.data) || (e.data === ',' && !big))) return;
-      e.preventDefault(); if (!last && b.value.trim()) go(open[i + 1]);
+      e.preventDefault(); if (!last && tp && b.value.trim()) go(open[i + 1]);
     });
     b.addEventListener('input', (e) => {
+      if (e.inputType === 'insertText') tp = true;
       if (/[０-９．]/.test(b.value)) b.value = b.value.replace(/[０-９．]/g, (d) => String.fromCharCode(d.charCodeAt(0) - 0xFEE0));   /* 전각 숫자(한글 자판 설정) */
       fitBlank(b);
       if (auto && e.inputType === 'insertText' && /^\d+$/.test(b.value) && b.value.length === cap && b.selectionEnd === b.value.length) { const nx = open.slice(i + 1).find((x) => !x.value.trim()); if (nx) go(nx); }
@@ -62,21 +65,24 @@ export function wireBlanks(open, { prompt = null, sol = null, onDone = null, onE
 }
 function numPad(open, { dec, go, nextEmpty, onEnd, place }) {
   let cur = open.find((x) => !x.value.trim()) || open[0];
-  const kp = document.createElement('div'), many = open.length > 1, key = (d) => `<button type="button" data-d="${d}">${d}</button>`;
-  kp.className = `kpad${dec ? ' dec' : ''}${many ? '' : ' one'}`; kp.setAttribute('role', 'group'); kp.setAttribute('aria-label', '숫자판');
-  kp.innerHTML = `${[...'12345'].map(key).join('')}${dec ? key('.') : ''}<button type="button" class="kp-bs" data-a="bs">지우기</button>${[...'67890'].map(key).join('')}${many ? `<button type="button" class="kp-nx" data-a="nx">다음 칸${icon('arrow', 18)}</button>` : ''}`;
+  const kp = document.createElement('div'), many = open.length > 1, key = (d) => `<button type="button" data-d="${d}"${d === '.' ? ' class="kp-dot"' : ''}>${d}</button>`, born = performance.now();
+  /* 모양은 늘 같게(처음 보는 눈 11-08 — 문제마다 '지우기' 자리 · 크기가 바뀌어 잘못 누름) — 1~5 · 지우기 / 6~0 · 다음 칸(칸이 하나면 꺼짐) · 소수 문제만 0 밑에 '.' */
+  kp.className = 'kpad'; kp.setAttribute('role', 'group'); kp.setAttribute('aria-label', '숫자판');
+  kp.innerHTML = `${[...'12345'].map(key).join('')}<button type="button" class="kp-bs" data-a="bs">지우기</button>${[...'67890'].map(key).join('')}<button type="button" class="kp-nx" data-a="nx"${many ? '' : ' disabled'}>다음 칸${icon('arrow', 18)}</button>${dec ? key('.') : ''}`;
   open.forEach((b) => { b.inputMode = 'none'; b.addEventListener('focus', () => { cur = b; }); });
   kp.addEventListener('pointerdown', (e) => { if (e.target.closest('button')) e.preventDefault(); });   /* 누르는 동안 칸이 포커스를 잃지 않게 */
   kp.addEventListener('click', (e) => {
-    const k = e.target.closest('button'), b = cur; if (!k || k.disabled || !b || b.disabled) return;
+    const k = e.target.closest('button'), b = cur; if (!k || k.disabled || !b || b.disabled || performance.now() - born < 350) return;   /* 앞 화면 '다 풀었어요'를 두 번 누른 손가락이 숫자로 들어가지 않게 */
     /* 계산기처럼 늘 끝에서 쓰고 지움 — 손가락으로 칸 앞쪽을 누르면 커서가 맨 앞에 가서 '지우기'가 앞 칸으로 넘어가던 것 · 칸 전체가 골라져 있으면(다음 칸으로 넘어온 칸) 바꿔 씀 */
     const i = open.indexOf(b), all = b.value.length > 0 && document.activeElement === b && b.selectionStart === 0 && b.selectionEnd === b.value.length;
     const put = (v, type, data) => { b.focus(); b.value = v; b.setSelectionRange(v.length, v.length); b.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: type, data })); };
     if (k.dataset.d) return put(all ? k.dataset.d : b.value + k.dataset.d, 'insertText', k.dataset.d);
     if (k.dataset.a === 'bs') { if (!b.value) { if (i > 0) go(open[i - 1], true); return; } return put(all ? '' : b.value.slice(0, -1), 'deleteContentBackward', null); }
-    if (i < open.length - 1) go(open[i + 1]); else { const x = nextEmpty(i); if (x) go(x); else if (onEnd) onEnd(); }
+    if (!b.value.trim()) return;   /* 빈 칸에서는 그대로 — 저절로 넘어온 칸에서 습관처럼 누르면 그 칸을 건너뛰던 것(Enter와 같게 · 코덱스 r13) */
+    const x = nextEmpty(i); if (x) go(x); else if (i < open.length - 1) go(open[i + 1]); else if (onEnd) onEnd();
   });
   place(kp);
+  { const qc = kp.closest('.qcard'); if (qc) qc.classList.add('kp-on'); }   /* 휴대폰에선 숫자판 · 내는 단추를 화면 아래에 붙임(틀린 뒤 도움말이 위에 생겨도 같은 자리) */
 }
 
 export function draw(root, { prompt, sol = null, choices = null, tag = '', act = '', dots = null, conf = true, idk = true, extra = '', lead = '', given = null, hide = null, say = null, okLabel = '다 풀었어요', onAnswer }) {
@@ -128,6 +134,7 @@ export function draw(root, { prompt, sol = null, choices = null, tag = '', act =
   open.forEach((x) => x.addEventListener('input', armIdle));
   root.querySelectorAll('[data-k]').forEach((x) => x.addEventListener('click', armIdle));
   const done = (a) => { clearTimeout(idleT); onAnswer(a, conf ? cf : null, Math.round(performance.now() - t0)); };
+  const early = (e) => e && e.detail > 0 && performance.now() - t0 < 400;   /* 앞 문제의 '다 풀었어요'를 두 번 누르면 같은 자리에 온 보기 · 넘어가기가 눌려 답이 정해지던 것(처음 보는 눈 11-08) · 손가락 · 마우스 누름만(Enter로 내는 것은 detail 0) */
   let pick = null;   /* 자신감이 있는 고르기 문항 — 보기를 먼저 고르고(초록 테두리) 자신감 단추로 냄 */
   const readBlanks = () => {
     const raws = blanks.map((b) => b.value.trim().replace(/,/g, ''));
@@ -136,8 +143,9 @@ export function draw(root, { prompt, sol = null, choices = null, tag = '', act =
     if (vals.some((v) => Number.isNaN(v))) { nudge('숫자로 써 주세요.', blanks[vals.findIndex((v) => Number.isNaN(v))]); return null; }
     return { vals, raws };
   };
-  if (ok) ok.addEventListener('click', () => { const a = readBlanks(); if (a) done(a); });
-  root.querySelectorAll('[data-cf]').forEach((b) => b.addEventListener('click', () => {
+  if (ok) ok.addEventListener('click', (e) => { if (early(e)) return; const a = readBlanks(); if (a) done(a); });
+  root.querySelectorAll('[data-cf]').forEach((b) => b.addEventListener('click', (e) => {
+    if (early(e)) return;
     if (choices) { if (pick == null) return nudge('먼저 보기를 하나 골라요.'); cf = Number(b.dataset.cf); return done({ vals: [pick], raws: [String(pick)] }); }
     const a = readBlanks(); if (!a) return;
     cf = Number(b.dataset.cf); done(a);
@@ -145,14 +153,14 @@ export function draw(root, { prompt, sol = null, choices = null, tag = '', act =
   wireBlanks(open, { prompt, sol, onDone: () => { if (ok) ok.click(); else { const c1 = root.querySelector('[data-cf="2"]'); if (c1) c1.focus(); } },
     onEnd: () => { const c = root.querySelector('.conf') || ok; if (c) { c.classList.add('wake'); c.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } },   /* 숫자판 '다음 칸'은 내지 않고 내는 자리만 보여 줌 */
     place: (kp) => { const at = root.querySelector('.qside > .conf, .qside > .qact'); if (at) at.before(kp); } });
-  root.querySelectorAll('[data-k]').forEach((b) => b.addEventListener('click', () => {
-    if (b.disabled) return;
+  root.querySelectorAll('[data-k]').forEach((b) => b.addEventListener('click', (e) => {
+    if (b.disabled || early(e)) return;
     if (!conf) return done({ vals: [Number(b.dataset.k)], raws: [b.dataset.k] });
     pick = Number(b.dataset.k); root.querySelectorAll('[data-k]').forEach((x) => x.classList.toggle('on', x === b)); msg.textContent = '';
     const cr = root.querySelector('.conf'); if (cr) cr.classList.add('ready');   /* 보기를 고르면 '이제 이걸 눌러 내요'가 보이게 */
   }));
   const ik = root.querySelector('#idk');
-  if (ik) ik.addEventListener('click', () => onAnswer({ idk: true }, 0, Math.round(performance.now() - t0)));
+  if (ik) ik.addEventListener('click', (e) => { if (!early(e)) onAnswer({ idk: true }, 0, Math.round(performance.now() - t0)); });
   if (open[0]) open[0].focus();
 }
 
