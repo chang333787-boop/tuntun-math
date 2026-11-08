@@ -119,7 +119,7 @@ export function answer(S, a) {
   if (cur.mode === 'slip') {   /* 실수였나 — 같은 꼴 새 숫자로 엔진의 실수 규칙 그대로(K문제 다 맞으면 실수 · K−1이면 불안정 · 둘 틀리면 합치기 빈칸) — 한 문제로 정하면 '앎' 비율이 그 아이 정답률과 같아 동전 던지기였음(2라운드 재반박 11-08 · 교사 10-10 '한 문제 맞으니 안다고 판단?') */
     const r0 = S.res[cur.c];
     cur.items.push({ ok: res.ok, ms: a.ms || 0, idk: !!a.idk, bug: res.bug || null, p: q.p });
-    const K = S.opts.confirmN || 3, okC = cur.items.filter((x) => x.ok).length, badC = cur.items.length - okC;
+    const K = (S.opts.confirmN || 3) + (makeItem(cur.c, cur.p).choices ? 1 : 0), okC = cur.items.filter((x) => x.ok).length, badC = cur.items.length - okC;   /* 보기 문항은 찍어도 맞으니 한 문제 더(VERIFY와 같게 · 심판 차례 0) */
     if (badC >= 2 || cur.items.length >= K) {
       r0.items = [...(r0.items || []), ...cur.items];
       if (okC === K) { r0.st = 'pass'; r0.slip = true; } else if (badC < 2) r0.st = 'unstable';

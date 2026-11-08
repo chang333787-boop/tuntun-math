@@ -126,7 +126,7 @@ export function checkView(root, C) {
         <td><a class="btn ck-pr" href="#/t/c/${esc(C)}/check/${esc(id)}/print">같은 문제 인쇄</a></td></tr>`;
     }).join('');
     root.innerHTML = `<div class="ck-bar"><a class="btn" href="#/t/c/${esc(C)}">반 화면으로</a><h2 class="sec">점검 내기 <small>${esc(C)} · ${esc(gl(K.g))} · ${K.n}명</small></h2></div>
-    ${list.length ? '' : '<p class="ck-first">처음이면 <b>② 점검지</b> 하나만 내 보세요. 우리 반이 어디까지 아는지 한 번에 보여요. ①은 수업 시작 5~10분에, ③은 저절로 떠요.</p>'}
+    ${list.length ? '' : '<p class="ck-first">처음이면 <b>② 점검지</b>부터 내 보세요. 앞 학년 칸 가운데 흔들리는 후보가 보이고, 정확히 어디서부터인지는 이어지는 확인지 · 오늘 단원 점검이 좁혀요. ①은 수업 시작 5~10분에, ③은 저절로 떠요.</p>'}
     <div class="ck-pick">
       <section class="card ck-c"><h3><span class="ck-no">1</span>오늘 단원 점검</h3>
         <p class="intro">오늘 배울 단원에 꼭 필요한 앞 학년 셈을 봐요. 틀리면 더 쉬운 앞 단계 문제로 이어지고, 남으면 다음 시간에 이어서 풀어요.</p>

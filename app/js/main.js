@@ -34,7 +34,7 @@ const tabs = document.getElementById('tabs');
 const KID_TAB = `<a href="#/me">${icon('home', 20)}<span>처음 화면</span></a>`;
 const setTabs = (h, html = KID_TAB) => { tabs.hidden = !h; if (h) tabs.innerHTML = html; };
 let cleanup = null;
-// 같은 크롬북을 여럿이 쓸 때 — 아이 화면은 앱을 열 때 · 날짜가 바뀌었을 때 · 20분 넘게 손대지 않다가 누를 때 'n번 맞아요?'(혹평 17)
+// 같은 크롬북을 여럿이 쓸 때 — 아이 화면은 앱을 열 때 · 날짜가 바뀌었을 때 · 5분 넘게 손대지 않다가 누를 때 'n번 맞아요?'(혹평 17 · 11-08 20분 → 5분)
 //  idle = 바로 앞 입력과 이번 입력 사이(누른 그 입력이 주소를 바꾸므로 그 앞 공백을 봄)
 let lastIn = Date.now(), idle = 0;
 const touched = () => { const n = Date.now(); idle = n - lastIn; lastIn = n; };
@@ -103,7 +103,7 @@ function route() {
   document.getElementById('who').textContent = kid && me ? `${me.C} · ${me.no}번` : /^#\/t/.test(h) ? '선생님' : '';
   { const tl = document.getElementById('trylink'); if (tl) tl.hidden = !tryInfo() || /^#\/try/.test(h); }   /* 시험 반이 있는 기기만 */
   if (kid && me && !/^#\/join/.test(h)) {
-    if (idle > 20 * 60000) WHO.ok = false;
+    if (idle > 5 * 60000) WHO.ok = false;   /* 쉬는 시간 10분 사이 다음 아이가 앞 번호로 풀던 것 — 20분 → 5분(비판 토론 A8 · 심판 차례 0) */
     idle = 0;
     if (!whoOk(me)) { setTabs(null); window.scrollTo(0, 0); return whoView(root, me, () => { idle = 0; route(); }); }   /* '네'를 누른 그 입력의 쉰 시간으로 다시 묻지 않게(회귀 10-31) */
   }

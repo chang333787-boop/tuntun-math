@@ -1,14 +1,16 @@
 // 선생님 기기에서 바로 Claude에게 묻기(M4 · 서버 없이) — copilot.js가 만든 근거 글(번호만 · 이름 X)을 그대로 보냄
-//  키 = 선생님이 넣은 Claude API 키 · 이 기기 localStorage에만(아이 기기 · Firebase로 가지 않음 · 코드 · 저장소에 없음)
+//  키 = 선생님이 넣은 Claude API 키 · 이 창(sessionStorage)에만 — 창을 닫으면 지워짐(아이 기기 · Firebase로 가지 않음 · 코드 · 저장소에 없음)
 //  공식 SDK(@anthropic-ai/sdk 1.1.0 · jsdelivr ESM) · dangerouslyAllowBrowser = 선생님이 자기 키를 자기 브라우저에서 쓸 때만(아이 화면엔 이 모듈을 부르지 않음)
 //  모델 claude-opus-5-5 · 생각 깊이 medium · 거절이면 같은 요청을 다른 모델로(fallbacks 'default') · AI 답은 짐작 — 아이 · 가정에 가기 전에 선생님이 확인 [goal.md M4]
-import { lsGet, lsSet, lsDel } from './local.js';
+import { lsGet, lsDel } from './local.js';
 
 const SDK = 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.1.0/+esm';
 const KEY = 'tt.ai.key';
 export const MODEL = 'claude-opus-5-5';
-export const aiKey = () => { const k = lsGet(KEY, ''); return typeof k === 'string' ? k : ''; };
-export const setAiKey = (k) => { const v = String(k || '').trim(); if (v) lsSet(KEY, v); else lsDel(KEY); };
+/* 키는 이 창(sessionStorage)에만 — 창을 닫으면 지워짐(같은 주소를 쓰는 다른 앱이 localStorage로 읽을 수 있던 것 · 비판 토론 C4 · 심판 차례 0) · 예전에 localStorage에 둔 키는 한 번 옮기고 지움 */
+const ss = { get: () => { try { return sessionStorage.getItem(KEY) || ''; } catch (e) { return ''; } }, set: (v) => { try { if (v) sessionStorage.setItem(KEY, v); else sessionStorage.removeItem(KEY); } catch (e) { /* */ } } };
+export const aiKey = () => { const old = lsGet(KEY, ''); if (typeof old === 'string' && old) { if (!ss.get()) ss.set(old); lsDel(KEY); } return ss.get(); };
+export const setAiKey = (k) => { ss.set(String(k || '').trim()); lsDel(KEY); };
 export const keyTail = (k = aiKey()) => (k ? `…${k.slice(-4)}` : '');
 
 let sdk = null;
