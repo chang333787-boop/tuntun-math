@@ -69,10 +69,11 @@ function numPad(open, { dec, go, nextEmpty, onEnd, place }) {
   kp.addEventListener('pointerdown', (e) => { if (e.target.closest('button')) e.preventDefault(); });   /* 누르는 동안 칸이 포커스를 잃지 않게 */
   kp.addEventListener('click', (e) => {
     const k = e.target.closest('button'), b = cur; if (!k || k.disabled || !b || b.disabled) return;
-    if (document.activeElement !== b) { b.focus(); const n = b.value.length; b.setSelectionRange(n, n); }
-    const s0 = b.selectionStart ?? b.value.length, s1 = b.selectionEnd ?? s0, i = open.indexOf(b);
-    if (k.dataset.d) { b.setRangeText(k.dataset.d, s0, s1, 'end'); b.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: k.dataset.d })); return; }
-    if (k.dataset.a === 'bs') { if (s1 > s0) b.setRangeText('', s0, s1, 'end'); else if (s0 > 0) b.setRangeText('', s0 - 1, s0, 'end'); else { if (i > 0) go(open[i - 1], true); return; } b.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'deleteContentBackward' })); return; }
+    /* 계산기처럼 늘 끝에서 쓰고 지움 — 손가락으로 칸 앞쪽을 누르면 커서가 맨 앞에 가서 '지우기'가 앞 칸으로 넘어가던 것 · 칸 전체가 골라져 있으면(다음 칸으로 넘어온 칸) 바꿔 씀 */
+    const i = open.indexOf(b), all = b.value.length > 0 && document.activeElement === b && b.selectionStart === 0 && b.selectionEnd === b.value.length;
+    const put = (v, type, data) => { b.focus(); b.value = v; b.setSelectionRange(v.length, v.length); b.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: type, data })); };
+    if (k.dataset.d) return put(all ? k.dataset.d : b.value + k.dataset.d, 'insertText', k.dataset.d);
+    if (k.dataset.a === 'bs') { if (!b.value) { if (i > 0) go(open[i - 1], true); return; } return put(all ? '' : b.value.slice(0, -1), 'deleteContentBackward', null); }
     if (i < open.length - 1) go(open[i + 1]); else { const x = nextEmpty(i); if (x) go(x); else if (onEnd) onEnd(); }
   });
   place(kp);
