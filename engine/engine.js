@@ -116,6 +116,12 @@ export function answer(S, a) {
 
   // check
   const cur = S.cur;
+  if (cur.mode === 'slip') {   /* 실수였나 — 같은 꼴 새 숫자 한 문제: 맞히면 처음 오답은 실수(앎) · 틀리면 합치기 빈칸 그대로 */
+    const r0 = S.res[cur.c], it = { ok: res.ok, ms: a.ms || 0, idk: !!a.idk, bug: res.bug || null, p: q.p };
+    r0.items = [...(r0.items || []), it];
+    if (res.ok) { r0.st = 'pass'; r0.slip = true; }
+    return pickNext(S);
+  }
   cur.items.push({ ok: res.ok, ms: a.ms || 0, idk: !!a.idk, bug: res.bug || null, p: q.p });
   if (!res.ok) cur.lastBadP = q.p;
   const it0 = makeItem(cur.c, cur.p), needPass = it0.choices ? 3 : 2;
@@ -192,6 +198,13 @@ function pickNext(S) {
     S.cur = { c: y, p: byId[y].gen(rng(nextSeed(S))), depth: j.depth + 1, items: [], from: [j.x], job: j };
     return S;
   }
+  // 처음 문제를 한 번만 틀리고(오답 모양 X · 모름 X) 쪼갠 단계 · 앞 개념을 다 맞혔으면 — '합치기 빈칸'으로 정하기 전에 같은 꼴 새 숫자 한 문제(한 번의 실수를 빈칸으로 단정하던 것 · 비판 토론 B 11-08 · tests/rule.sim.mjs)
+  if (!S.cur && !S.slipAsked && !S.stoppedByBudget && asked(S) < S.opts.maxItems && slipCheckable(S)) {
+    S.slipAsked = true;
+    const C0 = S.problem.c;
+    S.cur = { c: C0, p: likeGen(C0, S.res[C0].lastP || S.problem.p, S), depth: 0, items: [], from: [], mode: 'slip' };
+    return S;
+  }
   if (!S.cur && !S.stoppedByBudget && asked(S) < S.opts.maxItems) {
     const cid = confirmCandidate(S);
     if (cid) {
@@ -203,6 +216,21 @@ function pickNext(S) {
   }
   if (!S.cur) return finish(S);
   return S;
+}
+
+function slipCheckable(S) {
+  const C0 = S.problem.c, r0 = S.res[C0];
+  if (!r0 || r0.st !== 'fail' || !S.steps.length || S.verifying || !S.steps.every((x) => x.ok)) return false;
+  const items = r0.items || [];
+  if (items.filter((x) => !x.ok).length !== 1 || items.some((x) => x.idk) || (r0.bugs || []).length) return false;
+  return !Object.entries(S.res).some(([c, r]) => c !== C0 && r && r.st === 'fail');
+}
+// 같은 꼴(자리 수 · 가운데 0)의 새 숫자 — 쉬운 꼴이 나와 실수로 잘못 읽지 않게
+const formKey = (p) => Object.keys(p || {}).sort().map((k) => { const v = p[k]; return Number.isInteger(v) ? `${k}${String(v).length}${String(v).slice(0, -1).replace(/[1-9]/g, 'x')}` : `${k}${typeof v}`; }).join('|');
+function likeGen(c, p0, S) {
+  const want = formKey(p0); let p = null;
+  for (let i = 0; i < 40; i++) { p = byId[c].gen(rng(nextSeed(S))); if (formKey(p) === want && JSON.stringify(p) !== JSON.stringify(p0)) return p; }
+  return p;
 }
 
 function concludeCheck(S, verdict) {

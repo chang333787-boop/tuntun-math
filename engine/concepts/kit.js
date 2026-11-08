@@ -16,6 +16,8 @@ function withBugs(ok, vals, bugs) {
 // 빈칸 여러 개 — 각 칸이 정해진 수
 export function nums(prompt, answers, { bugs, timed, order = true, noFrac = false } = {}) {
   const ans = [].concat(answers).map((a) => Number(Number(a).toFixed(9)));
+  /* 소수로만 맞는 칸인데 문제 글에 '소수'가 없으면 빈칸 안에 흐린 '소수'(교사 11-08 '소수로 쓰세요 이런 거 표시' — 분수로 쓰면 '분수로 씀'으로 틀리던 것) */
+  if (noFrac && !/소수/.test(toText(prompt))) prompt = prompt.map((t) => (t && typeof t === 'object' && 'b' in t && !t.ph ? { ...t, ph: '소수' } : t));
   return {
     prompt,
     sol: ans,

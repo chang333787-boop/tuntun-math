@@ -9,15 +9,15 @@
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 function partHTML(p, opt) {
-  if (p && typeof p === 'object' && 'b' in p) return blankHTML(p.b, opt);
+  if (p && typeof p === 'object' && 'b' in p) return blankHTML(p.b, opt, p.ph);
   return `<span class="num">${esc(p)}</span>`;
 }
-function blankHTML(i, opt) {
+function blankHTML(i, opt, ph = '') {
   if (opt.static) {
     const v = opt.vals && opt.vals[i];
     return `<span class="blank-s${opt.marks && opt.marks[i] === false ? ' wrong' : ''}">${v == null || Number.isNaN(v) ? '□' : esc(v)}</span>`;
   }
-  return `<input class="blank" data-i="${i}" inputmode="decimal" autocomplete="off" spellcheck="false" aria-label="빈칸 ${i + 1}">`;
+  return `<input class="blank" data-i="${i}" inputmode="decimal" autocomplete="off" spellcheck="false" aria-label="빈칸 ${i + 1}${ph ? ` (${esc(ph)})` : ''}"${ph ? ` placeholder="${esc(ph)}"` : ''}>`;   /* ph = 칸 안 흐린 안내(소수로 쓰는 칸) */
 }
 
 // 빈칸은 바로 앞 짧은 낱말(= · 5를) · 바로 뒤 첫 낱말(cm예요 · 번 · 개)과 한 덩이로 줄바꿈 — 'cm'나 '번'이 칸에서 떨어져 혼자 다음 줄로 가거나
@@ -50,7 +50,7 @@ function tokHTML(t, opt) {
   if (!t || typeof t !== 'object') return '';
   if ('f' in t) return `<span class="fr"><span class="fr-t">${partHTML(t.f[0], opt)}</span><span class="fr-b">${partHTML(t.f[1], opt)}</span></span>`;
   if ('m' in t) return `<span class="mx">${partHTML(t.m[0], opt)}<span class="fr"><span class="fr-t">${partHTML(t.m[1], opt)}</span><span class="fr-b">${partHTML(t.m[2], opt)}</span></span></span>`;
-  if ('b' in t) return blankHTML(t.b, opt);
+  if ('b' in t) return blankHTML(t.b, opt, t.ph);
   if ('svg' in t) return `<div class="pic">${t.svg}</div>`;
   if ('br' in t) return '<span class="br"></span>';
   return '';
