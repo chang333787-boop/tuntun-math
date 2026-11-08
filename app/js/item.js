@@ -83,7 +83,11 @@ function numPad(open, { dec, go, nextEmpty, onEnd, place }) {
     const x = nextEmpty(i); if (x) go(x); else if (i < open.length - 1) go(open[i + 1]); else if (onEnd) onEnd();
   });
   mark(); place(kp);
-  { const qc = kp.closest('.qcard'); if (qc) qc.classList.add('kp-on'); }   /* 휴대폰에선 숫자판 · 내는 단추를 화면 아래에 붙임(틀린 뒤 도움말이 위에 생겨도 같은 자리) */
+  { const qc = kp.closest('.qcard'); if (qc) qc.classList.add('kp-on'); }
+  /* 숫자판 · 내는 단추가 화면 아래로 밀려 있으면 답 칸이 가려지지 않는 만큼만 저절로 내림(이야기 문제 답 쓰기처럼 위에 글이 많은 화면 · 휴대폰) */
+  requestAnimationFrame(() => { if (!kp.isConnected) return; const qc = kp.closest('.qcard'), end = (qc && (qc.querySelector('.qside > .qact > .pri') || qc.querySelector('.qside > .conf'))) || kp, box = open[0];
+    const need = end.getBoundingClientRect().bottom - innerHeight + 12, room = box.getBoundingClientRect().top - 8;
+    if (need > 0 && room > 0) scrollBy({ top: Math.min(need, room), behavior: 'smooth' }); });   /* 휴대폰에선 숫자판 · 내는 단추를 화면 아래에 붙임(틀린 뒤 도움말이 위에 생겨도 같은 자리) */
 }
 
 // 크롬북 첫 몇 번만 — 자판으로 하는 법 한 줄(이 기기에서 네 번까지 · 손가락 기기 X)
