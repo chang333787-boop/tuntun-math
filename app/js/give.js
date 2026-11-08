@@ -51,8 +51,9 @@ export function giveView(root, id) {
   if (!sh || !sh.items.length) return go('#/me');
   const SK = `tt.gv.${me.C}.${me.no}`;
   let S = lsGet(SK);
+  { const w = K.wip && K.wip.gv; if (w && w.id === id && Number(w.i) > ((S && S.id === id && S.i) || 0) && w.R && typeof w.R === 'object') S = { id, i: Number(w.i), R: w.R, ms: w.ms || {}, bl: w.bl, fixd: w.fixd || 0 }; }   /* 다른 기기에서 더 풀었으면 그 자리부터(요약 st.wp · 심판 차례 1) */
   if (!S || S.id !== id) S = { id, i: 0, R: { done: {}, it: {} }, ms: {} };
-  const keep = () => lsSet(SK, S);
+  const keep = () => { lsSet(SK, S); KS.setWip(me, K, 'gv', { id, i: S.i, R: S.R, ms: S.ms, bl: S.bl, fixd: S.fixd || 0 }); };
   KS.setNow(me, { mode: 'give' });
   const budget = { left: Number.isFinite(S.bl) ? S.bl : 3 };   /* 한 판에 '한 단계씩'은 세 번까지(조사 R · docs/hint_ladder.md) · 이어서 열어도 남은 수 그대로(S.bl · 코덱스 11-07) */
   const one = () => {
@@ -72,7 +73,7 @@ export function giveView(root, id) {
     sh.chapters.forEach((ch) => (S.R.done[ch.key] = true));
     { const T = sh.items.filter((x) => x.tr); if (T.length) sh.tr = [T.filter((x) => S.R.it[x.k] && S.R.it[x.k].s === 'ok').length, T.length]; }   /* 함정 문항을 첫 답에 몇 개 맞혔나 → 선생님 '보낸 보충'에 '그 생각을 고쳤나' */
     KS.addSheet(me, K, sh, S.R, {}, S.ms);
-    const fixd = S.fixd || 0; lsDel(SK); KS.setNow(me, { mode: 'home' });
+    const fixd = S.fixd || 0; lsDel(SK); if (K.wip) delete K.wip.gv; KS.setNow(me, { mode: 'home' });
     const ok = sh.items.filter((x) => S.R.it[x.k] && S.R.it[x.k].s === 'ok').length, n = sh.items.length;
     /* 많이 틀렸으면 가장 많이 틀린 꼴을 튼튼이와 차근차근(배우기 — 시범 → 같이 → 혼자) */
     const miss = {}; sh.items.forEach((x) => { if (!(S.R.it[x.k] && S.R.it[x.k].s === 'ok')) miss[x.c] = (miss[x.c] || 0) + 1; });

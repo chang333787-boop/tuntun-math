@@ -5,7 +5,7 @@ import { byId, unitById, gradeIdx } from '../../engine/lessons/index.js';
 import { LES, itemOf } from '../../paper/js/gen.js';
 import { mascot } from '../../paper/js/mascot.js';
 import { blankCount } from '../../engine/tokens.js';
-import { prepPlan, newPrep, current, answer, summary, asked, LEN, PREP } from './prep.js';
+import { prepPlan, newPrep, current, answer, summary, asked, LEN, PREP, packPrep, unpackPrep } from './prep.js';
 import { FIX, jumpTo, newFix, showNext, showLen, showTalk, blankTalk, factTalk, togetherStep, answerItem, afterReStep, checkItem, answerCheck, compareOf, stepsOf, exampleOf, mergeTip } from './fix.js';
 import * as KS from './kidstore.js';
 import { draw, stepHTML, staticHTML, ansSay, rushGuard, rushPause, fbSlot } from './item.js';
@@ -88,11 +88,12 @@ export function todoOf(K, rep) {
   const preppedAfter = (u, since) => !!(lp && lp.unit === u && lp.t >= since);   /* 끝낸 점검(K.lastPrep · 요약으로 다른 기기에도 옴)만 '했음' — 묶음 하나만 기록돼도 '했음'으로 보아 반쯤 하다 나가면 3시간 뒤 · 다른 기기에서 카드가 사라지던 것(비판 A 11-08) */
   const partAfter = (u, since) => Object.values(K.recs).some((x) => x && x.s && x.s.unit === u && x.s.made >= since && /^prep/.test(x.s.kind || ''));   /* 이 기기 하던 판은 없지만 푼 묶음이 기록돼 있음 → 새 판이 기록을 이어받아 남은 데부터(newPrep prior) */
   const me0 = meOf(), sp = me0 ? lsGet(`tt.prep.${me0.C}.${me0.no}`) : null;
-  const spOn = (u) => !!(sp && sp.unit === u && !sp.done && now - sp.made <= 3 * 3600e3 && asked(sp) > 0 && !(lp && lp.unit === u && lp.t >= sp.made));   /* 하다가 나간 점검(3시간 안 · 다른 기기에서 끝냈으면 X · prepView와 같은 기준) */
-  if (t && (spOn(t.unit) || !preppedAfter(t.unit, t.t))) out.push(spOn(t.unit) ?   /* 다 푼 묶음은 그때그때 기록이 되므로 — 하던 점검이 있으면 '했음'보다 '이어서'가 먼저(코덱스 11-08) */ { kind: 'prep', unit: t.unit, pri: true, resume: true, title: '오늘 단원 점검 — 이어서', sub: `${asked(sp) + 1}번째 문제부터 이어서 풀어요`, href: `#/prep/${t.unit}` } : partAfter(t.unit, t.t) ? { kind: 'prep', unit: t.unit, pri: true, resume: true, title: '오늘 단원 점검 — 이어서', sub: '푼 데까지는 기록됐어요 · 남은 문제를 이어서 풀어요', href: `#/prep/${t.unit}` } : { kind: 'prep', unit: t.unit, pri: true, title: '오늘 단원 점검', sub: `선생님이 연 단원: ${unitLabel(t.unit)} · 약 ${mins(t.len)}분`, href: `#/prep/${t.unit}` });
+  const spOn = (u) => !!(sp && sp.unit === u && !sp.done && now - sp.made <= KS.WIP_MS && asked(sp) > 0 && !(lp && lp.unit === u && lp.t >= sp.made));   /* 하다가 나간 점검(3시간 안 · 다른 기기에서 끝냈으면 X · prepView와 같은 기준) */
+  const wp = K.wip && K.wip.prep, wpOn = (u) => !!(wp && wp.unit === u && now - (wp.made || 0) <= KS.WIP_MS && Number(wp.n) > 0 && !(lp && lp.unit === u && lp.t >= wp.made));   /* 다른 기기에서 하던 점검(요약 st.wp) */
+  if (t && (spOn(t.unit) || wpOn(t.unit) || !preppedAfter(t.unit, t.t))) out.push(wpOn(t.unit) && !spOn(t.unit) ? { kind: 'prep', unit: t.unit, pri: true, resume: true, title: '오늘 단원 점검 — 이어서', sub: `${Number(wp.n) + 1}번째 문제부터 이어서 풀어요`, href: `#/prep/${t.unit}` } : spOn(t.unit) ?   /* 다 푼 묶음은 그때그때 기록이 되므로 — 하던 점검이 있으면 '했음'보다 '이어서'가 먼저(코덱스 11-08) */ { kind: 'prep', unit: t.unit, pri: true, resume: true, title: '오늘 단원 점검 — 이어서', sub: `${asked(sp) + 1}번째 문제부터 이어서 풀어요`, href: `#/prep/${t.unit}` } : partAfter(t.unit, t.t) ? { kind: 'prep', unit: t.unit, pri: true, resume: true, title: '오늘 단원 점검 — 이어서', sub: '푼 데까지는 기록됐어요 · 남은 문제를 이어서 풀어요', href: `#/prep/${t.unit}` } : { kind: 'prep', unit: t.unit, pri: true, title: '오늘 단원 점검', sub: `선생님이 연 단원: ${unitLabel(t.unit)} · 약 ${mins(t.len)}분`, href: `#/prep/${t.unit}` });
   /* 하다가 나간 배우기(3시간 안 · 같이 풀기 · 혼자 풀기 · 확인) — 배울 것 맨 앞에 '이어서'(fixView resume과 같은 기준) */
-  const fx0 = me0 ? lsGet(`tt.fx.${me0.C}.${me0.no}`) : null, FXN = { together: '같이 풀기', solo: '혼자 풀기', check: '확인 3문제' };
-  if (fx0 && byId[fx0.c] && FXN[fx0.phase] && now - fx0.t < 3 * 3600e3 && !(K.fixed && K.fixed[fx0.c] > fx0.t)) out.push({ kind: 'fix', c: fx0.c, resume: true, title: '배우기 — 이어서', sub: `'${FXN[fx0.phase]}'부터 이어서 해요 · ${plank(fx0.c)}`, href: `#/fix/${fx0.c}` });
+  const fxL0 = me0 ? lsGet(`tt.fx.${me0.C}.${me0.no}`) : null, fxW0 = K.wip && K.wip.fx, fx0 = fxW0 && (!fxL0 || (fxW0.t || 0) > (fxL0.t || 0)) ? fxW0 : fxL0, FXN = { together: '같이 풀기', solo: '혼자 풀기', check: '확인 3문제' };
+  if (fx0 && byId[fx0.c] && FXN[fx0.phase] && now - fx0.t < KS.WIP_MS && !(K.fixed && K.fixed[fx0.c] > fx0.t)) out.push({ kind: 'fix', c: fx0.c, resume: true, title: '배우기 — 이어서', sub: `'${FXN[fx0.phase]}'부터 이어서 해요 · ${plank(fx0.c)}`, href: `#/fix/${fx0.c}` });
   // 선생님과 같이 볼 판자
   const plan = lp && unitById[lp.unit] ? prepPlan(lp.unit) : null;
   const stuck = Object.values(rep.L).filter((x) => x.st === 'stuck' && byId[x.c] && (!plan || plan.below.includes(x.c))).map((x) => x.c).sort(byGrade);
@@ -223,10 +224,11 @@ export function prepView(root, unit) {
   const K = KS.load(me);
   const SK = `tt.prep.${me.C}.${me.no}`;
   let S = lsGet(SK);
+  { const w = K.wip && K.wip.prep; if (w && w.unit === unit && (!S || S.done || S.unit !== unit || (S.id === w.id ? asked(S) < (Number(w.n) || 0) : (S.made || 0) < (w.made || 0)))) { const S2 = unpackPrep(w, KS.history(K)); if (S2) S = S2; } }   /* 다른 기기 · 지난번에 하던 점검이 더 앞서 있으면 그 자리부터(심판 차례 1) */
   let fresh = false, done0 = 0;
-  if (!S || S.unit !== unit || S.done || Date.now() - S.made > 3 * 3600e3 || (K.lastPrep && K.lastPrep.unit === unit && K.lastPrep.t >= S.made)) { fresh = true; const task = Object.values(K.inbox || {}).filter((x) => x && x.kind === 'prep' && x.unit === unit).sort((a, b) => b.t - a.t)[0]; done0 = task ? Object.values(K.recs).filter((x) => x && x.s && x.s.unit === unit && /^prep/.test(x.s.kind || '') && x.s.made >= task.t && !(K.lastPrep && K.lastPrep.unit === unit && K.lastPrep.t >= task.t)).reduce((n, x) => n + ((x.s.it || []).length), 0) : 0; S = newPrep({ unit, id: rand(6), prior: KS.history(K), budget: task && task.len, done: done0 }); }   /* 길이는 선생님이 연 과제(len)대로 */
+  if (!S || S.unit !== unit || S.done || Date.now() - S.made > KS.WIP_MS || (K.lastPrep && K.lastPrep.unit === unit && K.lastPrep.t >= S.made)) { fresh = true; const task = Object.values(K.inbox || {}).filter((x) => x && x.kind === 'prep' && x.unit === unit).sort((a, b) => b.t - a.t)[0]; done0 = task ? Object.values(K.recs).filter((x) => x && x.s && x.s.unit === unit && /^prep/.test(x.s.kind || '') && x.s.made >= task.t && !(K.lastPrep && K.lastPrep.unit === unit && K.lastPrep.t >= task.t)).reduce((n, x) => n + ((x.s.it || []).length), 0) : 0; S = newPrep({ unit, id: rand(6), prior: KS.history(K), budget: task && task.len, done: done0 }); }   /* 길이는 선생님이 연 과제(len)대로 */
   const saved = new Set(S.saved || []);
-  const keep = () => { S.saved = [...saved]; lsSet(SK, S); };
+  const keep = () => { S.saved = [...saved]; lsSet(SK, S); KS.setWip(me, K, 'prep', packPrep(S)); };
   // 선생님이 방금 다른 길이로 다시 열었는데 이 기기 과제가 아직 옛것이면 — 서버 과제를 한 번 읽어 아직 하나도 안 풀었으면 길이를 맞춤(회귀 10-31)
   if (fresh) (async () => { try { const v = await dbGet(`k/${me.C}/${me.no}/${me.pin}/in`); const ts = Object.values(v || {}).map(dec).filter((x) => x && x.kind === 'prep' && x.unit === unit).sort((a, b) => b.t - a.t)[0]; if (ts && LEN.includes(Number(ts.len)) && Number(ts.len) !== S.budget && asked(S) === 0 && !done0) { S.budget = Number(ts.len); keep(); } } catch (e) { /* 그대로 */ } })();
   const store = () => {
@@ -253,7 +255,7 @@ export function prepView(root, unit) {
   const finished = () => {
     store();
     const sum = summary(S);
-    K.lastPrep = { unit, why: S.why, t: Date.now() };
+    K.lastPrep = { unit, why: S.why, t: Date.now() }; if (K.wip) delete K.wip.prep;
     if (sum.shaky.length) { K.firm = K.firm || {}; sum.shaky.forEach((c) => (K.firm[c] = Date.now())); }
     K.mx = K.mx || {};
     const mine = {}; for (const sh of S.sheets) for (const it of sh.items) { const r = S.res[sh.id].me.it[it.k]; if (!r) continue; const x = (mine[it.c] = mine[it.c] || { n: 0, ok: 0 }); x.n++; if (r.s === 'ok') x.ok++; }
@@ -302,10 +304,10 @@ export function fixView(root, c, opt = {}) {
   if (!byId[c]) return go('#/me');
   const K = KS.load(me);
   const before = KS.reportOf(K).L[c];
-  const FK = `tt.fx.${me.C}.${me.no}`, fx0 = lsGet(FK, null);
-  const resume = fx0 && fx0.c === c && Date.now() - fx0.t < 3 * 3600e3 && ['together', 'solo', 'check'].includes(fx0.phase) ? fx0 : null;
+  const FK = `tt.fx.${me.C}.${me.no}`, fxL = lsGet(FK, null), fxW = K.wip && K.wip.fx, fx0 = fxW && (!fxL || (fxW.t || 0) > (fxL.t || 0)) ? fxW : fxL;   /* 다른 기기에서 더 나중에 하던 걸음이면 그것 */
+  const resume = fx0 && fx0.c === c && Date.now() - fx0.t < KS.WIP_MS && ['together', 'solo', 'check'].includes(fx0.phase) ? fx0 : null;   /* 3시간 → 2일(다음 날에도 그 걸음부터 · 심판 차례 1) */
   const F = newFix({ c, id: resume ? resume.id : rand(6), like: K.back && K.back.c === c && K.back.root === c && !K.back.solved ? K.back.p : null });   /* 거꾸로 찾기에서 '합쳐 풀기'로 온 배우기 — 처음 문제 꼴(가운데 0)로 시범 · 같이 풀기(306 − 158을 배우고도 또 막히던 것 · 11-08 처음 보는 눈) */
-  if (resume) jumpTo(F, resume.phase);   /* 3시간 안에 다시 오면 나갔던 걸음부터 */
+  if (resume) { jumpTo(F, resume.phase); if (resume.phase === 'solo' && Number(resume.ok) > 0) F.solo.ok = Math.min(Number(resume.ok), 2); }   /* 나갔던 걸음부터 · 혼자 풀기는 맞힌 수도 이어서(3개 다 맞히면 확인으로 — 0부터 다시 하던 것) */
   else if (opt.check) jumpTo(F, 'check');   /* 선생님과 같이 본 뒤 — 시범 · 같이 · 혼자 없이 확인 3문제부터 */
   const ct0 = classTask(K), inClass = !!(ct0 && Date.now() - ct0.t < 3 * 3600e3);   /* 수업 중(연 뒤 3시간)만 — 저녁 집에서는 보통 끝 화면(회귀 10-31) */
   KS.setNow(me, { mode: 'fix', c });
@@ -479,7 +481,7 @@ export function fixView(root, c, opt = {}) {
   }
   const prefer = before && before.why ? [...before.why.sure, ...before.why.maybe].map((h) => h.id) : [];
   function route() {
-    if (F.phase === 'done') lsDel(FK); else lsSet(FK, { c, id: F.id, phase: F.phase, t: Date.now() });   /* 지금 걸음 적어 두기(이어서 하기) */
+    if (F.phase === 'done') { lsDel(FK); KS.setWip(me, K, 'fx', null); } else { lsSet(FK, { c, id: F.id, phase: F.phase, ok: F.solo.ok, t: Date.now() }); KS.setWip(me, K, 'fx', { c, id: F.id, phase: F.phase, ok: F.solo.ok }); }   /* 지금 걸음 적어 두기(이어서 하기 · 다른 기기에도 — 요약 st.wp) */
     if (F.phase === 'solo' && !F.compared && F.solo.n === 0 && !F.reStep) { F.compared = true; const X = compareOf(c, { prefer, like: F.like }); if (X) return compare(X); }
     ({ show, together, solo, check, done })[F.phase]();
   }

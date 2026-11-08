@@ -277,6 +277,18 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
     const Kp = K0({ recs }), tp = KD.todoOf(Kp, KS9.reportOf(Kp)).filter((x) => x.kind === 'prep');
     ok(tp.length === 1 && tp[0].title === '오늘 단원 점검 — 이어서' && tp[0].resume, "이 기기 하던 판이 없어도(다른 기기 · 3시간 뒤) '오늘 단원 점검 — 이어서'가 남음");
     ok(!KD.todoOf(K0({ recs, lastPrep: { unit: '4-1-3', why: 'found', t: now - 1000 } }), rep0).some((x) => x.kind === 'prep'), '끝낸 점검(lastPrep)이 있으면 카드 없음');
+    {   /* 다른 기기 · 다음 날 이어서(심판 차례 1) — 하던 점검을 문제 글 없이 싣고(packPrep) 다시 만들면(unpackPrep) 같은 다음 문제 · 요약(st.wp)에 실림 · 크기 */
+      const S3 = P7.newPrep({ unit: '4-1-3', id: 'WP' }); let m = 0;
+      while (P7.current(S3) && m < 11) { P7.answer(S3, { vals: [7], raws: ['7'] }); m++; }
+      const w = P7.packPrep(S3), S4 = P7.unpackPrep(JSON.parse(JSON.stringify(w)), null), a3 = P7.current(S3), a4 = S4 && P7.current(S4);
+      ok(!!S4 && P7.asked(S4) === P7.asked(S3) && a4 && a3.c === a4.c && JSON.stringify(a3.snap.prompt) === JSON.stringify(a4.snap.prompt), `다른 기기에서 다시 만든 점검이 ${P7.asked(S3) + 1}번째 같은 문제부터`);
+      ok(JSON.stringify(w).length < 8000, `싣는 꼴 ${JSON.stringify(w).length}자(문제 글 없이 · 요약 30000자 안)`);
+      const bad = JSON.parse(JSON.stringify(w)); bad.sh[0].cs = 'x'; ok(P7.unpackPrep(bad, null) === null, '다시 만든 묶음이 다르면(엔진이 바뀜) 버림');
+      const KW = K0({ wip: { prep: { ...w, t: now } } }), sw = KS9.summaryOf(KW);
+      ok(sw.wp && sw.wp.prep && sw.wp.prep.id === 'WP', '요약에 하던 점검(st.wp)');
+      const tw = KD.todoOf(KW, KS9.reportOf(KW)).filter((x) => x.kind === 'prep');
+      ok(tw.length === 1 && tw[0].title === '오늘 단원 점검 — 이어서' && /12번째/.test(tw[0].sub), `이 기기 기록이 없어도 처음 화면에 '12번째 문제부터 이어서'(${tw[0] && tw[0].sub})`);
+    }
     { const S2 = P7.newPrep({ unit: '4-1-3', id: 'SV2', budget: 18, done: 12 }); ok(S2.budget === 6, `다른 기기에서 12문제 푼 뒤 새 판은 남은 6문제만(${S2.budget}) — 18문제를 다시 받던 것(2라운드 재반박)`); }
   }
   const S = P7.newPrep({ unit: '2-1-3', id: 'TD' }); let it;

@@ -49,10 +49,15 @@ export function newPrep({ unit, id, now = Date.now(), prior = null, budget = nul
   return S;
 }
 const probe = (c) => ({ c, n: PREP.n, gate: true, covers: [...closure(c)] });   // 묻는 칸은 모두 관문 — 맞히면 그 아래 전부 '관문 통과'
-function push(S, lessons, kind) {
-  const sh = makeSheet({ kind, words: false, id: `${S.id}-${S.sheets.length}`, lessons, mixed: true });
+const sheetOf = (id, kind, lessons) => {
+  const sh = makeSheet({ kind, words: false, id, lessons, mixed: true });
   sh.items = sh.items.filter((it) => it.ch !== 'END'); sh.chapters = sh.chapters.filter((c) => c.key !== 'END');   // 종이용 '맨 끝 쉬운 두 문제'는 기기에선 뺀다
   sh.items.forEach((it, i) => (it.k = i + 1));
+  sh.ls = lessons;   /* 다른 기기에서 똑같이 다시 만들 수 있게(packPrep) */
+  return sh;
+};
+function push(S, lessons, kind) {
+  const sh = sheetOf(`${S.id}-${S.sheets.length}`, kind, lessons);
   if (!sh.items.length) return false;
   S.sheets.push(sh); S.res[sh.id] = { [KID]: { done: {}, it: {} } }; S.at = { sheet: sh.id, i: 0 };
   return true;
@@ -169,3 +174,19 @@ export function calibration(S) {
   return { n, sure, match: n ? hit / n : null, sureWrong, unsureRight };
 }
 export { KID };
+
+// 하던 점검을 요약에 싣는 꼴(문제 글 X — 묶음 만드는 법 · 답 · 자리) · 다시 만든 묶음의 차시가 다르면(엔진이 바뀜) null
+export function packPrep(S) {
+  if (!S || S.done || !S.sheets.every((sh) => Array.isArray(sh.ls))) return null;
+  return { v: 1, id: S.id, unit: S.unit, made: S.made, budget: S.budget, at: S.at, why: S.why, plan: S.plan, res: S.res, conf: S.conf, ms: S.ms, n: asked(S),
+    sh: S.sheets.map((sh) => ({ id: sh.id, kind: sh.kind, ls: sh.ls, cs: sh.items.map((it) => it.c).join('|') })), pr: S.prior ? S.prior.sheets.map((x) => x.id) : [] };
+}
+export function unpackPrep(o, hist = null) {
+  try {
+    const sheets = o.sh.map((x) => { const sh = sheetOf(x.id, x.kind, x.ls); return sh.items.map((it) => it.c).join('|') === x.cs ? sh : null; });
+    if (sheets.some((sh) => !sh)) return null;
+    const keep = hist && Array.isArray(o.pr) ? hist.sheets.filter((sh) => o.pr.includes(sh.id) && hist.res[sh.id]) : [];
+    return { v: 1, id: o.id, unit: o.unit, made: o.made, budget: o.budget, sheets, res: o.res, conf: o.conf || {}, ms: o.ms || {}, at: o.at, done: false, why: o.why || '', plan: o.plan,
+      prior: keep.length ? { sheets: keep, res: Object.fromEntries(keep.map((sh) => [sh.id, hist.res[sh.id]])) } : null };
+  } catch (e) { return null; }
+}

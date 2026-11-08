@@ -49,6 +49,7 @@ export async function pull(me) {
     { const b = st0.bk; if (b && typeof b === 'object' && typeof b.x === 'string' && b.c && b.p && typeof b.p === 'object' && Number(b.t) > ((K.back && K.back.t) || 0)) K.back = { c: String(b.c), p: b.p, text: b.x, root: b.r || null, t: Number(b.t), ...(Number(b.s) ? { solved: Number(b.s) } : {}) };
       else if (b && typeof b === 'object' && K.back && Number(b.t) === K.back.t && Number(b.s) > (K.back.solved || 0)) K.back.solved = Number(b.s); }   /* 같은 찾기를 다른 기기에서 다시 풀어 끝냈으면 그 표시를 합침(이 기기가 s: 0으로 덮던 것 · 코덱스 r12) */   /* 거꾸로 찾기 — 다른 기기로 들어와도 처음 화면 '처음 문제 다시' · 선생님 기록이 그대로(코덱스 11-08) */
     if (st0.help && typeof st0.help === 'object') { K.help = K.help || {}; for (const [c, n] of Object.entries(st0.help)) if (Number(n) > (K.help[c] || 0)) K.help[c] = Number(n); }
+    if (st0.wp && typeof st0.wp === 'object') { K.wip = K.wip || {}; for (const k of ['prep', 'fx', 'gv']) { const w = st0.wp[k]; if (w && typeof w === 'object' && Number(w.t) > ((K.wip[k] && K.wip[k].t) || 0) && Date.now() - Number(w.t) < WIP_MS) K.wip[k] = w; } }   /* 다른 기기에서 하던 판이 더 새로우면 */
   }   /* 선생님이 뺀 종이 기록(번호를 잘못 골랐을 때) — 종이 기록은 서버가 정본 */
   if (srv && srv.rv) { const rv = db.dec(srv.rv); if (rv) for (const [c, x] of Object.entries(rv)) if (!K.rv[c] || (x.t || 0) > (K.rv[c].t || 0)) K.rv[c] = x; }
   if (srv && srv.mx) { const mx = db.dec(srv.mx); K.mx = K.mx || {}; if (mx && Array.isArray(mx._jog)) K.jog = [...new Set([...(K.jog || []), ...mx._jog.filter((d) => typeof d === 'string')])].sort().slice(-60); if (mx && mx._tools && typeof mx._tools === 'object') { K.tools = K.tools || {}; for (const [t, v] of Object.entries(mx._tools)) if (v && (!K.tools[t] || (v.self || 0) > (K.tools[t].self || 0))) K.tools[t] = v; } if (mx && typeof mx === 'object') for (const [c, x] of Object.entries(mx)) { if (c === '_jog' || c === '_tools') continue; const a = K.mx[c]; if (x && (!a || (x.tier || 0) > (a.tier || 0) || ((x.tier || 0) === (a.tier || 0) && (x.runs || []).length > (a.runs || []).length))) K.mx[c] = x; } }
@@ -136,9 +137,20 @@ export function summaryOf(K) {
   /* 틀린 뒤 도움 사다리 결과 — 주마다 [주, 떠올려 고침, 풀이 순서로 고침, 답 봄, 보기 다시 골라 맞힘](교사 11-07 '단계적으로 하나씩 해내는 힘'의 기록) */
   const lad = Object.entries(K.lad || {}).sort((p, q) => (p[0] < q[0] ? -1 : 1)).slice(-8).map(([w, v]) => [w, v.r || 0, v.s || 0, v.x || 0, v.p || 0]);
   const bk = K.back && K.back.text ? { x: String(K.back.text).slice(0, 24), c: K.back.c || '', p: K.back.p || null, r: K.back.root || '', t: K.back.t || 0, s: K.back.solved || 0 } : null;   /* 거꾸로 찾기 — 아이가 직접 넣은 막힌 문제 · 찾은 곳 · 다시 풀었나(선생님 아이 자세히 · 11-08) */
-  return { t: now, last, mis, L, sw14, rush14, prep, bk, start: rep.start.map((s) => s.c), below: rep.below.map((b) => b.c), under: rep.under.map((u) => u.c), sw: cal.sureWrong, cal: { n: cal.n, m: cal.match }, fixed: K.fixed, due, help: K.help || {}, rush: K.rush || 0, jog: (K.jog || []).slice(-14), tools: K.tools || {}, ck, cko, gv, lad, story: storySum(K), wk: weeksOf(K.recs).slice(-12).map((w) => [w.wk, w.ok, w.n, w.term]), mx: Object.fromEntries(Object.entries(K.mx || {}).filter(([c]) => c !== '_jog' && c !== '_tools').map(([c, x]) => [c, x.tier || 0])) };
+  return { t: now, last, mis, L, sw14, rush14, prep, bk, wp: wipOf(K), start: rep.start.map((s) => s.c), below: rep.below.map((b) => b.c), under: rep.under.map((u) => u.c), sw: cal.sureWrong, cal: { n: cal.n, m: cal.match }, fixed: K.fixed, due, help: K.help || {}, rush: K.rush || 0, jog: (K.jog || []).slice(-14), tools: K.tools || {}, ck, cko, gv, lad, story: storySum(K), wk: weeksOf(K.recs).slice(-12).map((w) => [w.wk, w.ok, w.n, w.term]), mx: Object.fromEntries(Object.entries(K.mx || {}).filter(([c]) => c !== '_jog' && c !== '_tools').map(([c, x]) => [c, x.tier || 0])) };
 }
-export function pushSummary(me, K) { db.queuePut(`${base(me)}/st`, db.enc(summaryOf(K))); }
+export function pushSummary(me, K) { clearTimeout(wipT); wipLast = null; db.queuePut(`${base(me)}/st`, db.enc(summaryOf(K))); }
+// 하던 판(이어서) — 점검(prep) · 배우기 걸음(fx) · 선생님 문제(gv)를 요약(st.wp)에 실어 다른 기기 · 다음 날에도 그 자리부터(교사 11-07 밤 '다시 들어와도 이어서' · 심판 차례 1)
+//  문제 글은 싣지 않고 묶음 만드는 법(id · 꼴 · 차시 목록)과 답 · 자리만 — 같은 엔진이면 똑같이 다시 만들어짐 · 2일 지나면 버림 · 8초 모아 보내고 창을 숨기면 바로
+export const WIP_MS = 2 * DAY;
+let wipT = 0, wipLast = null;
+export function setWip(me, K, kind, v) {
+  K.wip = K.wip || {};
+  if (v) K.wip[kind] = { ...v, t: Date.now() }; else delete K.wip[kind];
+  save(me, K); wipLast = [me, K]; clearTimeout(wipT); wipT = setTimeout(() => { if (wipLast) pushSummary(...wipLast); }, 8000);
+}
+if (typeof addEventListener === 'function') addEventListener('visibilitychange', () => { if (typeof document !== 'undefined' && document.visibilityState === 'hidden' && wipLast) pushSummary(...wipLast); });
+const wipOf = (K) => Object.fromEntries(Object.entries(K.wip || {}).filter(([, v]) => v && Date.now() - (Number(v.t) || 0) < WIP_MS));
 
 // 들어가기 — 핀이 맞으면 서버가 읽기를 허락(없는 칸이면 null) · 틀리면 401
 export async function join(C, no, pin) {
