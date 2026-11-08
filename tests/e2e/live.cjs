@@ -1,5 +1,5 @@
 // 배포 주소에서 한 바퀴(머리 없는 크롬): node tests/e2e/live.cjs [주소]
-//  시험 반(ZZ) 만들기 → 오늘 단원 점검 열기 → 1번 아이 들어가기 → 오늘 단원 점검(빈 곳 하나) → 배울 것 → 다듬기 → 거꾸로 찾기 → 이번 주 점검 → 선생님 카드 셋 · 반 표 · 보충 주기 → 아이가 풀기 → 보낸 목록 맞힌 수 · 종이 결과 가져오기(2번) → (지우기는 firebase CLI)
+//  시험 반(ZZ) 만들기 → 오늘 단원 점검 열기 → 1번 아이 들어가기 → 오늘 단원 점검(빈 곳 하나) → 배울 것 → 옛 주소(#/stages · #/drill)가 처음 화면으로 → 거꾸로 찾기 → 이번 주 점검 → 선생님 카드 셋 · 반 표 · 보충 주기 → 아이가 풀기 → 보낸 목록 맞힌 수 · 종이 결과 가져오기(2번) → (지우기는 firebase CLI)
 const { chromium } = require(process.env.PW || 'playwright')   /* playwright가 다른 폴더에 있으면 PW=<그 폴더>/node_modules/playwright */;
 const BASE = process.argv[2] || 'https://chang333787-boop.github.io/tuntun-math/app/';
 const UNIT = '2-2-2', GAP = '2-1-6:3';
@@ -38,6 +38,9 @@ const UNIT = '2-2-2', GAP = '2-1-6:3';
     await w(150);
   }
   const end = (await pg.textContent('#view')).slice(0, 80);
+  // 지운 옛 화면(스테이지 · 다듬기)의 즐겨찾기 → 아이 처음 화면(11-08)
+  const old = [];
+  for (const h of ['#/stages', '#/drill/2-2-2:4']) { await pg.goto(BASE + h); await w(700); old.push(pg.url().replace(/^.*#/, '#')); }
   // 막힌 문제 거꾸로 찾기: 47 + 38 — 10을 넘는 한 자리 덧셈(1-2-6:2)이 빈 아이
   await pg.goto(BASE + '#/back'); await w(900);
   await pg.fill('#pq', '47+38'); await w(200); await pg.click('#go'); await w(300);
@@ -126,6 +129,6 @@ const UNIT = '2-2-2', GAP = '2-1-6:3';
   const scard = { title: (await pg.textContent('h2')).trim().slice(0, 30), frames: (await pg.$$('.sbf svg')).length };
   await pg.goto(BASE + '#/t/letter'); await w(800);
   const letter = (await pg.textContent('h2')).trim();
-  console.log(JSON.stringify({ C, opened, story, scard, letter, todo: todo.replace(/\s+/g, ' ').slice(0, 90), items: n, end: end.trim(), back, weekTodo, week, head, cards, row1, strip, wkPanel, give: { gsent, gcard, gdone, gres, lad, fixEnc }, paper: { psel, pmsg, kid2, moved2, moved1 }, ai, errs }, null, 1));
+  console.log(JSON.stringify({ C, opened, story, scard, letter, todo: todo.replace(/\s+/g, ' ').slice(0, 90), items: n, end: end.trim(), old, back, weekTodo, week, head, cards, row1, strip, wkPanel, give: { gsent, gcard, gdone, gres, lad, fixEnc }, paper: { psel, pmsg, kid2, moved2, moved1 }, ai, errs }, null, 1));
   await b.close();
 })().catch((e) => { console.error('ERR', e.message); process.exit(1); });

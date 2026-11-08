@@ -1,4 +1,5 @@
-// 스테이지 · 다듬기 — 판자(차시) 하나 = 스테이지 하나 · 표 셋: 정확 → 빠르게 → 오래(화면과 상관없는 순수 로직)
+// 칸(차시)마다 익힘 표 셋: 정확 → 빠르게 → 오래(화면과 상관없는 순수 로직)
+//  옛 스테이지 · 다듬기 화면(stageview.js)은 11-08에 지움 — 표는 배울 것 통과 · 점검(kid.js grantAccurate) · 매일 연습(run.js)이 올리고 선생님 반 표가 읽음
 //  근거: 정확해진 뒤에 빠르기 [B-R13] · 내 지난 기록과만 견줌(순위 X) [B-R13][D-20] · 간격 두고 다시 꺼내도 되는지 = 오래 [D-6][D-8]
 //    정답률이 낮으면 시계를 감추고 정확하게 먼저 [B-R16] · 완료에 거는 보상 X → 판자가 바뀌는 것으로(나무 → 못 박은 나무 → 돌) [D-19]
 //  시간은 늘 잰다(문항마다 ms) — 시계는 다듬기에서 아이가 켤 때만 보임(기본 꺼짐 · 혹평 11-01 · 근거 §1 '고를 수 있게') · 준비 다리 · 확인 문제는 조용히 잼
@@ -9,7 +10,6 @@ import { byId } from '../../engine/lessons/index.js';
 import { makeSheet, itemOf } from '../../paper/js/gen.js';
 
 export const TIER = ['', '정확', '빠르게', '오래'];
-export const TIER_KID = ['아직', '튼튼한 나무 판자', '못을 박은 단단한 판자', '돌 판자'];
 const DAY = 864e5;
 export const target = (c) => (byId[c] ? byId[c].sec : 20) * 1000;   // '빠르게' 기준 = 엔진의 기준 시간(한 문제 가운데값)
 // 셈 사실 칸 = 엔진이 시간 재기(timed · fact)로 표시한 칸(한 자리 덧셈 · 뺄셈 · 10 만들기 · 받아올림 · 받아내림 한 자리 · 곱셈구구)
@@ -74,15 +74,6 @@ export function lastReady(m, c, now = Date.now()) {
 }
 // 판자 고치기 통과 · 준비 다리에서 셋 다 맞힘 → '정확' 표
 export function grantAccurate(mx, c, now = Date.now()) { const m = mx[c] || { tier: 0, best: null, runs: [], t2: 0 }; if (m.tier < 1) { m.tier = 1; m.t1 = now; } mx[c] = m; return m; }
-// 다음 표까지 남은 것(아이에게 보이는 말)
-export function nextGoal(m, c, now = Date.now()) {
-  const T = target(c) / 1000;
-  if (!m || m.tier < 1) return `${drillN(c)}문제 중 ${need(drillN(c))}문제 맞히면 '정확'`;
-  if (m.tier === 1 && isFact(c)) return `한 문제를 보통 ${T}초 안에 풀면 '빠르게'`;
-  if (m.tier === 1 || m.tier === 2) { const from = m.tier === 2 ? m.t2 : m.t1 || Math.min(...(m.runs || []).map((r) => r.t), now), d = Math.ceil((from + 3 * DAY - now) / DAY); return d > 0 ? `${d}일 뒤에 다시 와서 그대로면 '오래'` : `오늘 다시 해서 그대로면 '오래'`; }
-  return '다 땄어요! 기록을 더 줄여 볼 수도 있어요';
-}
-
 // 이 아이 · 이 칸에서 겨눌 함정 꼴 — 지금 보이는 생각 또는 예전에 보였던 생각(고친 뒤에도 다질 때 섞음)
 import { mindsOf, wantFor } from '../../engine/mis.js';
 export function wantOf(rep, minds, c) {

@@ -281,7 +281,7 @@ export function classView(root, C) {
     </div>
     <div class="trow">${first2.length ? `<div class="card first"><h2>먼저 봐 줄 아이 <small>${first2.length}명</small></h2>${intro('앱이 혼자 고치기 어려워 보이는 아이예요. 수업 중에 먼저 들러 주세요. 이름을 누르면 자세히 봐요.')}<ul class="who">${first2.map((x) => `<li><a href="#/t/c/${C}/k/${x.no}">${esc(nm(K, x.no))}</a><span class="whys">${x.why.map((w) => `<span class="pill">${esc(w)}</span>`).join('')}</span></li>`).join('')}</ul></div>` : ''}
     ${(() => { const today = K.today && K.today.unit === unit ? K.today : null, fresh = (n) => n && n.t && Date.now() - n.t < 3 * 60000;
-      const MODE = { prep: '오늘 단원 점검', fix: '배우는 중', drill: '빠르게 풀기', run: '매일 연습', back: '거꾸로 찾기', story: '이야기 문제', week: '이번 주 점검', review: '다시 보기', give: '선생님이 준 문제', check: '점검지' };
+      const MODE = { prep: '오늘 단원 점검', fix: '배우는 중', run: '매일 연습', back: '거꾸로 찾기', story: '이야기 문제', week: '이번 주 점검', review: '다시 보기', give: '선생님이 준 문제', check: '점검지' };
       const g = { out: [], in: [], doing: [], done: [], fix: [], help: [], more: [] }, fin = [];   /* fin = 오늘 단원 점검을 끝낸 아이 모두(지금 다른 걸 하는 중이어도 · 점검 카드의 '끝낸 아이'와 같은 수) */
       rows.forEach((no) => { const x = S[no] || {}, st = x.st, n = x.now;
         const done = st && st.prep && today && st.prep.u === unit && st.prep.t >= today.t;
@@ -344,7 +344,7 @@ function nowText(n) {
   if (!n || !n.t) return '';
   const m = Math.round((Date.now() - n.t) / 60000);
   if (m > 20) return '';
-  return n.mode === 'prep' ? `오늘 단원 점검 ${n.n || 0}문제` : n.mode === 'fix' ? `배우는 중: ${esc(lessonName(n.c))}` : n.mode === 'drill' ? `다듬는 중: ${esc(lessonName(n.c))}` : n.mode === 'run' ? '매일 연습 중' : n.mode === 'back' ? `거꾸로 찾는 중: ${esc(lessonName(n.c))}` : n.mode === 'story' ? '이야기 문제' : n.mode === 'week' ? '이번 주 점검 중' : n.mode === 'give' ? '선생님이 준 문제' : n.mode === 'check' ? '점검지 푸는 중' : '';
+  return n.mode === 'prep' ? `오늘 단원 점검 ${n.n || 0}문제` : n.mode === 'fix' ? `배우는 중: ${esc(lessonName(n.c))}` : n.mode === 'run' ? '매일 연습 중' : n.mode === 'back' ? `거꾸로 찾는 중: ${esc(lessonName(n.c))}` : n.mode === 'story' ? '이야기 문제' : n.mode === 'week' ? '이번 주 점검 중' : n.mode === 'give' ? '선생님이 준 문제' : n.mode === 'check' ? '점검지 푸는 중' : '';
 }
 
 // 지도를 바꾼 때 — 서버엔 이 칩만(자유 글 X)

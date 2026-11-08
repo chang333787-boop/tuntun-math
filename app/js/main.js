@@ -62,6 +62,7 @@ const ROUTES = [
   [/^#\/week$/, () => weekView(root)],
   [/^#\/story(?:\/([^?]+))?(\?.*)?$/, (m) => storyView(root, m[1] ? decodeURIComponent(m[1]) : '')],
   [/^#\/retry$/, () => retryView(root)],
+  [/^#\/(stages|drill)(\/.*)?$/, () => { location.replace('#/me'); }],   /* 지운 옛 화면(스테이지 · 다듬기 — 11-08 0165df9)의 즐겨찾기 · 옛 링크 → 아이 처음 화면 */
   [/^#\/give\/([\w-]+)$/, (m) => giveView(root, m[1])],
   [/^#\/t$/, () => teacherHome(root)],
   [/^#\/t\/new/, () => newClassView(root)],
