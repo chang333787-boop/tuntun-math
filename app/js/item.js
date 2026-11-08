@@ -69,7 +69,8 @@ function numPad(open, { dec, go, nextEmpty, onEnd, place }) {
   /* 모양은 늘 같게(처음 보는 눈 11-08 — 문제마다 '지우기' 자리 · 크기가 바뀌어 잘못 누름) — 1~5 · 지우기 / 6~0 · 다음 칸(칸이 하나면 꺼짐) · 소수 문제만 위에 '.' */
   kp.className = 'kpad'; kp.setAttribute('role', 'group'); kp.setAttribute('aria-label', '숫자판');
   kp.innerHTML = `${dec ? `<div class="kp-row dot">${key('.')}</div>` : ''}<div class="kp-row">${[...'12345'].map(key).join('')}<button type="button" class="kp-bs" data-a="bs">지우기</button></div><div class="kp-row">${[...'67890'].map(key).join('')}<button type="button" class="kp-nx" data-a="nx"${many ? '' : ' disabled'}>다음 칸${icon('arrow', 18)}</button></div>`;   /* 소수의 '.'은 맨 위 줄 — 숫자판이 화면 아래에 붙어 있어 아래 두 줄은 늘 같은 자리(0 밑에 두면 숫자판 전체가 한 줄 올라가던 것 · 처음 보는 눈 2차) */
-  open.forEach((b) => { b.inputMode = 'none'; b.addEventListener('focus', () => { cur = b; }); });
+  const nx = kp.querySelector('.kp-nx'), mark = () => nx.classList.toggle('end', many && cur === open[open.length - 1]);   /* 마지막 칸에선 '다음 칸'을 흐리게(다 쓴 뒤 내기 단추로 알고 맴돌던 것 · 누르면 내는 자리만 보여 줌) */
+  open.forEach((b) => { b.inputMode = 'none'; b.addEventListener('focus', () => { cur = b; mark(); }); });
   kp.addEventListener('pointerdown', (e) => { if (e.target.closest('button')) e.preventDefault(); });   /* 누르는 동안 칸이 포커스를 잃지 않게 */
   kp.addEventListener('click', (e) => {
     const k = e.target.closest('button'), b = cur; if (!k || k.disabled || !b || b.disabled || performance.now() - born < 350) return;   /* 앞 화면 '다 풀었어요'를 두 번 누른 손가락이 숫자로 들어가지 않게 */
@@ -81,7 +82,7 @@ function numPad(open, { dec, go, nextEmpty, onEnd, place }) {
     if (!b.value.trim()) return;   /* 빈 칸에서는 그대로 — 저절로 넘어온 칸에서 습관처럼 누르면 그 칸을 건너뛰던 것(Enter와 같게 · 코덱스 r13) */
     const x = nextEmpty(i); if (x) go(x); else if (i < open.length - 1) go(open[i + 1]); else if (onEnd) onEnd();
   });
-  place(kp);
+  mark(); place(kp);
   { const qc = kp.closest('.qcard'); if (qc) qc.classList.add('kp-on'); }   /* 휴대폰에선 숫자판 · 내는 단추를 화면 아래에 붙임(틀린 뒤 도움말이 위에 생겨도 같은 자리) */
 }
 

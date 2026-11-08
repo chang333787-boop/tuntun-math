@@ -18,7 +18,7 @@ export default [
     gen: (r) => ({ d: r.int(2, 5), q: r.int(2, 6) }),
     make: (p) => {
       const n = p.d * p.q;
-      return nums([`${n} − ${Array(p.q).fill(p.d).join(' − ')} = 0`, { br: 1 }, `${n}에서 ${J(p.d, '을', '를')} `, B(0), '번 덜어 낼 수 있어요. ', `${n} ÷ ${p.d} = `, B(1)], [p.q, p.q], {
+      return nums([`${n} − ${Array(p.q).fill(p.d).join(' − ')} = 0`, { br: 1 }, `${n}에서 ${J(p.d, '을', '를')} `, B(0), '번 덜어 낼 수 있어요.', { br: 1 }, `${n} ÷ ${p.d} = `, B(1)], [p.q, p.q], {
         bugs: [{ test: (v) => v[0] === n - p.d || v[1] === n - p.d, name: '나누기를 한 번 빼기로 봄', to: 'A2' }],
       });
     },

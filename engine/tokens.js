@@ -20,13 +20,27 @@ function blankHTML(i, opt) {
   return `<input class="blank" data-i="${i}" inputmode="decimal" autocomplete="off" spellcheck="false" aria-label="빈칸 ${i + 1}">`;
 }
 
-// 빈칸 + 바로 뒤 짧은 글(단위 · 조사: cm · 개 · 묶음이에요)은 한 덩이로 — 줄이 바뀔 때 'cm'만 다음 줄에 혼자 떨어지지 않게(처음 보는 눈 11-08)
-const glueable = (t) => typeof t === 'string' && /^\s?\S{1,6}\s?$/.test(t);
+// 빈칸은 바로 앞 짧은 낱말(= · 5를) · 바로 뒤 첫 낱말(cm예요 · 번 · 개)과 한 덩이로 줄바꿈 — 'cm'나 '번'이 칸에서 떨어져 혼자 다음 줄로 가거나
+//  칸만 줄 끝에 떨어져 어느 칸이 무슨 답인지 헷갈리던 것(처음 보는 눈 11-08) · 글자는 그대로 나눠 붙임(종이에서는 보이는 것이 같음)
+const isBlank = (t) => t && typeof t === 'object' && 'b' in t;
+const txHTML = (s) => `<span class="tx${/[가-힣]/.test(s) ? ' kr' : ''}">${esc(s)}</span>`;
 export function toHTML(tokens, opt = {}) {
-  const ts = tokens || [], out = [];
+  const ts = [];
+  for (const t of tokens || []) { const s = typeof t === 'number' ? String(t) : t; if (typeof s === 'string' && typeof ts[ts.length - 1] === 'string') ts[ts.length - 1] += s; else ts.push(s); }   /* 이어진 글 조각은 하나로('8877만' + ', ' — 쉼표가 앞 수와 떨어져 ' ,'로 보이던 것) */
+  const out = [];
+  let pre = '';
   for (let i = 0; i < ts.length; i++) {
     const t = ts[i];
-    if (t && typeof t === 'object' && 'b' in t && glueable(ts[i + 1])) { out.push(`<span class="glue">${tokHTML(t, opt)}${tokHTML(ts[i + 1], opt)}</span>`); i++; continue; }
+    if (isBlank(t)) {
+      let h = `${pre ? txHTML(pre) : ''}${tokHTML(t, opt)}`, k = i;
+      while (typeof ts[k + 1] === 'string' && /^\s?\S{1,3}\s?$/.test(ts[k + 1]) && isBlank(ts[k + 2])) { h += txHTML(ts[k + 1]) + tokHTML(ts[k + 2], opt); k += 2; }   /* □ … □ · □ : □는 끝까지 한 덩이(나머지 칸만 다음 줄로 떨어지던 것) */
+      let post = '';
+      if (typeof ts[k + 1] === 'string') { const m = ts[k + 1].match(/^(\s?\S{1,8})(\s[\s\S]*)?$/); if (m) { post = m[1]; ts[k + 1] = m[2] || ''; } }
+      out.push(pre || post || k > i ? `<span class="glue">${h}${post ? txHTML(post) : ''}</span>` : h);
+      pre = ''; i = k; continue;
+    }
+    if (typeof t === 'string' && isBlank(ts[i + 1])) { const m = t.match(/^([\s\S]*\s)?(\S{1,6}\s?)$/); if (m) { if (m[1]) out.push(txHTML(m[1])); pre = m[2]; continue; } }
+    if (t === '') continue;
     out.push(tokHTML(t, opt));
   }
   return out.join('');
