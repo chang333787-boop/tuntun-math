@@ -7,6 +7,7 @@
 //  ③ 처음 문제 다시: 채운 단계를 보며 처음 문제의 답 · 또 틀리면 답을 보여 주고 끝(내일 매일 연습에 또)
 //  2초 안에 낸 오답은 시도로 세지 않음(찍기 거르기 — item.js rushGuard와 같은 기준) · 한 판에 '한 단계씩'을 여는 수는 부르는 쪽이 정함(budget — 매일 연습 2 · 선생님이 준 문제 3)
 //  기록(판정)은 부르는 쪽이 첫 답으로 이미 적음 — 여기서 고친 것은 판정에 넣지 않고 스스로 고친 횟수로만(recall · steps) · 점검(진단)에서는 쓰지 않음
+import { bridgeOf } from '../../engine/bridges.js';
 import { byId, makeItem } from '../../engine/lessons/index.js';
 import { cueOf, planOf } from '../../engine/hints/index.js';
 import { toText } from '../../engine/tokens.js';
@@ -51,6 +52,11 @@ export const colFor = (it, steps) => { try { return colOf(it, steps); } catch (e
 export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', dots = null, budget = null, again: againLine = '', onEnd }) {
   const steps = (() => { try { return stepsOf({ c, p: it.p }) || []; } catch (e) { return []; } })();
   const cue = cueFor(c, it.p);
+  /* 옛 개념 다리(engine/bridges.js — 교사 10-11 '옛날에 이런 거 배웠지? 이게 그냥 숫자만 바뀐 거야') — 떠올리기 말풍선에 '예전에 배운 생각 · 같은 것 · 새로 생기는 것' 한 덩이(비판 토론 D1 · 심판 차례 3 · 앱이 한 번도 부르지 않던 것) */
+  const br = (() => { try { return bridgeOf(c, it.p); } catch (e) { return null; } })();
+  const ansN = (() => { const own = new Set((toText(it.prompt).match(/\d+(?:\.\d+)?/g) || [])); return new Set((it.sol || []).map(String).filter((v) => !own.has(v))); })();
+  const safe = (t) => t && !(String(t).match(/\d+(?:\.\d+)?/g) || []).some((n) => ansN.has(n));   /* 이 문제의 답 숫자가 든 문장은 빼기(떠올리기에서 답을 흘리지 않게 — 24 ÷ 7 = 3 … 3) */
+  const brLine = br && br.idea ? `<span class="hl-br"><b>예전에 배운 생각</b> — ${esc(br.idea)}${safe(br.same) ? `<br>${esc(br.same)}` : ''}${safe(br.leap) ? `<br><b>새로 생기는 것</b> — ${esc(br.leap)}` : ''}</span>` : '';
   const C = colFor(it, steps);   /* 두 자리 넘는 덧셈 · 뺄셈 = 세로셈에 채운 자리까지 표시(model.js — 배우기 시범과 같은 그림) */
   const base = { tag, act, dots, conf: false, idk: false };
   const head = (k, html, pose = 'think', after = '') => `<div class="hl hl-${k}"><div class="say">${mascot(pose, 60)}<div class="bub">${html}</div></div>${after}</div>`;
@@ -94,7 +100,7 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
     if (!raws) return toSteps();   /* '못 풀겠어요 · 넘어가기' = 떠올리기 없이 바로 단계로(모른다는 아이에게 '떠올려 봐요' X · 11-07 사용감 점검) */
     const canStep = steps.length && !(budget && budget.left <= 0);
     draw(root, { ...base, prompt: it.prompt, sol: it.sol, choices: ch, hide: picked,
-      lead: head('cue', `<span class="hl-was">내 답 <b>${esc(mine(it, raws))}</b> — 아직 아니에요. ${nudge || '튼튼이 말을 읽고 다시 풀어 봐요.'}</span>${cue ? `<span class="hl-cue-t">${esc(cue)}</span>` : ''}<span class="hl-ans">이 생각으로 <b>${esc(qName)}</b>${P(qName.slice(-1), '을', '를')} 써요.</span>`, 'think', `<button type="button" class="hl-go" id="hs"><span>모르겠어요 — <span class="nobr">${canStep ? '한 단계씩 같이 풀기' : '같이 보기'}</span></span></button>`),   /* 늘 나가는 길 하나(아무 수나 써야 빠져나가던 것 · 11-07) */
+      lead: head('cue', `<span class="hl-was">내 답 <b>${esc(mine(it, raws))}</b> — 아직 아니에요. ${nudge || '튼튼이 말을 읽고 다시 풀어 봐요.'}</span>${cue ? `<span class="hl-cue-t">${esc(cue)}</span>` : ''}${brLine}<span class="hl-ans">이 생각으로 <b>${esc(qName)}</b>${P(qName.slice(-1), '을', '를')} 써요.</span>`, 'think', `<button type="button" class="hl-go" id="hs"><span>모르겠어요 — <span class="nobr">${canStep ? '한 단계씩 같이 풀기' : '같이 보기'}</span></span></button>`),   /* 늘 나가는 길 하나(아무 수나 써야 빠져나가던 것 · 11-07) */
       onAnswer: (a, cf, t) => {
         if (sameAns(it, a)) return finish(true, ch ? 'pick' : 'recall', ch ? '맞았어요!' : '맞았어요! 생각을 떠올려서 스스로 고쳤어요.');
         if (t < RUSH && !ch && ++rushN < 2) return recall('조금 빨라요. 끝까지 읽고 다시 풀어 봐요.');

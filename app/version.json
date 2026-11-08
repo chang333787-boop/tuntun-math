@@ -1,5 +1,5 @@
 {
- "v": "d8ec22f1284b",
+ "v": "ad5ad5740cd5",
  "files": [
   "css/app.css",
   "js/ai.js",
@@ -33,6 +33,7 @@
   "js/ttable.js",
   "js/week.js",
   "js/weekcore.js",
+  "../engine/bridges.js",
   "../engine/concepts/dec.js",
   "../engine/concepts/div.js",
   "../engine/concepts/frac.js",
