@@ -1,5 +1,5 @@
 {
- "v": "837cc35f7d76",
+ "v": "ca473def5c3a",
  "files": [
   "css/app.css",
   "js/ai.js",
@@ -49,6 +49,7 @@
   "../engine/hints/me.js",
   "../engine/hints/na.js",
   "../engine/lessons/catalog.js",
+  "../engine/lessons/da.js",
   "../engine/lessons/g1.js",
   "../engine/lessons/g2.js",
   "../engine/lessons/g3.js",
