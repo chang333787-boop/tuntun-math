@@ -490,7 +490,7 @@ export default {
         return { v, big: small * k, small };
       },
       is: (p) => ['int', 'both', 'frac'].includes(p.v) && p.big % p.small === 0,
-      prev: null, pre: (p) => (p && p.v === 'frac' ? ['6-1-1:2'] : ['2-1-6:4', '3-1-3:6']),
+      prev: null, pre: (p) => (p && p.v === 'frac' ? ['6-1-1:2'] : ['2-1-6:4', '3-1-3:6', '5-1-3:2']),   /* 두 양의 관계(대응 · 5-1-3:2)와 이어짐 — 끊겨 있던 줄(조사 E6) */
       make: (p) => (p.v === 'both'
         ? nums([`${jn(p.big, '은', '는')} ${p.small}보다 `, B(0), ` 크고, ${p.small}의 `, B(1), '배예요.'], [p.big - p.small, p.big / p.small], {
           bugs: [
@@ -850,7 +850,7 @@ export default {
     {
       id: '6-2-4:4', fam: 'R8', name: '비례식 (외항·내항)', kid: '비례식 알아보기', sec: 20,
       gen: (r) => { let a, b; do { a = r.int(1, 7); b = r.int(2, 9); } while (a === b || gcd(a, b) !== 1); return { v: r.chance(0.5) ? 'is' : 'terms', a, b, k: r.int(2, 4), t: r.chance(0.5) ? 'out' : 'in' }; },
-      is: (p) => p.v === 'is' || p.v === 'terms', prev: '6-2-4:2', pre: ['6-1-4:4'],
+      is: (p) => p.v === 'is' || p.v === 'terms', prev: '6-2-4:2', pre: ['6-1-4:4', '4-1-6:8'],   /* 등호 양쪽이 같다(4-1-6:8)와 이어짐 — 끊겨 있던 줄(조사 E6 · 심판 차례 4) */
       make: (p) => {
         if (p.v === 'is') {
           // 보기 셋: 비례식 · 같은 수를 더한 비 · 뒤 비의 앞뒤를 바꾼 비 (둘 중 하나 찍기를 막는다)
@@ -916,7 +916,7 @@ export default {
       }, (p) => p.c !== p.a)),
       steps: (p) => { const F0 = FAMS.find((f) => f.id === 'g6_PROPUSE'); return p.ctx === 4 || !F0.steps ? [] : F0.steps(p); },
       make: (p) => (p.ctx === 4 ? nums([[`빨래 한 벌을 널어 두면 마르는 데 ${p.t}시간이 걸려요. 빨래 ${p.a}벌을 한꺼번에 널어 두면 다 마르는 데 몇 시간이 걸릴까요? 답 `, B(0), '시간'], [`달걀 한 개를 삶는 데 ${p.t}분이 걸려요. 달걀 ${p.a}개를 한 냄비에 한꺼번에 삶으면 몇 분이 걸릴까요? 답 `, B(0), '분'], [`노래 한 곡을 혼자 부르는 데 ${p.t}분이 걸려요. ${p.a}명이 함께 같은 노래를 부르면 몇 분이 걸릴까요? 답 `, B(0), '분']][p.k], p.t, { bugs: [{ test: (v) => v[0] === p.t * p.a, name: '비례가 아닌데 비례로 셈 (무엇이든 비례)', to: '6-2-4:4' }, { test: (v) => p.t % p.a === 0 && v[0] === p.t / p.a, name: '비례가 아닌데 거꾸로 비례로 셈', to: '6-2-4:4' }] }) : FAMS.find((f) => f.id === 'g6_PROPUSE').make(p)),
-      is: (p) => p.ctx === 4 || ([0, 1, 2, 3].includes(p.ctx) && p.a * p.d === p.b * p.c), prev: '6-2-4:5', pre: ['6-1-4:3'],
+      is: (p) => p.ctx === 4 || ([0, 1, 2, 3].includes(p.ctx) && p.a * p.d === p.b * p.c), prev: '6-2-4:5', pre: ['6-1-4:3', '5-1-3:2'],   /* 대응 관계와 이어짐(조사 E6) */
       // ctx 4: 비례가 아닌 상황(무엇이든 비례로 푸는 과잉 일반화 — 빨래 · 달걀 · 노래) [E4-34][E4-35] — '두 배가 되면 두 배가 되나?'를 먼저 묻게
       hint: '아는 두 양과 구하려는 두 양을 같은 순서로 써서 비례식을 세워요. 3개에 600원이면 5개는 얼마일까요? 3 : 600 = 5 : □라서 □ = 1000!',
     },
