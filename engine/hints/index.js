@@ -9,6 +9,8 @@
 import NA from './na.js';
 import MDF from './mdf.js';
 import ME from './me.js';
+import PICS from './pics.js';
+import { picSVG } from '../pics.js';
 
 export const HINTS = { ...NA, ...MDF, ...ME };   /* ME = 측정(11-08~) */
 export function cueOf(c, p) {
@@ -24,3 +26,13 @@ export function planOf(c, p, n) {
   let xs = null; try { xs = h.plan(p); } catch (e) { return null; }
   return Array.isArray(xs) && xs.length === n && xs.every((x) => typeof x === 'string' && x.trim()) ? xs.map((x) => x.trim()) : null;
 }
+// 그림(11-13 · docs/direction_1110.md 차례 1) — 차시 → 그림 설명(./pics.js) → SVG(../pics.js) · 없거나 그릴 수 없으면 ''
+//  ctx = { i, steps } · i = −1 떠올리기 · 0…n−1 그 단계 · n 처음 문제로 돌아옴 · steps = 화면이 쓰는 단계(app/js/fix.js stepsOf)
+export function picSpec(c, p, ctx = {}) {
+  const f = PICS[c];
+  if (!f) return null;
+  try { return f(p, { i: Number.isInteger(ctx.i) ? ctx.i : -1, steps: ctx.steps || [] }) || null; } catch (e) { return null; }
+}
+export function picOf(c, p, ctx = {}) { const s = picSpec(c, p, ctx); return s ? picSVG(s) || '' : ''; }
+export const hasPic = (c) => !!PICS[c];
+export const PIC_IDS = Object.keys(PICS);

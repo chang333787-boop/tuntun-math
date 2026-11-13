@@ -21,7 +21,7 @@ import { makeItem as mkItem } from '../../engine/lessons/index.js';
 import { icon, tile, ACT, art } from './icons.js';
 import { giveTasks } from './give.js';
 import { cueOf } from '../../engine/hints/index.js';
-import { ladder, stepCtx, colFor, planHTML, planNames } from './hint.js';
+import { ladder, stepCtx, colFor, planHTML, planNames, picHTML } from './hint.js';
 import { checkTasks } from './check.js';
 import { speakButton } from './speak.js';
 
@@ -330,7 +330,7 @@ export function fixView(root, c, opt = {}) {
     return b;
   };
   function show() {
-    const n = showLen(F), done = F.si >= n, has = F.steps.length > 0, md = tenFrameHTML(F.ex, { moved: has && F.si >= F.steps.length - 1, anim: has && F.si === F.steps.length - 1 }) || regroupHTML(F.ex, { pre: F.si === 0, anim: F.si === 1 });   /* 한 자리 10 만들기 · 10에서 빼기는 10칸 틀(둘째 단계에서 옮기는 모습 한 번) · 받아올림 · 받아내림은 첫 단계에서 묶음 바꾸기 한 번(docs/motion.md ① ②) */
+    const n = showLen(F), done = F.si >= n, has = F.steps.length > 0, md = tenFrameHTML(F.ex, { moved: has && F.si >= F.steps.length - 1, anim: has && F.si === F.steps.length - 1 }) || regroupHTML(F.ex, { pre: F.si === 0, anim: F.si === 1 }) || picHTML(F.ex.c || c, F.ex.p, done ? F.steps.length : F.si - 1, F.steps);   /* 그림 틀(곱셈 띠 · 배열 · 분수 띠 · 수직선 … — 지금 말하는 단계의 칸이 노랑 · 도움 사다리와 같은 그림 · 11-13) · 한 자리 10 만들기 · 10에서 빼기는 10칸 틀(둘째 단계에서 옮기는 모습 한 번) · 받아올림 · 받아내림은 첫 단계에서 묶음 바꾸기 한 번(docs/motion.md ① ②) */
     const fin = done ? `<p class="fxa">${picAns(F.ex) ? '그래서 답은 ✓ 표시한 보기예요.' : ansSay(F.ex, '그래서 답은')}</p>` : '';
     const choices = F.ex.choices ? `<div class="choices static">${F.ex.choices.map((ch, k) => `<button type="button" disabled class="${done && String(k) === String(F.ex.sol[0]) ? 'right' : ''}">${staticHTML(ch, null)}</button>`).join('')}</div>` : '';   /* 고르기 문제는 단계가 있어도 보기를 보임(11-07 — '가장 큰 수를 고르세요'만 있고 고를 수가 없던 것) */
     if (has) {
@@ -353,11 +353,11 @@ export function fixView(root, c, opt = {}) {
     if (F.assist) return assist();
     const st = F.curSteps[F.si];
     if (!st) {   // 단계 다 함 → 원래 문제
-      draw(slot(), { lead: head('think', F.tw ? (colFor(F.cur, F.curSteps) ? '아직 아니에요. 세로셈 아래에 모인 수를 <b>차례로</b> 한 번 더 써 봐요.' : '아직 아니에요. 위에 채운 단계의 답을 보고 <b>한 번 더</b> 써 봐요.') : '단계를 다 했어요. 이제 이 문제의 답을 써요.') + planHTML(F.curSteps, planNames(F.cur.c || c, F.cur.p, F.curSteps), F.curSteps.length), prompt: F.cur.prompt, sol: F.cur.sol, choices: F.cur.choices, conf: false, idk: false, extra: stepCtx(F.cur, F.curSteps, F.curSteps.length, { C: colFor(F.cur, F.curSteps), head: false, fresh: F.curSteps.length - 1 }), onAnswer: (a) => { const it0 = F.cur; const r = answerItem(F, a.vals, a.raws); if (r.retry) return feedback({ ok: false, msg: colFor(it0, F.curSteps) ? '아직 아니에요. 세로셈 맨 아래 줄을 <b>차례로</b> 읽어 한 번 더 써 봐요.' : '아직 아니에요. 채운 단계의 답을 보고 <b>한 번 더</b> 써 봐요.', label: '다시 써 보기' }, together);   /* 세로셈이 없는 문제(분수 · 곱셈)에 '세로셈'이라 하던 것(코덱스 r12) */ feedback({ ...r, it0, how: 'steps' }, route); } });
+      draw(slot(), { lead: head('think', F.tw ? (colFor(F.cur, F.curSteps) ? '아직 아니에요. 세로셈 아래에 모인 수를 <b>차례로</b> 한 번 더 써 봐요.' : '아직 아니에요. 위에 채운 단계의 답을 보고 <b>한 번 더</b> 써 봐요.') : '단계를 다 했어요. 이제 이 문제의 답을 써요.') + planHTML(F.curSteps, planNames(F.cur.c || c, F.cur.p, F.curSteps), F.curSteps.length), prompt: F.cur.prompt, sol: F.cur.sol, choices: F.cur.choices, conf: false, idk: false, extra: stepCtx(F.cur, F.curSteps, F.curSteps.length, { C: colFor(F.cur, F.curSteps), head: false, pic: picHTML(F.cur.c || c, F.cur.p, F.curSteps.length, F.curSteps), fresh: F.curSteps.length - 1 }), onAnswer: (a) => { const it0 = F.cur; const r = answerItem(F, a.vals, a.raws); if (r.retry) return feedback({ ok: false, msg: colFor(it0, F.curSteps) ? '아직 아니에요. 세로셈 맨 아래 줄을 <b>차례로</b> 읽어 한 번 더 써 봐요.' : '아직 아니에요. 채운 단계의 답을 보고 <b>한 번 더</b> 써 봐요.', label: '다시 써 보기' }, together);   /* 세로셈이 없는 문제(분수 · 곱셈)에 '세로셈'이라 하던 것(코덱스 r12) */ feedback({ ...r, it0, how: 'steps' }, route); } });
       return;
     }
     /* 왼쪽 위 = 같이 풀 문제 · 세로셈 · 채운 단계(도움 사다리와 같은 모양 hint.js stepCtx) · 오른쪽 튼튼이 말 = 몇 단계 · 할 일 */
-    draw(slot(), { lead: head('point', `<span class="hl-k">${F.si + 1}단계</span> 이번엔 같이 풀어요. <b>${esc(st.why)}</b>${(() => { if (!F.tw) return ''; let t = ''; try { t = cueOf(st.c, st.p) || factTalk({ c: st.c, p: st.p, prompt: st.prompt, sol: st.sol }, false); } catch (e) { t = ''; } return t ? `<br><span class="small">도움: ${esc(t)}</span>` : ''; })()}`)   /* 다시 쓸 때는 그 단계 차시의 첫 도움말을 한 줄 더(답 숫자 X — 엄격 시험 · 같은 말만 다시 보이던 것) */ + planHTML(F.curSteps, planNames(F.cur.c || c, F.cur.p, F.curSteps), F.si), extra: stepCtx(F.cur, F.curSteps, F.si, { C: colFor(F.cur, F.curSteps), label: '같이 풀 문제', fresh: F.si - 1 }), prompt: st.prompt, sol: st.sol, conf: false, idk: false, onAnswer: (a) => { const r = togetherStep(F, a.vals); if (r.ok) together(); else if (r.retry) feedback({ ok: false, msg: '아직 아니에요. 위 튼튼이 말을 다시 읽고 <b>한 번 더</b> 써 봐요.', label: '다시 써 보기' }, together); else feedback({ ok: false, msg: ansSay({ sol: r.sol }, '이 단계의 답은') }, together); }   /* 까닭 글은 말풍선 · 왼쪽 기록에 이미 있음 — 같은 긴 문단이 세 번 나와 화면이 넘치던 것(11-08 처음 보는 눈 3차) */, okLabel: F.si + 1 < F.curSteps.length ? '이 단계 다 했어요' : '다 풀었어요' });
+    draw(slot(), { lead: head('point', `<span class="hl-k">${F.si + 1}단계</span> 이번엔 같이 풀어요. <b>${esc(st.why)}</b>${(() => { if (!F.tw) return ''; let t = ''; try { t = cueOf(st.c, st.p) || factTalk({ c: st.c, p: st.p, prompt: st.prompt, sol: st.sol }, false); } catch (e) { t = ''; } return t ? `<br><span class="small">도움: ${esc(t)}</span>` : ''; })()}`)   /* 다시 쓸 때는 그 단계 차시의 첫 도움말을 한 줄 더(답 숫자 X — 엄격 시험 · 같은 말만 다시 보이던 것) */ + planHTML(F.curSteps, planNames(F.cur.c || c, F.cur.p, F.curSteps), F.si), extra: stepCtx(F.cur, F.curSteps, F.si, { C: colFor(F.cur, F.curSteps), label: '같이 풀 문제', pic: picHTML(F.cur.c || c, F.cur.p, F.si, F.curSteps), fresh: F.si - 1 }), prompt: st.prompt, sol: st.sol, conf: false, idk: false, onAnswer: (a) => { const r = togetherStep(F, a.vals); if (r.ok) together(); else if (r.retry) feedback({ ok: false, msg: '아직 아니에요. 위 튼튼이 말을 다시 읽고 <b>한 번 더</b> 써 봐요.', label: '다시 써 보기' }, together); else feedback({ ok: false, msg: ansSay({ sol: r.sol }, '이 단계의 답은') }, together); }   /* 까닭 글은 말풍선 · 왼쪽 기록에 이미 있음 — 같은 긴 문단이 세 번 나와 화면이 넘치던 것(11-08 처음 보는 눈 3차) */, okLabel: F.si + 1 < F.curSteps.length ? '이 단계 다 했어요' : '다 풀었어요' });
   }
   function assist() {
     const A = F.assist;

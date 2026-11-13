@@ -9,7 +9,7 @@
 //  기록(판정)은 부르는 쪽이 첫 답으로 이미 적음 — 여기서 고친 것은 판정에 넣지 않고 스스로 고친 횟수로만(recall · steps) · 점검(진단)에서는 쓰지 않음
 import { bridgeOf } from '../../engine/bridges.js';
 import { byId, makeItem } from '../../engine/lessons/index.js';
-import { cueOf, planOf } from '../../engine/hints/index.js';
+import { cueOf, planOf, picOf } from '../../engine/hints/index.js';
 import { toText } from '../../engine/tokens.js';
 import { readExpr } from '../../engine/errors.js';
 import { draw, staticHTML, ansSay, fbSlot } from './item.js';
@@ -45,6 +45,12 @@ export function stepCtx(it, steps, upto, { shown = new Set(), C = null, label = 
   return `<div class="hl-ctx${C ? ' with-col' : ''}">${head ? `<span class="hl-k">${esc(label)}</span>${staticHTML(it.prompt, null)}` : ''}${C && pic ? `<div class="hl-cp"><div class="hl-col">${colView(C, upto, lag).html}</div>${pic}</div>` : C ? `<div class="hl-col">${colView(C, upto, lag).html}</div>` : pic}${list}</div>`;
 }
 export const colFor = (it, steps) => { try { return colOf(it, steps); } catch (e) { return null; } };
+// 그림 틀(engine/hints/pics.js · 11-13 방향 차례 1) — 문제의 수로 그린 그림 · i = −1 떠올리기 · 0…n−1 그 단계(지금 할 칸이 노랑) · n 처음 문제로 돌아옴 · 없으면 ''
+//  배우기 시범 · 같이 풀기도 같은 그림(kid.js)
+export function picHTML(c, p, i = -1, steps = []) {
+  let svg = ''; try { svg = picOf(c, p, { i, steps }); } catch (e) { svg = ''; }
+  return svg ? `<div class="hl-pic"><div class="pic hpic">${svg}</div></div>` : '';
+}
 
 /* root = 문제 카드 자리 · it = 엔진 문항(makeItem · itemOf) · raws = 아이가 쓴 답(넘어감이면 null)
    budget = { left } 한 판에 '한 단계씩'을 열 수 있는 수(없으면 끝없이) · again = 답을 보여 줄 때 덧붙일 사실 한 줄(매일 연습 '내일 다시 나와요' — 지킬 수 있는 말만)
@@ -69,15 +75,20 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
      묶음 바꾸기(받아올림 · 받아내림 — model.js regroupHTML · docs/motion.md ① ②): 움직임은 이 사다리에서 한 번만(seen) · 다시 보기 단추는 늘
        뺄셈 첫 단계에서 한 번 틀리면 = 십 막대 하나가 낱개 10개로(이 단계 식 '12 − 7'의 12가 어디서 왔나 — 단계 답은 보이지 않음)
        덧셈 첫 단계에서 한 번 틀리면 = 바꾸기 전 모습만(낱개를 세면 되는 단계라 모은 뒤 모습은 답이 됨)
-       첫 단계를 마치고 둘째 단계로 오면 = 아직 안 봤으면 방금 한 것의 뜻으로 한 번(세로셈 빗금 · 올린 1이 같은 때에 — lag) · 그 뒤는 틀렸을 때만 끝 모습 */
+       첫 단계를 마치고 둘째 단계로 오면 = 아직 안 봤으면 방금 한 것의 뜻으로 한 번(세로셈 빗금 · 올린 1이 같은 때에 — lag) · 그 뒤는 틀렸을 때만 끝 모습
+     그림 틀(곱셈 · 나눗셈 · 분수 · 소수 · 시간 · 넓이 — picHTML): 떠올리기부터 늘 보임 · 단계마다 지금 할 칸만 바뀜(같은 그림이 같은 자리에)
+       이 차시에 그림이 없으면 = 한 번 틀린 단계에서 그 단계 차시의 그림(곱셈구구 배열 · 분수 띠 …) */
   let seen = false, rushN = 0;   /* 떠올리기에서 빨리 낸 오답 — 두 번째면 '조금 빨라요'를 되풀이하지 않고 단계로(11-08 처음 보는 눈) */
   const isSub = (() => { try { return readExpr(it).op === '−'; } catch (e) { return false; } })();
+  const hp = (i) => picHTML(c, it.p, i, steps);
   const pic = (i, tries, fresh) => {
+    const own = hp(i); if (own) return { html: own };
     if (tenFrameHTML(it)) { const tf = tenFrameHTML(it, { moved: i >= last, anim: i >= last && fresh }); return { html: i >= last || tries ? tf : '' }; }
     const rg = (o) => { const h = regroupHTML(it, o); if (h && o.anim) seen = true; return { html: h ? `<div class="hl-pic">${h}</div>` : '', anim: !!(h && o.anim) }; };
-    if (i === 0) return tries ? (isSub ? rg({ anim: !seen }) : rg({ pre: true })) : { html: '' };
+    if (i === 0) { const r = tries ? (isSub ? rg({ anim: !seen }) : rg({ pre: true })) : { html: '' }; return !r.html && tries && steps[i] ? { html: picHTML(steps[i].c, steps[i].p) } : r; }
     if (i === 1 && fresh && !seen) return rg({ anim: true });
-    return tries ? rg({}) : { html: '' };
+    const r = tries ? rg({}) : { html: '' };
+    return !r.html && tries && steps[i] ? { html: picHTML(steps[i].c, steps[i].p) } : r;
   };
   const lock = () => root.querySelectorAll('.qcard input, .qcard .qact button, .qcard .choices button, .qcard .hl-go').forEach((x) => (x.disabled = true));   /* 맞힌 뒤에도 '모르겠어요 — 한 단계씩'이 살아 있던 것(처음 보는 눈 11-08) */
   const finish = (ok, how, msg, calm = false) => {
@@ -101,7 +112,8 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
     if (ch && ch.length <= 2) return toSteps();
     if (!raws) return toSteps();   /* '못 풀겠어요 · 넘어가기' = 떠올리기 없이 바로 단계로(모른다는 아이에게 '떠올려 봐요' X · 11-07 사용감 점검) */
     const canStep = steps.length && !(budget && budget.left <= 0);
-    draw(root, { ...base, prompt: it.prompt, sol: it.sol, choices: ch, hide: picked,
+    const rp = hp(-1);
+    draw(root, { ...base, prompt: it.prompt, sol: it.sol, choices: ch, hide: picked, extra: rp ? `<div class="hl-ctx hl-ctx-pic">${rp}</div>` : '',
       lead: head('cue', `<span class="hl-was">내 답 <b>${esc(mine(it, raws))}</b> — 아직 아니에요. ${nudge || '튼튼이 말을 읽고 다시 풀어 봐요.'}</span>${cue ? `<span class="hl-cue-t">${esc(cue)}</span>` : ''}<span class="hl-ans">이 생각으로 <b>${esc(qName)}</b>${P(qName.slice(-1), '을', '를')} 써요.</span>`, 'think', `<button type="button" class="hl-go" id="hs"><span>모르겠어요 — <span class="nobr">${canStep ? '한 단계씩 같이 풀기' : '같이 보기'}</span></span></button>`),   /* 늘 나가는 길 하나(아무 수나 써야 빠져나가던 것 · 11-07) */
       onAnswer: (a, cf, t) => {
         if (sameAns(it, a)) return finish(true, ch ? 'pick' : 'recall', ch ? '맞았어요!' : '맞았어요! 생각을 떠올려서 스스로 고쳤어요.');
@@ -117,10 +129,11 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
     if (i >= steps.length) return again(shown);
     const s = steps[i];
     let sit = null; try { sit = makeItem(s.c, s.p); } catch (e) { sit = null; }
+    const pv = pic(i, tries, fresh && !tries);
     draw(root, { ...base, prompt: s.prompt, sol: s.sol, choices: sit && sit.choices ? sit.choices : null,
-      extra: (() => { const pv = pic(i, tries, fresh && !tries); return stepCtx(it, steps, i, { shown, C, pic: pv.html, fresh: fresh && !tries ? i - 1 : -1, lag: pv.anim && i === 1 ? rgLag(it) : null }); })(),
+      extra: stepCtx(it, steps, i, { shown, C, pic: pv.html, fresh: fresh && !tries ? i - 1 : -1, lag: pv.anim && i === 1 ? rgLag(it) : null }),
       okLabel: '이 단계 다 했어요',
-      lead: head('step', `<span class="hl-k">${i + 1}단계</span><span class="hl-why">${esc(s.why).replace(/(\d) ([+−×÷=]) (?=\d)/g, '$1\u00a0$2\u00a0')}</span>${tries === 1 ? '<span class="hl-re">아직 아니에요. 그림을 보고 한 번 더 해 봐요.</span>' : tries === -1 ? '<span class="hl-re">조금 빨라요. 천천히 다시 풀어 봐요.</span>' : ''}`, tries ? 'think' : 'point', planHTML(steps, names, i, shown, `${qName} 쓰기`)),
+      lead: head('step', `<span class="hl-k">${i + 1}단계</span><span class="hl-why">${esc(s.why).replace(/(\d) ([+−×÷=]) (?=\d)/g, '$1\u00a0$2\u00a0')}</span>${tries === 1 ? `<span class="hl-re">아직 아니에요. ${pv.html ? '그림을 보고 ' : ''}한 번 더 해 봐요.</span>` : tries === -1 ? '<span class="hl-re">조금 빨라요. 천천히 다시 풀어 봐요.</span>' : ''}`, tries ? 'think' : 'point', planHTML(steps, names, i, shown, `${qName} 쓰기`)),
       onAnswer: (a, cf, t) => {
         const ok = sit ? sameAns(sit, a) : s.sol.every((v, k) => Number(a.vals[k]) === Number(v));
         if (ok) return step(i + 1, 0, shown, true);
@@ -138,7 +151,7 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
   // ③ 처음 문제 다시 — 채운 단계(방금 채운 줄만 나타남) · 옮긴 그림을 옆에 두고
   function again(shown, nudge = '') {
     draw(root, { ...base, prompt: it.prompt, sol: it.sol, choices: it.choices || null,
-      extra: stepCtx(it, steps, steps.length, { shown, C, head: false, pic: C ? '' : tenFrameHTML(it, { moved: true }), fresh: nudge ? -1 : last }),
+      extra: stepCtx(it, steps, steps.length, { shown, C, head: false, pic: hp(steps.length) || (C ? '' : tenFrameHTML(it, { moved: true })), fresh: nudge ? -1 : last }),
       lead: head('again', `<span class="hl-k">마지막</span><span class="hl-why">단계를 다 했어요. 이제 <b>${esc(qName)}</b>${P(qName.slice(-1), '을', '를')} 써요.</span>${nudge ? `<span class="hl-re">${nudge}</span>` : ''}`, 'point', planHTML(steps, names, steps.length, shown, `${qName} 쓰기`)),
       onAnswer: (a, cf, t) => {
         if (sameAns(it, a)) return finish(true, shown.size ? 'shown' : 'steps', `맞았어요! 풀이 순서대로 하나씩 풀었어요.${names ? `<br><span class="small">${names.map(esc).join(' → ')}</span>` : ''}`);   /* 순서를 한 번 더 짚음 · 단계 답을 본 적이 있으면 맞혀도 '스스로 고침'으로 세지 않음(how 'shown' — 한 단계뿐이면 그 답이 곧 처음 문제의 답 · 코덱스 11-07) */

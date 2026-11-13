@@ -160,6 +160,18 @@ button:focus-visible,.btn:focus-visible,a:focus-visible,summary:focus-visible,.b
 .fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 .12em;font-size:.92em}.fr-t{border-bottom:2px solid currentColor;padding:0 .2em .05em;min-width:1.1em;text-align:center}.fr-b{padding:.05em .2em 0;text-align:center}
 .mx{display:inline-flex;align-items:center;gap:.08em}
 .pic{flex-basis:100%;margin:4px 0 8px}.pic svg{max-width:100%;height:auto}.pic .dot{fill:var(--teal)}.pic .grp{fill:none;stroke:var(--mute);stroke-width:2;stroke-dasharray:4 3}.pic .cell{fill:#fff;stroke:var(--ink);stroke-width:2}.pic .cell.on{fill:var(--sun)}
+/* 그림 틀(engine/pics.js · 11-13) — 띠 · 배열 · 묶음 · 분수 띠 · 눈금 · 시계 · 모눈 · 색은 여기서만(노랑 = 지금 볼 것 · 청록 = 세는 것 · 옅은 청록 = 마친 것) */
+.pic .p-t{fill:var(--ink);font-family:var(--num);font-variant-numeric:tabular-nums}.pic .p-t.mu{fill:var(--mute)}.pic .p-t.ac{fill:var(--teal-d)}.pic .p-t.in{fill:#fff;font-weight:800}
+.pic .p-ln{fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.pic .p-ln.mu{stroke:var(--mute);stroke-width:1.5}.pic .p-ln.th{stroke-width:1.2}.pic .p-ln.da{stroke:var(--mute);stroke-dasharray:3 3}
+.pic .p-box{fill:#fff;stroke:var(--ink);stroke-width:2}.pic .p-box.now{fill:var(--sun)}.pic .p-box.done{fill:var(--teal-t)}
+.pic .p-dot{fill:var(--teal)}.pic .p-dot.dim{fill:var(--teal-l)}.pic .p-dot.gh{fill:none;stroke:var(--teal-l);stroke-width:1.5;stroke-dasharray:3 3}.pic .p-dot.b{fill:var(--sun);stroke:var(--ink);stroke-width:1.5}
+.pic .p-ring{fill:none;stroke:var(--mute);stroke-width:1.5;stroke-dasharray:4 3}
+.pic .p-arc{fill:none;stroke:var(--teal);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}.pic .p-arc.da{stroke:var(--mute);stroke-dasharray:5 4}
+.pic .p-gap{fill:none;stroke:var(--pri);stroke-width:7;stroke-linecap:round;opacity:.5}.pic .p-pt{fill:var(--pri)}
+.pic .p-hand{fill:none;stroke:var(--ink);stroke-width:4;stroke-linecap:round}.pic .p-hand.min{stroke:var(--teal);stroke-width:3}
+.pic .p-x{fill:none;stroke:var(--stuck);stroke-width:2.2;stroke-linecap:round}.pic .p-edge{fill:none;stroke:var(--teal);stroke-width:4;stroke-linejoin:round}
+.pic .cell.b{fill:var(--teal-l)}.pic .cell.thin{stroke-width:1;stroke:var(--mute)}
+.hpic{margin:0;display:flex;justify-content:center}.hl-pic .hpic svg{max-height:170px;width:auto}.hl-ctx-pic{align-items:center}
 .blank{width:2.6em;min-width:2.6em;height:1.55em;border:3px solid var(--ink);border-radius:12px;text-align:center;font:inherit;background:var(--surface);color:var(--ink);padding:0 .1em;transition:border-color var(--press),background-color var(--press)}
 .fr .blank{width:2.3em;height:1.45em;margin:.08em 0}
 .blank:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 4px var(--teal-t)}
@@ -443,6 +455,7 @@ button.pk:active,button.pk.press{box-shadow:0 1px 0 var(--line2)}
 .fxs.nomid>.fxs-q>.choices{width:100%;max-width:760px}
 .fxs-mid{grid-area:mid;display:flex;align-items:center;justify-content:center;min-width:0;min-height:0}
 .fxs-side{grid-area:side;display:flex;align-items:center;justify-content:center;min-width:0;min-height:0}
+.fxs-side>.hl-pic{flex:1 1 auto;min-width:0;padding:0}.fxs-side>.hl-pic .hpic svg{max-height:220px}.fxs-side>.hl-pic+.plan{flex:0 1 230px}   /* 시범: 그림 틀(11-13) — 수 모형과 같은 자리 · 풀이 순서는 좁게 */
 .fxs-side>.model{width:fit-content;max-width:100%;padding:12px 16px 8px}.fxs-side>.model p{max-width:340px}.fxs-side>.model svg{max-height:240px;display:block;margin:0 auto}
 .fxs-say{grid-area:say;display:flex;align-items:center;gap:20px;background:var(--panel);border-radius:18px;padding:12px 18px}
 .fxs-say>.say{flex:1;margin:0;min-width:0}
