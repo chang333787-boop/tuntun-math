@@ -228,28 +228,27 @@ function mulParts(a, b) {
   const ms = (big, small, sw) => (sw ? `${small} × ${big}` : `${big} × ${small}`);
   const sw = a <= 9 && b > 9;
   const [A, Bb] = sw ? [b, a] : [a, b];
-  if (Bb <= 9 && A % 10 === 0 && A < 100) return [{ c: 'MUL', p: m(A / 10, Bb, sw), why: `${A}${P(A, '은', '는')} ${A / 10}의 10배라서 ${ms(A / 10, Bb, sw)}부터 해요. 그다음 10배예요.` }];
-  if (Bb <= 9 && A % 100 === 0 && A < 1000) return [{ c: 'MUL', p: m(A / 100, Bb, sw), why: `${A}${P(A, '은', '는')} ${A / 100}의 100배라서 ${ms(A / 100, Bb, sw)}부터 해요. 그다음 100배예요.` }];
+  if (Bb <= 9 && A % 10 === 0 && A < 100) return [{ c: 'MUL', p: m(A / 10, Bb, sw), why: `${ms(A / 10, Bb, sw)}부터 해요. 그다음 10배 해요.` }];
+  if (Bb <= 9 && A % 100 === 0 && A < 1000) return [{ c: 'MUL', p: m(A / 100, Bb, sw), why: `${ms(A / 100, Bb, sw)}부터 해요. 그다음 100배 해요.` }];
   if (Bb <= 9) {
     // 일의 자리부터 자리마다 곱해서 더한다 (교과서 세로셈 순서)
-    //  글: 첫 단계에 '47 = 40 + 7이라서 자리마다 따로 곱해 더해요' · 몇십 · 몇백 단계는 '40은 4의 10배라서 4 × 6의 10배예요'(답 수는 말하지 않음)
+    //  글(11-13 · 그림 띠가 가르기를 보여 줌 → 말은 지금 할 곱 하나만): '먼저 7 × 6을 해요.' · 몇십 · 몇백 단계는 '40 × 6을 해요. 4 × 6의 10배예요.'(답 수는 말하지 않음)
     const parts = [];
     for (let i = 0; i < len(A); i++) { const d = dig(A, i); if (d) parts.push(d * 10 ** i); }
-    const expr = sw ? `${Bb} × ${A}` : `${A} × ${Bb}`, split = `${A} = ${[...parts].reverse().join(' + ')}`;
-    const tail = (x) => { const k = String(x).length - 1, d = x / 10 ** k, t = 10 ** k; return k && d > 1 ? ` ${x}${P(x, '은', '는')} ${d}의 ${t}배라서 ${ms(d, Bb, sw)}의 ${t}배예요.` : ''; };
-    const steps = parts.map((x, j) => ({ c: 'MUL', p: m(x, Bb, sw), why: parts.length > 1 && !j ? `${split}${P(parts[0], '이라서', '라서')} 자리마다 따로 곱해 더해요. 먼저 ${ms(x, Bb, sw)}${P(sw ? x : Bb, '을', '를')} 해요.` : `${ms(x, Bb, sw)}${P(sw ? x : Bb, '을', '를')} 해요.${tail(x)}` }));
-    if (parts.length === 2) steps.push({ c: 'ADD', p: { a: parts[1] * Bb, b: parts[0] * Bb }, why: `두 곱을 더하면 ${expr}의 답이 나와요.` });
-    if (parts.length === 3) { steps.push({ c: 'ADD', p: { a: parts[1] * Bb, b: parts[0] * Bb }, why: `${PLN[String(parts[0]).length - 1]}의 자리 곱과 ${PLN[String(parts[1]).length - 1]}의 자리 곱을 더해요.` }, { c: 'ADD', p: { a: parts[2] * Bb, b: (parts[0] + parts[1]) * Bb }, why: `그 합에 백의 자리 곱을 더하면 ${expr}의 답이 나와요.` }); }
+    const tail = (x) => { const k = String(x).length - 1, d = x / 10 ** k, t = 10 ** k; return k && d > 1 ? ` ${ms(d, Bb, sw)}의 ${t}배예요.` : ''; };
+    const steps = parts.map((x, j) => ({ c: 'MUL', p: m(x, Bb, sw), why: `${parts.length > 1 && !j ? '먼저 ' : ''}${ms(x, Bb, sw)}${P(sw ? x : Bb, '을', '를')} 해요.${tail(x)}` }));
+    if (parts.length === 2) steps.push({ c: 'ADD', p: { a: parts[1] * Bb, b: parts[0] * Bb }, why: '두 곱을 더해요.' });
+    if (parts.length === 3) { steps.push({ c: 'ADD', p: { a: parts[1] * Bb, b: parts[0] * Bb }, why: `${PLN[String(parts[0]).length - 1]}의 자리 곱과 ${PLN[String(parts[1]).length - 1]}의 자리 곱을 더해요.` }, { c: 'ADD', p: { a: parts[2] * Bb, b: (parts[0] + parts[1]) * Bb }, why: '그 합에 백의 자리 곱을 더해요.' }); }
     return steps;
   }
-  if (b % 10 === 0 && b < 100) return [{ c: 'MUL', p: { a, b: b / 10 }, why: `${a} × ${b / 10}부터 해요. 그다음 10배예요.` }];
+  if (b % 10 === 0 && b < 100) return [{ c: 'MUL', p: { a, b: b / 10 }, why: `${a} × ${b / 10}부터 해요. 그다음 10배 해요.` }];
   if (a % 10 === 0 && a < 100 && b < 100) return mulParts(b, a);
   if (b < 100) {
     const o = ones(b), t = tens(b) * 10;
     const st = [];
-    if (o) st.push({ c: 'MUL', p: { a, b: o }, why: `${b} = ${t} + ${o}${P(o, '이라서', '라서')} ${a}에 ${o}${P(o, '과', '와')} ${t}${P(t, '을', '를')} 따로 곱해 더해요. 먼저 ${a} × ${o}${P(o, '을', '를')} 해요.` });
+    if (o) st.push({ c: 'MUL', p: { a, b: o }, why: `먼저 ${a} × ${o}${P(o, '을', '를')} 해요.` });
     st.push({ c: 'MUL', p: { a, b: t }, why: `${a} × ${t}${P(t, '을', '를')} 해요. ${a} × ${t / 10}의 10배예요.` });
-    if (o) st.push({ c: 'ADD', p: { a: a * t, b: a * o }, why: `두 곱을 더하면 ${a} × ${b}의 답이 나와요.` });
+    if (o) st.push({ c: 'ADD', p: { a: a * t, b: a * o }, why: '두 곱을 더해요.' });
     return st;
   }
   return [];

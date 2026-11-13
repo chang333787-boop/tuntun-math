@@ -595,9 +595,9 @@ export default {
       steps: (p) => {
         const s = Math.min(p.a, p.b), t = Math.max(p.a, p.b), tt = t - ones(t), o = ones(t);
         return [
-          { c: 'MUL', p: { a: s, b: tt }, why: `${t} = ${tt} + ${J(o, '이라서', '라서')} ${s} × ${J(tt, '과', '와')} ${s} × ${J(o, '을', '를')} 따로 구해 더해요. 먼저 ${s} × ${J(tt, '을', '를')} 해요.` },
+          { c: 'MUL', p: { a: s, b: tt }, why: `먼저 ${s} × ${J(tt, '을', '를')} 해요.${tt > 10 ? ` ${s} × ${tt / 10}의 10배예요.` : ''}` },
           { c: 'MUL', p: { a: s, b: o }, why: `${s} × ${J(o, '을', '를')} 해요.` },
-          { c: 'ADD', p: { a: s * tt, b: s * o }, why: `두 곱을 더하면 ${p.a} × ${p.b}의 답이 나와요.` },
+          { c: 'ADD', p: { a: s * tt, b: s * o }, why: '두 곱을 더해요.' },
         ];
       },
       hint: '4 × 23은 4 × 20과 4 × 3을 따로 구해서 더해요. 80 + 12 = 92예요.',

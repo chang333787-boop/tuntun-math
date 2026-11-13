@@ -71,13 +71,15 @@ function factSteps(a, b) {
 const FACT = { cue: (p) => factCue(p.a, p.b), steps: (p) => factSteps(p.a, p.b) };
 
 // ── (여러 자리) × (한 자리 · 몇십 · 몇십몇) — 자리마다 갈라 곱해 더하기(차시 단계와 같은 꼴)
+/* '200, 90, 4로' · '30과 1로' — 그림 띠의 칸과 같은 가르기를 한 번만 말함 */
+const cut = (ps) => (ps.length === 2 ? `${gwa(ps[0])} ${RO(ps[1])}` : `${ps.slice(0, -1).join(', ')}, ${RO(ps[ps.length - 1])}`);
 function partsOf(A) { const out = []; String(A).split('').forEach((d, i, s) => { const v = Number(d) * 10 ** (s.length - 1 - i); if (v) out.push(v); }); return out; }
 function mulCue({ a, b }) {
   const sw = a <= 9 && b > 9, A = sw ? b : a, Bb = sw ? a : b, ex = (x) => (sw ? `${Bb} × ${x}` : `${x} × ${Bb}`);
   if (Bb <= 9) {
-    if (A % 10 === 0 && partsOf(A).length === 1) { const t = 10 ** (String(A).length - 1), d = A / t; return `${eun(A)} ${d}의 ${t}배라서 곱도 ${t}배가 돼요. ${ex(d)}${P(ex(d), '을', '를')} 먼저 떠올려 볼까요?`; }
+    if (A % 10 === 0 && partsOf(A).length === 1) { const t = 10 ** (String(A).length - 1), d = A / t; return `${eun(A)} ${d}의 ${t}배예요. ${ex(d)}${P(ex(d), '을', '를')} 먼저 떠올려 볼까요?`; }
     const ps = partsOf(A);
-    return `${A} = ${ps.join(' + ')}처럼 자리마다 갈라 볼까요? 자리마다 ${Bb}${P(Bb, '을', '를')} 곱해 더해요.`;
+    return `${eul(A)} ${cut(ps)} 갈라서 곱해 볼까요?`;
   }
   // 곱하는 수가 두 자리
   const big = sw ? Bb : a, m = sw ? A : b;
@@ -85,8 +87,8 @@ function mulCue({ a, b }) {
     if (big % 10 === 0 && big < 100) return `${eun(big)} ${big / 10}의 10배, ${eun(m)} ${m / 10}의 10배예요. ${big / 10} × ${m / 10}부터 떠올려 볼까요?`;
     return `${eun(m)} ${m / 10}의 10배예요. ${sw ? `${m / 10} × ${big}` : `${big} × ${m / 10}`}${P(sw ? big : m / 10, '을', '를')} 먼저 구하고 10배 해 볼까요?`;
   }
-  const t = tens(m) * 10, o = ones(m), e1 = sw ? `${o} × ${big}` : `${big} × ${o}`, e2 = sw ? `${t} × ${big}` : `${big} × ${t}`;
-  return `${m} = ${t} + ${ye(o)}. ${e1}${P(sw ? big : o, '과', '와')} ${e2}${P(sw ? big : t, '을', '를')} 따로 구해 더해 볼까요?`;
+  const t = tens(m) * 10, o = ones(m);
+  return `${eul(m)} ${cut([t, o])} 갈라서 곱해 볼까요?`;
 }
 const MULC = { cue: mulCue };
 
