@@ -13,6 +13,8 @@ const famOf = (s) => (s && s.p && s.p.fam) || '';
 const cur = (steps, i) => (i >= 0 && i < steps.length ? steps[i] : null);
 const seg = (n, k = 'a') => ({ n, k });
 const rep = (n, f) => Array.from({ length: n }, (_, k) => f(k));
+const dn = (m, k) => String(Number((m / 10 ** k).toFixed(k)));   /* 정수 m · 소수 k자리 → '2.17' */
+const POW = { 2: '100', 1: '10', 0: '1', [-1]: '0.1', [-2]: '0.01', [-3]: '0.001' };
 
 // ── 가르기 띠 ── 자리마다 갈라 곱하기 · 갈라 나누기(단계의 가족 문항에서 칸을 읽음 — 차시마다 따로 쓰지 않음)
 //  지금 단계의 칸은 노랑 · 마친 칸에는 그 단계의 답 · 더하는 단계에서는 더할 두 칸이 노랑
@@ -200,6 +202,30 @@ const PICS = {
   '2-2-4:5': timePic,
   '3-1-5:5': timePic,
 
+  /* 소수 세 자리 수 — 자리 값은 자리 표(물은 숫자 칸이 노랑) · 0.001이 몇 개와 m → km는 가르기 띠(단계와 같은 두 칸) */
+  '4-2-3:4': (p, { i, steps }) => {
+    if (!int(p.n)) return null;
+    if (p.v === 'value') {
+      const ds = String(p.n).split('');
+      return ds.length !== 4 || ds[3 - p.i] === '1' ? null : { t: 'place', cols: ['1', '0.1', '0.01', '0.001'], rows: [{ ds, on: 3 - p.i }] };   /* 숫자 1이면 자리 이름이 곧 답 */
+    }
+    const n = steps.length, w = Math.floor(p.n / 1000), r = p.n % 1000;
+    if (!n || n > 2 || !w || !r) return null;
+    if (p.v === 'units') { const a = n - 2, got = i >= 0 && i > a; return { t: 'split', top: dn(p.n, 3), cells: [{ t: String(w), v: got ? `${w * 1000}개` : null, on: i === a }, { t: dn(r, 3), v: got ? `${r}개` : null, on: i === n - 1 }] }; }
+    if (p.v === 'km' && n === 2) return { t: 'split', top: `${p.n} m`, cells: [{ t: `${w * 1000} m`, v: i > 0 ? `${w} km` : null, on: i === 0 }, { t: `${r} m`, v: i > 1 ? `${dn(r, 3)} km` : null, on: i === 1 }] };
+    return null;
+  },
+  /* 소수 사이의 관계 — 자리 표: 윗줄 = 주어진 수 · 아랫줄 = 빈칸 · 작은 단위 칸에서 새 단위 칸으로 화살표(답은 적지 않음) */
+  '4-2-3:7': (p, { i }) => {
+    const [m, k, sh] = p.v === 'x10' ? [p.k, 2, 1] : p.v === 'x100' ? [p.k, 2, 2] : p.v === 'd10' ? [p.k, 2, -1] : p.v === 'd100' ? [p.m, 1, -2] : p.v === 'inv' ? [p.m, p.f === 10 ? 2 : 1, p.f === 10 ? -1 : -2] : [];
+    if (!int(m) || m < 1) return null;
+    const ds = String(m), hi = Math.max(ds.length - 1 - k, 0, ds.length - 1 - k + sh), lo = Math.min(-k, sh - k), cols = [], row = [];
+    if (hi > 2 || lo < -3) return null;
+    for (let e = hi; e >= lo; e--) { const j = e + k; cols.push(POW[e]); row.push(j < 0 ? '' : j < ds.length ? ds[ds.length - 1 - j] : e <= 0 ? '0' : ''); }
+    if ([m, m * 10 ** (sh - k)].some((v) => cols.includes(String(Number(v.toFixed(3)))))) return null;   /* 답이 자리 이름과 같은 수면 그리지 않음 */
+    const from = cols.indexOf(POW[-k]), to = cols.indexOf(POW[sh - k]);
+    return { t: 'place', cols, rows: [{ ds: row, on: i < 1 ? from : -1 }, { ds: cols.map(() => ''), on: i >= 1 ? to : -1 }], hop: i === 0 ? null : { from, to, text: sh > 0 ? `${10 ** sh}배` : `1/${10 ** -sh}` } };
+  },
   /* 직사각형 둘레와 넓이 — 둘레 단계에서는 테두리 · 넓이 단계에서는 칸 */
   '5-1-6:4': (p, { i, steps }) => (int(p.a) && int(p.b) && p.a >= 1 && p.b >= 1 && p.a <= 20 && p.b <= 12
     ? { t: 'grid', w: p.a, h: p.b, wl: `${p.a} cm`, hl: `${p.b} cm`, mode: i < 0 || i >= steps.length ? 'plain' : i === steps.length - 1 ? 'area' : 'peri' } : null),

@@ -165,7 +165,33 @@ export function grid({ w, h, mode = 'area', wl = '', hl = '', label = '' }) {
   return wrap(LX + w * cs + 4, TY + h * cs + 4, label || `가로 ${w}칸, 세로 ${h}칸 모눈 직사각형${mode === 'peri' ? ' — 테두리 표시' : ''}`, s);
 }
 
-const KINDS = { split, tiles, array, share, bars, line, clock, grid };
+// ── 자리 표 ── 자리 이름(10 · 1 · 0.1 …) 아래 한 칸에 숫자 하나 · 소수점은 일의 자리 칸 오른쪽 금 위에
+//  rows = [{ ds: 칸마다 숫자('' = 빈칸), on: 지금 볼 칸 }] · hop = { from, to, text } 첫 줄 칸에서 둘째 줄 칸으로 가는 화살표
+export function place({ cols = [], rows = [], hop = null, label = '' }) {
+  if (!cols.length || !rows.length) return '';
+  const cw = Math.min(74, Math.floor(440 / cols.length)), W = cw * cols.length + 4, rh = 46, gap = 44, dot = cols.indexOf('1');
+  const cx = (i) => 2 + cw * i + cw / 2, ys = [];
+  let s = cols.map((c, i) => T(cx(i), 17, c, 15, 'mu')).join(''), y = 26;
+  rows.forEach((r, k) => {
+    ys.push(y);
+    cols.forEach((_, i) => {
+      const d = r.ds ? r.ds[i] : '';
+      s += `<rect x="${2 + cw * i}" y="${y}" width="${cw}" height="${rh}" class="p-box${r.on === i ? ' now' : ''}"/>`;
+      if (d != null && d !== '') s += T(cx(i), y + 33, d, 28, '', 'middle', true);
+    });
+    if (dot >= 0 && dot < cols.length - 1) s += `<circle cx="${2 + cw * (dot + 1)}" cy="${y + rh - 10}" r="4.2" class="p-t"/>`;   /* 소수점 — 글자 '.'은 작아 안 보여 점으로 */
+    y += rh + (k < rows.length - 1 ? gap : 0);
+  });
+  if (hop && rows.length > 1) {
+    const x0 = cx(hop.from), y0 = ys[0] + rh + 4, x1 = cx(hop.to), y1 = ys[1] - 5, a = Math.atan2(y1 - y0, x1 - x0), right = x1 > x0;
+    const wing = (t) => `L${r1(x1 - 9 * Math.cos(a + t))} ${r1(y1 - 9 * Math.sin(a + t))}`;
+    s += `<path d="M${r1(x0)} ${r1(y0)} L${r1(x1)} ${r1(y1)} ${wing(0.5)} M${r1(x1)} ${r1(y1)} ${wing(-0.5)}" class="p-arc"/>`;
+    if (hop.text) s += T((x0 + x1) / 2 + (right ? 8 : -8), y0 + 11, hop.text, 15, 'ac', right ? 'start' : 'end', true);
+  }
+  return wrap(W, y + 2, label, s);
+}
+
+const KINDS = { split, tiles, array, share, bars, line, clock, grid, place };
 /* spec = { t: 틀 이름, …그 틀의 값 } → SVG 글자(틀이 없거나 그릴 수 없으면 '') */
 export function picSVG(spec) {
   if (!spec || !KINDS[spec.t]) return '';
