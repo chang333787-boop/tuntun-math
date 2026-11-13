@@ -102,7 +102,7 @@ export function draw(root, { prompt, sol = null, choices = null, tag = '', act =
     <div class="qmain">
       <div class="qtop">${tagHTML(tag, act)}${dots ? progHTML(dots) : ''}</div>
       ${extra}
-      <div class="math" id="q">${toHTML(prompt)}</div>
+      <div class="math${Array.isArray(prompt) && prompt.filter((t) => t && t.br).length >= 4 ? ' tall' : ''}" id="q">${toHTML(prompt)}</div>
     </div>
     <div class="qside">
       ${lead ? `<div class="qlead">${lead}</div>` : ''}

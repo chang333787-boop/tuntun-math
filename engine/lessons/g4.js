@@ -341,17 +341,17 @@ const FAMS = [
       if (p.ask === 'res') {
         const dz = z - pz;
         return [
-          dz > 0 ? { c: 'ADD', p: { a: pz, b: dz }, why: `규칙대로라면 ${what} 앞 식의 ${pz}보다 ${dz}만큼 커져요.` }
-            : dz < 0 ? { c: 'SUB', p: { a: pz, b: -dz }, why: `규칙대로라면 ${what} 앞 식의 ${pz}보다 ${-dz}만큼 작아져요.` } : null,
-          { c: p.op === '+' ? 'ADD' : 'SUB', p: { a: x, b: y }, why: '다음 식을 직접 계산해 확인해요.' },
+          dz > 0 ? { c: 'ADD', p: { a: pz, b: dz }, why: `${what} 앞 식보다 ${dz}만큼 커져요.` }
+            : dz < 0 ? { c: 'SUB', p: { a: pz, b: -dz }, why: `${what} 앞 식보다 ${-dz}만큼 작아져요.` } : null,
+          { c: p.op === '+' ? 'ADD' : 'SUB', p: { a: x, b: y }, why: dz ? '다음 식을 직접 계산해 확인해요.' : `${what} 그대로인지 직접 계산해 확인해요.` },
         ];
       }
       if (p.kind === 'sub') return [
-        { c: 'ADD', p: { a: py, b: p.k }, why: `빼는 수가 ${p.k}씩 커져요. 앞 식의 ${py}에 ${J(p.k, '을', '를')} 더해요.` },
+        { c: 'ADD', p: { a: py, b: p.k }, why: `빼는 수가 앞 식보다 ${p.k}만큼 커져요.` },
         { c: 'SUB', p: { a: x, b: z }, why: `${x} − □ = ${z}이니까 ${x} − ${RO(z)} 확인해요.` },
       ];
       return [
-        { c: 'ADD', p: { a: px, b: p.k }, why: `${p.op === '+' ? '더해지는' : '빼지는'} 수가 ${p.k}씩 커져요. 앞 식의 ${px}에 ${J(p.k, '을', '를')} 더해요.` },
+        { c: 'ADD', p: { a: px, b: p.k }, why: `${p.op === '+' ? '더해지는' : '빼지는'} 수가 앞 식보다 ${p.k}만큼 커져요.` },
         p.op === '+' ? { c: 'SUB', p: { a: z, b: y }, why: `□ + ${y} = ${z}이니까 ${z} − ${RO(y)} 확인해요.` } : { c: 'ADD', p: { a: z, b: y }, why: `□ − ${y} = ${z}이니까 ${z} + ${RO(y)} 확인해요.` },
       ];
     },
@@ -374,10 +374,9 @@ const FAMS = [
     },
     steps: (p) => {
       const L = mdLines(p), [a, b, c, o] = L[L.length - 1];
-      if (p.kind === 'x10') return [{ c: 'MUL', p: { a: L[0][0], b: L[0][1] }, why: `곱하는 수가 10배가 되면 곱도 10배예요. 먼저 첫째 식 ${L[0][0]} × ${L[0][1]}부터 확인해요.` }];
-      if (p.kind === 'dbl') { const pc = L[L.length - 2][2]; return [{ c: 'MUL', p: { a: pc, b: 2 }, why: `곱하는 수가 2배가 되면 곱도 2배예요. 앞 식의 곱 ${pc}의 2배를 구해요.` }]; }
+      if (p.kind === 'x10' || p.kind === 'dbl') { const f = p.kind === 'dbl' ? 2 : 10; return [{ c: 'MUL', p: { a: L[L.length - 2][2], b: f }, why: `곱하는 수가 ${f}배이니 곱도 ${f}배예요.` }]; }   /* 10배는 앞서 '첫째 식부터 확인'(문제에 이미 있는 식을 다시 계산하던 것 · 11-14 묶음 5) */
       if (p.kind === 'divk') return [
-        { c: 'MUL', p: { a: p.q, b: p.at }, why: `나누어지는 수가 첫째 식의 ${p.at}배이니 몫도 ${p.q}의 ${p.at}배예요.` },
+        { c: 'MUL', p: { a: p.q, b: p.at }, why: `나누어지는 수가 첫째 식의 ${p.at}배이니 몫도 ${p.at}배예요.` },
         { c: 'DIV', p: { a, b }, why: '직접 나눠 확인해요.' },
       ];
       if (p.kind === 'r101' && p.ask !== 'left' && o === '×') return [{ c: 'MUL', p: { a, b }, why: '규칙이 헷갈리면 직접 곱해 확인해요.' }];

@@ -191,7 +191,22 @@ export function place({ cols = [], rows = [], hop = null, label = '' }) {
   return wrap(W, y + 2, label, s);
 }
 
-const KINDS = { split, tiles, array, share, bars, line, clock, grid, place };
+// ── 식 꼴 칸 ── 식 모양 그대로 [칸] + [칸] = [칸] · 칸 위에 이름(더해지는 수 …) · 칸 안에 앞 식보다 바뀐 만큼('20 커짐' · '그대로' · '?')
+export function eqbox({ heads = [], ops = [], vals = [], on = -1, label = '' }) {
+  if (!vals.length) return '';
+  const bw = Math.round(Math.min(122, Math.max(92, ...vals.map((v) => tw(v, 19) + 22), ...heads.map((h) => tw(h, 15) + 10)))), og = 34, bh = 40, y = 22;
+  let s = '', x = 2;
+  vals.forEach((v, j) => {
+    if (j) { s += T(x + og / 2, y + 28, ops[j - 1] || '', 24, '', 'middle', true); x += og; }
+    s += T(x + bw / 2, 15, heads[j] || '', 15, 'mu');
+    s += `<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="6" class="p-box${on === j ? ' now' : ''}"/>`;
+    s += T(x + bw / 2, y + 27, v, v === '?' ? 24 : 19, v === '그대로' || v === '?' ? '' : 'ac', 'middle', true);
+    x += bw;
+  });
+  return wrap(x + 2, y + bh + 2, label, s);
+}
+
+const KINDS = { split, tiles, array, share, bars, line, clock, grid, place, eqbox };
 /* spec = { t: 틀 이름, …그 틀의 값 } → SVG 글자(틀이 없거나 그릴 수 없으면 '') */
 export function picSVG(spec) {
   if (!spec || !KINDS[spec.t]) return '';

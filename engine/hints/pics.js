@@ -226,6 +226,21 @@ const PICS = {
     const from = cols.indexOf(POW[-k]), to = cols.indexOf(POW[sh - k]);
     return { t: 'place', cols, rows: [{ ds: row, on: i < 1 ? from : -1 }, { ds: cols.map(() => ''), on: i >= 1 ? to : -1 }], hop: i === 0 ? null : { from, to, text: sh > 0 ? `${10 ** sh}배` : `1/${10 ** -sh}` } };
   },
+  /* 덧셈식 · 뺄셈식 배열 — 식 꼴 칸: 앞 식보다 두 수가 바뀐 만큼 · 모르는 칸은 떠올리기에서만 '?'(단계부터는 단계 식에 나온 만큼) */
+  '4-1-6:6': (p, { i }) => {
+    if (!int(p.k) || !p.kind) return null;
+    const k = p.k, dx = p.kind === 'sub' ? 0 : k, dy = p.kind === 'both' || p.kind === 'sub' ? k : p.kind === 'opp' ? -k : 0, dz = p.op === '+' ? dx + dy : dx - dy;
+    const u = p.ask === 'res' ? 2 : p.kind === 'sub' ? 1 : 0, say = (d) => (d > 0 ? `${d} 커짐` : d < 0 ? `${-d} 작아짐` : '그대로');
+    return { t: 'eqbox', heads: p.op === '+' ? ['더해지는 수', '더하는 수', '합'] : ['빼지는 수', '빼는 수', '차'], ops: [p.op === '+' ? '+' : '−', '='], vals: [dx, dy, dz].map((d, j) => (j === u && i < 0 ? '?' : say(d))), on: u };
+  },
+  /* 곱셈식 · 나눗셈식 배열 — 같은 식 꼴 칸(몇 배 · 그대로) · 몇 배는 앞 식과(나누어지는 수만 몇 배 = 첫째 식과) · 숫자 모양 규칙(101 · 9 · 1)은 그림 없음 */
+  '4-1-6:7': (p, { i }) => {
+    const MUL = ['곱해지는 수', '곱하는 수', '곱'], DIV = ['나누어지는 수', '나누는 수', '몫'], box = (heads, op, vals, end) => ({ t: 'eqbox', heads, ops: [op, '='], vals: [...vals, i < 0 ? '?' : end], on: 2 });
+    if (p.kind === 'dbl' || p.kind === 'x10') { const f = p.kind === 'dbl' ? '2배' : '10배'; return box(MUL, '×', ['그대로', f], f); }
+    if (p.kind === 'divk' && int(p.at)) return box(DIV, '÷', [`${p.at}배`, '그대로'], `${p.at}배`);
+    if (p.kind === 'dsame') return box(DIV, '÷', ['2배', '2배'], '그대로');
+    return null;
+  },
   /* 직사각형 둘레와 넓이 — 둘레 단계에서는 테두리 · 넓이 단계에서는 칸 */
   '5-1-6:4': (p, { i, steps }) => (int(p.a) && int(p.b) && p.a >= 1 && p.b >= 1 && p.a <= 20 && p.b <= 12
     ? { t: 'grid', w: p.a, h: p.b, wl: `${p.a} cm`, hl: `${p.b} cm`, mode: i < 0 || i >= steps.length ? 'plain' : i === steps.length - 1 ? 'area' : 'peri' } : null),
