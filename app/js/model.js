@@ -186,12 +186,16 @@ export function colOf(it, steps) {
 }
 // k = 보인 단계 수(0 = 처음 · 단계 수 = 끝) → { html, lead0: 지금 자리 답이 맨 앞 0이라 쓰지 않음 }
 //  lag = { mk, put }(ms · rgLag) — 이 단계에서 새로 생긴 빗금 · 위 숫자 · 답을 그만큼 늦게 나타냄(모형이 바뀌는 순간과 같은 때 [M-18])
-export function colView(C, k, lag = null) {
-  const n = C.at.length, cur = k ? C.at[Math.min(k, n) - 1] : -1, upto = !k ? -1 : k >= n || cur < 0 ? C.plan.length - 1 : cur;
+//  peek(11-13 묶음 3 · 단계를 '풀 때' 보는 그림 — 도움 사다리 · 같이 풀기) — 띠는 지금 풀 자리에 · 받아내림 빗금과 위 숫자는 풀기 전에 보임(단계 식의 수와 같음 · 답 줄은 그대로 비움)
+//    받아올림의 작은 1은 그 자리를 푼 뒤에(그 단계의 답이라서) · 단계가 없는 자리(0 − 0)는 지나가며 채움 · peek가 없으면(시범) 방금 설명한 자리에 띠
+export function colView(C, k, lag = null, { peek = false } = {}) {
+  const n = C.at.length, done = k ? C.at[Math.min(k, n) - 1] : -1, upto = !k ? -1 : k >= n || done < 0 ? C.plan.length - 1 : done;
   const W = Math.max(ln(C.a), ln(C.b), ln(C.ans)), mk = {}, put = {};
+  const now = !peek ? done : k < n ? C.at[k] : -1, sub = C.op === '−';
   for (let q = 0; q <= upto; q++) { C.plan[q].mk.forEach((m) => (mk[m.at] = m)); C.plan[q].put.forEach((m) => (put[m.at] = m.v)); }
-  const now = cur, lead0 = now >= 0 && put[now] === 0 && now >= ln(C.ans);
-  const LP = lag && cur >= 0 ? C.plan[cur] : null, lmk = new Set(LP ? LP.mk.map((m) => m.at) : []), lput = new Set(LP ? LP.put.map((m) => m.at) : []);
+  if (peek) for (let q = upto + 1; q <= now; q++) { if (q < now || sub) C.plan[q].mk.forEach((m) => (mk[m.at] = m)); if (q < now) C.plan[q].put.forEach((m) => (put[m.at] = m.v)); }
+  const lead0 = done >= 0 && put[done] === 0 && done >= ln(C.ans);
+  const LP = lag && done >= 0 ? C.plan[done] : null, lmk = new Set(LP && !(peek && sub) ? LP.mk.map((m) => m.at) : []), lput = new Set(LP ? LP.put.map((m) => m.at) : []);
   const lg = (on, inner, ms) => (on && inner ? `<span class="lag" style="--lag:${ms}ms">${inner}</span>` : inner);
   const cell = (pos, inner, cls = '', st = '') => `<td class="${[cls, pos === now ? 'now' : ''].filter(Boolean).join(' ')}"${st ? ` style="${st}"` : ''}>${inner}</td>`;
   const row = (f) => Array.from({ length: W }, (_, j) => f(W - 1 - j)).join('');

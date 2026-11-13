@@ -40,9 +40,11 @@ export function planHTML(steps, names, cur, shown = new Set(), lastLabel = '전�
 
 // 단계 풀 때 왼쪽 위 — 처음 문제(작게) · 세로셈(덧셈 · 뺄셈 두 자리 넘으면) · 그림 · 채운 단계(맞음 ✓ · 답을 본 단계는 옅게 · 방금 채운 줄만 살짝 나타남 fresh)
 //  배우기 '같이 풀기'도 같은 모양(kid.js)
+//  세로셈이 있으면(11-13 묶음 3) 세로셈이 지금 풀 자리와 받아내림을 보여 주므로 — 채운 단계는 글 없이 식만 한 줄로(같은 말이 그림 · 줄 · 말풍선에 세 번 나오던 것)
 export function stepCtx(it, steps, upto, { shown = new Set(), C = null, label = '전체 문제', head = true, pic = '', fresh = -1, lag = null } = {}) {
-  const list = upto ? `<ol class="hl-steps">${steps.slice(0, upto).map((s, i) => `<li class="${shown.has(i) ? 'shown' : 'ok'}${i === fresh ? ' nw' : ''}"><span class="hl-n">${i + 1}</span><span class="why">${esc(s.why)}</span>${staticHTML(s.prompt, s.sol)}</li>`).join('')}</ol>` : '';
-  return `<div class="hl-ctx${C ? ' with-col' : ''}">${head ? `<span class="hl-k">${esc(label)}</span>${staticHTML(it.prompt, null)}` : ''}${C && pic ? `<div class="hl-cp"><div class="hl-col">${colView(C, upto, lag).html}</div>${pic}</div>` : C ? `<div class="hl-col">${colView(C, upto, lag).html}</div>` : pic}${list}</div>`;
+  const list = upto ? `<ol class="hl-steps${C ? ' eq' : ''}">${steps.slice(0, upto).map((s, i) => `<li class="${shown.has(i) ? 'shown' : 'ok'}${i === fresh ? ' nw' : ''}"><span class="hl-n">${i + 1}</span>${C ? '' : `<span class="why">${esc(s.why)}</span>`}${staticHTML(s.prompt, s.sol)}</li>`).join('')}</ol>` : '';
+  const col = C ? `<div class="hl-col">${colView(C, upto, lag, { peek: true }).html}</div>` : '';
+  return `<div class="hl-ctx${C ? ' with-col' : ''}">${head ? `<span class="hl-k">${esc(label)}</span>${staticHTML(it.prompt, null)}` : ''}${C && pic ? `<div class="hl-cp">${col}${pic}</div>` : C ? col : pic}${list}</div>`;
 }
 export const colFor = (it, steps) => { try { return colOf(it, steps); } catch (e) { return null; } };
 // 그림 틀(engine/hints/pics.js · 11-13 방향 차례 1) — 문제의 수로 그린 그림 · i = −1 떠올리기 · 0…n−1 그 단계(지금 할 칸이 노랑) · n 처음 문제로 돌아옴 · 없으면 ''
@@ -112,7 +114,7 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
     if (ch && ch.length <= 2) return toSteps();
     if (!raws) return toSteps();   /* '못 풀겠어요 · 넘어가기' = 떠올리기 없이 바로 단계로(모른다는 아이에게 '떠올려 봐요' X · 11-07 사용감 점검) */
     const canStep = steps.length && !(budget && budget.left <= 0);
-    const rp = hp(-1);
+    const rp = hp(-1) || (C ? `<div class="hl-col">${colView(C, 0).html}</div>` : '');   /* 그림 틀이 없으면 세로로 쓴 모습(떠올리기 말이 '어느 자리 위에'를 물음 · 11-13 묶음 3) */
     draw(root, { ...base, prompt: it.prompt, sol: it.sol, choices: ch, hide: picked, extra: rp ? `<div class="hl-ctx hl-ctx-pic">${rp}</div>` : '',
       lead: head('cue', `<span class="hl-was">내 답 <b>${esc(mine(it, raws))}</b> — 아직 아니에요. ${nudge || '튼튼이 말을 읽고 다시 풀어 봐요.'}</span>${cue ? `<span class="hl-cue-t">${esc(cue)}</span>` : ''}<span class="hl-ans">이 생각으로 <b>${esc(qName)}</b>${P(qName.slice(-1), '을', '를')} 써요.</span>`, 'think', `<button type="button" class="hl-go" id="hs"><span>모르겠어요 — <span class="nobr">${canStep ? '한 단계씩 같이 풀기' : '같이 보기'}</span></span></button>`),   /* 늘 나가는 길 하나(아무 수나 써야 빠져나가던 것 · 11-07) */
       onAnswer: (a, cf, t) => {

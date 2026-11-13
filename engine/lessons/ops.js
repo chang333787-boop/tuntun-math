@@ -159,7 +159,8 @@ function divBugs(a, b) {
 
 // ── 같은 숫자로 쪼갠 단계
 //  단계 글(11-05 교사 '받아내려 · 윗자리만 말하면 4학년이 무엇을 할지 모름') — 한 단계 한두 문장 · 자리 이름(십의 자리 · 백의 자리)으로
-//    받아내림 · 받아올림은 무엇이 어떻게 바뀌는지 숫자로(36 − 28 → '십의 자리 3에서 10을 하나 가져오면 일의 자리는 16, 십의 자리는 2가 돼요')
+//    받아내림 · 받아올림은 무엇이 어떻게 바뀌는지 숫자로 — 바뀐 숫자는 세로셈 그림이 보여 주고(빗금 + 위 숫자 · app model.js colView) 글은 할 일 하나만(11-13 묶음 3)
+//      36 − 28 → '일의 자리 6에서 8은 뺄 수 없어요. 십의 자리에서 10을 가져와 16에서 빼요.'(예전 글은 '…가져오면 일의 자리는 16, 십의 자리는 2가 돼요'까지 말해 한 말풍선에 생각이 셋)
 //    단계 글은 그 단계의 답을 말하지 않는다(같이 풀기 · 나눠 풀기에서 빈칸 위에 보임) · 앞 단계의 답은 말해도 됨
 const PLN = ['일', '십', '백', '천', '만', '십만'];
 export const placeOf = (k) => `${PLN[k] || PLN[PLN.length - 1]}의 자리`;
@@ -170,18 +171,14 @@ const placeVal = (k) => String(10 ** k);
 export function borrowWhy(i, x, y, up, { lent = false, nm = placeOf, val = placeVal } = {}) {
   let k = 0;
   while (k < up.length - 1 && up[k] === 0) k++;
-  const K = i + 1 + k, X = up[k], a = nm(i), top = `${lent ? '하나 줄어든 ' : ''}${a} ${x}에서 ${y}${P(y, '은', '는')} 뺄 수 없`;
-  const after = `${a}${P(a, '은', '는')} ${x + 10}`, hi = `${nm(K)}${P(nm(K), '은', '는')} ${X - 1}${P(X - 1, '이', '가')} 돼요.`;
-  if (!k) {
-    const from = `${nm(K)} ${X}에서 ${val(K)}${P(val(K), '을', '를')} 하나 가져오면`;
-    return val(i) === '1' ? `${top}어요. ${from} ${after}, ${hi}` : `${top}어요. ${from} ${val(K)}${P(val(K), '은', '는')} ${val(i)}${P(val(i), '이', '가')} 10개라서 ${after}, ${hi}`;
-  }
-  const zs = Array.from({ length: k }, (_, j) => nm(i + 1 + j)), z = zs.join('와 ');
-  if (k === 1) return `${top}는데 ${z}${P(z, '이', '가')} 0이에요. ${nm(K)} ${X}에서 하나를 가져와 ${z}${P(z, '을', '를')} 10으로 만들고, 그 10에서 하나를 ${RO(a)} 가져오면 ${after}, ${z}${P(z, '은', '는')} 9, ${hi}`;
-  return `${top}는데 ${z}${P(z, '이', '가')} 0이에요. ${nm(K)} ${X}에서 하나를 가져와 차례로 내려 주면 ${after}, ${z}${P(z, '은', '는')} 모두 9, ${hi}`;
+  const K = i + 1 + k, a = nm(i), top = `${lent ? '하나 줄어든 ' : ''}${a} ${x}에서 ${y}${P(y, '은', '는')} 뺄 수 없`;
+  if (!k) return `${top}어요. ${nm(K)}에서 ${val(i) === '1' ? '10을' : '하나를'} 가져와 ${x + 10}에서 빼요.`;
+  const z = Array.from({ length: k }, (_, j) => nm(i + 1 + j)).join('와 ');
+  if (k === 1) return `${top}는데 ${z}${P(z, '이', '가')} 0이에요. ${nm(K)}에서 하나를 가져와 ${z}${P(z, '을', '를')} 10으로 만들고, 거기서 하나를 ${RO(a)} 가져와요.`;
+  return `${top}는데 ${z}${P(z, '이', '가')} 0이에요. ${nm(K)}에서 하나를 가져와 차례로 내려 주면 ${a}${P(a, '은', '는')} ${x + 10}${P(x + 10, '이', '가')} 돼요.`;
 }
-// 받아올림 — 앞 자리 합 S(10 이상)를 어떻게 쓰고 올리는지(38 + 45의 십의 자리: '일의 자리 합 13에서 3은 일의 자리에 쓰고, 10은 십의 자리로 올려 1로 써요.')
-export const carryLead = (lo, hi, S) => `${lo} 합 ${S}에서 ${S - 10}${P(S - 10, '은', '는')} ${lo}에 쓰고, 10은 ${RO(hi)} 올려 1로 써요.`;
+// 받아올림 — 앞 자리 합 S(10 이상)를 어떻게 쓰고 올리는지(38 + 45의 십의 자리: '일의 자리 합 13에서 3만 쓰고, 10은 십의 자리 위에 작은 1로 올려요.' — 세로셈 그림의 작은 1과 같은 말)
+export const carryLead = (lo, hi, S) => `${lo} 합 ${S}에서 ${S - 10}만 쓰고, 10은 ${hi} 위에 작은 1로 올려요.`;
 function addColumns(a, b) {
   const L = Math.max(len(a), len(b));
   if (L === 1) return [];
@@ -195,8 +192,8 @@ function addColumns(a, b) {
     const x = dig(a, i), y = dig(b, i), lead = c ? `${carryLead(placeOf(i - 1), placeOf(i), prev)} ` : '';
     if (i > 0 && x === 0 && y === 0 && !c) { prev = 0; continue; }
     // 받아올린 1까지 세 수 — 10이 되는 짝이 없고 합이 10을 넘으면 (5 + 8 + 1) '세 수 덧셈'(9까지)이 아니라 받아올림 덧셈이 필요하므로 1을 먼저 더한 두 수로
-    if (c && x + y + c >= 10 && x + y !== 10 && x !== 9 && y !== 9) out.push({ c: 'ADD', p: { a: x + c, b: y }, why: `${lead}올린 1을 ${x}에 먼저 더하면 ${x + c}, 여기에 ${y}${P(y, '을', '를')} 더해요.` });
-    else if (c) out.push({ c: 'ADD3', p: { a: x, b: y, c }, why: `${lead}${placeOf(i)}${P(placeOf(i), '은', '는')} ${x} + ${y}에 올린 1까지 더해요.` });
+    if (c && x + y + c >= 10 && x + y !== 10 && x !== 9 && y !== 9) out.push({ c: 'ADD', p: { a: x + c, b: y }, why: `${lead}올린 1을 ${x}에 먼저 더하면 ${x + c}${P(x + c, '이에요', '예요')}.` });
+    else if (c) out.push({ c: 'ADD3', p: { a: x, b: y, c }, why: `${lead}${placeOf(i)}${P(placeOf(i), '은', '는')} 올린 1까지 더해요.` });
     else out.push({ c: 'ADD', p: { a: x, b: y }, why: `${placeOf(i)}끼리 더해요.` });
     prev = x + y + c;
     c = prev >= 10 ? 1 : 0;

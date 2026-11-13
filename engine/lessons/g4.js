@@ -571,7 +571,7 @@ function decCols(p) {
     for (let i = 0; i < L; i++) {
       const x = dig(A, i), y = dig(Bm, i), lead = c ? `${carryLead(nm(i - 1), nm(i), prev)} ` : '';
       if (c && (x === 0 || y === 0)) { if (x + y) out.push({ c: 'ADD', p: { a: x + y, b: 1 }, why: `${lead}${nm(i)}${P(nm(i), '은', '는')} ${x + y}에 올린 1을 더해요.` }); }
-      else if (c) out.push({ c: 'ADD3', p: { a: x, b: y, c: 1 }, why: `${lead}${nm(i)}${P(nm(i), '은', '는')} ${x} + ${y}에 올린 1까지 더해요.` });
+      else if (c) out.push({ c: 'ADD3', p: { a: x, b: y, c: 1 }, why: `${lead}${nm(i)}${P(nm(i), '은', '는')} 올린 1까지 더해요.` });
       else if (x && y) out.push({ c: 'ADD', p: { a: x, b: y }, why: `${nm(i)}끼리 더해요.` });
       prev = x + y + c;
       c = prev >= 10 ? 1 : 0;

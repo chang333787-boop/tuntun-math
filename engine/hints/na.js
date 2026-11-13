@@ -277,18 +277,17 @@ const bcmpCue = (p) => (p.v === 'mix' ? '억이 몇 개인지 먼저 비교하�
 // ── 덧셈 · 뺄셈 여러 자리
 const firstCarry = (a, b) => { for (let i = 0; i < Math.max(len(a), len(b)); i++) if (dig(a, i) + dig(b, i) >= 10) return i; return -1; };
 const firstBorrow = (a, b) => { for (let i = 0; i < len(a); i++) if (dig(a, i) < dig(b, i)) return i; return -1; };
-function carry3Cue(p, many) {
+function carry3Cue(p) {
   const i = firstCarry(p.a, p.b);
-  if (i < 0) return `일의 자리부터 같은 자리끼리 더해요. 10이거나 10보다 크면 바로 왼쪽 자리 위에 1을 작게 쓰고 같이 더해요.`;
-  const x = dig(p.a, i), y = dig(p.b, i);
-  return `일의 자리부터 더해요. ${at(i)} ${x} + ${y}처럼 10이거나 10보다 크면 1을 바로 왼쪽 자리${many ? ' 위에 작게 써서 올려요.' : '로 올려 같이 더해요.'}`;
+  if (i < 0) return '일의 자리부터 같은 자리끼리 더해요. 10이 넘으면 왼쪽 자리 위에 1을 작게 써요.';
+  const x = dig(p.a, i), y = dig(p.b, i), over = x + y === 10 ? '10이 되면' : '10이 넘으면';
+  return i ? `일의 자리부터 더해요. ${at(i)} ${x} + ${y}처럼 ${over} 1을 어느 자리 위에 쓸까요?` : `일의 자리 ${x} + ${y}부터 더해요. ${over} 1을 어느 자리 위에 쓸까요?`;
 }
-function borrow3Cue(p, two) {
+function borrow3Cue(p) {
   const i = firstBorrow(p.a, p.b);
   if (i < 0) return '일의 자리부터 같은 자리끼리 빼요. 뺄 수 없는 자리는 바로 왼쪽 자리에서 10을 가져와요.';
   const x = dig(p.a, i), y = dig(p.b, i), ask = `${at(i)} ${x}에서 ${J(y, '을', '를')} 뺄 수 있나요?`;
-  if (two) return `${ask} ${dig(p.a, i + 1) === 0 ? '바로 왼쪽 자리가 0이면 그보다 왼쪽 자리에서 먼저 가져오고' : '못 빼면 바로 왼쪽 자리에서 10을 가져오고'}, 내준 자리는 1 줄여요.`;
-  return `${ask} ${i === 0 ? '못 빼면 십의 자리에서 10을 가져와요.' : '못 빼면 백의 자리에서 하나를 가져와 십의 자리에 10을 보태요.'}`;
+  return dig(p.a, i + 1) === 0 ? `${ask} 바로 왼쪽 자리가 0이면 그 왼쪽 자리에서 먼저 가져와요.` : `${ask} 못 빼면 어느 자리에서 가져올까요?`;
 }
 
 // ── 혼합 계산(g5_MIX)
@@ -538,7 +537,7 @@ const H = {
   '2-1-1:7': { cue: g2CmpCue, steps: digitSteps },
   // 2-1-3 덧셈과 뺄셈
   '2-1-3:2': { cue: (p) => { const h = Math.max(p.a, p.b), l = Math.min(p.a, p.b); return `일의 자리 ${h % 10} + ${l}부터 더해 볼까요? 10이거나 10보다 크면 10은 십의 자리로 올려요.`; }, plan: () => ['일의 자리끼리 더하기', '몇십에 일의 자리 합 더하기'] },
-  '2-1-3:3': { cue: (p) => `일의 자리 ${p.a % 10} + ${p.b % 10}부터 더해요. 10이거나 10보다 크면 십의 자리 위에 1을 작게 쓰고 같이 더해요.`, plan: (p) => addPlan(p.a, p.b) },
+  '2-1-3:3': { cue: (p) => `일의 자리 ${p.a % 10} + ${p.b % 10}부터 더해요. ${p.a % 10 + p.b % 10 === 10 ? '10이 되면' : '10이 넘으면'} 1을 어느 자리 위에 쓸까요?`, plan: (p) => addPlan(p.a, p.b) },
   '2-1-3:4': {
     cue: (p) => {
       const ta = Math.floor(p.a / 10) % 10, tb = Math.floor(p.b / 10) % 10, c0 = p.a % 10 + p.b % 10 >= 10;
@@ -592,11 +591,11 @@ const H = {
   '2-2-3:2': { cue: lenCue, steps: lenSteps },
   // 3-1-1 덧셈과 뺄셈(세 자리)
   '3-1-1:2': { cue: (p) => `${p.a} + ${J(p.b, '을', '를')} 자리를 맞춰 세로로 써 볼까요? 일, 십, 백의 자리끼리 차례로 더해요.`, plan: (p) => addPlan(p.a, p.b) },
-  '3-1-1:3': { cue: (p) => carry3Cue(p, false), plan: (p) => addPlan(p.a, p.b) },
-  '3-1-1:4': { cue: (p) => carry3Cue(p, true), plan: (p) => addPlan(p.a, p.b) },
+  '3-1-1:3': { cue: (p) => carry3Cue(p), plan: (p) => addPlan(p.a, p.b) },
+  '3-1-1:4': { cue: (p) => carry3Cue(p), plan: (p) => addPlan(p.a, p.b) },
   '3-1-1:5': { cue: (p) => `${J(p.a, '과', '와')} ${J(p.b, '을', '를')} 자리를 맞춰 쓰고, 일, 십, 백의 자리끼리 차례로 빼요.`, plan: (p) => subPlan(p.a, p.b) },
-  '3-1-1:6': { cue: (p) => borrow3Cue(p, false), plan: (p) => subPlan(p.a, p.b) },
-  '3-1-1:7': { cue: (p) => borrow3Cue(p, true), plan: (p) => subPlan(p.a, p.b) },
+  '3-1-1:6': { cue: (p) => borrow3Cue(p), plan: (p) => subPlan(p.a, p.b) },
+  '3-1-1:7': { cue: (p) => borrow3Cue(p), plan: (p) => subPlan(p.a, p.b) },
   // 4-1-1 큰 수
   '4-1-1:2': { cue: manCue, noSteps: NO.read },
   '4-1-1:3': { cue: fiveCue, noSteps: NO.read },
