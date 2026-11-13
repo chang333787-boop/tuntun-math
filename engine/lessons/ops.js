@@ -255,7 +255,7 @@ function mulParts(a, b) {
 }
 function divParts(a, b) {
   const q = Math.floor(a / b), r = a % b;
-  if (b <= 9 && q <= 9) return r ? [{ c: 'D3', p: { v: 'mbox', a: b, b: q }, why: `${b}단에서 ${a}보다 크지 않은 가장 큰 곱은 ${b * q}${P(b * q, '이에요', '예요')}. ${b}에 몇을 곱한 걸까요?` }, { c: 'SUB', p: { a, b: b * q }, why: `${a}에서 그 곱을 빼면 나머지예요.` }] : [{ c: 'D3', p: { v: 'mbox', a: b, b: q }, why: `${b}의 단에서 곱이 ${a}인 것을 찾아요.` }];   /* 몫을 식에 미리 보이지 않게 '6 × □ = 24'(11-07) */
+  if (b <= 9 && q <= 9) return r ? [{ c: 'D3', p: { v: 'mbox', a: b, b: q }, why: `${b}단에서 ${J(a, '을', '를')} 넘지 않는 가장 큰 곱은 ${b * q}${P(b * q, '이에요', '예요')}. ${b}에 몇을 곱한 걸까요?` }, { c: 'SUB', p: { a, b: b * q }, why: `${a}에서 그 곱을 빼면 나머지예요.` }] : [{ c: 'D3', p: { v: 'mbox', a: b, b: q }, why: `${b}단에서 곱이 ${a}인 것을 찾아요.` }];   /* 몫을 식에 미리 보이지 않게 '6 × □ = 24'(11-07) */
   if (b <= 9) {
     // 높은 자리부터 나눈다 — 자리마다 한 단계(몫의 숫자 하나) · 맨 앞자리가 나누는 수보다 작으면 다음 자리와 합쳐서
     //   중간 · 끝 자리가 나누는 수보다 작으면 '이 자리 몫은 0' 단계(422 ÷ 6 → 42 ÷ 6 · 2 ÷ 6 = 0 … 2 / 215 ÷ 2 → 2 ÷ 2 · 1 ÷ 2 = 0 … 1 · 15 ÷ 2)
@@ -266,11 +266,12 @@ function divParts(a, b) {
     for (let i = 0; i < s.length; i++) {
       const k = s.length - 1 - i, d = Number(s[i]), cur = rem * 10 + d, last = k === 0, at = `${PL[k]}의 자리`, by = RO(b);
       if (!started && cur < b && !last) { rem = cur; continue; }
-      const join = `${UW[k + 1]} ${rem}개는 ${UW[k]} ${rem * 10}개라서 ${at} ${d}${P(d, '과', '와')} 합치면 ${cur}, ${cur} ÷ ${J(b, '을', '를')} 해요.`;
+      /* 한 풍선에 생각 하나 — 윗자리에서 남은 것을 아랫자리 단위로 바꿔 합침 · 식은 단계 칸이 보여 줌 · 이 자리 몫(0)은 말하지 않고 물음 */
+      const up = `${UW[k + 1]} ${rem}`, down = `${UW[k]} ${rem * 10}`, sum = `${at} ${J(d, '과', '와')} 합치면 ${J(cur, '이에요', '예요')}.`;
       let why;
-      if (!started && i > 0) why = `${PL[k + 1]}의 자리 ${J(rem, '은', '는')} ${by} 나눌 수 없어요. ${join}`;
-      else if (cur < b) why = cur === 0 ? `${at}${P(at, '은', '는')} 0이라서 이 자리 몫은 0이에요.${last ? '' : ' 다음 자리로 넘어가요.'}` : `${at} ${J(cur, '은', '는')} ${b}보다 작아서 이 자리 몫은 0이에요. ${last ? `${J(cur, '이', '가')} 나머지예요.` : `${UW[k]} ${cur}개는 다음 자리로 내려요.`}`;
-      else if (rem) why = `앞에서 남은 ${join}`;
+      if (!started && i > 0) why = `${up}개는 ${by} 나눌 수 없어요. ${down}개로 바꿔 ${sum}`;
+      else if (cur < b) why = cur === 0 ? `${at}${P(at, '은', '는')} 0이에요. 0을 ${by} 나누면 몫은 몇일까요?` : `${at} ${J(cur, '은', '는')} ${b}보다 작아요. 이 자리 몫은 몇일까요?`;
+      else if (rem) why = `남은 ${up}개는 ${down}개예요. ${sum}`;
       else why = `${at} ${J(cur, '을', '를')} ${by} 나눠요.`;
       out.push({ c: 'DIV', p: { a: cur, b }, why });
       started = true;
@@ -281,12 +282,11 @@ function divParts(a, b) {
   // 두 자리 수로 나누기: 몇십으로 어림하고 곱해서 확인
   const t = Math.round(b / 10) * 10 || 10;
   const st = [];
-  if (b % 10 !== 0) st.push({ c: 'DIV', p: { a: Math.floor(a / 10) * 10 - ((Math.floor(a / 10) * 10) % t), b: t }, why: `${b}${P(b, '을', '를')} ${RO10(t)} 어림해서 몫을 짐작해요.` });
+  if (b % 10 !== 0) st.push({ c: 'DIV', p: { a: Math.floor(a / 10) * 10 - ((Math.floor(a / 10) * 10) % t), b: t }, why: `${J(b, '을', '를')} ${RO(t)} 어림해서 몫을 짐작해요.` });
   if (q >= 10) { const qt = Math.floor(q / 10) * 10; st.push({ c: 'MUL', p: { a: b, b: qt }, why: `${b} × ${qt}${P(qt, '을', '를')} 해 봐요.` }, { c: 'SUB', p: { a, b: b * qt }, why: '남은 수를 구해요.' }); }
   else st.push({ c: 'MUL', p: { a: b, b: q }, why: `짐작한 몫으로 ${b} × ${q}${P(q, '을', '를')} 해서 확인해요.` });
   return st.filter((s) => !(s.c === 'DIV' && (s.p.a < s.p.b || s.p.a <= 0)));
 }
-const RO10 = (t) => `${t}(으)로`;
 
 // 한 차시가 여러 가족의 문항을 받을 때(예: '0을 더하거나 빼기') — 분류기로 들어온 params에는 p.fam이 붙어 온다
 export const OPSBY = Object.fromEntries(FAMS.map((f) => [f.id, f]));

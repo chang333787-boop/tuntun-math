@@ -58,7 +58,7 @@ export default [
       });
     },
     steps: (p) => [
-      { c: tbl(p.d), p: { a: p.d, b: p.q }, why: `${p.d}단에서 ${p.d * p.q + p.x}보다 크지 않은 가장 큰 곱을 찾아요.` },
+      { c: tbl(p.d), p: { a: p.d, b: p.q }, why: `${p.d}단에서 ${J(p.d * p.q + p.x, '을', '를')} 넘지 않는 가장 큰 곱을 찾아요.` },
       { c: 'A8', p: { op: '-', a: p.d * p.q + p.x, b: p.d * p.q }, why: '남는 수를 구해요.' },
     ],
   },

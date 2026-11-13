@@ -324,7 +324,7 @@ div.cmpc{box-shadow:none}
 .klist li>b{font-size:16px}.klist li>.btn{margin-left:auto}
 .fb-acts{display:flex;gap:10px;flex-wrap:wrap}.fb-acts button{flex:1 1 auto}.fb-steps{margin:12px 0 4px}
 /* 틀렸을 때 도움 사다리(hint.js) — 오른쪽 튼튼이 말: 떠올리기 · 단계 글 · 왼쪽 위: 처음 문제(작게) + 채운 단계(맞음 ✓ · 답을 본 단계는 옅게) · 새로 채운 단계만 살짝 나타남 */
-.hl .bub{display:flex;flex-direction:column;gap:6px}
+.hl .bub{display:flex;flex-direction:column;gap:6px;flex:1}   /* 말이 짧아도 풀이 순서 칸과 같은 폭(짧은 말에 '읽어 주기'만 넓게 보이던 것 · 11-13) */
 .hl-was{font-size:16px;color:var(--mute)}.hl-was b{color:var(--stuck)}
 .hl-cue-t{font-size:20px;font-weight:700;line-height:1.5;color:var(--ink)}
 .hl-k{display:inline-block;align-self:flex-start;font-size:14px;font-weight:800;color:var(--teal-d);background:var(--teal-t);border-radius:999px;padding:1px 12px}

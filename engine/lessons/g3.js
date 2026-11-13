@@ -74,18 +74,19 @@ function divSplit(a, b, self) {
   const byTable = (x) => {
     const qq = Math.floor(x / b), rr = x % b;
     return rr
-      ? [{ c: 'D3', p: { v: 'mbox', a: b, b: qq }, why: `${b}단에서 ${x}보다 크지 않은 가장 큰 곱은 ${b * qq}${P(b * qq, '이에요', '예요')}. ${b}에 몇을 곱한 걸까요?` }, { c: 'SUB', p: { a: x, b: b * qq }, why: '남는 수(나머지)를 구해요.' }]
+      ? [{ c: 'D3', p: { v: 'mbox', a: b, b: qq }, why: `${b}단에서 ${J(x, '을', '를')} 넘지 않는 가장 큰 곱은 ${b * qq}${P(b * qq, '이에요', '예요')}. ${b}에 몇을 곱한 걸까요?` }, { c: 'SUB', p: { a: x, b: b * qq }, why: `${x}에서 그 곱을 빼면 나머지예요.` }]
       : [{ c: 'D3', p: { v: 'mbox', a: b, b: qq }, why: `${b}단에서 곱이 ${x}인 것을 찾아요.` }];
   };
   if (q <= 9) return byTable(a);
   const qt = Math.floor(q / 10) * 10, a1 = b * qt, a2 = a - a1, q2 = Math.floor(a2 / b);
-  if (a2 === 0) return [{ c: 'DIV', p: { a: a / 10, b }, why: `${a}${P(a, '은', '는')} ${a / 10}의 10배라서 ${a / 10} ÷ ${b}부터 해요. 몫은 그 10배예요.` }];
-  const rest = a2 < b ? ` 남은 ${a2}${P(a2, '은', '는')} ${b}보다 작으니 나머지예요.` : '';
-  const out = [{ c: 'DIV', p: { a: a1, b }, why: `${J(a, '을', '를')} ${J(a1, '과', '와')} ${RO(a2)} 갈라 ${a1} ÷ ${b}부터 해요. ${a1} ÷ ${b}처럼 몫이 몇십인 나눗셈부터 해요(몫이 ${qt + 10}이면 ${b} × ${qt + 10} = ${a1 + b * 10}${P(a1 + b * 10, '이라', '라')} ${a}보다 커요).${rest}` }];   /* 왜 그 몇십인지(88 → 60 · 처음 보는 눈 11-07) */
+  if (a2 === 0) return [{ c: 'DIV', p: { a: a / 10, b }, why: `${a / 10} ÷ ${b}부터 해요. 그다음 10배 해요.` }];
+  /* 말은 지금 할 나눗셈 하나만 — 가르기는 떠올리기 말과 그림(가르기 띠)이 보여 줌 · 남는 수는 아이가 봄(나머지를 말하지 않음) */
+  const lead = qt > 10 ? ` ${a1 / 10} ÷ ${b}의 10배예요.` : '';
+  const out = [{ c: 'DIV', p: { a: a1, b }, why: a2 < b ? `${a} 중에서 ${J(a1, '을', '를')} 먼저 나눠요. 남는 수가 ${b}보다 작으면 나머지예요.` : `먼저 ${a1} ÷ ${J(b, '을', '를')} 해요.${lead}` }];
   if (a2 >= b) {
     if (divKind(a2, b) === self) out.push(...byTable(a2));
-    else out.push({ c: 'DIV', p: { a: a2, b }, why: `${J(a1, '을', '를')} 나누고 남은 ${J(a2, '을', '를')} ${RO(b)} 나눠요.` });
-    out.push({ c: 'ADD', p: { a: qt, b: q2 }, why: `두 몫을 더하면 ${a} ÷ ${b}의 몫이에요.` });
+    else out.push({ c: 'DIV', p: { a: a2, b }, why: `남은 ${J(a2, '을', '를')} ${RO(b)} 나눠요.` });
+    out.push({ c: 'ADD', p: { a: qt, b: q2 }, why: '두 몫을 더해요.' });
   }
   return out;
 }
