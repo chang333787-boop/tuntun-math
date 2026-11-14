@@ -124,11 +124,13 @@ export function tbl(a) {
 const BAT = [1, 1, 0, 1, 0, 0, 1, 1, 1, 0];
 const RIEUL = [0, 1, 0, 0, 0, 0, 0, 1, 1, 0];
 // 마지막에 소리 내어 읽는 것: 소수는 끝자리(2.3 → 삼), 분수는 분자(3/4 → 사분의 삼), 한글로 끝나면 그 글자(5272만 → 만)
+const UNIT_SOUND = [[/(?:k|c|m)?m[²³]?$/, false], [/m?L$/, false], [/(?:k|m)?g$/, true], [/(?:^|[\d\s])t$/, true], [/°$/, false]];
 function lastSound(n) {
   let t = typeof n === 'number' ? String(Number(n.toFixed(10))) : String(n).trim();
   const h = t.charCodeAt(t.length - 1);
   if (h >= 0xac00 && h <= 0xd7a3) { const jong = (h - 0xac00) % 28; return { bat: jong > 0, rieul: jong === 8 }; }
   if (t.endsWith('%')) return { bat: false, rieul: false };
+  { const u = UNIT_SOUND.find(([re]) => re.test(t)); if (u) return { bat: u[1], rieul: false }; }   /* 단위 기호는 읽는 소리로(리터 · 미터 · 도는 받침 없음 · 그램 · 톤은 받침) — 숫자 '영'으로 읽어 '1 L을 mL으로'가 되던 것(11-14) */
   if (t.includes('/')) t = t.slice(0, t.indexOf('/'));
   const m = t.match(/(\d)\D*$/), d = m ? Number(m[1]) : 0;
   return { bat: !!BAT[d], rieul: !!RIEUL[d] };
