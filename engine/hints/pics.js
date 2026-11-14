@@ -137,7 +137,8 @@ function twoRows(p, fine) {
   if (!p || !okD(p.d1) || !okD(p.d2)) return null;
   const { L } = tb(p), ok = (w, n, d) => int(n) && n >= 1 && n <= d && (!w || (int(w) && w <= 6));
   if (!fineOK(p.d1, L) || !fineOK(p.d2, L) || !ok(p.w1, p.n1, p.d1) || !ok(p.w2, p.n2, p.d2)) return null;
-  return { t: 'bars', rows: [fracRow(p.w1 || 0, p.n1, p.d1, 'a', fine ? L : 0), fracRow(p.w2 || 0, p.n2, p.d2, 'b', fine ? L : 0)] };
+  const k2 = p.w1 || p.w2 ? 'a' : 'b';   /* 대분수는 자연수 네모가 노랑이라 분수 칸도 노랑으로(색에 뜻이 없게) */
+  return { t: 'bars', rows: [fracRow(p.w1 || 0, p.n1, p.d1, 'a', fine ? L : 0), fracRow(p.w2 || 0, p.n2, p.d2, k2, fine ? L : 0)] };
 }
 /* 진분수 — 통분 단계(0번) 다음은 분모가 같은 띠 하나(덧셈은 두 색 · 뺄셈은 덜어 낼 칸 ✕) · 띠 둘에 걸치면 공통분모 24까지 */
 function fracCalc(p, { i, steps }) {
@@ -193,12 +194,14 @@ function roundPic(p, { i, steps }) {
   const tx = new Set([...cols, ...s].map(Number));
   if (tx.has(r) || tx.has(base / 10 ** dp)) return null;
   const cut = steps.findIndex((st) => /떼어 내/.test(st.why || '')), gone = cut >= 0 && i > cut;
-  const lows = rep(n - tgt - 1, (k) => tgt + 1 + k), on = gone ? tgt : p.m === 'half' && i < cut ? tgt + 1 : lows;   /* 반올림 — 볼 숫자 한 칸 → 떼어 낼 때 아래 자리 모두 → 올릴 자리 */
+  const lows = rep(n - tgt - 1, (k) => tgt + 1 + k), on = gone ? tgt : p.m === 'half' && (cut < 0 || i < cut) ? tgt + 1 : lows;   /* 반올림 — 볼 숫자 한 칸 → 떼어 낼 때 아래 자리 모두 → 올릴 자리 */
   return { t: 'place', cols, rows: [{ ds: rep(n, (j) => (gone && j > tgt ? '0' : s[j])), on }] };
 }
 
 // ── 분수의 나눗셈 · 비 ── 같은 띠에 g칸씩 묶어 번갈아 칠함(묶음 수 = 몫 · 띠는 다섯까지) · 분모가 같은 두 분수를 위아래로
 const groupBar = (d, total, g) => (int(d) && d >= 2 && d <= 24 && int(total) && int(g) && g >= 1 && total >= g && total % g === 0 && Math.ceil(total / d) <= 5 && total / g <= 30 ? bar1({ d, segs: rep(total / g, (j) => seg(g, j % 2 ? 'b' : 'a')) }) : null);
+/* (분수) ÷ (자연수) — 위 = 칠한 칸을 k묶음으로(번갈아 두 색) · 아래 = 그 가운데 한 묶음(몫) · 묶음 수가 답인 분수 ÷ 분수 그림과 헷갈리지 않게 */
+const oneGroup = (d, n, k) => { const g = groupBar(d, n, n / k); return g ? { t: 'bars', rows: [{ ...g.rows[0], lab: [n, d] }, { d, segs: [seg(n / k, 'b')], lab: '한 묶음' }] } : null; };
 const sameRows = (a, b, d) => (int(d) && d >= 2 && d <= 24 && int(a) && int(b) && a >= 1 && b >= 1 && a <= 2 * d && b <= 2 * d ? { t: 'bars', rows: [{ d, segs: [seg(a)], lab: [a, d] }, { d, segs: [seg(b, 'b')], lab: [b, d] }] } : null);
 
 const MULS = ['3-1-4:3', '3-1-4:4', '3-1-4:5', '3-1-4:6', '3-2-1:2', '3-2-1:3', '3-2-1:4', '3-2-1:6', '3-2-1:7', '3-2-1:8', '4-1-3:3'];
@@ -341,9 +344,9 @@ const PICS = {
   '6-1-6:5': (p, { i, steps }) => (i >= steps.length ? null : fg('6-1-6:5', p, { faces: i >= 0 && i < 3 ? [['top', 'side', 'front'][i]] : ['top', 'side', 'front'] })),
   /* 시계 — 처음엔 짧은바늘이 지나온 숫자 칸(색칠한 부채꼴) · 단계에선 긴바늘이 숫자 한 칸씩 뛴 자국(5분씩 · 자국이 시계 밖으로 나가 반지름을 조금 줄임) */
   '1-2-3:5': (p, { i }) => (p.m && i < 0 ? fg('1-2-3:5', p, { gap: true }) : null),
-  '2-2-4:2': (p, { i, steps }) => (i >= steps.length ? null : fg('2-2-4:2', p, i < 0 && steps.length ? { gap: true } : { gap: i < 0, jumps: true, r: 68 })),
+  '2-2-4:2': (p, { i, steps }) => (i >= steps.length ? null : fg('2-2-4:2', p, i < 1 ? { gap: true } : { jumps: true, r: 68 })),   /* 떠올리기 · '시' 단계 = 지나온 숫자 칸 · 분 단계 = 5분씩 뛴 자국 */
   /* 자 — 처음엔 1 cm 칸을 나눠 그림 · 빼기 단계에선 시작 눈금과 끝 눈금 숫자를 칠함 */
-  '2-1-4:5': (p, { i, steps }) => (i < 0 ? fg('2-1-4:5', p, { cells: true }) : i < steps.length ? fg('2-1-4:5', p, { hi: true }) : null),
+  '2-1-4:5': (p, { i, steps }) => (i < 0 ? fg('2-1-4:5', p, { cells: true }) : i < steps.length ? fg('2-1-4:5', p, { cells: true, hi: true }) : null),
   /* 원 — 준 쪽 말고 다른 쪽(지름 = 반지름 두 개)을 진하게 · 컴퍼스 문제는 벌린 길이를 반지름으로 그림 */
   '3-2-3:3': (p, { i, steps }) => (i >= steps.length ? null : p.v === 'comp' ? (Number.isInteger(p.r) && p.r > 0 ? { t: 'circle', r: p.r, both: true } : null) : fg('3-2-3:3', p, { both: true })),
   /* 1 m² — 한 변이 100 cm인 정사각형 하나(모눈 10000칸은 그리지 않음) */
@@ -387,7 +390,7 @@ const PICS = {
     if (i < 1) return twoRows(p, i === 0);
     const { L, a, b } = tb(p);
     if (L > 24 || !int(p.w1) || p.w1 < 1 || p.w1 > 8 || p.w1 - 1 < p.w2 || L + a < b) return null;
-    return bar1(i === 1 ? { d: L, pre: p.w1 - 1, min: 2, segs: [seg(L + a)] } : { d: L, pre: p.w1 - 1, preX: p.w2, min: 2, segs: [seg(L + a - b), seg(b, 'x')] });
+    return bar1(i === 1 ? { d: L, pre: p.w1 - 1, min: 2, segs: [seg(L + a)] } : i === 2 ? { d: L, pre: p.w1 - 1, preX: p.w2, min: 2, segs: [seg(L + a)] } : { d: L, pre: p.w1 - 1, preX: p.w2, min: 2, segs: [seg(L + a - b), seg(b, 'x')] });   /* 받아내림 → 자연수끼리 덜기 → 분수끼리 덜기(차례대로 ✕) */
   },
   /* 진분수 × 자연수 — 같은 분수를 k번 이어 칠함(번갈아 두 색) · 띠가 넷을 넘으면 그리지 않음 */
   '5-2-2:2': (p, { i, steps }) => (i < steps.length && okD(p.d) && int(p.n) && int(p.k) && p.n >= 1 && p.n <= p.d && p.k >= 2 && p.n * p.k <= 4 * p.d ? bar1({ d: p.d, segs: rep(p.k, (j) => seg(p.n, j % 2 ? 'b' : 'a')) }) : null),
@@ -402,8 +405,8 @@ const PICS = {
   '6-1-1:2': (p, { i, steps }) => (i < steps.length && okD(p.b) && int(p.a) && p.a >= 1 && p.a < p.b ? bar1({ d: p.b, segs: [seg(p.a)] }) : null),
   '6-1-1:3': (p, { i, steps }) => (i < steps.length && okD(p.b) && int(p.a) && p.a > p.b && p.a <= 4 * p.b ? bar1({ d: p.b, segs: [seg(p.a)] }) : null),
   /* (분수) ÷ (자연수) — 칠한 칸을 k묶음으로 똑같이(번갈아 두 색) · 한 묶음이 몫 · 대분수는 가분수로 바꾼 뒤부터 */
-  '6-1-1:4': (p, { i, steps }) => (i < steps.length && int(p.k) && p.k >= 2 && p.n % p.k === 0 ? groupBar(p.d, p.n, p.n / p.k) : null),
-  '6-1-1:6': (p, { i, steps }) => (i >= steps.length || !okD(p.d) || !int(p.n) || p.n > 4 * p.d ? null : i < 1 ? bar1({ d: p.d, segs: [seg(p.n)] }) : p.v === 'div' && p.n % p.k === 0 ? groupBar(p.d, p.n, p.n / p.k) : null),
+  '6-1-1:4': (p, { i, steps }) => (i < steps.length && int(p.k) && p.k >= 2 && p.n % p.k === 0 ? oneGroup(p.d, p.n, p.k) : null),
+  '6-1-1:6': (p, { i, steps }) => (i >= steps.length || !okD(p.d) || !int(p.n) || p.n > 4 * p.d ? null : i < 1 ? bar1({ d: p.d, segs: [seg(p.n)] }) : p.v === 'div' && p.n % p.k === 0 ? oneGroup(p.d, p.n, p.k) : null),
   /* (분수) ÷ (분수) — 나누는 분수만큼씩 묶어 몇 묶음인지 · 나누어떨어지지 않으면 두 분수를 위아래로 · 분모가 다르면 통분 띠부터 */
   '6-2-1:2': (p, { i, steps }) => (i < steps.length ? groupBar(p.d, p.a, p.b) : null),
   '6-2-1:3': (p, { i, steps }) => (i < steps.length ? sameRows(p.a, p.b, p.d) : null),

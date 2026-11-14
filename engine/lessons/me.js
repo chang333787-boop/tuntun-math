@@ -253,6 +253,8 @@ const pickOr = (r, rate) => (r.chance(rate) ? { pick: 1, ord: r.int(0, 3) } : {}
 // ── 1-2-3:5 몇 시 · 몇 시 30분 · 2-2-4:2 몇 시 몇 분 — 시계 그림 읽기(짧은바늘이 지나온 숫자가 시 · 긴바늘은 숫자 한 칸에 5분, 작은 눈금 한 칸에 1분)
 const clockMake = (id) => (p) => {
   const lead = figLead(id, p), nx = (p.h % 12) + 1, k = Math.floor(p.m / 5), rest = p.m % 5;
+  /* 단계 문항(2-2-4:2의 첫 단계) — 위 시계를 보고 시만(그림은 다시 넣지 않음) */
+  if (p.v === 'hr') return nums([p.m ? '짧은바늘이 지나온 숫자는 ' : '짧은바늘이 가리키는 숫자는 ', B(0), P(p.h, '이에요.', '예요.')], p.h, { bugs: [{ test: (v) => p.m > 0 && v[0] === nx, name: '짧은바늘이 지나온 숫자가 아니라 다음 숫자를 시로 읽음', to: null }] });
   if (!p.m) return nums([...lead, '시계가 나타내는 시각은 ', B(0), '시예요.'], p.h, { bugs: [{ test: (v) => p.h !== 12 && v[0] === 12, name: '긴바늘이 가리키는 숫자를 시로 읽음', to: null }] });
   return nums([...lead, '시계가 나타내는 시각은 ', B(0), '시 ', B(1), '분이에요.'], [p.h, p.m], {
     bugs: [
@@ -267,6 +269,7 @@ const clockMake = (id) => (p) => {
 const clockSteps = (p) => {
   const k = Math.floor(p.m / 5), rest = p.m % 5, far = k >= 10;
   return [
+    { c: '1-2-3:5', p: { h: p.h, m: p.m, v: 'hr' }, why: "짧은바늘은 두 숫자 사이에 있어요. 지나온 숫자가 '시'예요." },
     k >= 1 ? { c: 'MUL', p: { a: 5, b: far ? 9 : k }, why: far ? '긴바늘이 숫자 9를 지났어요. 숫자 한 칸은 5분이에요.' : `긴바늘이 숫자 ${k}${P(k, '을', '를')} ${rest ? '지났어요' : '가리켜요'}. 숫자 한 칸은 5분이에요.` } : null,
     far ? { c: 'ADD', p: { a: 45, b: 5 * (k - 9) }, why: `숫자 ${k}${P(k, '은', '는')} 9에서 ${k - 9}칸 더 간 곳이에요. 한 칸에 5분씩 더해요.` } : null,
     rest && k >= 1 ? { c: 'ADD', p: { a: 5 * k, b: rest }, why: `작은 눈금 한 칸은 1분이에요. 긴바늘이 숫자 ${k}에서 ${rest}칸을 더 갔어요.` } : null,
@@ -284,33 +287,21 @@ function rulerMake(p) {
 }
 const genRuler = (r) => { const a = r.chance(0.25) ? 0 : r.int(2, 5); return { a, b: a + r.int(2, Math.min(8, 10 - a)) }; };
 
-// ── 2-2-3:4 길이의 합과 차(m와 cm) — 합은 100 cm를 1 m로 · 차는 cm끼리 뺄 수 있는 것만(1 m를 100 cm로 받아내리면 세 자리 뺄셈 = 3학년) · 합이 꼭 100 cm인 것은 뺌
+// ── 2-2-3:4 길이의 합과 차(m와 cm) — 2학년은 받아올림 · 받아내림이 없는 범위(cm끼리 더해 100 아래 · cm끼리 뺄 수 있는 것) · 받아올림은 3학년 길이와 시간(3-1-5)
 const mcm = (a, b) => (a ? `${a} m ${b} cm` : `${b} cm`);
 function lenCalcMake(p) {
   const tail = [B(0), ' m ', B(1), ' cm'];
-  if (p.op === '+') {
-    const s = p.b1 + p.b2, up = s >= 100 ? 1 : 0, A = p.a1 + p.a2 + up;
-    return nums([`${mcm(p.a1, p.b1)} + ${mcm(p.a2, p.b2)} = `, ...tail], [A, s % 100], {
-      bugs: up ? [
-        { test: (v) => v[0] === p.a1 + p.a2 && v[1] === s, name: '100 cm가 넘어도 1 m로 바꾸지 않음(꼴)', to: null },   /* 양은 맞고 꼴만 — 시간 · 들이 덧셈과 같게 개념 빈칸으로 보내지 않음 */
-        { test: (v) => v[0] === A && v[1] === s, name: '1 m를 올리고 100 cm를 빼지 않음', to: '2-2-3:2' },
-        { test: (v) => v[0] === p.a1 + p.a2 && v[1] === s - 100, name: '받아올린 1 m를 더하지 않음', to: null },
-      ] : [],
-    });
-  }
-  return nums([`${mcm(p.a1, p.b1)} − ${mcm(p.a2, p.b2)} = `, ...tail], [p.a1 - p.a2, p.b1 - p.b2], {});
+  const plus = p.op === '+', A = plus ? p.a1 + p.a2 : p.a1 - p.a2, C = plus ? p.b1 + p.b2 : p.b1 - p.b2;
+  /* m와 cm를 섞음 — cm 수를 m에 더하거나 뺌(1 m 20 cm + 50 cm → 51 m 20 cm) */
+  const mix = p.a2 ? [] : [{ test: (v) => v[0] === (plus ? p.a1 + p.b2 : p.a1 - p.b2) && v[1] === p.b1, name: 'm와 cm를 섞어 계산함', to: '2-2-3:2' }];
+  return nums([`${mcm(p.a1, p.b1)} ${plus ? '+' : '−'} ${mcm(p.a2, p.b2)} = `, ...tail], [A, C], { bugs: mix });
 }
-const lenCalcSteps = (p) => {
-  const s = p.b1 + p.b2;
-  if (p.op !== '+') return [{ c: 'SUB', p: { a: p.b1, b: p.b2 }, why: 'cm끼리 빼요.' }];
-  return [
-    { c: 'ADD', p: { a: p.b1, b: p.b2 }, why: 'cm끼리 더해요.' },
-    s > 100 ? { c: '2-2-3:2', p: { v: 'rev', m: 1, cm: s - 100 }, why: `${s} cm는 몇 m 몇 cm인가요? (1 m는 100 cm예요)` } : null,
-  ].filter(Boolean);
-};
+const lenCalcSteps = (p) => (p.op === '+'
+  ? [{ c: 'ADD', p: { a: p.b1, b: p.b2 }, why: 'cm끼리 더해요.' }, p.a2 ? { c: 'ADD', p: { a: p.a1, b: p.a2 }, why: 'm끼리 더해요.' } : null]
+  : [{ c: 'SUB', p: { a: p.b1, b: p.b2 }, why: 'cm끼리 빼요.' }, p.a2 ? { c: 'SUB', p: { a: p.a1, b: p.a2 }, why: 'm끼리 빼요.' } : null]).filter(Boolean);
 const genLenCalc = (r) => {
   const op = r.pick(['+', '+', '−']), step = r.pick([10, 10, 5]), b = (r) => r.int(1, Math.floor(95 / step)) * step, short = r.chance(0.25);
-  if (op === '+') { const want = r.chance(0.5); return until(r, (r) => ({ op, a1: r.int(1, 5), a2: short ? 0 : r.int(1, 3), b1: b(r), b2: b(r) }), (p) => (want ? p.b1 + p.b2 > 100 : p.b1 + p.b2 < 100)); }
+  if (op === '+') return until(r, (r) => ({ op, a1: r.int(1, 5), a2: short ? 0 : r.int(1, 3), b1: b(r), b2: b(r) }), (p) => p.b1 + p.b2 < 100);
   return until(r, (r) => { const a1 = r.int(2, 6); return { op, a1, a2: short ? 0 : r.int(1, a1 - 1), b1: b(r), b2: b(r) }; }, (p) => p.b1 > p.b2);
 };
 
@@ -412,7 +403,7 @@ export default {
       id: '1-2-3:5', name: '몇 시, 몇 시 30분', kid: '몇 시, 몇 시 30분 읽기', s: 'ME', sec: 12,
       gen: (r) => ({ h: r.int(1, 12), m: r.chance(0.4) ? 0 : 30 }),
       make: clockMake('1-2-3:5'), prev: null, pre: ['1-1-5:3', '1-1-5:5'],
-      hint: "긴바늘이 맨 위를 가리키면 '몇 시'예요. 이때는 짧은바늘이 가리키는 숫자를 읽어요. 긴바늘이 6을 가리키면 '몇 시 30분'이에요. 짧은바늘이 두 숫자 사이에 있으면 지나온 숫자가 '시'예요.",   /* 문장마다 따로 읽혀도 되게 — 시범 말은 예로 든 숫자(12 · 6 · 30)가 든 문장을 뺌(app/js/fix.js ruleFor) */
+      hint: "긴바늘이 12를 가리키면 '몇 시'예요. 그때 짧은바늘이 가리키는 숫자가 '시'예요. 긴바늘이 6을 가리키면 '몇 시 30분'이에요. 그때 짧은바늘은 두 숫자 사이에 있고, 지나온 숫자가 '시'예요.",   /* 시범 · 함께 말은 engine/hints/me.js say(이 문제의 숫자로) */
       tip: "'몇 시 30분'에서 짧은바늘이 다음 숫자에 가까워 보여 그 숫자를 시로 읽는 아이가 많아요. 모형 시계의 긴바늘을 12에서 6까지 돌리며 짧은바늘이 숫자 사이로 조금씩 가는 것을 보여 줘요.",
     },
     // ── 2-1-4 길이 재기
@@ -428,8 +419,8 @@ export default {
     {
       id: '2-2-3:4', name: '길이의 합과 차', kid: '길이 더하기와 빼기 (m와 cm)', s: 'ME', sec: 30,
       gen: genLenCalc, make: lenCalcMake, steps: lenCalcSteps, prev: '2-2-3:2', pre: ['2-1-3:4', '2-1-3:7'],
-      hint: 'm는 m끼리, cm는 cm끼리 계산해요. 1 m 70 cm + 1 m 50 cm에서 cm끼리 더하면 120 cm예요. 100 cm는 1 m라서 120 cm는 1 m 20 cm이고, 답은 3 m 20 cm예요.',
-      tip: 'cm의 합이 100을 넘어도 그대로 쓰는지(2 m 120 cm) 봐요. 양은 맞지만 꼴을 바꾸지 않은 답이에요. 100 cm = 1 m를 줄자로 다시 확인해요.',
+      hint: 'm는 m끼리, cm는 cm끼리 계산해요. 1 m 20 cm + 2 m 50 cm는 cm끼리 70 cm, m끼리 3 m라서 3 m 70 cm예요.',
+      tip: 'm와 cm를 섞어 계산하는지(1 m 20 cm + 50 cm → 51 m 20 cm) 봐요. 같은 단위끼리 줄을 맞춰 세로로 쓰게 해요. cm의 합이 100을 넘는 계산은 3학년(길이와 시간)에서 해요.',
     },
     // ── 2-2-4 시각과 시간
     {
@@ -489,7 +480,9 @@ export default {
     {
       id: '3-2-3:3', name: '원의 반지름과 지름', kid: '원의 반지름과 지름', s: 'ME', sec: 12,
       gen: (r) => ({ v: r.pick(['r2d', 'r2d', 'd2r', 'd2r', 'comp']), r: r.int(2, 12) }),
-      make: circMake, prev: null, pre: ['2-2-2:2', '3-1-3:6'],
+      make: circMake,
+      steps: (p) => (p.v === 'd2r' ? [{ c: 'DIV', p: { a: 2 * p.r, b: 2 }, why: '반지름은 지름의 반이에요. 지름을 2로 나눠요.' }] : [{ c: 'ADD', p: { a: p.r, b: p.r }, why: `지름은 반지름 두 개를 이은 길이예요. ${p.v === 'comp' ? '컴퍼스를 벌린 길이가 반지름이에요. ' : ''}반지름 두 개를 더해요.` }]),
+      prev: null, pre: ['2-2-2:2', '3-1-3:6'],
       hint: '반지름은 원의 중심에서 원 위의 한 점까지 이은 선분이에요. 지름은 원의 중심을 지나 원 위의 두 점을 이은 선분이에요. 지름은 반지름 두 개를 이은 길이예요. 반지름이 5 cm면 지름은 10 cm예요.',
       tip: '반지름과 지름을 바꿔 생각하는지 봐요. 컴퍼스를 벌린 길이가 반지름이라는 것을 원을 직접 그리며 확인해요.',
     },
@@ -571,8 +564,10 @@ export default {
     {
       id: '5-1-6:5', name: '1 m² = 10000 cm²', kid: 'm²와 cm² 바꾸기', s: 'ME', sec: 15,
       gen: (r) => { const v = r.pick(['m2cm', 'm2cm', 'cm2m']); return { v, n: r.int(v === 'cm2m' ? 2 : 1, 12) }; },
-      make: m2Make, prev: '5-1-6:4', pre: ['4-1-1:2', '4-1-1:4'],
-      hint: '1 m²는 한 변이 1 m인 정사각형의 넓이예요. 1 m는 100 cm라서 가로 100 cm, 세로 100 cm인 정사각형이에요. 그래서 1 m² = 100 × 100 = 10000 cm²예요.',
+      make: m2Make,
+      steps: (p) => (p.v === 'cm2m' ? [{ c: 'DIV', p: { a: p.n * 10000, b: 10000 }, why: '1 m²는 10000 cm²예요. 10000 cm²가 몇 번 들어가는지 나눠요.' }] : p.n > 1 ? [{ c: 'MUL', p: { a: p.n, b: 10000 }, why: `1 m²는 10000 cm²예요. ${p.n} m²는 그 ${p.n}배예요.` }] : []),
+      prev: '5-1-6:4', pre: ['4-1-1:2', '4-1-1:4'],
+      hint: '1 m²는 한 변이 1 m인 정사각형의 넓이예요. 1 m는 100 cm라서 이 정사각형은 가로 100 cm, 세로 100 cm예요. 100 cm × 100 cm = 10000 cm²라서 1 m² = 10000 cm²예요.',
       tip: '1 m = 100 cm에서 미루어 1 m² = 100 cm²라고 답하는 아이가 많아요. 한 변이 1 m인 정사각형을 바닥에 그리고 1 cm² 칸이 가로로 100개, 세로로 100줄 들어가는 것을 떠올리게 해요.',
     },
     {

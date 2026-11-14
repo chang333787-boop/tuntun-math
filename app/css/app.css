@@ -155,7 +155,7 @@ button:focus-visible,.btn:focus-visible,a:focus-visible,summary:focus-visible,.b
 @media (prefers-reduced-motion:no-preference){.pbar i{animation:pgrow .2s ease-out}@keyframes pgrow{from{width:var(--p0,0)}}.pseg i.nw{transform-origin:left;animation:segin .2s ease-out}@keyframes segin{from{transform:scaleX(0)}}}
 /* 수식 */
 .math{font-family:var(--num);font-size:clamp(28px,5vw,44px);display:flex;align-items:center;flex-wrap:wrap;gap:.12em .2em;line-height:1.3;font-variant-numeric:tabular-nums}
-#q.math{font-size:clamp(34px,5.4cqi,56px)}
+#q.math{font-size:clamp(34px,5.4cqi,56px)}#q.math.wide,.qcard.tfit2 .qmain>#q.wide{font-size:clamp(26px,3.2cqi,36px)}   /* 분수가 넷 넘는 식(15/24 + 20/24 = □/24 = □ □/24) — 한 줄에 들게(대분수 칸이 다음 줄 왼쪽으로 떨어져 다른 식처럼 보이던 것) */
 #q.math.tall{font-size:clamp(28px,3.8cqi,40px)}   /* 식 다섯 줄 넘는 문제(식의 배열 4-1-6) — 크롬북 768에서 답 칸이 화면 아래로 밀리지 않게 · 도움 그림이 위에 붙어도 */
 .hl-ctx-pic .pic{margin:0}
 .math .tx{white-space:pre-wrap}.math .kr{font-size:max(.55em,19px);font-weight:600}
@@ -164,7 +164,7 @@ button:focus-visible,.btn:focus-visible,a:focus-visible,summary:focus-visible,.b
 .mx{display:inline-flex;align-items:center;gap:.08em}
 .pic{flex-basis:100%;margin:4px 0 8px}.pic svg{max-width:100%;height:auto}.pic .dot{fill:var(--teal)}.pic .grp{fill:none;stroke:var(--mute);stroke-width:2;stroke-dasharray:4 3}.pic .cell{fill:#fff;stroke:var(--ink);stroke-width:2}.pic .cell.on{fill:var(--sun)}
 /* 그림 틀(engine/pics.js · 11-13) — 띠 · 배열 · 묶음 · 분수 띠 · 눈금 · 시계 · 모눈 · 색은 여기서만(노랑 = 지금 볼 것 · 청록 = 세는 것 · 옅은 청록 = 마친 것) */
-.pic .p-t{fill:var(--ink);font-family:var(--num);font-variant-numeric:tabular-nums}.pic .p-t.mu{fill:var(--mute)}.pic .p-t.ac{fill:var(--teal-d)}.pic .p-t.in{fill:#fff;font-weight:800}
+.pic .p-t{fill:var(--ink);font-family:var(--num);font-variant-numeric:tabular-nums}.pic .p-t.mu{fill:var(--mute)}.pic .p-t.ac{fill:var(--teal-d)}.pic .p-t.in{fill:#fff;font-weight:800}.pic .p-t.halo{paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}
 .pic .p-ln{fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.pic .p-ln.mu{stroke:var(--mute);stroke-width:1.5}.pic .p-ln.th{stroke-width:1.2}.pic .p-ln.da{stroke:var(--mute);stroke-dasharray:3 3}
 .pic .p-box{fill:#fff;stroke:var(--ink);stroke-width:2}.pic .p-box.now{fill:var(--sun)}.pic .p-box.done{fill:var(--teal-t)}
 .pic .p-dot{fill:var(--teal)}.pic .p-dot.dim{fill:var(--teal-l)}.pic .p-dot.gh{fill:none;stroke:var(--teal-l);stroke-width:1.5;stroke-dasharray:3 3}.pic .p-dot.b{fill:var(--sun);stroke:var(--ink);stroke-width:1.5}

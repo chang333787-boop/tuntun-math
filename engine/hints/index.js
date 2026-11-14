@@ -18,6 +18,13 @@ export function cueOf(c, p) {
   if (!h || !h.cue) return '';
   try { return String(typeof h.cue === 'function' ? h.cue(p) : h.cue).trim(); } catch (e) { return ''; }
 }
+// 시범 · 함께 말(단계가 없는 문제) — 이 문제의 숫자로 · full = 시범(답까지 말해도 됨) · 아니면 함께(답 수는 말하지 않음) · 없으면 화면이 차시 hint의 '방법' 문장으로(app/js/fix.js ruleFor)
+export function sayOf(c, p, full) {
+  const h = HINTS[c];
+  if (!h || typeof h.say !== 'function') return null;
+  let xs = null; try { xs = h.say(p, full); } catch (e) { return null; }
+  return Array.isArray(xs) && xs.length && xs.every((x) => typeof x === 'string' && x.trim()) ? xs : null;
+}
 export const extraSteps = (c) => (HINTS[c] && typeof HINTS[c].steps === 'function' ? HINTS[c].steps : null);
 // 풀이 순서 이름 — 개수가 단계 수와 다르면 null(화면이 숫자를 가린 단계 글로 대신)
 export function planOf(c, p, n) {

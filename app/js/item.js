@@ -102,7 +102,7 @@ export function draw(root, { prompt, sol = null, choices = null, tag = '', act =
     <div class="qmain">
       <div class="qtop">${tagHTML(tag, act)}${dots ? progHTML(dots) : ''}</div>
       ${extra}
-      <div class="math${Array.isArray(prompt) && prompt.filter((t) => t && t.br).length >= 4 ? ' tall' : ''}" id="q">${toHTML(prompt)}</div>
+      <div class="math${Array.isArray(prompt) && prompt.filter((t) => t && t.br).length >= 4 ? ' tall' : ''}${Array.isArray(prompt) && prompt.filter((t) => t && typeof t === 'object' && ('f' in t || 'm' in t)).length >= 4 ? ' wide' : ''}" id="q">${toHTML(prompt)}</div>
     </div>
     <div class="qside">
       ${lead ? `<div class="qlead">${lead}</div>` : ''}
@@ -226,7 +226,28 @@ function ansMulti(it) {
   }
   return it.prompt && !fr.length && sol.every((v) => String(v) === String(sol[0])) ? { html: esc(sol[0]), plain: String(sol[0]) } : null;   /* 문제 글을 모르면(sol만 받음) 분수인지 알 수 없어 그대로 늘어놓음 */
 }
+/* 빈칸마다 바로 뒤에 단위가 붙은 문제(□시 □분 · □ cm · □ cm² · □°) — 답도 단위를 붙여 말함('답은 2, 30' → '답은 2시 30분' · 교사 눈 평가 11-14) · 분수 칸이 있으면 null */
+const UNIT = /^ ?(cm²|m²|km|cm|mm|mL|kg|m|g|L|°|시간|시|분|초)/, UNIT_B = new Set(['분', '시간', 'kg', 'g']);   /* 받침이 있게 읽는 단위(분 · 시간 · 킬로그램 · 그램) */
+function unitSay(it) {
+  const pr = it.prompt, sol = it.sol || [];
+  if (it.choices || !Array.isArray(pr) || !sol.length) return null;
+  const out = [];
+  let last = '';
+  for (let i = 0; i < pr.length; i++) {
+    const t = pr[i];
+    if (!t || typeof t !== 'object') continue;
+    if (('f' in t || 'm' in t) && (t.f || t.m).some((x) => x && typeof x === 'object' && 'b' in x)) return null;
+    if (!('b' in t)) continue;
+    const m = typeof pr[i + 1] === 'string' ? pr[i + 1].match(UNIT) : null;
+    if (!m || sol[t.b] == null) return null;
+    out.push(`${sol[t.b]}${m[0].startsWith(' ') ? ' ' : ''}${m[1]}`);
+    last = m[1];
+  }
+  return out.length === sol.length ? { text: out.join(' '), b: UNIT_B.has(last) } : null;
+}
 export function ansSay(it, lead = '답은') {
+  const u = unitSay(it);
+  if (u) return `${lead} <b>${esc(u.text)}</b>${u.b ? '이에요' : '예요'}.`;
   const m = ansMulti(it);
   if (m) return `${lead} <b>${m.html}</b>${P(m.plain, '이에요', '예요')}.`;
   const t = ansPlain(it).trim(), word = /[가-힣]$/.test(t);

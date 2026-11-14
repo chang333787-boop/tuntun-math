@@ -13,6 +13,7 @@ import { itemOf, makeSheet, pickItems } from '../../paper/js/gen.js';
 import { testable, __predict, readExpr } from '../../engine/errors.js';
 import { toText, blankCount } from '../../engine/tokens.js';
 import { P } from '../../engine/concepts/kit.js';
+import { sayOf } from '../../engine/hints/index.js';
 
 export const FIX = { soloNeed: 3, soloMax: 6, check: 3, miss: 3 };   // 혼자 셋 맞히면 확인 · 여섯 문제까지 · 세 번 내리 틀리면 함께로(한 번) → 또 세 번이면 선생님과
 const hash = (s) => [...String(s)].reduce((h, ch) => (Math.imul(h, 31) + ch.charCodeAt(0)) >>> 0, 7);
@@ -159,12 +160,14 @@ export function otherEx(c, it) {
 //  빈칸이 하나인 수 늘어놓기(4, 5, 6, 7, □)는 그 빈칸 말도 — 빈칸이 둘 이상이면 화면(kid.js)이 빈칸마다 붙임 · 수 이름 문항은 세기 말만(점 세기 방법 X)
 export const showTalk = (F) => {
   const ex = { ...F.ex, c: F.ex.c || F.c }, nb = ex.choices ? 0 : blankCount(ex.prompt), ct = countTalk(ex, true);
+  { const sd = sayOf(F.c, ex.p, true); if (sd) return sd; }   /* 차시가 이 문제의 숫자로 할 말을 주면 그것(시계 · 원 · 넓이 단위 — engine/hints say) */
   if (ct && ex.p && (ex.p.v === 'nat' || ex.p.v === 'sin')) return [ct];
   const t = [factTalk(ex, true) || ct || (nb === 1 ? blankTalk(ex, 0, true) : ''), ruleFor(F.c, ex)].filter(Boolean);
   return t.length ? t : [otherEx(F.c, ex)].filter(Boolean);
 };
 export function talkOf(it, c) {
   const x = it && !it.c ? { ...it, c } : it, ct = countTalk(x, false);
+  { const sd = x && sayOf(c, x.p, false); if (sd) return sd; }
   if (ct && x.p && (x.p.v === 'nat' || x.p.v === 'sin')) return [ct];
   const t = [factTalk(x, false) || ct || (x.choices ? '' : blankTalk(x, blankCount(x.prompt) - 1, false)), ruleFor(c, x, { noAns: true })].filter(Boolean);
   return t.length ? t : [otherEx(c, x)].filter(Boolean);

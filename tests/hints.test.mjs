@@ -3,7 +3,7 @@
 //  STRICT=1 node tests/hints.test.mjs  모든 차시에 cue가 있어야 · 단계 없는 차시는 까닭(HINTS[c].noSteps)이 있어야 · STRANDS=N,A 처럼 영역만
 //  풀이 순서(HINTS[c].plan(p) — 숫자 없는 단계 이름 배열): 있으면 늘 검사(개수 = stepsOf 단계 수 · 이름에 숫자 X — 10만 됨) · PLAN=1이면 없는 차시도 실패
 import { NODES, byId, makeItem, stepsOf } from '../engine/lessons/index.js';
-import { HINTS, cueOf } from '../engine/hints/index.js';
+import { HINTS, cueOf, sayOf } from '../engine/hints/index.js';
 import { rng } from '../engine/math.js';
 import { toText } from '../engine/tokens.js';
 
@@ -28,6 +28,13 @@ for (const n of LIST) {
         if (ans.some((v) => cn.has(v))) leak.push(`${n.id} ${toText(it.prompt)} → 답 ${it.sol} · 말: ${cue}`);
       }
     }
+    /* 함께 말(say · full 아님) — 답이 문제에 없던 수면 말하지 않음 · 풍선마다 두 문장까지 */
+    const say = sayOf(n.id, p, false);
+    if (say && !it.choices) {
+      const own = new Set(nums(toText(it.prompt))), sn = new Set(say.flatMap((x) => nums(x)));
+      if ((it.sol || []).map(Number).some((v) => Number.isFinite(v) && !own.has(v) && sn.has(v))) leak.push(`${n.id} 함께 말에 답 ${it.sol} · 말: ${say.join(' / ')}`);
+    }
+    for (const x of [...(say || []), ...(sayOf(n.id, p, true) || [])]) if ((x.match(/[.?!](\s|$)/g) || []).length > 2) bad.push(`${n.id} 시범 · 함께 말 한 풍선에 세 문장 넘음: ${x}`);
     let st = []; try { st = stepsOf(n.id, p); } catch (e) { st = []; }
     if (st.length) stepN++;
     const h = HINTS[n.id];

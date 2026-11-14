@@ -45,7 +45,7 @@ export function planHTML(steps, names, cur, shown = new Set(), lastLabel = '전�
 //  세로셈이 있으면(11-13 묶음 3) 세로셈이 지금 풀 자리와 받아내림을 보여 주므로 — 채운 단계는 글 없이 식만 한 줄로(같은 말이 그림 · 줄 · 말풍선에 세 번 나오던 것)
 //  q = 문제 속 도형 그림을 이 단계 그림으로 바꾼 문제 조각(figSwap — 없으면 문제 그대로)
 export function stepCtx(it, steps, upto, { shown = new Set(), C = null, label = '전체 문제', head = true, pic = '', fresh = -1, lag = null, q = null } = {}) {
-  const eq = !!C || steps.length >= 5;   /* 다섯 단계가 넘는 문제(겉넓이 여섯 단계)는 마친 단계를 식만 한 줄로 — 크롬북 768에서 답 칸이 화면 밖으로 밀리지 않게(단계 이름은 옆 풀이 순서에 그대로) */
+  const eq = !!C || steps.length >= 5 || (steps.length >= 4 && steps.some((s) => (s.prompt || []).some((t) => t && typeof t === 'object' && ('f' in t || 'm' in t))));   /* 다섯 단계가 넘는 문제(겉넓이 여섯 단계) · 분수 단계가 넷인 문제(대분수 받아내림)는 마친 단계를 식만 한 줄로 — 크롬북 768에서 답 칸이 화면 밖으로 밀리지 않게(단계 이름은 옆 풀이 순서에 그대로) */
   const list = upto ? `<ol class="hl-steps${eq ? ' eq' : ''}">${steps.slice(0, upto).map((s, i) => `<li class="${shown.has(i) ? 'shown' : 'ok'}${i === fresh ? ' nw' : ''}"><span class="hl-n">${i + 1}</span>${eq ? '' : `<span class="why">${esc(s.why)}</span>`}${staticHTML(s.prompt, s.sol)}</li>`).join('')}</ol>` : '';
   const col = C ? `<div class="hl-col">${colView(C, upto, lag, { peek: true }).html}</div>` : '';
   return `<div class="hl-ctx${C ? ' with-col' : ''}">${head ? `<span class="hl-k">${esc(label)}</span>${staticHTML(q || it.prompt, null)}` : ''}${C && pic ? `<div class="hl-cp">${col}${pic}</div>` : C ? col : pic}${list}</div>`;

@@ -153,8 +153,9 @@ export function clock({ h = 12, m = 0, sweep = false, gap = false, jumps = false
     const big = k % 5 === 0, on = jumps && k > k5 * 5 && k <= m;
     s += `<path d="M${xy(k * 6, r - (big || on ? 8 : 4))} L${xy(k * 6, r - 1)}" class="${on ? 'p-arc' : `p-ln${big ? '' : ' th'}`}"/>`;
   }
-  for (let k = 1; k <= 12; k++) { const [x, yy] = pt(k * 30, r - 19); s += T(x, yy + 5, k, 13); }
   s += `<path d="M${c} ${c} L${xy(((h % 12) + m / 60) * 30, r * 0.5)}" class="p-hand"/><path d="M${c} ${c} L${xy(m * 6, r * 0.84)}" class="p-hand min"/><circle cx="${c}" cy="${c}" r="3.5" class="p-pt"/>`;
+  /* 숫자는 바늘 위에 흰 테를 둘러 그림(긴바늘이 7 · 6을 덮던 것) · gap이면 짧은바늘이 지나온 숫자를 진하게 */
+  for (let k = 1; k <= 12; k++) { const [x, yy] = pt(k * 30, r - 19), on = gap && k === ((h - 1) % 12) + 1; s += T(x, yy + 5, k, on ? 15 : 13, on ? 'ac halo' : 'halo', 'middle', on); }
   if (jumps) {
     for (let j = 1; j <= k5; j++) s += `<path d="M${xy(j * 30 - 27, r + 4)} Q${xy(j * 30 - 15, r + 17)} ${xy(j * 30 - 3, r + 4)}" class="p-arc"/>`;
     if (k5 >= 2) { const [x, y] = pt(15, r + 21); s += T(x, y + 4, '5분', 12, 'ac', 'middle', true); }
@@ -172,7 +173,7 @@ export function ruler({ a = 0, b = 5, max = 10, cells = false, hi = false, label
   s += `<rect x="2" y="${yr}" width="${r1(W - 4)}" height="${hr}" rx="3" class="p-box"/>`;
   for (let k = 0; k <= max; k++) {
     const on = hi && (k === a || k === b);
-    s += `<path d="M${xv(k)} ${yr} v13" class="p-ln th"/>` + (k < max ? `<path d="M${xv(k + 0.5)} ${yr} v7" class="p-ln th"/>` : '') + T(x0 + k * u, yr + 30, k, 13, on ? 'ac' : '', 'middle', on);
+    s += `<path d="M${xv(k)} ${yr} v13" class="p-ln th"/>` + T(x0 + k * u, yr + 30, k, 13, on ? 'ac' : '', 'middle', on);   /* 1 cm 눈금만(반 눈금이 있으면 1 cm가 두 칸으로 보임 · 2학년 자) */
   }
   return wrap(W, yr + hr + 4, label || `자 위의 색 테이프 — 왼쪽 끝은 눈금 ${a}, 오른쪽 끝은 눈금 ${b}`, s);
 }
@@ -427,10 +428,10 @@ export function circle({ r = 0, d = 0, both = false, sq = false, roll = false, l
   return wrap(2 * R + 16 + (sq ? tw(sqt, 15) + 14 : 0), 2 * R + 16, label || (d ? `원 — 지름 ${d} cm` : r ? `원 — 반지름 ${r} cm` : '원'), g);
 }
 
-// ── 마름모 ── a = 가로 대각선 · b = 세로 대각선(긴 쪽을 길게 — 꼭 맞는 비율은 아님) · 길이는 도형 밖 꺾쇠에 · boxed = 둘러싼 직사각형(점선) + 마름모 칠 · hi = 길이 글을 진하게
+// ── 마름모 ── a = 가로 대각선 · b = 세로 대각선(비율대로 — 짧은 쪽이 아주 짧으면 44까지만 줄임) · 길이는 도형 밖 꺾쇠에 · boxed = 둘러싼 직사각형(점선) + 마름모 칠 · hi = 길이 글을 진하게
 export function rhom({ a = 1, b = 1, boxed = false, hi = false, label = '' }) {
   if (!(a > 0) || !(b > 0)) return '';
-  const k = Math.min(200 / a, 110 / b), W = Math.max(96, a * k), H = Math.max(64, b * k), bl = `${b} cm`, LX = tw(bl, 15) + 22, T0 = 6;
+  const k = Math.min(200 / a, 110 / b), W = Math.max(44, a * k), H = Math.max(44, b * k), bl = `${b} cm`, LX = tw(bl, 15) + 22, T0 = 6;
   const cx = LX + W / 2, cy = T0 + H / 2, Q = [[LX, cy], [cx, T0], [LX + W, cy], [cx, T0 + H]], yb = T0 + H + 9, xl = LX - 9;
   let g = boxed ? `<rect x="${r1(LX)}" y="${T0}" width="${r1(W)}" height="${r1(H)}" class="p-ln da"/>` : '';
   g += `<path d="${polyD(Q)}" class="${boxed ? 'p-f1 ol' : 'p-ln'}"/><path d="M${pt(Q[0])} L${pt(Q[2])} M${pt(Q[1])} L${pt(Q[3])}" class="p-ln da"/>`;

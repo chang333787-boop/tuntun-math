@@ -304,15 +304,16 @@ const RN = { ge: '이상', le: '이하', gt: '초과', lt: '미만' };
 const opened = (m) => m === 'gt' || m === 'lt';
 const inQ = (m, b) => `${b} ${RN[m]}에 ${b}${P(b, '이', '가')}`;
 function rangeCue(p) {
-  if (p.v === 'cnt') return `${inQ(p.m, p.b)} 들어가나요? 기준 수를 넣을지 먼저 정하고, 위의 수 중 알맞은 수만 세어 봐요.`;
-  if (p.v === 'span') return `${inQ(p.m, p.b)}, ${inQ(p.m2, p.b2)} 들어가는지 먼저 보세요. 들어가는 수만 세어요.`;
-  if (p.v === 'edge') return `${inQ(p.m, p.b)} 들어가나요? 들어가는 수 중에서 가장 ${p.m === 'ge' || p.m === 'gt' ? '작은' : '큰'} 수를 찾아요.`;
+  /* 수직선 그림(engine/hints/pics.js rangePic)과 같은 말 — ● 들어감 · ○ 안 들어감 · 칠한 쪽 */
+  if (p.v === 'cnt') return '수직선의 ●는 그 수가 들어가고 ○는 들어가지 않아요. 칠한 쪽에 있는 위의 수만 세어 봐요.';
+  if (p.v === 'span') return '수직선의 ●는 그 수가 들어가고 ○는 들어가지 않아요. 칠한 곳에 있는 자연수만 세어요.';
+  if (p.v === 'edge') return `수직선의 ●는 그 수가 들어가고 ○는 들어가지 않아요. 칠한 쪽에서 가장 ${p.m === 'ge' || p.m === 'gt' ? '작은' : '큰'} 자연수는 무엇일까요?`;
   return `●는 기준 수가 들어가고 ○는 들어가지 않아요. 선이 ${p.b}보다 큰 쪽으로 가는지 작은 쪽으로 가는지도 보세요.`;
 }
 // 끝 수 — 초과는 바로 뒤의 수 · 미만은 바로 앞의 수(이상 · 이하는 기준 수 그대로라 단계 없음)
 const edgeStep = (m, b) => (m === 'gt'
-  ? { c: 'g1_SEQ', p: { v: 'next', n: b, d: 1 }, why: `${b}${P(b, '은', '는')} 빼고 가장 작은 수를 찾아요.`, n: '기준 수를 빼고 가장 작은 수 찾기' }
-  : { c: 'g1_SEQ', p: { v: 'next', n: b, d: -1 }, why: `${b}${P(b, '은', '는')} 빼고 가장 큰 수를 찾아요.`, n: '기준 수를 빼고 가장 큰 수 찾기' });
+  ? { c: 'g1_SEQ', p: { v: 'next', n: b, d: 1 }, why: `${b}${P(b, '은', '는')} 들어가지 않아요. 들어가는 가장 작은 수를 찾아요.`, n: '들어가는 가장 작은 수 찾기' }
+  : { c: 'g1_SEQ', p: { v: 'next', n: b, d: -1 }, why: `${b}${P(b, '은', '는')} 들어가지 않아요. 들어가는 가장 큰 수를 찾아요.`, n: '들어가는 가장 큰 수 찾기' });
 function rangeSteps(p) {
   if (p.v === 'edge' || p.v === 'cnt') return opened(p.m) ? [edgeStep(p.m, p.b)] : [];
   if (p.v !== 'span') return [];
@@ -320,7 +321,7 @@ function rangeSteps(p) {
   if (opened(p.m)) out.push(edgeStep(p.m, p.b));
   if (opened(p.m2)) out.push(edgeStep(p.m2, p.b2));
   out.push({ c: 'SUB', p: { a: hi, b: lo }, why: '가장 큰 수에서 가장 작은 수를 빼요.', n: '가장 큰 수에서 가장 작은 수 빼기' });
-  out.push({ c: 'ADD', p: { a: hi - lo, b: 1 }, why: '첫 수까지 세려고 1을 더해요.', n: '첫 수까지 세려고 하나 더하기' });
+  out.push({ c: 'ADD', p: { a: hi - lo, b: 1 }, why: '빼기만 하면 맨 앞의 수가 빠져요. 양 끝 수를 모두 세려면 1을 더해요.', n: '양 끝 수까지 세려고 하나 더하기' });
   return out;
 }
 
