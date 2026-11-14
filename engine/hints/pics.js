@@ -128,6 +128,75 @@ const bar1 = (row, top = '') => ({ t: 'bars', top, rows: [row] });
 /* 0.1이 몇 개 — 온전한 1이 셋까지면 열 칸 띠로 다 그리고(1은 0.1이 10개), 넘으면 작은 네모로 */
 const tenths = (n, top) => (n >= 0 && n <= 99 ? bar1(n < 40 ? { d: 10, segs: [seg(n)] } : { d: 10, pre: Math.floor(n / 10), segs: [seg(n % 10)] }, top) : null);
 
+// ── 통분 ── 두 분수를 한 줄씩(대분수는 자연수 부분을 네모로) · fine = 공통분모 칸을 점선으로(같은 띠를 더 잘게 — 색칠한 양은 그대로)
+const gcd2 = (a, b) => (b ? gcd2(b, a % b) : a);
+const tb = (p) => { const L = p.L || (p.d1 * p.d2) / gcd2(p.d1, p.d2); return { L, a: (p.n1 * L) / p.d1, b: (p.n2 * L) / p.d2 }; };
+const fineOK = (d, L) => okD(d) && int(L) && L % d === 0 && L <= 36;
+const fracRow = (w, n, d, k, L) => ({ d, ...(w ? { pre: w } : {}), segs: [seg(n, k)], lab: w ? [w, n, d] : [n, d], ...(L > d ? { sub: L / d } : {}) });
+function twoRows(p, fine) {
+  if (!p || !okD(p.d1) || !okD(p.d2)) return null;
+  const { L } = tb(p), ok = (w, n, d) => int(n) && n >= 1 && n <= d && (!w || (int(w) && w <= 6));
+  if (!fineOK(p.d1, L) || !fineOK(p.d2, L) || !ok(p.w1, p.n1, p.d1) || !ok(p.w2, p.n2, p.d2)) return null;
+  return { t: 'bars', rows: [fracRow(p.w1 || 0, p.n1, p.d1, 'a', fine ? L : 0), fracRow(p.w2 || 0, p.n2, p.d2, 'b', fine ? L : 0)] };
+}
+/* 진분수 — 통분 단계(0번) 다음은 분모가 같은 띠 하나(덧셈은 두 색 · 뺄셈은 덜어 낼 칸 ✕) · 띠 둘에 걸치면 공통분모 24까지 */
+function fracCalc(p, { i, steps }) {
+  if (i >= steps.length) return null;
+  if (i < 1) return twoRows(p, i === 0);
+  const { L, a, b } = tb(p), sub = p.op === '-' || p.op === '−';
+  if (!twoRows(p, true) || L > (a + b > L ? 24 : 36) || (sub && a < b)) return null;
+  return bar1({ d: L, segs: sub ? [seg(a - b), seg(b, 'x')] : [seg(a), seg(b, 'b')] });
+}
+/* 대분수 — 통분 뒤 덧셈은 두 줄(분모가 같은 대분수) · 뺄셈은 한 줄(자연수 네모와 칸에 ✕) */
+const mixedCalc = (op) => (p, { i, steps }) => {
+  if (i >= steps.length) return null;
+  if (i < 1) return twoRows(p, i === 0);
+  const { L, a, b } = tb(p);
+  if (!twoRows(p, true)) return null;
+  if (op === '+') return { t: 'bars', rows: [{ d: L, pre: p.w1, segs: [seg(a)], lab: [p.w1, a, L] }, { d: L, pre: p.w2, segs: [seg(b, 'b')], lab: [p.w2, b, L] }] };
+  return p.w1 >= p.w2 && a >= b ? bar1({ d: L, pre: p.w1, preX: p.w2, segs: [seg(a - b), seg(b, 'x')] }) : null;
+};
+
+// ── 수의 범위 ── 수직선에 기준 수(● 들어감 · ○ 안 들어감)와 들어가는 쪽 · 세어 볼 수는 진하게(span = 두 기준 수 사이 · cnt = 위의 수들 · edge = 가장 큰 · 작은 수)
+const OPEN = { gt: true, lt: true };
+function rangePic(p, { i, steps }) {
+  if (i >= steps.length || !int(p.b)) return null;
+  const up = (m) => m === 'ge' || m === 'gt', I = (lo, hi) => rep(hi - lo + 1, (k) => lo + k), dot = (v, m) => ({ v, dot: true, open: !!OPEN[m] });
+  if (p.v === 'span') {
+    if (!int(p.b2) || p.b2 - p.b < 2 || p.b2 - p.b > 16) return null;
+    const lo = p.b - 2, hi = p.b2 + 2, on = (v) => v === p.b || v === p.b2;
+    return { t: 'line', min: lo, max: hi, ticks: I(lo, hi).map((v) => ({ v, big: on(v), lab: on(v) ? v : null })), marks: [dot(p.b, p.m), dot(p.b2, p.m2)], gap: [p.b, p.b2] };
+  }
+  if (p.v === 'cnt' && Array.isArray(p.list) && p.list.every(int)) {
+    const lo = Math.min(p.b, ...p.list) - 1, hi = Math.max(p.b, ...p.list) + 1, inL = new Set(p.list), on = (v) => inL.has(v) || v === p.b;
+    if (hi - lo > 18) return null;
+    return { t: 'line', min: lo, max: hi, ticks: I(lo, hi).map((v) => ({ v, big: on(v), lab: on(v) ? v : null, ac: inL.has(v) })), marks: [dot(p.b, p.m)], gap: up(p.m) ? [p.b, hi] : [lo, p.b] };
+  }
+  if (p.v === 'edge') {
+    const lo = p.b - 3, hi = p.b + 3;
+    return { t: 'line', min: lo, max: hi, ticks: I(lo, hi).map((v) => ({ v, big: v === p.b, lab: v === p.b ? v : null })), marks: [dot(p.b, p.m)], gap: up(p.m) ? [p.b, hi] : [lo, p.b] };
+  }
+  return null;
+}
+
+// ── 어림 ── xi(소수 dp자리)를 자리 표에 · pk = 구하는 자리(10의 몇 제곱) · 노랑 = 가릴 자리(반올림은 바로 아래 한 칸) · '떼어 내' 단계를 마치면 아래 자리가 0
+//   '자리 숫자를 봐요' 단계는 그 숫자가 곧 단계의 답이라 그리지 않음 · 어림한 수나 떼어 낸 수가 자리 이름(1 · 10 …)이나 칸의 숫자 하나와 같으면 그리지 않음(글자로 샘 — 7.46을 일의 자리로 버림 = 7)
+function roundPic(p, { i, steps }) {
+  if (p.v !== 'val' || i >= steps.length || !int(p.xi) || p.xi < 1) return null;
+  const dp = p.dp || 0, s = String(p.xi).padStart(dp + 1, '0'), n = s.length, top = n - 1 - dp;
+  if (n > 6 || /자리 숫자를 봐요/.test((cur(steps, i) || {}).why || '')) return null;
+  const pw = (j) => top - j, name = (e) => (e >= 0 ? String(10 ** e) : `0.${'0'.repeat(-e - 1)}1`);
+  const cols = rep(n, (j) => name(pw(j))), tgt = rep(n, (j) => j).find((j) => pw(j) === p.pk);
+  if (tgt == null || tgt >= n - 1) return null;
+  const unit = 10 ** (p.pk + dp), low = p.xi % unit, base = p.xi - low, half = Math.floor(low / (unit / 10)) >= 5;
+  const r = (p.m === 'up' ? (low ? base + unit : base) : p.m === 'half' && half ? base + unit : base) / 10 ** dp;
+  const tx = new Set([...cols, ...s].map(Number));
+  if (tx.has(r) || tx.has(base / 10 ** dp)) return null;
+  const cut = steps.findIndex((st) => /떼어 내/.test(st.why || '')), gone = cut >= 0 && i > cut;
+  const lows = rep(n - tgt - 1, (k) => tgt + 1 + k), on = gone ? tgt : p.m === 'half' && i < cut ? tgt + 1 : lows;   /* 반올림 — 볼 숫자 한 칸 → 떼어 낼 때 아래 자리 모두 → 올릴 자리 */
+  return { t: 'place', cols, rows: [{ ds: rep(n, (j) => (gone && j > tgt ? '0' : s[j])), on }] };
+}
+
 const MULS = ['3-1-4:3', '3-1-4:4', '3-1-4:5', '3-1-4:6', '3-2-1:2', '3-2-1:3', '3-2-1:4', '3-2-1:6', '3-2-1:7', '3-2-1:8', '4-1-3:3'];
 const DIVS = ['3-2-2:3', '3-2-2:4', '3-2-2:5', '3-2-2:7'];
 const FACTS = ['2-2-2:2', '2-2-2:3', '2-2-2:4', '2-2-2:5', '2-2-2:6', '2-2-2:7'];
@@ -291,5 +360,39 @@ const PICS = {
     if (i >= steps.length || !(Number.isInteger(p.r) && p.r > 0)) return null;
     return p.v === 'd' && (i < 0 || (i === 0 && steps.length)) ? { t: 'circle', d: 2 * p.r, both: true } : { t: 'circle', r: p.r, sq: true };
   },
+  /* 통분 — 처음엔 제 분모의 띠 둘(조각 크기가 다름) · 최소공배수를 찾은 뒤 같은 띠를 공통분모 칸으로 더 잘게(점선) */
+  '5-1-4:5': (p, { i, steps }) => (i < steps.length ? twoRows(p, i >= 1) : null),
+  /* 분모가 다른 분수 비교(고르기) — 처음엔 분수마다 제 띠 · 통분 단계에선 그 두 분수를 공통분모 칸으로 */
+  '5-1-4:6': (p, { i, steps }) => {
+    if (i < 0) {
+      const fs = [[p.n1, p.d1], [p.n2, p.d2], ...(p.v === 'three' ? [[p.n3, p.d3]] : [])];
+      return fs.every(([n, d]) => okD(d) && int(n) && n >= 1 && n <= d) ? { t: 'bars', rows: fs.map(([n, d], k) => ({ d, segs: [seg(n, k % 2 ? 'b' : 'a')], lab: [n, d] })) } : null;
+    }
+    const s = cur(steps, i);
+    return s && s.c === '5-1-4:5' ? twoRows(s.p, true) : null;
+  },
+  /* 분모가 다른 덧셈 · 뺄셈 — 처음엔 제 분모의 띠 둘 · 통분 단계에서 공통분모 칸(점선) · 그 뒤는 분모가 같은 덧셈 · 뺄셈 띠 하나(덜어 낼 칸 ✕) */
+  '5-1-5:2': fracCalc,
+  '5-1-5:3': fracCalc,
+  '5-1-5:5': fracCalc,
+  '5-1-5:4': mixedCalc('+'),
+  '5-1-5:6': mixedCalc('-'),
+  /* 받아내림 — 통분 뒤 자연수 하나를 공통분모 칸으로 바꾼 모습 · 그다음 덜어 낼 칸에 ✕ */
+  '5-1-5:7': (p, { i, steps }) => {
+    if (i >= steps.length) return null;
+    if (i < 1) return twoRows(p, i === 0);
+    const { L, a, b } = tb(p);
+    if (L > 24 || !int(p.w1) || p.w1 < 1 || p.w1 > 8 || p.w1 - 1 < p.w2 || L + a < b) return null;
+    return bar1(i === 1 ? { d: L, pre: p.w1 - 1, min: 2, segs: [seg(L + a)] } : { d: L, pre: p.w1 - 1, preX: p.w2, min: 2, segs: [seg(L + a - b), seg(b, 'x')] });
+  },
+  /* 진분수 × 자연수 — 같은 분수를 k번 이어 칠함(번갈아 두 색) · 띠가 넷을 넘으면 그리지 않음 */
+  '5-2-2:2': (p, { i, steps }) => (i < steps.length && okD(p.d) && int(p.n) && int(p.k) && p.n >= 1 && p.n <= p.d && p.k >= 2 && p.n * p.k <= 4 * p.d ? bar1({ d: p.d, segs: rep(p.k, (j) => seg(p.n, j % 2 ? 'b' : 'a')) }) : null),
+  /* 수의 범위 — 이상 · 이하는 ●(기준 수가 들어감) · 초과 · 미만은 ○ · 들어가는 쪽을 굵게 칠함 */
+  '5-2-1:2': rangePic,
+  '5-2-1:3': rangePic,
+  /* 어림 — 수를 자리 표에 · 구하는 자리 아래를 노랑(가릴 곳) · 반올림은 바로 아래 한 칸만 · 떼어 낸 뒤엔 아래 자리가 0 */
+  '5-2-1:5': roundPic,
+  '5-2-1:6': roundPic,
+  '5-2-1:7': roundPic,
 };
 export default PICS;

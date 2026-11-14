@@ -170,7 +170,7 @@ button:focus-visible,.btn:focus-visible,a:focus-visible,summary:focus-visible,.b
 .pic .p-dot{fill:var(--teal)}.pic .p-dot.dim{fill:var(--teal-l)}.pic .p-dot.gh{fill:none;stroke:var(--teal-l);stroke-width:1.5;stroke-dasharray:3 3}.pic .p-dot.b{fill:var(--sun);stroke:var(--ink);stroke-width:1.5}
 .pic .p-ring{fill:none;stroke:var(--mute);stroke-width:1.5;stroke-dasharray:4 3}
 .pic .p-arc{fill:none;stroke:var(--teal);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}.pic .p-arc.da{stroke:var(--mute);stroke-dasharray:5 4}
-.pic .p-gap{fill:none;stroke:var(--pri);stroke-width:7;stroke-linecap:round;opacity:.5}.pic .p-pt{fill:var(--pri)}
+.pic .p-gap{fill:none;stroke:var(--pri);stroke-width:7;stroke-linecap:round;opacity:.5}.pic .p-pt{fill:var(--pri)}.pic .p-pt.op{fill:#fff;stroke:var(--pri);stroke-width:2.5}
 .pic .p-hand{fill:none;stroke:var(--ink);stroke-width:4;stroke-linecap:round}.pic .p-hand.min{stroke:var(--teal);stroke-width:3}
 .pic .p-x{fill:none;stroke:var(--stuck);stroke-width:2.2;stroke-linecap:round}.pic .p-edge{fill:none;stroke:var(--teal);stroke-width:4;stroke-linejoin:round}
 .pic .cell.b{fill:var(--teal-l)}.pic .cell.thin{stroke-width:1;stroke:var(--mute)}

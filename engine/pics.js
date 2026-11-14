@@ -118,10 +118,10 @@ export function bars({ rows = [], top = '', label = '' }) {
   return wrap(bx + Wn * (ww + 8) - 6, y0 + rows.length * (rh + 12) - 10, label || rows.map(say).join(' · '), s);
 }
 
-// ── 눈금 ── 수직선(min~max) · ticks = [{ v, big, lab }] · marks = [{ v, lab }](깃발) · arcs = [{ a, b, da(점선 — 넘어감), lab }] 뛰어 세기 · gap = [a, b] 굵게 칠할 사이
+// ── 눈금 ── 수직선(min~max) · ticks = [{ v, big, lab }] · marks = [{ v, lab }](깃발 · dot이면 선 위에 점만 — open이면 ○) · arcs = [{ a, b, da(점선 — 넘어감), lab }] 뛰어 세기 · gap = [a, b] 굵게 칠할 사이
 export function line({ min = 0, max, ticks = [], marks = [], arcs = [], gap = null, w = 440, label = '' }) {
   if (!(max > min)) return '';
-  const x0 = 24, x1 = w - 24, xv = (v) => x0 + ((v - min) / (max - min)) * (x1 - x0), y = arcs.length ? 76 : marks.length ? 44 : 16;
+  const x0 = 24, x1 = w - 24, xv = (v) => x0 + ((v - min) / (max - min)) * (x1 - x0), y = arcs.length ? 76 : marks.some((m) => !m.dot) ? 44 : 16;
   let s = `<path d="M${x0 - 10} ${y} H${x1 + 10}" class="p-ln"/>`;
   if (gap) s += `<path d="M${r1(xv(gap[0]))} ${y} H${r1(xv(gap[1]))}" class="p-gap"/>`;
   ticks.forEach((t) => {
@@ -135,6 +135,7 @@ export function line({ min = 0, max, ticks = [], marks = [], arcs = [], gap = nu
     if (a.lab) s += T((xa + xb) / 2, y - hh - 12, a.lab, 13, 'ac', 'middle', true);
   });
   marks.forEach((m) => {
+    if (m.dot) { s += `<circle cx="${r1(xv(m.v))}" cy="${y}" r="6" class="p-pt${m.open ? ' op' : ''}"/>`; return; }   /* 수의 범위 — ● 들어감 · ○ 안 들어감 */
     const x = r1(xv(m.v)), top = arcs.length ? 22 : 20;
     s += `<path d="M${x} ${y} V${top}" class="p-ln da th"/><circle cx="${x}" cy="${y}" r="4.5" class="p-pt"/>` + T(Math.max(18, Math.min(w - 18, x)), top - 5, m.lab != null ? m.lab : m.v, 15, '', 'middle', true);
   });

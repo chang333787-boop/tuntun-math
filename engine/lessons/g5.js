@@ -357,7 +357,7 @@ const ROUNDFAM = {
     if (p.m === 'up') add(p.xi % u === 0 ? p.xi + u : Math.floor(p.xi / u) * u + u + (p.xi % u), p.xi % u === 0 ? '아래 자리가 모두 0인데도 올림' : '아래 자리를 0으로 바꾸지 않음', null);
     if (p.m === 'down') add(p.xi % u ? p.xi : p.xi - u, p.xi % u ? '아래 자리를 0으로 바꾸지 않음' : '아래 자리가 모두 0인데도 내림', null);
     [u * 10, u / 10].forEach((w) => { if (w >= 1) add(roundI(p.m, p.xi, w), '어느 자리까지인지 잘못 봄', placeLesson(p)); });
-    const it = nums([`${jx(xs, '을', '를')} ${how} `, B(0)], val(ans), { noFrac: true, bugs });
+    const it = nums([`${jx(xs, '을', '를')} ${how} `, B(0)], val(ans), { noFrac: p.pk < 0, bugs });   /* '(소수)' 표시는 소수 □째 자리까지일 때만 — 자연수 답(6866 → 7000 · 7.46 → 7)에 붙던 것 */
     // 소수 □째 자리까지 나타낸 답은 끝자리 0도 보여 준다 (5.703 → 5.70 · 9.98 → 10.0) — 채점은 5.7도 정답
     if (p.pk < 0) it.ans = toText(it.prompt, [(ans / 10 ** p.dp).toFixed(-p.pk)]);
     return it;
@@ -810,7 +810,7 @@ export default {
       steps: (p) => {
         const L = lcm(p.d1, p.d2), a = (p.n1 * L) / p.d1, b = (p.n2 * L) / p.d2;
         return [
-          { c: 'F9', p: { v: 'given', n1: p.n1, d1: p.d1, n2: p.n2, d2: p.d2, L }, why: `분모가 달라서 먼저 통분해요 — ${p.d1}${P(p.d1, '과', '와')} ${p.d2}에 각각 몇을 곱하면 ${L}${P(L, '이', '가')} 되는지 찾아 분자에도 같은 수를 곱해요.` },
+          { c: 'F9', p: { v: 'given', n1: p.n1, d1: p.d1, n2: p.n2, d2: p.d2, L }, why: `분모가 달라서 먼저 통분해요. ${p.d1}${P(p.d1, '과', '와')} ${p.d2}에 각각 몇을 곱하면 ${L}${P(L, '이', '가')} 될까요?` },
           { c: 'F6', p: { op: '+', a, b, d: L }, why: '분모가 같은 분수의 덧셈이 돼요. 1보다 크면 대분수로 바꿔요.' },
         ];
       },
