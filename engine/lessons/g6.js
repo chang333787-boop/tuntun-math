@@ -327,7 +327,8 @@ const FAMS = [
 ];
 
 // ── (분수)÷(자연수) 문항 — 답 글은 기약분수로 (크기가 같으면 정답)
-const fdivNat = (lead, p, more = []) => frac([...lead, ` ÷ ${p.k} = `, fb(0, 1)], simp(F(p.n, p.d * p.k)), {
+const fdivNat = (lead, p, more = []) => frac([...lead, ` ÷ ${p.k} = `, fb(0, 1)], p.keep && p.n % p.k === 0 ? F(p.n / p.k, p.d) : simp(F(p.n, p.d * p.k)), {   /* keep = 단계 문항(분자만 나눈 꼴 그대로 보임 · 크기가 같은 분수는 모두 정답) */
+  keep: !!p.keep,
   bugs: [
     ...more,
     { test: (v) => v[0] === p.n && v[1] * p.k === p.d, name: '분모를 나눔', to: '5-1-4:3' },
@@ -357,7 +358,7 @@ const f16 = (a, b, why) => ({ c: 'F16', p: { v: a < b ? 'small' : 'big', a, b },
 /* (분수)÷(자연수) n/d ÷ k 단계 — 분자가 나누어떨어지면 분자만 · 아니면 크기가 같은 분수로 바꿔 분자를 나눔(6-1-1:4 · 6-1-1:6) */
 //  frac = 마지막 걸음을 분수 꼴(n/d ÷ k = □/□ · 6-1-1:4)로 — 대분수 ÷ 자연수(6-1-1:6)에서 분자만 나눈 수(15)를 가분수의 분자(15/7)와 헷갈리지 않게 분모를 화면에 남김(처음 보는 눈 7차)
 const fdivNatSteps = (n, d, k, frac = false) => {
-  const last = (N, D, why) => (frac ? { c: '6-1-1:4', p: { n: N, d: D, k }, why } : { c: 'DIV', p: { a: N, b: k }, why });
+  const last = (N, D, why) => (frac ? { c: '6-1-1:4', p: { n: N, d: D, k, keep: 1 }, why } : { c: 'DIV', p: { a: N, b: k }, why });
   return n % k === 0
     ? [last(n, d, `분자 ${n}${pn(n, '을', '를')} ${ron(k)} 나눠요. 분모는 그대로예요.`)]
     : [
@@ -538,7 +539,7 @@ export default {
       steps: (p) => [
         { c: 'R3', p: { v: 'base', a: p.a, b: p.b }, why: '기준량은 기호 :의 오른쪽 수예요. 무엇과 비교하는지, 그 기준이 되는 양이에요.' },
         f16(p.a, p.b, `비교하는 양 ÷ 기준량 = ${p.a} ÷ ${p.b}`),
-        p.v === 'dec' ? ext('F11', { n: p.a, d: p.b }, '분수를 소수로 바꿔요.') : null,
+        ...(p.v !== 'dec' ? [] : (() => { const D = 10 % p.b === 0 ? 10 : 100, k = D / p.b; return p.b === D || !Number.isInteger(k) ? [ext('F11', { n: p.a, d: p.b }, '분수를 소수로 바꿔요.')] : [ext('F7', { v: 'up', n: p.a, d: p.b, k }, `분모를 ${D}${pn(D, '으로', '로')} 만들어요. 분모와 분자에 ${k}${pn(k, '을', '를')} 곱해요.`), ext('F11', { n: p.a * k, d: D }, `분모가 ${D}${pn(D, '이니까', '니까')} 소수로 바로 쓸 수 있어요.`)]; })()),   /* 13/25 = □ (소수로)에 도움 말이 없던 것 — 분모를 100으로 먼저(처음 보는 눈 8차) */
       ],
       hint: '비율 = 비교하는 양 ÷ 기준량이에요. 3 : 5의 비율은 3/5 = 0.6!',
     },

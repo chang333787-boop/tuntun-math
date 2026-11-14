@@ -207,6 +207,8 @@ function roundPic(p, { i, steps }) {
 // ── 분수의 나눗셈 · 비 ── 같은 띠에 g칸씩 묶어 번갈아 칠함(묶음 수 = 몫 · 띠는 다섯까지) · 분모가 같은 두 분수를 위아래로
 const groupBar = (d, total, g) => (int(d) && d >= 2 && d <= 24 && int(total) && int(g) && g >= 1 && total >= g && total % g === 0 && Math.ceil(total / d) <= 5 && total / g <= 30 ? bar1({ d, segs: rep(total / g, (j) => seg(g, j % 2 ? 'b' : 'a')) }) : null);
 /* (분수) ÷ (자연수) — 위 = 칠한 칸을 k묶음으로(번갈아 두 색) · 아래 = 그 가운데 한 묶음(몫) · 묶음 수가 답인 분수 ÷ 분수 그림과 헷갈리지 않게 */
+/* 받아내림 띠 — 받아내린 하나(d칸)는 청록 · 남은 분수 칸은 노랑 · 덜어 낸 칸(끝에서 x개)은 ✕ */
+const borrowSegs = (d, n, x = 0) => { const keep = d + n - x; return [seg(Math.min(d, keep), 'b'), seg(Math.max(0, keep - d)), seg(x, 'x')].filter((g) => g.n > 0); };
 const oneGroup = (d, n, k) => { const g = groupBar(d, n, n / k); return g ? { t: 'bars', rows: [{ ...g.rows[0], lab: [n, d] }, { d, segs: [seg(n / k, 'b')], lab: '한 묶음' }] } : null; };
 const sameRows = (a, b, d) => (int(d) && d >= 2 && d <= 24 && int(a) && int(b) && a >= 1 && b >= 1 && a <= 2 * d && b <= 2 * d ? { t: 'bars', rows: [{ d, segs: [seg(a)], lab: [a, d] }, { d, segs: [seg(b, 'b')], lab: [b, d] }] } : null);
 
@@ -263,11 +265,11 @@ const PICS = {
   /* 자연수 − 분수 · 받아내림 — 하나를 d/d로 바꾼 모습에서 시작 · 바꾸는 단계를 마치면 덜어 낼 칸에 ✕ */
   '4-2-1:6': (p, { i }) => {
     if (p.op !== '-' || !okD(p.d) || !(p.w1 >= 1) || p.w1 > 9 || p.n1 !== 0 || p.w1 - 1 < p.w2 || p.n2 > p.d) return null;
-    return bar1(i < 1 ? { d: p.d, pre: p.w1 - 1, segs: [seg(p.d)] } : { d: p.d, pre: p.w1 - 1, preX: p.w2, segs: [seg(p.d - p.n2), seg(p.n2, 'x')] });
+    return bar1(i < 1 ? { d: p.d, pre: p.w1 - 1, segs: borrowSegs(p.d, 0) } : { d: p.d, pre: p.w1 - 1, preX: p.w2, segs: borrowSegs(p.d, 0, p.n2) });
   },
   '4-2-1:7': (p, { i }) => {
     if (p.op !== '-' || !okD(p.d) || !(p.w1 >= 1) || p.w1 > 9 || p.w1 - 1 < p.w2 || p.n2 > p.d + p.n1) return null;
-    return bar1(i < 1 ? { d: p.d, pre: p.w1 - 1, min: 2, segs: [seg(p.d + p.n1)] } : { d: p.d, pre: p.w1 - 1, preX: p.w2, min: 2, segs: [seg(p.d + p.n1 - p.n2), seg(p.n2, 'x')] });
+    return bar1(i < 1 ? { d: p.d, pre: p.w1 - 1, min: 2, segs: borrowSegs(p.d, p.n1) } : { d: p.d, pre: p.w1 - 1, preX: p.w2, min: 2, segs: borrowSegs(p.d, p.n1, p.n2) });
   },
   /* 크기가 같은 분수 — 같은 띠를 더 잘게(점선) · 색칠한 넓이는 그대로 */
   '5-1-4:3': (p) => {
@@ -396,7 +398,7 @@ const PICS = {
     if (i < 1) return twoRows(p, i === 0);
     const { L, a, b } = tb(p);
     if (L > 24 || !int(p.w1) || p.w1 < 1 || p.w1 > 8 || p.w1 - 1 < p.w2 || L + a < b) return null;
-    return bar1(i === 1 ? { d: L, pre: p.w1 - 1, min: 2, segs: [seg(L + a)] } : i === 2 ? { d: L, pre: p.w1 - 1, preX: p.w2, min: 2, segs: [seg(L + a)] } : { d: L, pre: p.w1 - 1, preX: p.w2, min: 2, segs: [seg(L + a - b), seg(b, 'x')] });   /* 받아내림 → 자연수끼리 덜기 → 분수끼리 덜기(차례대로 ✕) */
+    return bar1(i === 1 ? { d: L, pre: p.w1 - 1, min: 2, segs: borrowSegs(L, a) } : i === 2 ? { d: L, pre: p.w1 - 1, preX: p.w2, min: 2, segs: borrowSegs(L, a) } : { d: L, pre: p.w1 - 1, preX: p.w2, min: 2, segs: borrowSegs(L, a, b) });   /* 받아내림 → 자연수끼리 덜기 → 분수끼리 덜기(차례대로 ✕) */
   },
   /* 진분수 × 자연수 — 같은 분수를 k번 이어 칠함(번갈아 두 색) · 띠가 넷을 넘으면 그리지 않음 */
   '5-2-2:2': (p, { i, steps }) => (i < steps.length && okD(p.d) && int(p.n) && int(p.k) && p.n >= 1 && p.n <= p.d && p.k >= 2 && p.n * p.k <= 4 * p.d ? bar1({ d: p.d, segs: rep(p.k, (j) => seg(p.n, j % 2 ? 'b' : 'a')) }) : null),
