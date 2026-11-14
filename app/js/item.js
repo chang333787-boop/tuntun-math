@@ -106,7 +106,7 @@ export function draw(root, { prompt, sol = null, choices = null, tag = '', act =
     </div>
     <div class="qside">
       ${lead ? `<div class="qlead">${lead}</div>` : ''}
-      ${say && say.length ? `<div class="tsay">${say.map((x) => `<p>${esc(x)}</p>`).join('')}</div>` : ''}
+      ${say && say.length ? `<div class="tsay">${say.map((x) => `<p>${nbsp(esc(x))}</p>`).join('')}</div>` : ''}
       ${choices ? `<div class="choices n${choices.length}${choices.some((ch) => toText(ch).length >= 9) ? ' long' : ''}">${choices.map((ch, k) => `<button type="button" data-k="${k}"${keys ? ' data-ck="1"' : ''}${gone.has(k) ? ' class="gone" aria-label="튼튼이가 지운 보기"' : ''}>${keys ? `<span class="ck" aria-hidden="true">${k + 1}</span>` : ''}<span class="math${toText(ch).length <= 18 ? ' one' : ''}">${toHTML(ch, { static: true })}</span></button>`).join('')}</div>` : ''}
       <div class="qmsg" id="msg" role="alert"></div>
       ${conf ? `<div class="conf"><p><b>답 내기</b> — ${choices ? '보기를 고르고' : '답을 쓰고'} 얼마나 자신 있는지 하나 눌러요</p><div class="row">${CONF.map(([v, t]) => `<button type="button" class="cfs" data-cf="${v}">${icon('send', 16)}${t}</button>`).join('')}</div></div>` : ''}
@@ -245,8 +245,12 @@ function unitSay(it) {
   }
   return out.length === sol.length ? { text: out.join(' '), b: UNIT_B.has(last) } : null;
 }
-/* 말풍선 글 — 수와 단위(1 cm) · 수와 기호(3 × 4)가 줄 끝에서 갈리지 않게 */
-export const nbsp = (s) => String(s).replace(/(\d) ([+−×÷=]) (?=\d)/g, '$1\u00a0$2\u00a0').replace(/(\d) (cm²|m²|km|cm|mm|mL|kg|m|g|L)(?![A-Za-z])/g, '$1\u00a0$2');
+/* 말풍선 글(esc 뒤에) — 수와 단위(1 cm) · 수와 기호(3 × 4)가 줄 끝에서 갈리지 않게 · 빗금 분수(3/4 · 5 2/7)는 세로 분수로(교과서 꼴 — 5 2/7이 52/7로 읽히던 것 · 처음 보는 눈 6 ~ 9차)
+   분수 꼴은 문제 글과 같은 .fr이라 읽어 주기(speak.js sayText)가 '4분의 3'으로 읽음 */
+const FRB = (n, d) => `<span class="fr"><span class="fr-t">${n}</span><span class="fr-b">${d}</span></span>`;
+export const nbsp = (s) => String(s).replace(/(\d) ([+−×÷=]) (?=\d)/g, '$1\u00a0$2\u00a0').replace(/(\d) (cm²|m²|km|cm|mm|mL|kg|m|g|L)(?![A-Za-z])/g, '$1\u00a0$2')
+  .replace(/(\d+)[ \u00a0](\d+)\/(\d+)/g, (_, w, n, d) => `<span class="math bfr"><span class="mx">${w}${FRB(n, d)}</span></span>`)
+  .replace(/(\d+)\/(\d+)/g, (_, n, d) => `<span class="math bfr">${FRB(n, d)}</span>`);
 export function ansSay(it, lead = '답은') {
   const u = unitSay(it);
   if (u) return `${lead} <b>${esc(u.text)}</b>${u.b ? '이에요' : '예요'}.`;

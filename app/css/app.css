@@ -61,7 +61,7 @@ body.wide main{max-width:1440px}
 .say>svg.mascot{flex:none;width:72px;height:72px}
 .say .bub{position:relative;background:var(--surface);border:2px solid var(--ink);border-radius:18px;padding:12px 16px;line-height:1.55;font-size:18px;min-width:0}
 .say .bub::before{content:'';position:absolute;left:-9px;top:50%;margin-top:-7px;width:14px;height:14px;background:var(--surface);border-left:2px solid var(--ink);border-bottom:2px solid var(--ink);transform:rotate(45deg)}
-.say .bub .math{display:inline-flex;font-size:1.45em;vertical-align:middle;margin:0 .12em;line-height:1.25}
+.say .bub .math{display:inline-flex;font-size:1.45em;vertical-align:middle;margin:0 .12em;line-height:1.25}.math.bfr,.say .bub .math.bfr{display:inline-flex;font-size:1.02em;vertical-align:middle;margin:0 .14em;line-height:1.1}.math.bfr .mx{gap:.12em}   /* 말풍선 · 단계 말 속 세로 분수 — 글줄 높이에 맞게 작게 */
 .kid p>.math{display:inline-flex;vertical-align:middle;font-size:1.5em}
 
 /* ── 단추 — 누르는 손맛: 아래 단단한 턱(번지지 않음) · 누르면 3px 내려가고 턱이 1px로(80ms) ── */
