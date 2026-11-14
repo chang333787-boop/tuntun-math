@@ -818,7 +818,7 @@ export default {
       steps: (p) => {
         const L = lcm(p.d1, p.d2), a = (p.n1 * L) / p.d1, b = (p.n2 * L) / p.d2;
         return [
-          { c: 'F9', p: { v: 'given', n1: p.n1, d1: p.d1, n2: p.n2, d2: p.d2, L }, why: `분모가 달라서 먼저 통분해요. 분모를 ${RO(L)} 만들려고 곱한 수를 분자에도 곱해요.` },
+          { c: 'F9', p: { v: 'given', n1: p.n1, d1: p.d1, n2: p.n2, d2: p.d2, L }, why: `먼저 통분해요. ${p.d1} × ${L / p.d1} = ${L}, ${p.d2} × ${L / p.d2} = ${L}${P(L, '이니까', '니까')} 곱한 수를 분자에도 곱해요.` },
           { c: 'F6', p: { op: '+', a, b, d: L }, why: '분모가 같은 분수의 덧셈이 돼요. 1보다 크면 대분수로 바꿔요.' },
         ];
       },

@@ -178,7 +178,7 @@ button:focus-visible,.btn:focus-visible,a:focus-visible,summary:focus-visible,.b
 .pic .p-f1{fill:var(--teal-l);stroke:none}.pic .p-f2{fill:var(--sun);stroke:none}.pic .p-f3{fill:#E9B79C;stroke:none}.pic .gh{fill-opacity:.45;stroke:var(--mute);stroke-width:1.5;stroke-dasharray:4 3}.pic .ol{stroke:var(--ink);stroke-width:1.5;stroke-linejoin:round}
 .pic .p-ln.da.hi{stroke:var(--teal);stroke-width:3;stroke-dasharray:5 4}.pic .p-ln.th.mu{stroke:var(--mute);stroke-width:1}
 .pic.fig{display:flex;justify-content:flex-start;align-items:center;margin:2px 0 6px}.fxs.nomid .pic.fig,.choices .pic.fig{justify-content:center}.pic.fig svg{width:auto;max-height:min(30vh,210px)}.hl-ctx .pic.fig svg{max-height:150px}
-.hpic{margin:0;display:flex;justify-content:center}.hl-pic .hpic svg{max-height:170px;width:auto}.hl-ctx-pic{align-items:center}
+.hpic{margin:0;display:flex;justify-content:center}.hl-pic .hpic svg{max-height:170px;width:auto}.hl-ctx .pic.fig svg[aria-label="시계"]{min-height:136px}.hl-ctx-pic{align-items:center}
 .blank{width:2.6em;min-width:2.6em;height:1.55em;border:3px solid var(--ink);border-radius:12px;text-align:center;font:inherit;background:var(--surface);color:var(--ink);padding:0 .1em;transition:border-color var(--press),background-color var(--press)}
 .fr .blank{width:2.3em;height:1.45em;margin:.08em 0}
 .blank:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 4px var(--teal-t)}
@@ -197,7 +197,7 @@ button:focus-visible,.btn:focus-visible,a:focus-visible,summary:focus-visible,.b
 /* 보기 — 잠김 = 납작한 회색(턱 없음) · 맞음 ✓ · 지운 보기 */
 .choices{display:flex;flex-wrap:wrap;gap:12px}
 .choices button{flex:1 1 140px;min-height:76px;border-radius:16px;font-size:clamp(24px,3.2cqi,32px);padding:8px 18px;font-weight:600}
-.choices button .math{font-size:inherit}.choices button[data-ck]{padding-left:40px}.choices button .math.one{flex-wrap:nowrap;white-space:nowrap}.choices.long{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.choices.long button .math{font-size:.86em}   /* 번호 동그라미가 식 첫 글자에 붙지 않게 · 식 보기(5 × 2 × 3.14)는 두 칸씩 한 줄로(처음 보는 눈 5차) */
+.choices button .math{font-size:inherit}.choices button[data-ck]{padding-left:40px}.choices button .math.one,.choices button .math.one *{flex-wrap:nowrap;white-space:nowrap}.choices.long{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.choices.long button .math{font-size:.86em}   /* 번호 동그라미가 식 첫 글자에 붙지 않게 · 식 보기(5 × 2 × 3.14)는 두 칸씩 한 줄로(처음 보는 눈 5차) */
 .choices button.gone:disabled{background:transparent;border-style:dashed;border-color:var(--line2);text-decoration:line-through;color:var(--off-ink)}
 .choices.static button:disabled{background:var(--panel);border-color:var(--line2);border-style:dashed;color:var(--ink);cursor:default;box-shadow:none;transform:none}   /* 시범의 보기는 누르는 단추로 보이지 않게(처음 보는 눈 11-07) */
 .choices.static button.right{border-color:var(--ok);background:var(--ok-t)}
