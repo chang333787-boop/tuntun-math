@@ -16,6 +16,7 @@ import { unitLabel } from './kid.js';
 import { pullAll, nm } from './teacher.js';
 import { icon } from './icons.js';
 import { P } from '../../engine/concepts/kit.js';
+import { REVIEW_DAYS } from './kidstore.js';
 
 const cls = (C) => (lsGet('tt.t', { classes: {} }).classes || {})[C];
 const glOf = (s) => gText(s).replace(/(\d)-(\d)/g, '$1학년 $2학기');   /* '1-2 ~ 2-1' → '1학년 2학기 ~ 2학년 1학기'(11-07 처음 쓰는 선생님) */
@@ -36,6 +37,24 @@ export function skillState(st, s) {
   }
   return !any ? '' : root ? 'root' : bad ? 'bad' : sh ? 'shaky' : 'ok';
 }
+// 배운 칸의 길(고리 닫기 · direction_1110 차례 3) — 배우기 확인 통과(fixed) → 매일 연습 다시 보기 1 · 3 · 7일(rv[0] = 맞힌 수) → 세 번 다 맞힘 = 메움
+//  다시 보기에서 틀리면 맞힌 수가 0으로 돌아가고 그때가 배운 때보다 뒤 = '다시'(내일 다시 나옴) · 요약에 rv가 없던 예전 기록은 '다시 보기 0'
+export const md = (t) => new Date(t).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
+export function closeOf(st, c) {
+  const f = st && st.fixed ? Number(st.fixed[c]) || 0 : 0; if (!f) return null;
+  const v = st.rv && Array.isArray(st.rv[c]) ? st.rv[c] : [0, f], n = Number(v[0]) || 0, t = Number(v[1]) || f, again = n === 0 && t > f;
+  return { c, f, n, t, again, done: !again && n >= REVIEW_DAYS.length, gap: st.gap ? Number(st.gap[c]) || 0 : 0 };
+}
+// 기능 하나 — 갈래 차시 가운데 배운 것만 · 하나라도 다시 틀렸으면 'again' · 모두 세 번 맞혔고 칸이 됨이면 'done' · 그 밖은 'learn'(가장 적게 맞힌 차시의 수)
+export function skillClose(st, s) {
+  const xs = s.parts.map((p) => closeOf(st, p.c)).filter(Boolean); if (!xs.length) return null;
+  const ag = xs.filter((x) => x.again);
+  if (ag.length) return { k: 'again', f: Math.max(...ag.map((x) => x.f)), t: Math.max(...ag.map((x) => x.t)) };
+  const gap = Math.min(...xs.map((x) => x.gap || Infinity)), base = { f: Math.max(...xs.map((x) => x.f)), gap: Number.isFinite(gap) ? gap : 0 };
+  if (xs.every((x) => x.done) && skillState(st, s) === 'ok') return { k: 'done', ...base, t: Math.max(...xs.map((x) => x.t)) };
+  return { k: 'learn', ...base, n: Math.min(...xs.map((x) => x.n)) };
+}
+const closeSay = (x) => (!x ? '' : x.k === 'done' ? ` · ${x.gap ? `${md(x.gap)} 틀림 → ` : ''}${md(x.f)} 배움 → 다시 보기 세 번 다 맞힘(${md(x.t)}) = 메움` : x.k === 'again' ? ` · ${md(x.f)} 배움 → ${md(x.t)} 다시 보기에서 틀림(다음 날 다시 나와요)` : ` · ${md(x.f)} 배움 · 다시 보기 ${x.n}/${REVIEW_DAYS.length} 맞힘`);
 // 이 기능에서 보인 틀린 생각(engine/mis.js 카드 — 카드 차시가 기능 갈래와 겹침) · 아이 요약 mis: s = 여러 번 보임 · m = 한 번 · r = 고침(뺌)
 //  다른 프로그램에 없는 것(교사 11-07 '경쟁력') — '얘가 이걸 못하네'에 '이렇게 생각해서 틀리네'를 붙여 보여 줌
 export function skillMinds(K, S, s) {
@@ -63,7 +82,8 @@ export function skillRows(K, S, { unit = null } = {}) {
   const rows = [...ids].map((id) => {
     const s = SKILL[id], cells = nos.map((no) => skillState(S[no] && S[no].st, s));
     const lack = nos.filter((no, i) => LACK(cells[i])), shaky = nos.filter((no, i) => cells[i] === 'shaky'), seen = cells.filter(Boolean).length;
-    return { s, cells, lack, shaky, seen };
+    const cl = nos.map((no) => skillClose(S[no] && S[no].st, s)), done = nos.filter((no, i) => cl[i] && cl[i].k === 'done'), learn = nos.filter((no, i) => cl[i] && cl[i].k !== 'done');
+    return { s, cells, cl, lack, shaky, seen, done, learn };
   });
   /* 아이마다 가장 아래(낮은 학년)의 부족한 기능 — 더 아래가 빈 아이에게 위 기능 보충이 먼저 가지 않게(first = 이 기능부터인 아이 · later = 더 아래부터 · 처음 보는 눈 11-07) */
   const low = {}, isRoot = (r, no) => r.cells[nos.indexOf(no)] === 'root'; for (const r of rows) r.lack.forEach((no) => { const o = low[no]; if (!o || (isRoot(r, no) && !isRoot(o, no)) || (isRoot(r, no) === isRoot(o, no) && skillCmp(r.s, o.s) < 0)) low[no] = r; });   /* '여기서부터'(진한 ✕)가 있으면 그것이 먼저 — 아이 자세히 '먼저 배울 곳'과 같게 */
@@ -73,9 +93,10 @@ export function skillRows(K, S, { unit = null } = {}) {
 // 반 화면 카드 ②에 넣는 짧은 줄 — 부족한 아이가 많은 기능 셋
 export function tableCard(C, K, S) {
   if (!S) return '<p class="small muted">불러오는 중…</p>';
-  const rows = skillRows(K, S).filter((r) => r.lack.length).slice(0, 3);
-  if (!rows.length) return `<p class="c3-none">${Object.values(S).some((x) => x && x.st) ? '부족한 기능이 아직 없어요' : '아이들이 점검을 하면 여기에 떠요'}</p>`;
-  return `<ul class="c3-list t-lines">${rows.map((r) => `<li><a href="#/t/c/${C}/give?sk=${r.s.id}&who=${r.first.join(',')}"><b>${esc(r.s.name)}</b><span>부족 ${r.lack.length}명 — ${r.lack.map((no) => esc(nm(K, no))).join(', ')}</span></a></li>`).join('')}</ul>`;
+  const all = skillRows(K, S), rows = all.filter((r) => r.lack.length).slice(0, 3), nD = all.reduce((m, r) => m + r.done.length, 0), nL = all.reduce((m, r) => m + r.learn.length, 0);
+  const cl = nD || nL ? `<p class="c3-close">배워서 메운 칸 <b>${nD}</b>개 · 배우고 다시 보는 중 <b>${nL}</b>개 <span class="small muted">(다시 보기 1 · 3 · 7일을 다 맞히면 메움)</span></p>` : '';
+  if (!rows.length) return cl + `<p class="c3-none">${Object.values(S).some((x) => x && x.st) ? '부족한 기능이 아직 없어요' : '아이들이 점검을 하면 여기에 떠요'}</p>`;
+  return cl + `<ul class="c3-list t-lines">${rows.map((r) => `<li><a href="#/t/c/${C}/give?sk=${r.s.id}&who=${r.first.join(',')}"><b>${esc(r.s.name)}</b><span>부족 ${r.lack.length}명 — ${r.lack.map((no) => esc(nm(K, no))).join(', ')}</span></a></li>`).join('')}</ul>`;
 }
 
 // ── ② 반 표 ──
@@ -89,17 +110,17 @@ export function tableView(root, C) {
     const sx = (root.querySelector('.stab') || {}).scrollLeft || 0;
     const head = `<tr><th class="sk">기능</th>${nos.map((no) => `<th class="kn"><a href="#/t/c/${C}/k/${no}" title="${esc(nm(K, no))} 자세히">${no}${K.names && K.names[no] ? `<small>${esc(String(K.names[no]).slice(0, 3))}</small>` : ''}</a></th>`).join('')}<th class="lack">보충할 아이</th></tr>`;
     const row = (r) => { const md = S ? skillMinds(K, S, r.s).slice(0, 2) : [];
-      return `<tr><th class="sk"><b>${esc(r.s.name)}</b><small>${esc(glOf(r.s))}</small>${md.length ? `<span class="sk-m">${md.map((x) => `<a href="#/t/c/${C}/m/${x.m.id}" title="${esc(x.m.plain || x.m.title)}">틀린 생각: ${esc(x.m.title)} <b>${x.rep.length + x.once.length}명</b></a>`).join('')}</span>` : ''}</th>${r.cells.map((v, i) => { const [c, t] = SIGN[v], km = S && v !== 'ok' ? kidMinds(S[nos[i]] && S[nos[i]].st, r.s) : [], lab = `${nm(K, nos[i])} ${r.s.name} ${{ root: '부족(먼저 배울 곳)', bad: '부족', shaky: '가끔 틀림', ok: '됨', '': '아직 안 풂' }[v]}${km.length ? ` · 생각: ${km.map((m) => m.title).join(', ')}` : ''}`; return `<td class="${c}${km.length ? ' has-m' : ''}"><a href="#/t/c/${C}/k/${nos[i]}" title="${esc(lab)}" aria-label="${esc(lab)}">${t}</a></td>`; }).join('')}
-      <td class="lack"><div class="lk">${r.lack.length ? `<span>${r.lack.map((no) => esc(no)).join(' · ')}번</span><a class="btn teal mini" href="#/t/c/${C}/give?sk=${r.s.id}&who=${r.first.join(',')}">${icon('send', 16)}보충 주기</a>` : r.shaky.length ? `<span class="muted">가끔 틀림 ${r.shaky.length}명</span><a class="btn mini" href="#/t/c/${C}/give?sk=${r.s.id}&who=${r.shaky.join(',')}">보충 주기</a>` : ''}</div></td></tr>`; };
+      return `<tr><th class="sk"><b>${esc(r.s.name)}</b><small>${esc(glOf(r.s))}</small>${md.length ? `<span class="sk-m">${md.map((x) => `<a href="#/t/c/${C}/m/${x.m.id}" title="${esc(x.m.plain || x.m.title)}">틀린 생각: ${esc(x.m.title)} <b>${x.rep.length + x.once.length}명</b></a>`).join('')}</span>` : ''}</th>${r.cells.map((v, i) => { const [c, t] = SIGN[v], km = S && v !== 'ok' ? kidMinds(S[nos[i]] && S[nos[i]].st, r.s) : [], lab = `${nm(K, nos[i])} ${r.s.name} ${{ root: '부족(먼저 배울 곳)', bad: '부족', shaky: '가끔 틀림', ok: '됨', '': '아직 안 풂' }[v]}${km.length ? ` · 생각: ${km.map((m) => m.title).join(', ')}` : ''}`; const x = r.cl[i], lab2 = lab + closeSay(x), sub = !x ? '' : x.k === 'done' ? '<small class="cl">메움</small>' : x.k === 'again' ? '<small class="cl ag">다시</small>' : `<small class="cl">${x.n}/${REVIEW_DAYS.length}</small>`; return `<td class="${x && x.k === 'done' ? 'c-ok c-done' : c}${km.length ? ' has-m' : ''}"><a href="#/t/c/${C}/k/${nos[i]}" title="${esc(lab2)}" aria-label="${esc(lab2)}">${x && x.k === 'done' ? '◎' : t}${sub}</a></td>`; }).join('')}
+      <td class="lack"><div class="lk">${r.lack.length ? `<span>${r.lack.map((no) => esc(no)).join(' · ')}번</span><a class="btn teal mini" href="#/t/c/${C}/give?sk=${r.s.id}&who=${r.first.join(',')}">${icon('send', 16)}보충 주기</a>` : r.shaky.length ? `<span class="muted">가끔 틀림 ${r.shaky.length}명</span><a class="btn mini" href="#/t/c/${C}/give?sk=${r.s.id}&who=${r.shaky.join(',')}">보충 주기</a>` : ''}</div>${r.done.length ? `<p class="cl-n">배워서 메움 ${r.done.map((no) => esc(no)).join(' · ')}번</p>` : ''}</td></tr>`; };
     root.innerHTML = `<div class="card tview">
       <div class="tv-h"><h2>반 표 <small>${esc(C)} · ${K.n}명 · 기능 × 아이</small></h2><a class="btn" href="#/t/c/${C}">반 화면으로</a></div>
       ${intro('가로줄 = <b>셈 기능</b> · 세로줄 = <b>아이 번호</b>. 줄 끝 <b>[보충 주기]</b>를 누르면 그 아이들에게 그 기능 문제가 바로 가요. <b>틀린 생각</b>은 아이가 쓴 틀린 답으로 짐작한 것이에요(주황 점 = 그 생각이 보인 아이).')}
-      <div class="tv-bar"><div class="legend2"><span><i class="c-stuck">✕</i>부족<small>(진한 ✕ = 여기서부터 배울 것)</small></span><span><i class="c-shaky">△</i>가끔 틀림</span><span><i class="c-ok">○</i>됨</span><span><i class="c-none"></i>아직 안 풂</span></div>
+      <div class="tv-bar"><div class="legend2"><span><i class="c-stuck">✕</i>부족<small>(진한 ✕ = 여기서부터 배울 것)</small></span><span><i class="c-shaky">△</i>가끔 틀림</span><span><i class="c-ok">○</i>됨</span><span><i class="c-none"></i>아직 안 풂</span><span><b class="cl-k">1/3</b>배운 뒤 다시 보기(1 · 3 · 7일) 맞힌 수</span><span><i class="c-ok c-done">◎</i>메움<small>(다시 보기 세 번 다 맞힘)</small></span><span><b class="cl-k ag">다시</b>배운 뒤 다시 틀림</span></div>
         ${K.today && K.today.unit ? `<div class="seg"><a class="${only ? '' : 'on'}" href="#/t/c/${C}/table">모든 기능</a><a class="${only ? 'on' : ''}" href="#/t/c/${C}/table?u=1">오늘 단원(${esc(unitLabel(K.today.unit))})에 필요한 것</a></div>` : ''}</div>
       ${!S ? '<p class="muted">불러오는 중…</p>' : !rows.length ? '<p class="muted">아직 기록이 없어요. 아이들이 점검을 하면 여기에 떠요.</p>'
         : `<div class="stab"><table>${head}${open.map(row).join('')}</table></div>
         ${open.length ? '' : '<p class="okc">부족하거나 가끔 틀리는 기능이 없어요.</p>'}
-        ${fine.length ? `<details class="more"><summary>모두 된 기능 ${fine.length}개</summary><div class="stab"><table>${head}${fine.map(row).join('')}</table></div></details>` : ''}`}
+        ${fine.length ? `<details class="more"><summary>모두 된 기능 ${fine.length}개${fine.some((r) => r.done.length) ? ` — 그 가운데 배워서 메운 아이가 있는 기능 ${fine.filter((r) => r.done.length).length}개` : ''}</summary><div class="stab"><table>${head}${fine.map(row).join('')}</table></div></details>` : ''}`}
       <p class="small muted">${S ? '15초마다 새로 봐요(이 화면이 열려 있을 때만).' : ''}</p></div>`;
     const tb = root.querySelector('.stab'); if (tb && sx) tb.scrollLeft = sx;
   }

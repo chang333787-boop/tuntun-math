@@ -33,7 +33,7 @@ const kidName = (c) => (LES(c) ? LES(c).kid : c);
 export const unitLabel = (u) => (unitById[u] ? unitById[u].nm : u);
 const byGrade = (a, b) => gradeIdx(LES(a).g) - gradeIdx(LES(b).g) || (LES(a).n || 0) - (LES(b).n || 0);
 const ro = (s) => RO(s).slice(String(s).length);   // 받침 따라 '으로' · '로'
-const plank = (c) => { const x = exampleOf(c); return x ? `${x} 같은 문제` : kidName(c); };   /* 판자 부르기 = 예시 문제(없으면 할 수 있는 것 이름) */
+export const plank = (c) => { const x = exampleOf(c); return x ? `${x} 같은 문제` : kidName(c); };   /* 판자 부르기 = 예시 문제(없으면 할 수 있는 것 이름) */
 const names = (cs) => cs.map((c) => esc(plank(c))).join(', ');
 const eun = (cs) => P(plank(cs[cs.length - 1]), '은', '는');   // 마지막 말 받침으로 은 · 는
 // 선생님이 오늘 연 단원(수업 중) — 받은 준비 과제 가운데 오늘 날짜인 것

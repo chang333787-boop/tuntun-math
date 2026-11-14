@@ -296,7 +296,9 @@ div.cmpc{box-shadow:none}
 .stab tr:first-child th.sk{z-index:3;background:#F3EEE6;vertical-align:bottom}
 .stab th.sk b{display:block;font-size:15.5px;line-height:1.35}.stab th.sk small{color:var(--mute);font-weight:400;font-size:13px}
 .stab th.kn{min-width:42px;padding:6px 2px}.stab th.kn a{display:flex;flex-direction:column;align-items:center;color:var(--ink);text-decoration:none;font-size:15px;line-height:1.2}.stab th.kn small{font-size:11px;font-weight:400;color:var(--mute)}
-.stab td a{display:flex;align-items:center;justify-content:center;min-width:42px;height:44px;color:inherit;text-decoration:none;font-size:19px;font-weight:800}
+.stab td a{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:42px;height:44px;color:inherit;text-decoration:none;font-size:19px;font-weight:800}
+.stab td a small.cl,.cl-k{font-size:11px;font-weight:700;line-height:1.1;color:var(--teal-d)}.stab td a small.cl.ag,.cl-k.ag{color:var(--stuck)}.cl-k{font-size:12.5px;margin-right:5px}.stab td.c-done{background:var(--teal-t)}.legend2 i.c-done{background:var(--teal-t)}   /* 배운 칸의 길(차례 3) — 다시 보기 맞힌 수 · 메움 · 다시 */
+.cl-n{color:var(--teal-d);font-weight:700}td.lack p.cl-n{margin:4px 0 0;font-size:13.5px;text-align:left}.c3-close{margin:0 0 8px;font-size:15px}
 .stab td.c-root{background:var(--stuck);color:#fff}.stab td.c-stuck{color:var(--stuck)}.stab td.c-shaky{color:var(--shaky)}.stab td.c-ok{color:var(--ok-ink);font-weight:600}
 .stab th.lack,.stab td.lack{position:sticky;right:0;text-align:left;padding:4px 10px;min-width:220px;white-space:nowrap}.stab td.lack{background:#fff}
 .stab td.lack .lk{display:flex;align-items:center;justify-content:space-between;gap:10px}.stab td.lack span{font-weight:700;font-size:14.5px}.stab td.lack .btn{min-height:34px;flex:none}

@@ -423,5 +423,19 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   { const f1 = globalThis.fetch; globalThis.fetch = async (url) => ({ ok: true, status: 200, json: async () => (/ZZBK\/7\/0000\.json/.test(url) ? { st: dbb.enc({ bk: { ...bk, s: Date.now() } }) } : null) }); const r2 = await KSb.pull({ C: 'ZZBK', no: '7', pin: '0000' }); globalThis.fetch = f1; ok(r2.K.back && r2.K.back.solved > 0, '같은 찾기를 다른 기기에서 다시 풀어 끝냄 → 이 기기도 풀었음으로(코덱스 r12)'); }
   ok(r.K.back && r.K.back.text === '306-158' && r.K.back.p && r.K.back.p.a === 306 && KSb.summaryOf(r.K).bk && KSb.summaryOf(r.K).bk.x === '306-158', `다른 기기 — 거꾸로 찾기 되살림 · 요약에 그대로 — ${JSON.stringify(r.K.back)}`);
 }
+// ⑮ 배운 칸의 길(고리 닫기 · 차례 3) — 요약에 다시 보기(rv) · 처음 틀린 날(gap) · 반 표 칸: 다시 보기 n/3 → 세 번 다 맞힘 = 메움 · 다시 보기에서 틀림 = 다시
+{
+  const TT = await import('../js/ttable.js'), KSc = await import('../js/kidstore.js'), SKc = await import('../../engine/skills.js'), LSc = await import('../../engine/lessons/index.js'), MTc = await import('../../engine/math.js');
+  const s = SKc.skillsOf('2-1-6:3')[0], c = s.parts[0].c, L = Object.fromEntries(s.parts.map((p) => [p.c, 'ok'])), f = 1000;
+  const st = (rv) => ({ L, start: [], fixed: { [c]: f }, rv: rv ? { [c]: rv } : {}, gap: { [c]: 500 } });
+  const a = TT.skillClose(st([1, 2000]), s), b = TT.skillClose(st([3, 9000]), s), g = TT.skillClose(st([0, 3000]), s), o = TT.skillClose(st(null), s), n = TT.skillClose({ L, start: [], fixed: {} }, s);
+  ok(a && a.k === 'learn' && a.n === 1 && b && b.k === 'done' && b.gap === 500 && g && g.k === 'again' && o && o.k === 'learn' && o.n === 0 && n === null, `반 표 칸 — 다시 보기 1/3 · 세 번 = 메움 · 틀림 = 다시 · rv 없는 예전 기록 = 0/3 · 안 배움 = 없음 (${[a, b, g, o].map((x) => x && x.k).join(' ')})`);
+  const bs = TT.skillClose({ ...st([3, 9000]), L: { ...L, [c]: 'shaky' } }, s);
+  ok(bs && bs.k === 'learn', '세 번 맞혔어도 지금 칸이 됨이 아니면 메움이 아님');
+  const day = 864e5, t0 = Date.now() - 9 * day, mk = (ok1, made) => { const its = [0, 1, 2].map((k) => [k, c, LSc.byId[c].gen(MTc.rng(7 + k)), 0, 'a']); return { s: { id: `r${made}`, kind: 'prep', made, it: its }, r: { done: { a: true }, it: Object.fromEntries(its.map(([k]) => [k, { s: ok1 ? 'ok' : 'x', a: ok1 ? [] : ['1'] }])) }, cf: {}, ms: {} }; };
+  const K = { recs: { [`r${t0}`]: mk(false, t0), [`r${t0 + 2 * day}`]: mk(true, t0 + 2 * day) }, rv: { [c]: { n: 2, due: Date.now() + day, t: t0 + 5 * day } }, fixed: { [c]: t0 + day }, log: [] };
+  const sm = KSc.summaryOf(K);
+  ok(sm.rv && sm.rv[c] && sm.rv[c][0] === 2 && sm.gap && sm.gap[c] === t0, `요약에 다시 보기 [${sm.rv && sm.rv[c]}] · 처음 틀린 날 ${sm.gap && sm.gap[c] === t0 ? '맞음' : sm.gap && sm.gap[c]}`);
+}
 console.log(fail ? `FAIL ${fail}` : 'PASS');
 process.exitCode = fail ? 1 : 0;

@@ -12,7 +12,7 @@ import { draw, okFlash } from './item.js';
 import { ladder } from './hint.js';
 import { target, wantOf, isFact, lastReady } from './stage.js';
 import { esc, rand, lsGet, lsSet, lsDel } from './local.js';
-import { go, meOf } from './kid.js';
+import { go, meOf, plank } from './kid.js';
 import { tile, art } from './icons.js';
 
 const sayArt = (k, html, size = 104) => `<div class="say">${art(k, size, 'say-art')}<div class="bub">${html}</div></div>`;
@@ -88,13 +88,13 @@ export function runView(root) {
     lsDel(RK);
     sh.chapters.forEach((ch) => (R.done[ch.key] = true));
     KS.addSheet(me, K, sh, R, {}, ms);
-    const now = Date.now(), up = [], again = [];
+    const now = Date.now(), up = [], again = [], closed = [];   /* closed = 이번에 다시 보기 세 번째를 맞힌 배운 칸(반 표 '메움'과 같은 때) */
     K.mx = K.mx || {}; K.rv = K.rv || {};
     for (const c of plan) {
       const its = sh.items.filter((x) => x.c === c), good = its.every((x) => R.it[x.k] && R.it[x.k].s === 'ok');
       const t = its.map((x) => ms[x.k] || 0).sort((a, b) => a - b), med = t.length ? (t[0] + t[t.length - 1]) / 2 : null;
       const x = K.rv[c];
-      if (good) { if (x && x.n < KS.REVIEW_DAYS.length && x.due <= now) { x.n++; x.t = now; x.due = x.n < KS.REVIEW_DAYS.length ? now + (KS.REVIEW_DAYS[x.n] - KS.REVIEW_DAYS[x.n - 1]) * DAY : Infinity; } }
+      if (good) { if (x && x.n < KS.REVIEW_DAYS.length && x.due <= now) { x.n++; x.t = now; x.due = x.n < KS.REVIEW_DAYS.length ? now + (KS.REVIEW_DAYS[x.n] - KS.REVIEW_DAYS[x.n - 1]) * DAY : Infinity; if (x.n === KS.REVIEW_DAYS.length && K.fixed && K.fixed[c]) closed.push(c); } }
       else { K.rv[c] = { n: 0, due: now + DAY, t: now }; again.push(c); }
       const m = K.mx[c] || { tier: 0, best: null, runs: [], t2: 0 };
       m.runs = [...(m.runs || []), { t: now, ok: its.filter((y) => R.it[y.k] && R.it[y.k].s === 'ok').length, n: its.length, med, run: 1 }].slice(-10);
@@ -106,7 +106,7 @@ export function runView(root) {
     const d = today(now); K.jog = [...new Set([...(K.jog || []), d])].slice(-60);
     KS.save(me, K); KS.setReview(me, K); KS.pushMastery(me, K); KS.pushSummary(me, K); KS.setNow(me, { mode: 'home' });
     const okN = Object.values(R.it).filter((x) => x.s === 'ok').length;
-    root.innerHTML = `<div class="card msg act-run"><p class="eyebrow">${tile('daily', 22)}매일 연습</p>${say(again.length ? 'think' : 'cheer', `오늘 매일 연습 끝! 처음에 ${sh.items.length}문제 중 <b>${okN}개</b>를 혼자 맞혔어요.${fixd ? ` 틀린 것 가운데 <b>${fixd}개</b>는 도움을 받아 고쳤어요.` : ''}${again.length ? `<br>틀린 문제와 같은 꼴은 내일 한 번 더 나와요.` : ''}`, 104)}
+    root.innerHTML = `<div class="card msg act-run"><p class="eyebrow">${tile('daily', 22)}매일 연습</p>${say(again.length ? 'think' : 'cheer', `오늘 매일 연습 끝! 처음에 ${sh.items.length}문제 중 <b>${okN}개</b>를 혼자 맞혔어요.${fixd ? ` 틀린 것 가운데 <b>${fixd}개</b>는 도움을 받아 고쳤어요.` : ''}${closed.length ? `<br><b>${esc(plank(closed[0]))}</b>${closed.length > 1 ? ` 말고도 ${closed.length - 1}개` : ''} — 배운 뒤 세 번 다시 풀어 모두 맞혔어요.` : ''}${again.length ? `<br>틀린 문제와 같은 꼴은 내일 한 번 더 나와요.` : ''}`, 104)}
       <p>이번 주 연습한 날 ${weekHTML(K, now)}</p>
       <div class="acts"><a class="btn pri big" href="#/me">처음 화면으로</a></div></div>`;
   };
