@@ -166,7 +166,7 @@ export function grid({ w, h, mode = 'area', wl = '', hl = '', label = '' }) {
 }
 
 // ── 자리 표 ── 자리 이름(10 · 1 · 0.1 …) 아래 한 칸에 숫자 하나 · 소수점은 일의 자리 칸 오른쪽 금 위에
-//  rows = [{ ds: 칸마다 숫자('' = 빈칸), on: 지금 볼 칸 }] · hop = { from, to, text } 첫 줄 칸에서 둘째 줄 칸으로 가는 화살표
+//  rows = [{ ds: 칸마다 숫자('' = 빈칸), on: 지금 볼 칸(여럿이면 배열) }] · hop = { from, to, text } 첫 줄 칸에서 둘째 줄 칸으로 가는 화살표
 export function place({ cols = [], rows = [], hop = null, label = '' }) {
   if (!cols.length || !rows.length) return '';
   const cw = Math.min(74, Math.floor(440 / cols.length)), W = cw * cols.length + 4, rh = 46, gap = 44, dot = cols.indexOf('1');
@@ -176,7 +176,7 @@ export function place({ cols = [], rows = [], hop = null, label = '' }) {
     ys.push(y);
     cols.forEach((_, i) => {
       const d = r.ds ? r.ds[i] : '';
-      s += `<rect x="${2 + cw * i}" y="${y}" width="${cw}" height="${rh}" class="p-box${r.on === i ? ' now' : ''}"/>`;
+      s += `<rect x="${2 + cw * i}" y="${y}" width="${cw}" height="${rh}" class="p-box${[].concat(r.on).includes(i) ? ' now' : ''}"/>`;
       if (d != null && d !== '') s += T(cx(i), y + 33, d, 28, '', 'middle', true);
     });
     if (dot >= 0 && dot < cols.length - 1) s += `<circle cx="${2 + cw * (dot + 1)}" cy="${y + rh - 10}" r="4.2" class="p-t"/>`;   /* 소수점 — 글자 '.'은 작아 안 보여 점으로 */

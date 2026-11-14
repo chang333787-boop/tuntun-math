@@ -241,6 +241,9 @@ const PICS = {
     if (p.kind === 'dsame') return box(DIV, '÷', ['2배', '2배'], '그대로');
     return null;
   },
+  /* 1 km = 1000 m · 1 L = 1000 mL · 1 kg = 1000 g — 몇 km 몇 m를 자리 표에(천의 자리 · 일의 자리) · 빈 자리 둘이 노랑 · m로 가르기(split)는 숫자가 곧 답이라 그림 없음 */
+  ...Object.fromEntries([['3-1-5:2', 'm'], ['3-2-5:3', 'mL'], ['3-2-5:6', 'g']].map(([id, u]) => [id, (p) => (p.v === 'join' && int(p.k) && int(p.m) && p.m < 10
+    ? { t: 'place', cols: [1000, 100, 10, 1].map((v) => `${v} ${u}`), rows: [{ ds: [String(p.k), '', '', String(p.m)], on: [1, 2] }] } : null)])),
   /* 직사각형 둘레와 넓이 — 둘레 단계에서는 테두리 · 넓이 단계에서는 칸 */
   '5-1-6:4': (p, { i, steps }) => (int(p.a) && int(p.b) && p.a >= 1 && p.b >= 1 && p.a <= 20 && p.b <= 12
     ? { t: 'grid', w: p.a, h: p.b, wl: `${p.a} cm`, hl: `${p.b} cm`, mode: i < 0 || i >= steps.length ? 'plain' : i === steps.length - 1 ? 'area' : 'peri' } : null),
