@@ -245,6 +245,8 @@ function unitSay(it) {
   }
   return out.length === sol.length ? { text: out.join(' '), b: UNIT_B.has(last) } : null;
 }
+/* 말풍선 글 — 수와 단위(1 cm) · 수와 기호(3 × 4)가 줄 끝에서 갈리지 않게 */
+export const nbsp = (s) => String(s).replace(/(\d) ([+−×÷=]) (?=\d)/g, '$1\u00a0$2\u00a0').replace(/(\d) (cm²|m²|km|cm|mm|mL|kg|m|g|L)(?![A-Za-z])/g, '$1\u00a0$2');
 export function ansSay(it, lead = '답은') {
   const u = unitSay(it);
   if (u) return `${lead} <b>${esc(u.text)}</b>${u.b ? '이에요' : '예요'}.`;

@@ -419,9 +419,9 @@ export function circle({ r = 0, d = 0, both = false, sq = false, roll = false, l
   let g = sq ? `<path d="${polyD([[cx, cy], [cx + R, cy], [cx + R, cy - R], [cx, cy - R]])}" class="p-f1"/>` : '';
   g += `<circle cx="${cx}" cy="${cy}" r="${R}" class="p-ln"/>`;
   if (d) {
-    g += `<path d="M${cx - R} ${cy} H${cx + R}" class="p-ln"/>` + (both ? `<path d="M${cx} ${cy} H${cx + R}" class="p-edge"/>` : '') + T(cx, cy - 9, `${d} cm`, 15, '', 'middle', true);
+    g += `<path d="M${cx - R} ${cy} H${cx + R}" class="p-ln"/>` + (both ? `<path d="M${cx} ${cy} H${cx + R}" class="p-edge"/>` + T(cx, cy + 22, `지름 ${d} cm`, 14, '', 'middle', true) + T(cx + R / 2, cy - 9, '반지름', 13, 'ac', 'middle', true) : T(cx, cy - 9, `${d} cm`, 15, '', 'middle', true));
   } else {
-    g += (both ? `<path d="M${cx - R} ${cy} H${cx}" class="p-edge"/>` : '') + `<path d="M${cx} ${cy} H${cx + R}" class="p-ln"/>` + T(cx + R / 2, cy - 9, r ? `${r} cm` : '반지름', 15, '', 'middle', true);
+    g += (both ? `<path d="M${cx - R} ${cy} H${cx}" class="p-edge"/>` + T(cx, cy + 22, '지름', 14, 'ac', 'middle', true) : '') + `<path d="M${cx} ${cy} H${cx + R}" class="p-ln"/>` + T(cx + R / 2, cy - 9, r ? `${r} cm` : '반지름', 15, '', 'middle', true);
   }
   g += `<circle cx="${cx}" cy="${cy}" r="3" class="p-pt"/>`;
   if (sq) g += T(cx + R + 10, cy - R / 2 + 5, sqt, 15, 'ac', 'start', true);

@@ -8,7 +8,7 @@ import { blankCount } from '../../engine/tokens.js';
 import { prepPlan, newPrep, current, answer, summary, asked, LEN, PREP, packPrep, unpackPrep } from './prep.js';
 import { FIX, jumpTo, newFix, showNext, showLen, showTalk, blankTalk, factTalk, togetherStep, answerItem, afterReStep, checkItem, answerCheck, compareOf, stepsOf, exampleOf, mergeTip } from './fix.js';
 import * as KS from './kidstore.js';
-import { draw, stepHTML, staticHTML, ansSay, rushGuard, rushPause, fbSlot } from './item.js';
+import { draw, stepHTML, staticHTML, ansSay, rushGuard, rushPause, fbSlot, nbsp } from './item.js';
 import { P, RO } from '../../engine/concepts/kit.js';
 import { colOf, colView, picAns, tenFrameHTML, regroupHTML, rgLag } from './model.js';
 import { grantAccurate } from './stage.js';
@@ -351,7 +351,7 @@ export function fixView(root, c, opt = {}) {
     if (has) {
       const C = colOf(F.ex, F.steps), st = F.si ? F.steps[F.si - 1] : null, v = C ? colView(C, F.si, F.si === 1 ? rgLag(F.ex) : null) : null;   /* 묶음 바꾸기와 같은 때에 빗금 · 위 숫자 */
       const mid = v ? v.html : `${F.si ? '' : '<span class="fxs-ph" aria-hidden="true"></span>'}<ol class="steps eq${F.si ? '' : ' eq0'}" style="--r:${Math.ceil(F.steps.length / 2)}">${F.steps.map((x, i) => (i < F.si ? stepHTML(x, { cls: i === F.si - 1 ? 'now' : '', why: false }) : stepHTML(x, { cls: 'ph', why: false, vals: [] }))).join('')}</ol>`;   /* 아직 안 본 단계는 자리만(좁은 화면 — '다음 단계'가 안 내려가게 · 답 숫자 X) */
-      const talk = st ? `<p>${esc(st.why).replace(/(\d) ([+−×÷=]) (?=\d)/g, '$1\u00a0$2\u00a0')}</p>${v ? `<p class="fxe">${staticHTML(st.prompt, st.sol)}${v.lead0 ? '<span class="small">맨 앞자리의 0은 쓰지 않아요.</span>' : ''}${done ? `<span class="fxa">${ansSay(F.ex, '그래서 답은')}</span>` : ''}</p>` : fin}`
+      const talk = st ? `<p>${nbsp(esc(st.why))}</p>${v ? `<p class="fxe">${staticHTML(st.prompt, st.sol)}${v.lead0 ? '<span class="small">맨 앞자리의 0은 쓰지 않아요.</span>' : ''}${done ? `<span class="fxa">${ansSay(F.ex, '그래서 답은')}</span>` : ''}</p>` : fin}`
         : `<p>튼튼이가 먼저 풀어 볼게요. ${C ? '일의 자리부터 한 자리씩 계산해요.' : '한 단계씩 풀면서 생각을 말할게요.'}</p>`;
       const plan = planHTML(F.steps, planNames(F.ex.c || c, F.ex.p, F.steps), done ? F.steps.length : F.si - 1).replace('<div class="plan">', `<div class="plan${F.steps.length >= 5 ? ' two' : ''}" style="--r:${Math.ceil((F.steps.length + 1) / 2)}">`);   /* 풀이 순서 — 처음부터 전체 순서를 보여 주고 지금 단계를 짚음(교사 11-07 '단계적으로 하나씩') */
       stage({ top: `${staticHTML(qf || F.ex.prompt, done ? F.ex.sol : null)}${choices}`, mid: mid || '<span class="fxs-ph" aria-hidden="true"></span>', side: `${md}${plan}`, talk, fit: md ? 'fpic' : 'fplan',   /* 첫 화면에도 가운데 자리를 비워 둠(문제가 가운데 → 왼쪽 위로 튀던 것 · 11-07) */ act: nextAct(done ? '이제 같이 풀어요' : F.si ? '다음 단계' : '첫 단계 보기') });
@@ -360,7 +360,7 @@ export function fixView(root, c, opt = {}) {
     const nb = F.ex.choices ? 0 : blankCount(F.ex.prompt);
     const vals = F.ex.choices ? null : F.ex.sol.map((x, i) => (i < F.si ? x : null));
     const say1 = F.si ? [...showTalk(F), ...(nb >= 2 ? Array.from({ length: F.si }, (_, i) => blankTalk(F.ex, i)).filter(Boolean) : [])] : [];
-    const talk = say1.length ? `${say1.map((x) => `<p>${esc(x)}</p>`).join('')}${fin}` : done ? fin : '<p>튼튼이가 먼저 풀어 볼게요. 생각을 말하면서 풀게요.</p>';
+    const talk = say1.length ? `${say1.map((x) => `<p>${nbsp(esc(x))}</p>`).join('')}${fin}` : done ? fin : '<p>튼튼이가 먼저 풀어 볼게요. 생각을 말하면서 풀게요.</p>';
     stage({ top: `${staticHTML(qf || F.ex.prompt, vals)}${choices}`, side: md, talk, act: nextAct(done ? '이제 같이 풀어요' : F.si ? '다음' : '튼튼이 생각 보기') });
   }
   // 함께 — 단계 빈칸을 아이가(단계 있는 칸) · 튼튼이가 일부를 해 주고 아이는 한 곳만(단계 없는 칸)

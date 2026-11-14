@@ -270,8 +270,8 @@ const clockSteps = (p) => {
   const k = Math.floor(p.m / 5), rest = p.m % 5, far = k >= 10;
   return [
     { c: '1-2-3:5', p: { h: p.h, m: p.m, v: 'hr' }, why: "짧은바늘은 두 숫자 사이에 있어요. 지나온 숫자가 '시'예요." },
-    k >= 1 ? { c: 'MUL', p: { a: 5, b: far ? 9 : k }, why: far ? '긴바늘이 숫자 9를 지났어요. 숫자 한 칸은 5분이에요.' : `긴바늘이 숫자 ${k}${P(k, '을', '를')} ${rest ? '지났어요' : '가리켜요'}. 숫자 한 칸은 5분이에요.` } : null,
-    far ? { c: 'ADD', p: { a: 45, b: 5 * (k - 9) }, why: `숫자 ${k}${P(k, '은', '는')} 9에서 ${k - 9}칸 더 간 곳이에요. 한 칸에 5분씩 더해요.` } : null,
+    k >= 1 ? { c: 'MUL', p: { a: 5, b: far ? 9 : k }, why: far ? '긴바늘이 숫자 9를 지났어요. 숫자 하나를 지날 때마다 5분이에요.' : `긴바늘이 숫자 ${k}${P(k, '을', '를')} ${rest ? '지났어요' : '가리켜요'}. 숫자 하나를 지날 때마다 5분이에요.` } : null,
+    far ? { c: 'ADD', p: { a: 45, b: 5 * (k - 9) }, why: `숫자 ${k}${P(k, '은', '는')} 9에서 숫자 ${k - 9}개를 더 지난 곳이에요. 숫자 하나에 5분씩 더해요.` } : null,
     rest && k >= 1 ? { c: 'ADD', p: { a: 5 * k, b: rest }, why: `작은 눈금 한 칸은 1분이에요. 긴바늘이 숫자 ${k}에서 ${rest}칸을 더 갔어요.` } : null,
   ].filter(Boolean);
 };
@@ -296,9 +296,10 @@ function lenCalcMake(p) {
   const mix = p.a2 ? [] : [{ test: (v) => v[0] === (plus ? p.a1 + p.b2 : p.a1 - p.b2) && v[1] === p.b1, name: 'm와 cm를 섞어 계산함', to: '2-2-3:2' }];
   return nums([`${mcm(p.a1, p.b1)} ${plus ? '+' : '−'} ${mcm(p.a2, p.b2)} = `, ...tail], [A, C], { bugs: mix });
 }
+/* 답 칸 차례(m → cm)와 같게 m부터 — 단계 답을 엉뚱한 칸에 옮겨 쓰지 않게(처음 보는 눈 2차) */
 const lenCalcSteps = (p) => (p.op === '+'
-  ? [{ c: 'ADD', p: { a: p.b1, b: p.b2 }, why: 'cm끼리 더해요.' }, p.a2 ? { c: 'ADD', p: { a: p.a1, b: p.a2 }, why: 'm끼리 더해요.' } : null]
-  : [{ c: 'SUB', p: { a: p.b1, b: p.b2 }, why: 'cm끼리 빼요.' }, p.a2 ? { c: 'SUB', p: { a: p.a1, b: p.a2 }, why: 'm끼리 빼요.' } : null]).filter(Boolean);
+  ? [p.a2 ? { c: 'ADD', p: { a: p.a1, b: p.a2 }, why: 'm끼리 더해요.' } : null, { c: 'ADD', p: { a: p.b1, b: p.b2 }, why: 'cm끼리 더해요.' }]
+  : [p.a2 ? { c: 'SUB', p: { a: p.a1, b: p.a2 }, why: 'm끼리 빼요.' } : null, { c: 'SUB', p: { a: p.b1, b: p.b2 }, why: 'cm끼리 빼요.' }]).filter(Boolean);
 const genLenCalc = (r) => {
   const op = r.pick(['+', '+', '−']), step = r.pick([10, 10, 5]), b = (r) => r.int(1, Math.floor(95 / step)) * step, short = r.chance(0.25);
   if (op === '+') return until(r, (r) => ({ op, a1: r.int(1, 5), a2: short ? 0 : r.int(1, 3), b1: b(r), b2: b(r) }), (p) => p.b1 + p.b2 < 100);
@@ -403,7 +404,7 @@ export default {
       id: '1-2-3:5', name: '몇 시, 몇 시 30분', kid: '몇 시, 몇 시 30분 읽기', s: 'ME', sec: 12,
       gen: (r) => ({ h: r.int(1, 12), m: r.chance(0.4) ? 0 : 30 }),
       make: clockMake('1-2-3:5'), prev: null, pre: ['1-1-5:3', '1-1-5:5'],
-      hint: "긴바늘이 12를 가리키면 '몇 시'예요. 그때 짧은바늘이 가리키는 숫자가 '시'예요. 긴바늘이 6을 가리키면 '몇 시 30분'이에요. 그때 짧은바늘은 두 숫자 사이에 있고, 지나온 숫자가 '시'예요.",   /* 시범 · 함께 말은 engine/hints/me.js say(이 문제의 숫자로) */
+      hint: "긴바늘이 12를 가리키면 '몇 시'예요. 짧은바늘이 가리키는 숫자가 '시'예요. 긴바늘이 6을 가리키면 '몇 시 30분'이에요. 이때 짧은바늘은 두 숫자 사이에 있고, 지나온 숫자가 '시'예요.",   /* 시범 · 함께 말은 engine/hints/me.js say(이 문제의 숫자로) */
       tip: "'몇 시 30분'에서 짧은바늘이 다음 숫자에 가까워 보여 그 숫자를 시로 읽는 아이가 많아요. 모형 시계의 긴바늘을 12에서 6까지 돌리며 짧은바늘이 숫자 사이로 조금씩 가는 것을 보여 줘요.",
     },
     // ── 2-1-4 길이 재기
@@ -426,7 +427,7 @@ export default {
     {
       id: '2-2-4:2', name: '몇 시 몇 분', kid: '몇 시 몇 분 읽기', s: 'ME', sec: 20,
       gen: genClock, make: clockMake('2-2-4:2'), steps: clockSteps, prev: null, pre: ['1-2-3:5', '2-2-2:3'],
-      hint: "짧은바늘이 지나온 숫자가 '시'예요. 긴바늘은 숫자 한 칸에 5분씩 가서 숫자 3은 15분이에요. 작은 눈금 한 칸은 1분이에요. 긴바늘이 3에서 작은 눈금 두 칸을 더 가면 17분이에요.",
+      hint: "짧은바늘이 지나온 숫자가 '시'예요. 긴바늘은 숫자 하나를 지날 때마다 5분이라서 숫자 3은 15분이에요. 작은 눈금 한 칸은 1분이에요. 긴바늘이 3에서 작은 눈금 두 칸을 더 가면 17분이에요.",
       tip: '긴바늘이 가리키는 숫자를 그대로 분으로 읽거나(3 → 3분) 짧은바늘이 다음 숫자에 가까울 때 그 숫자를 시로 읽는지 봐요. 긴바늘을 12에서부터 5분씩 뛰어 세게 해요.',
     },
     {

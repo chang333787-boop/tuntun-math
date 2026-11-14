@@ -347,17 +347,17 @@ function roundSteps(p) {
     if (p.m === 'half' || p.pk >= 0 || p.dp + p.pk < 1) return [];
     const u = 10 ** (p.dp + p.pk), below = p.xi % u, floor = p.xi - below, pl = { '-1': '소수 첫째 자리', '-2': '소수 둘째 자리' }[p.pk];
     if (!below || !pl) return [];
-    const cutD = { c: 'g4_DECAS', p: { op: '-', a: p.xi, ka: p.dp, b: below, kb: p.dp }, why: `${pl} 아래 숫자를 떼어 내요.`, n: '아래 자리 떼어 내기' };
+    const cutD = { c: 'g4_DECAS', p: { op: '-', a: p.xi, ka: p.dp, b: below, kb: p.dp }, why: `${pl} 아래 숫자를 버려요.`, n: '아래 자리 버리기' };
     return p.m === 'down' ? [cutD] : [cutD, { c: 'g4_DECAS', p: { op: '+', a: floor, ka: p.dp, b: u, kb: p.dp }, why: `${pl} 숫자를 하나 올려요.`, n: '그 자리 숫자 하나 올리기' }];
   }
   const n = p.xi, u = 10 ** p.pk, below = n % u, floor = n - below, pl = RPL[p.pk];
   if (!below) return [];
-  const cut = { c: 'SUB', p: { a: n, b: below }, why: `${pl} 아래를 떼어 내 0으로 만들어요.`, n: '아래 자리 떼어 내기' };
+  const cut = { c: 'SUB', p: { a: n, b: below }, why: `${pl} 아래 수를 버려서 0으로 만들어요.`, n: '아래 자리 버리기' };
   const add = { c: 'ADD', p: { a: floor, b: u }, why: `${pl} 숫자를 하나 올려요.`, n: '그 자리 숫자 하나 올리기' };
   if (p.m === 'down') return [cut];
   if (p.m === 'up') return [cut, add];
   const k = p.pk - 1, look = len(n) <= 4 ? { c: 'N5', p: { v: 'which', n, i: k } } : { c: 'g4_BIG', p: { v: 'digit', n, i: k } };
-  return [{ ...look, why: `바로 아래 ${RPL[k]} 숫자를 봐요.`, n: '바로 아래 숫자 보기' }, cut, ...(dig(n, k) >= 5 ? [add] : [])];
+  return [{ ...look, why: `바로 아래 ${RPL[k]} 숫자를 봐요.`, n: '바로 아래 숫자 보기' }, { c: '5-2-1:2', p: { v: 'is', d: dig(n, k) }, why: '5 이상이면 올리고, 5보다 작으면 버려요.', n: '올릴지 버릴지 고르기' }, cut, ...(dig(n, k) >= 5 ? [add] : [])];
 }
 
 // ── 풀이 순서 이름(plan) — 그 문제의 stepsOf 단계와 같은 개수 · 숫자 없이(10만 씀) · 같은 갈래는 같은 이름

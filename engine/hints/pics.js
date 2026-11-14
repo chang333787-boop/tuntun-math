@@ -161,7 +161,7 @@ const mixedCalc = (op) => (p, { i, steps }) => {
 // ── 수의 범위 ── 수직선에 기준 수(● 들어감 · ○ 안 들어감)와 들어가는 쪽 · 세어 볼 수는 진하게(span = 두 기준 수 사이 · cnt = 위의 수들 · edge = 가장 큰 · 작은 수)
 const OPEN = { gt: true, lt: true };
 function rangePic(p, { i, steps }) {
-  if (i >= steps.length || !int(p.b)) return null;
+  if (i > steps.length || !int(p.b)) return null;   /* 처음 문제로 돌아와서도 남김(칠한 쪽의 수를 세는 단서) */
   const up = (m) => m === 'ge' || m === 'gt', I = (lo, hi) => rep(hi - lo + 1, (k) => lo + k), dot = (v, m) => ({ v, dot: true, open: !!OPEN[m] });
   if (p.v === 'span') {
     if (!int(p.b2) || p.b2 - p.b < 2 || p.b2 - p.b > 16) return null;
@@ -183,9 +183,9 @@ function rangePic(p, { i, steps }) {
 // ── 어림 ── xi(소수 dp자리)를 자리 표에 · pk = 구하는 자리(10의 몇 제곱) · 노랑 = 가릴 자리(반올림은 바로 아래 한 칸) · '떼어 내' 단계를 마치면 아래 자리가 0
 //   '자리 숫자를 봐요' 단계는 그 숫자가 곧 단계의 답이라 그리지 않음 · 어림한 수나 떼어 낸 수가 자리 이름(1 · 10 …)이나 칸의 숫자 하나와 같으면 그리지 않음(글자로 샘 — 7.46을 일의 자리로 버림 = 7)
 function roundPic(p, { i, steps }) {
-  if (p.v !== 'val' || i >= steps.length || !int(p.xi) || p.xi < 1) return null;
+  if (p.v !== 'val' || i > steps.length || !int(p.xi) || p.xi < 1) return null;   /* 처음 문제로 돌아와서도(i = n) 남김 — 단서가 마지막에 사라지지 않게 */
   const dp = p.dp || 0, s = String(p.xi).padStart(dp + 1, '0'), n = s.length, top = n - 1 - dp;
-  if (n > 6 || /자리 숫자를 봐요/.test((cur(steps, i) || {}).why || '')) return null;
+  if (n > 6 || /자리 숫자를 봐요|5 이상이면/.test((cur(steps, i) || {}).why || '')) return null;
   const pw = (j) => top - j, name = (e) => (e >= 0 ? String(10 ** e) : `0.${'0'.repeat(-e - 1)}1`);
   const cols = rep(n, (j) => name(pw(j))), tgt = rep(n, (j) => j).find((j) => pw(j) === p.pk);
   if (tgt == null || tgt >= n - 1) return null;
@@ -193,7 +193,7 @@ function roundPic(p, { i, steps }) {
   const r = (p.m === 'up' ? (low ? base + unit : base) : p.m === 'half' && half ? base + unit : base) / 10 ** dp;
   const tx = new Set([...cols, ...s].map(Number));
   if (tx.has(r) || tx.has(base / 10 ** dp)) return null;
-  const cut = steps.findIndex((st) => /떼어 내/.test(st.why || '')), gone = cut >= 0 && i > cut;
+  const cut = steps.findIndex((st) => /아래 (?:수|숫자)를 (?:버려|떼어)/.test(st.why || '')), gone = cut >= 0 && i > cut;
   const lows = rep(n - tgt - 1, (k) => tgt + 1 + k), on = gone ? tgt : p.m === 'half' && (cut < 0 || i < cut) ? tgt + 1 : lows;   /* 반올림 — 볼 숫자 한 칸 → 떼어 낼 때 아래 자리 모두 → 올릴 자리 */
   return { t: 'place', cols, rows: [{ ds: rep(n, (j) => (gone && j > tgt ? '0' : s[j])), on }] };
 }
@@ -346,7 +346,7 @@ const PICS = {
   '1-2-3:5': (p, { i }) => (p.m && i < 0 ? fg('1-2-3:5', p, { gap: true }) : null),
   '2-2-4:2': (p, { i, steps }) => (i >= steps.length ? null : fg('2-2-4:2', p, i < 1 ? { gap: true } : { jumps: true, r: 68 })),   /* 떠올리기 · '시' 단계 = 지나온 숫자 칸 · 분 단계 = 5분씩 뛴 자국 */
   /* 자 — 처음엔 1 cm 칸을 나눠 그림 · 빼기 단계에선 시작 눈금과 끝 눈금 숫자를 칠함 */
-  '2-1-4:5': (p, { i, steps }) => (i < 0 ? fg('2-1-4:5', p, { cells: true }) : i < steps.length ? fg('2-1-4:5', p, { cells: true, hi: true }) : null),
+  '2-1-4:5': (p, { i, steps }) => (i < 0 || !steps.length ? fg('2-1-4:5', p, { cells: true }) : fg('2-1-4:5', p, { cells: true, hi: true })),   /* 처음 문제로 돌아와서도 1 cm 칸을 남김 */
   /* 원 — 준 쪽 말고 다른 쪽(지름 = 반지름 두 개)을 진하게 · 컴퍼스 문제는 벌린 길이를 반지름으로 그림 */
   '3-2-3:3': (p, { i, steps }) => (i >= steps.length ? null : p.v === 'comp' ? (Number.isInteger(p.r) && p.r > 0 ? { t: 'circle', r: p.r, both: true } : null) : fg('3-2-3:3', p, { both: true })),
   /* 1 m² — 한 변이 100 cm인 정사각형 하나(모눈 10000칸은 그리지 않음) */

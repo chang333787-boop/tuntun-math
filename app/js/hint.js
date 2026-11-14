@@ -14,7 +14,7 @@ import { picSVG } from '../../engine/pics.js';
 import { FIGK } from '../../engine/figs.js';
 import { toText } from '../../engine/tokens.js';
 import { readExpr } from '../../engine/errors.js';
-import { draw, staticHTML, ansSay, fbSlot } from './item.js';
+import { draw, staticHTML, ansSay, fbSlot, nbsp } from './item.js';
 import { stepsOf } from './fix.js';
 import { colOf, colView, tenFrameHTML, regroupHTML, rgLag } from './model.js';
 import { esc } from './local.js';
@@ -132,7 +132,7 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
     const canStep = steps.length && !(budget && budget.left <= 0);
     const q0 = fq(-1), rp = q0 ? '' : hp(-1) || (C ? `<div class="hl-col">${colView(C, 0).html}</div>` : '');   /* 그림 틀이 없으면 세로로 쓴 모습(떠올리기 말이 '어느 자리 위에'를 물음 · 11-13 묶음 3) */
     draw(root, { ...base, prompt: q0 || it.prompt, sol: it.sol, choices: ch, hide: picked, extra: rp ? `<div class="hl-ctx hl-ctx-pic">${rp}</div>` : '',
-      lead: head('cue', `<span class="hl-was">내 답 <b>${esc(mine(it, raws))}</b> — 아직 아니에요. ${nudge || '튼튼이 말을 읽고 다시 풀어 봐요.'}</span>${cue ? `<span class="hl-cue-t">${esc(cue)}</span>` : ''}<span class="hl-ans">이 생각으로 <b>${esc(qName)}</b>${P(qName.slice(-1), '을', '를')} 써요.</span>`, 'think', `<button type="button" class="hl-go" id="hs"><span>모르겠어요 — <span class="nobr">${canStep ? '한 단계씩 같이 풀기' : '같이 보기'}</span></span></button>`),   /* 늘 나가는 길 하나(아무 수나 써야 빠져나가던 것 · 11-07) */
+      lead: head('cue', `<span class="hl-was">내 답 <b>${esc(mine(it, raws))}</b> — 아직 아니에요.${nudge ? ` ${nudge}` : ''}</span>${cue ? `<span class="hl-cue-t">${nbsp(esc(cue))}</span>` : ''}<span class="hl-ans">이 생각으로 <b>${esc(qName)}</b>${P(qName.slice(-1), '을', '를')} 써요.</span>`, 'think', `<button type="button" class="hl-go" id="hs"><span>모르겠어요 — <span class="nobr">${canStep ? '한 단계씩 같이 풀기' : '같이 보기'}</span></span></button>`),   /* 늘 나가는 길 하나(아무 수나 써야 빠져나가던 것 · 11-07) */
       onAnswer: (a, cf, t) => {
         if (sameAns(it, a)) return finish(true, ch ? 'pick' : 'recall', ch ? '맞았어요!' : '맞았어요! 생각을 떠올려서 스스로 고쳤어요.');
         if (t < RUSH && !ch && ++rushN < 2) return recall('조금 빨라요. 끝까지 읽고 다시 풀어 봐요.');
@@ -151,7 +151,7 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
     draw(root, { ...base, prompt: s.prompt, sol: s.sol, choices: sit && sit.choices ? sit.choices : null,
       extra: stepCtx(it, steps, i, { shown, C, q: qi, pic: pv.html, fresh: fresh && !tries ? i - 1 : -1, lag: pv.anim && i === 1 ? rgLag(it) : null }),
       okLabel: '이 단계 다 했어요',
-      lead: head('step', `<span class="hl-k">${i + 1}단계</span><span class="hl-why">${esc(s.why).replace(/(\d) ([+−×÷=]) (?=\d)/g, '$1\u00a0$2\u00a0')}</span>${tries === 1 ? `<span class="hl-re">아직 아니에요. ${pv.html || qi ? '그림을 보고 ' : ''}한 번 더 해 봐요.</span>` : tries === -1 ? '<span class="hl-re">조금 빨라요. 천천히 다시 풀어 봐요.</span>' : ''}`, tries ? 'think' : 'point', planHTML(steps, names, i, shown, `${qName} 쓰기`)),
+      lead: head('step', `<span class="hl-k">${i + 1}단계</span><span class="hl-why">${nbsp(esc(s.why))}</span>${tries === 1 ? `<span class="hl-re">아직 아니에요. ${pv.html || qi ? '그림을 보고 ' : ''}한 번 더 해 봐요.</span>` : tries === -1 ? '<span class="hl-re">조금 빨라요. 천천히 다시 풀어 봐요.</span>' : ''}`, tries ? 'think' : 'point', planHTML(steps, names, i, shown, `${qName} 쓰기`)),
       onAnswer: (a, cf, t) => {
         const ok = sit ? sameAns(sit, a) : s.sol.every((v, k) => Number(a.vals[k]) === Number(v));
         if (ok) return step(i + 1, 0, shown, true);

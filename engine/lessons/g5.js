@@ -273,6 +273,8 @@ const RANGEFAM = {
   id: 'g5_RANGE', s: 'N', sec: 15,
   tip: '수직선에 ●(기준 수가 들어감)과 ○(기준 수가 빠짐)를 직접 찍어 보게 해요. "이상·이하는 그 수도 들어가요"를 기준 수 하나로 확인해요.',
   make: (p) => {
+    /* 반올림의 단계(5-2-1:7) — 바로 아래 숫자가 5 이상인가 · 이상은 5도 들어감 */
+    if (p.v === 'is') { const yes = p.d >= 5; return pick([`바로 아래 숫자 ${p.d}${P(p.d, '은', '는')} 5 이상인가요?`], [['5 이상이에요. 올려요.'], ['5보다 작아요. 버려요.']], yes ? 0 : 1, { bugs: { [yes ? 1 : 0]: { name: yes ? (p.d === 5 ? '5는 5 이상에 들어가지 않는다고 봄' : '5 이상인데 버림') : '5보다 작은데 올림', to: p.d === 5 ? '5-2-1:2' : null } } }); }
     const toLe = open(p.m) || (p.m2 && open(p.m2)) ? '5-2-1:2' : null;
     if (p.v === 'cnt') {
       const ans = p.list.filter((x) => inR(p.m, p.b, x)).length;
@@ -435,7 +437,7 @@ function fmixSteps(p, op) {
     return [
       head,
       { c: 'g4_FMIX', p: { op: '=', w: p.w1, n: N1, d: L }, why: `${N1}/${L}에서 ${N2}/${L}${P(N2, '을', '를')} 뺄 수 없어요. 자연수에서 1을 ${RO(`${L}/${L}`)} 바꿔 분수 부분에 보태요.` },
-      p.w2 && p.w1 - 1 > p.w2 ? { c: 'SUB', p: { a: p.w1 - 1, b: p.w2 }, why: '1을 보내고 남은 자연수 부분끼리 빼요.' } : null,
+      p.w2 && p.w1 - 1 > p.w2 ? { c: 'SUB', p: { a: p.w1 - 1, b: p.w2 }, why: `자연수 ${p.w1}에서 1을 분수 쪽으로 보냈어요. 남은 ${p.w1 - 1}에서 ${p.w2}${P(p.w2, '을', '를')} 빼요.` } : null,
       { c: 'F6', p: { op: '-', a: L + N1, b: N2, d: L }, why: '분수 부분끼리 빼요.' },
     ].filter(Boolean);
   }
