@@ -364,7 +364,7 @@ div.cmpc{box-shadow:none}
 .plan li.now{color:var(--ink);font-weight:700}.plan li.now i{background:var(--teal);border-color:var(--teal);color:#fff}
 @media (max-width:700px){.plan{margin-left:0}}
 .fxs-side .plan{margin:12px 0 0}
-.hl-pic{display:flex;justify-content:center;padding:4px 0}.hl-pic svg{max-width:100%;height:auto}
+.hl-pic{display:flex;justify-content:center;padding:4px 0}.hl-chs{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:2px 0 6px}.hl-chs>i{font-style:normal;color:var(--mute)}.hl-chs .math{font-size:clamp(20px,2.6cqi,26px)}.hl-pic svg{max-width:100%;height:auto}
 .tf{margin:6px 0 12px;display:flex}.tf svg{max-width:100%;height:auto}
 .tf .d1 circle{fill:var(--teal)}.tf .d2 circle{fill:var(--pri)}
 .tf .mv.done{transform:translate(var(--dx),var(--dy))}.tf .gone.done{opacity:.22}

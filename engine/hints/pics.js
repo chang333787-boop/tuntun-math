@@ -356,7 +356,7 @@ const PICS = {
   /* 자 — 처음엔 1 cm 칸을 나눠 그림 · 빼기 단계에선 시작 눈금과 끝 눈금 숫자를 칠함 */
   '2-1-4:5': (p, { i, steps }) => (i < 0 || !steps.length ? fg('2-1-4:5', p, { cells: true }) : fg('2-1-4:5', p, { cells: true, hi: true })),   /* 처음 문제로 돌아와서도 1 cm 칸을 남김 */
   /* 원 — 준 쪽 말고 다른 쪽(지름 = 반지름 두 개)을 진하게 · 컴퍼스 문제는 벌린 길이를 반지름으로 그림 */
-  '3-2-3:3': (p, { i, steps }) => (i >= steps.length ? null : p.v === 'comp' ? (Number.isInteger(p.r) && p.r > 0 ? { t: 'circle', r: p.r, both: true } : null) : fg('3-2-3:3', p, { both: true })),
+  '3-2-3:3': (p, { i, steps }) => (i > steps.length ? null : p.v === 'comp' ? (Number.isInteger(p.r) && p.r > 0 ? { t: 'circle', r: p.r, both: true } : null) : fg('3-2-3:3', p, { both: true })),
   /* 1 m² — 한 변이 100 cm인 정사각형 하나(모눈 10000칸은 그리지 않음) */
   '5-1-6:5': (p, { i, steps }) => (i <= steps.length ? { t: 'grid', w: 1, h: 1, size: 84, wl: '100 cm', hl: '100 cm', mid: '1 m²', mode: 'plain', label: '한 변이 100 cm인 정사각형, 넓이 1 m²' } : null),
   /* 마름모 — 둘러싼 직사각형 · 곱하기 단계에선 그 직사각형을 칠함 */
@@ -414,7 +414,12 @@ const PICS = {
   '6-1-1:3': (p, { i, steps }) => (i < steps.length && okD(p.b) && int(p.a) && p.a > p.b && p.a <= 4 * p.b ? bar1({ d: p.b, segs: [seg(p.a)] }) : null),
   /* (분수) ÷ (자연수) — 칠한 칸을 k묶음으로 똑같이(번갈아 두 색) · 한 묶음이 몫 · 대분수는 가분수로 바꾼 뒤부터 */
   '6-1-1:4': (p, { i, steps }) => (i < steps.length && int(p.k) && p.k >= 2 && p.n % p.k === 0 ? oneGroup(p.d, p.n, p.k) : null),
-  '6-1-1:6': (p, { i, steps }) => (i >= steps.length || !okD(p.d) || !int(p.n) || p.n > 4 * p.d ? null : i < 1 ? bar1({ d: p.d, segs: [seg(p.n)] }) : p.v === 'div' && p.n % p.k === 0 ? oneGroup(p.d, p.n, p.k) : null),
+  '6-1-1:6': (p, { i, steps }) => {   /* 크기가 같은 분수로 바꾸는 꼴(eq)도 — 한 칸을 k조각으로 나눈 띠(점선) → 마지막 걸음에서 k묶음(2단계부터 그림이 사라지던 것) */
+    if (i >= steps.length || !okD(p.d) || !int(p.n) || p.n > 4 * p.d) return null;
+    if (i < 1) return bar1({ d: p.d, segs: [seg(p.n)] });
+    if (p.n % p.k === 0) return oneGroup(p.d, p.n, p.k);
+    return i === steps.length - 1 ? oneGroup(p.d * p.k, p.n * p.k, p.k) || bar1({ d: p.d, segs: [seg(p.n)], sub: p.k }) : bar1({ d: p.d, segs: [seg(p.n)], sub: p.k });
+  },
   /* (분수) ÷ (분수) — 나누는 분수만큼씩 묶어 몇 묶음인지 · 나누어떨어지지 않으면 두 분수를 위아래로 · 분모가 다르면 통분 띠부터 */
   '6-2-1:2': (p, { i, steps }) => (i < steps.length ? groupBar(p.d, p.a, p.b) : null),
   '6-2-1:3': (p, { i, steps }) => (i < steps.length ? sameRows(p.a, p.b, p.d) : null),

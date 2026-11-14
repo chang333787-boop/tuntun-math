@@ -48,7 +48,8 @@ export function stepCtx(it, steps, upto, { shown = new Set(), C = null, label = 
   const eq = !!C || steps.length >= 5 || (steps.length >= 4 && steps.some((s) => (s.prompt || []).some((t) => t && typeof t === 'object' && ('f' in t || 'm' in t))));   /* 다섯 단계가 넘는 문제(겉넓이 여섯 단계) · 분수 단계가 넷인 문제(대분수 받아내림)는 마친 단계를 식만 한 줄로 — 크롬북 768에서 답 칸이 화면 밖으로 밀리지 않게(단계 이름은 옆 풀이 순서에 그대로) */
   const list = upto ? `<ol class="hl-steps${eq ? ' eq' : ''}">${steps.slice(0, upto).map((s, i) => `<li class="${shown.has(i) ? 'shown' : 'ok'}${i === fresh ? ' nw' : ''}"><span class="hl-n">${i + 1}</span>${eq ? '' : `<span class="why">${esc(s.why)}</span>`}${staticHTML(s.prompt, s.sol)}</li>`).join('')}</ol>` : '';
   const col = C ? `<div class="hl-col">${colView(C, upto, lag, { peek: true }).html}</div>` : '';
-  return `<div class="hl-ctx${C ? ' with-col' : ''}">${head ? `<span class="hl-k">${esc(label)}</span>${staticHTML(q || it.prompt, null)}` : ''}${C && pic ? `<div class="hl-cp">${col}${pic}</div>` : C ? col : pic}${list}</div>`;
+  const chs = head && it.choices ? `<span class="hl-chs">${it.choices.map((ch) => staticHTML(ch, null)).join('<i>·</i>')}</span>` : '';   /* 고르기 문제 — 보기도 함께(처음 보는 눈 9차) */
+  return `<div class="hl-ctx${C ? ' with-col' : ''}">${head ? `<span class="hl-k">${esc(label)}</span>${staticHTML(q || it.prompt, null)}${chs}` : ''}${C && pic ? `<div class="hl-cp">${col}${pic}</div>` : C ? col : pic}${list}</div>`;
 }
 export const colFor = (it, steps) => { try { return colOf(it, steps); } catch (e) { return null; } };
 // 그림 틀(engine/hints/pics.js · 11-13 방향 차례 1) — 문제의 수로 그린 그림 · i = −1 떠올리기 · 0…n−1 그 단계(지금 할 칸이 노랑) · n 처음 문제로 돌아옴 · 없으면 ''
