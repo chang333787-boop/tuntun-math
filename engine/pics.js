@@ -87,42 +87,59 @@ export function share({ total, groups: d, on = 0, label = '' }) {
 // ── 분수 띠 ── 똑같이 나눈 띠에 칸 색칠
 //  rows = [{ d, segs: [{ n, k }], min, pre, preX, sub, lab }]
 //    segs = 왼쪽부터 이어 칠할 칸 수와 색(k: 'a' 노랑 · 'b' 청록 · 'x' 덜어 낸 칸) · 띠 하나(1)를 넘으면 다음 띠로 · min = 적어도 그릴 띠 수
-//    pre = 띠 앞에 놓는 온전한 하나(자연수 부분) 개수 · preX = 그 가운데 덜어 낸 개수(뒤에서부터) · sub = 한 칸을 다시 나눈 수(점선)
+//    pre = 띠 앞에 놓는 온전한 하나(자연수 부분) 개수 — 분수 띠와 같은 길이의 다 칠한 띠로 · preX = 그 가운데 덜어 낸 개수(뒤에서부터) · sub = 한 칸을 다시 나눈 수(점선)
 //    lab = 왼쪽 글(분수 [n, d] · 대분수 [w, n, d] · 글자) · top = 첫 띠 위에 얹는 글('1시간 = 60분')
 export function bars({ rows = [], top = '', label = '' }) {
   if (!rows.length) return '';
   const LW = rows.some((q) => q.lab != null) ? 52 : 0, AW = 436 - LW;
   const tot = (q) => (q.segs || []).reduce((a, sg) => a + sg.n, 0), wholes = (q) => Math.max(q.min || 1, Math.ceil(tot(q) / q.d) || 1);
   const Wn = Math.max(...rows.map(wholes)), Pn = Math.max(0, ...rows.map((q) => q.pre || 0));
-  /* 온전한 하나를 분수 띠와 같은 길이 띠로(1과 1/7의 크기가 맞게 — 처음 보는 눈 다섯 번 지적) · 띠가 넷(칸 10까지) · 셋(칸 16까지)을 넘으면 작은 '1' 네모로(칸이 너무 가늘어짐) */
-  const Tn = Math.max(...rows.map((q) => (q.pre || 0) + wholes(q))), full = Pn > 0 && ((Tn <= 3 && rows.every((q) => q.d <= 16)) || (Tn <= 4 && rows.every((q) => q.d <= 10)));
-  const rh = rows.length >= 3 ? 28 : 34, tl = Pn && !full ? Math.max(14, Math.min(rh, Math.floor((AW * 0.42) / Pn) - 4)) : 0, tilesW = Pn && !full ? Pn * (tl + 4) + 8 : 0;
-  const ww = full ? Math.min(210, Math.floor((AW - 8 * (Tn - 1)) / Tn)) : Math.min(Wn > 1 ? 210 : 290, Math.floor((AW - tilesW - 8 * (Wn - 1)) / Wn)), y0 = top ? 42 : 2, bx = 2 + LW + tilesW;
   const frac = (cx, cy, n, d, size = 14) => T(cx, cy - 4, n, size) + `<path d="M${r1(cx - 9)} ${r1(cy)} H${r1(cx + 9)}" class="p-ln th"/>` + T(cx, cy + size, d, size);
   const cross = (x, y, w, h) => `<path d="M${r1(x + 3)} ${y + 4} L${r1(x + w - 3)} ${y + h - 4} M${r1(x + w - 3)} ${y + 4} L${r1(x + 3)} ${y + h - 4}" class="p-x"/>`;
+  const labAt = (q, cy) => (Array.isArray(q.lab) ? (q.lab.length === 3 ? T(14, cy + 6, q.lab[0], 17) + frac(34, cy, q.lab[1], q.lab[2], 13) : frac(24, cy, q.lab[0], q.lab[1])) : q.lab != null ? T(24, cy + 5, q.lab, 14) : '');
+  const kindsOf = (q) => { const ks = []; (q.segs || []).forEach((sg) => { for (let i = 0; i < sg.n; i++) ks.push(sg.k); }); return ks; };
+  /* 띠 하나(온전한 하나 = d칸) — kd(칸마다 색) · 점선 sub */
+  const bar = (q, x, y, w, h, kd) => {
+    let g = '';
+    for (let i = 0; i < q.d; i++) {
+      const k = kd(i), cx = x + (i * w) / q.d;
+      g += `<rect x="${r1(cx)}" y="${y}" width="${r1(w / q.d)}" height="${h}" class="cell${k === 'a' || k === 'x' ? ' on' : k === 'b' ? ' b' : ''}"/>${k === 'x' ? cross(cx, y, w / q.d, h) : ''}`;
+      if (q.sub > 1) for (let j = 1; j < q.sub; j++) g += `<path d="M${r1(cx + (w / q.d) * (j / q.sub))} ${y + 2} V${y + h - 2}" class="p-ln da th"/>`;
+    }
+    return g;
+  };
+  const say = (q) => `${q.pre ? `온전한 하나 ${q.pre}개와 ` : ''}${q.d}칸으로 나눈 띠에 ${tot(q)}칸 색칠`;
+  if (Pn > 0) {
+    /* 대분수(온전한 하나가 있는 줄) — 온전한 하나도 분수 띠와 똑같은 길이의 띠(교사 11-14 '1하고 분수 부분 전체하고 크기가 다르잖아 · 분수에서 중요한 건데')
+       한 수의 띠가 한 줄에 다 들어가면(넷까지 · 칸 4px 넘게) 한 줄 · 아니면 한 줄에 K개씩 다음 줄로 · 덜어 낸 하나는 띠째 ✕ */
+    const n = rows.map((q) => (q.pre || 0) + wholes(q)), D = Math.max(...rows.map((q) => q.d)), GAP = 8;
+    const wOf = (k) => Math.min(210, Math.floor((AW - 8 * (k - 1)) / k)), linesOf = (k) => n.reduce((a, m) => a + Math.ceil(m / k), 0);
+    let K = Math.max(...n);
+    if (!(K <= 4 && wOf(K) / D >= 4)) K = [2, 3, 4, 5, 6].find((k) => linesOf(k) * 40 + (rows.length - 1) * GAP <= 192) || 6;
+    K = Math.min(K, Math.max(...n));
+    /* 줄이 많으면 띠를 낮게(도움 화면에서 그림이 커져 단계 칸이 크롬북 768 밑으로 밀리지 않게) */
+    const NL = linesOf(K), rh = NL <= 2 ? 30 : NL <= 3 ? 22 : 18, LH = rh + (NL <= 2 ? 10 : 6), ww = wOf(K), bx = 2 + LW;
+    let s = '', y = 2;
+    rows.forEach((q, r) => {
+      const ks = kindsOf(q), pre = q.pre || 0, gone = (i) => i >= pre - (q.preX || 0);
+      s += labAt(q, y + rh / 2);
+      for (let t = 0; t < n[r]; t++) {
+        const x = bx + (t % K) * (ww + 8), yy = y + Math.floor(t / K) * LH;
+        if (t < pre) s += bar(q, x, yy, ww, rh, () => 'a') + (gone(t) ? cross(x, yy, ww, rh) : '');
+        else { const w = t - pre; s += bar(q, x, yy, ww, rh, (i) => ks[w * q.d + i]); }
+      }
+      y += Math.ceil(n[r] / K) * LH + (r < rows.length - 1 ? GAP : 0);
+    });
+    return wrap(bx + K * (ww + 8) - 6, y - (LH - rh) + 2, label || rows.map(say).join(' · '), s);
+  }
+  const rh = rows.length >= 3 ? 28 : 34, ww = Math.min(Wn > 1 ? 210 : 290, Math.floor((AW - 8 * (Wn - 1)) / Wn)), y0 = top ? 42 : 2, bx = 2 + LW;
   let s = top ? brace(bx, bx + ww, 18, top) : '';
   rows.forEach((q, k) => {
-    const y = y0 + k * (rh + 12), cw = ww / q.d, cy = y + rh / 2;
-    if (Array.isArray(q.lab)) s += q.lab.length === 3 ? T(14, cy + 6, q.lab[0], 17) + frac(34, cy, q.lab[1], q.lab[2], 13) : frac(24, cy, q.lab[0], q.lab[1]);
-    else if (q.lab != null) s += T(24, cy + 5, q.lab, 14);
-    if (full) for (let i = 0; i < (q.pre || 0); i++) {   /* 온전한 하나 = 다 칠한 띠 한 줄 · 덜어 낸 하나는 띠째 ✕ */
-      const x = bx + i * (ww + 8), gone = i >= (q.pre || 0) - (q.preX || 0);
-      for (let j = 0; j < q.d; j++) s += `<rect x="${r1(x + (j * ww) / q.d)}" y="${y}" width="${r1(ww / q.d)}" height="${rh}" class="cell on"/>`;
-      if (gone) s += cross(x, y, ww, rh);
-    }
-    for (let i = 0; i < (full ? 0 : q.pre || 0); i++) {
-      const x = 2 + LW + i * (tl + 4), gone = i >= (q.pre || 0) - (q.preX || 0);
-      s += `<rect x="${x}" y="${y}" width="${tl}" height="${rh}" class="cell on"/>${tl >= 16 ? T(x + tl / 2, y + rh / 2 + 5, 1, 14, '', 'middle', true) : ''}${gone ? cross(x, y, tl, rh) : ''}`;   /* 온전한 하나에 '1' — 분수 띠 한 칸과 크기가 달라도 1로 읽히게 */
-    }
-    const kinds = []; (q.segs || []).forEach((sg) => { for (let i = 0; i < sg.n; i++) kinds.push(sg.k); });
-    for (let w = 0; w < wholes(q); w++) for (let i = 0; i < q.d; i++) {
-      const kd = kinds[w * q.d + i], x = bx + ((full ? q.pre || 0 : 0) + w) * (ww + 8) + i * cw;
-      s += `<rect x="${r1(x)}" y="${y}" width="${r1(cw)}" height="${rh}" class="cell${kd === 'a' || kd === 'x' ? ' on' : kd === 'b' ? ' b' : ''}"/>${kd === 'x' ? cross(x, y, cw, rh) : ''}`;
-      if (q.sub > 1) for (let j = 1; j < q.sub; j++) s += `<path d="M${r1(x + (cw * j) / q.sub)} ${y + 2} V${y + rh - 2}" class="p-ln da th"/>`;
-    }
+    const y = y0 + k * (rh + 12), ks = kindsOf(q);
+    s += labAt(q, y + rh / 2);
+    for (let w = 0; w < wholes(q); w++) s += bar(q, bx + w * (ww + 8), y, ww, rh, (i) => ks[w * q.d + i]);
   });
-  const say = (q) => `${q.pre ? `온전한 하나 ${q.pre}개와 ` : ''}${q.d}칸으로 나눈 띠에 ${tot(q)}칸 색칠`;
-  return wrap(bx + (full ? Tn : Wn) * (ww + 8) - 6, y0 + rows.length * (rh + 12) - 10, label || rows.map(say).join(' · '), s);
+  return wrap(bx + Wn * (ww + 8) - 6, y0 + rows.length * (rh + 12) - 10, label || rows.map(say).join(' · '), s);
 }
 
 // ── 눈금 ── 수직선(min~max) · ticks = [{ v, big, lab }] · marks = [{ v, lab }](깃발 · dot이면 선 위에 점만 — open이면 ○) · arcs = [{ a, b, da(점선 — 넘어감), lab }] 뛰어 세기 · gap = [a, b] 굵게 칠할 사이
