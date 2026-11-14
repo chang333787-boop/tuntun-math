@@ -102,7 +102,7 @@ export function kidSheet({ C = '', ...args }) { ssSet(PRE, kidPreset(args)); go(
 //  고르고 뺄 때는 그 카드의 꼬리표만 바꿈(목록을 다시 그리지 않음) — 크롬북 흉내(CPU 4배 느리게)에서 탭 바꾸기 · 첫 화면 0.3초 안
 const EXH = new Map();
 const NUM = ['①', '②', '③', '④', '⑤'];
-const inline = (h) => h.replace(/<div class="pic">/g, '<span class="pic">').replace(/<\/div>/g, '</span>');   /* 카드 = 단추 하나라 안에 div X(그림 칸만 div) */
+const inline = (h) => h.replace(/<div class="pic( fig)?">/g, '<span class="pic$1">').replace(/<\/div>/g, '</span>');   /* 카드 = 단추 하나라 안에 div X(그림 칸만 div) */
 function exHTML(s) {
   if (EXH.has(s.id)) return EXH.get(s.id);
   let xs = []; try { xs = examplesOf(s); } catch (e) { xs = []; }

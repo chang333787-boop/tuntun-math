@@ -11,8 +11,23 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 
 const chHTML = (it, mark = null) => `<div class="ch">${it.choices.map((ch, k) => `<span class="${mark === k ? 'on' : ''}">${NUM[k]} ${toHTML(ch, { static: true })}</span>`).join('')}</div>`;
 let CHK = false;   /* 실수가 잦은 아이 — 문제마다 '확인' 동그라미(풀고 거꾸로 계산해서 확인하면 ✓) */
-const qHTML = (it, i) => { const long = toText(it.prompt).length > 22; return `<div class="q"><span class="n">${i + 1}</span>${CHK ? '<span class="ck"><i></i>확인</span>' : ''}<div class="p${long ? ' long' : ''}">${toHTML(it.prompt, { static: true })}</div>${it.choices ? chHTML(it) : ''}</div>`; };
-const exHTML = (it) => `<div class="ex"><b>보기</b><div>${toHTML(it.prompt, { static: true, vals: it.choices ? null : it.sol })}${it.choices ? chHTML(it, Number(it.sol[0])) : ''}</div></div>`;
+/* 문제 속 도형 그림(측정 — 문제 조각의 fig)은 글 옆(오른쪽)에 따로 — 그림을 글 위에 쌓으면 칸이 넘쳐 60%까지 줄어 그림 속 길이 글자가 못 읽게 작아졌음 */
+const figAt = (it) => (it.prompt || []).findIndex((t) => t && typeof t === 'object' && t.fig);
+const noFig = (it, k) => (k < 0 ? it.prompt : it.prompt.filter((_, j) => j !== k));
+/* 그림은 좌표 1에 0.2 mm로 찍음(길이 글자 8.5pt) — 폭 wmm · 높이 hmm를 넘는 그림만 그만큼 줄임(가장 큰 그림도 7pt) · 칸이 넘치면 --k로 같이 줄어듦 */
+const figHTML = (it, k, wmm = 42, hmm = 27) => {
+  if (k < 0) return '';
+  const html = toHTML([it.prompt[k]], { static: true }), m = /viewBox="0 0 ([\d.]+) ([\d.]+)"/.exec(html);
+  if (!m) return html;
+  const f = Math.min(0.2, wmm / m[1], hmm / m[2]);
+  return html.replace('<svg ', `<svg style="width:calc(${(m[1] * f).toFixed(1)}mm * var(--k,1))" `);
+};
+const qHTML = (it, i) => {
+  const k = figAt(it), long = k >= 0 || toText(it.prompt).length > 22;
+  const body = `<div class="p${long ? ' long' : ''}">${toHTML(noFig(it, k), { static: true })}</div>${it.choices ? chHTML(it) : ''}`;
+  return `<div class="q${k < 0 ? '' : ' qf'}"><span class="n">${i + 1}</span>${CHK ? '<span class="ck"><i></i>확인</span>' : ''}${k < 0 ? body : `<div class="qt">${body}</div>${figHTML(it, k, 42, CHK ? 21 : 27)}`}</div>`;
+};
+const exHTML = (it) => { const k = figAt(it); return `<div class="ex${k < 0 ? '' : ' exf'}"><b>보기</b><div>${toHTML(noFig(it, k), { static: true, vals: it.choices ? null : it.sol })}${it.choices ? chHTML(it, Number(it.sol[0])) : ''}</div>${figHTML(it, k, 60, 24)}</div>`; };
 const hasB = (t) => t && typeof t === 'object' && ('b' in t || ['f', 'm'].some((k) => Array.isArray(t[k]) && t[k].some((x) => x && typeof x === 'object' && 'b' in x)));
 /* 정답 = 빈칸이 든 토막만 값을 채워 글로(분수는 17/18 · 대분수는 1 5/18 — 쉼표로 늘어놓으면 '1, 5, 18'로 읽힘 · 11-07) */
 const ansText = (it) => (it.choices ? `${NUM[Number(it.sol[0])]} ${toText(it.choices[Number(it.sol[0])] || [])}` : (it.prompt || []).filter(hasB).map((t) => toText([t], it.sol)).join(', ') || it.sol.join(', '));

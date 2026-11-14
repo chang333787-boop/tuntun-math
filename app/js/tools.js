@@ -145,7 +145,7 @@ export function nextStep(box, { it, vals = [], c, bug = null, idk = false, onSel
     p.insertBefore(p.querySelector('.toolbox'), a);
     return 'tool';
   }
-  let st = null; try { st = (stepsOf({ c: it.c || c, p: it.p }) || [])[0] || null; } catch (e) { st = null; }
+  let st = null; try { st = (stepsOf({ c: it.c || c, p: it.p, prompt: it.prompt }) || [])[0] || null; } catch (e) { st = null; }
   const rule = st ? '' : ruleFor(c, it);
   seen = true;
   p.innerHTML = `<p>${idk ? '' : '아직 아니에요. '}${ansSay(it)}${after ? ` ${esc(after)}` : ''}</p>${st ? `<p class="small">다음엔 이렇게 시작해요 — <b>${esc(st.why)}</b></p><ol class="steps">${stepHTML(st)}</ol>` : rule ? `<p class="small">다음엔 — ${esc(rule)}</p>` : ''}`;

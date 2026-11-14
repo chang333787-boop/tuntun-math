@@ -2,6 +2,8 @@
 //   근거와 오답 꼴은 docs/research/E5_measure.md(조사 11-08) — 시간 계산 오답은 수와 연산 받아올림 · 받아내림 오답의 60진법판
 //   가려내는 수: 시간 뺄셈은 분의 차가 30이 아니게(큰 수 − 작은 수와 시 안 줄임이 같은 답) · km는 m를 한 자리로(두 자리면 이어 쓰기 = 1 km를 100 m로)
 import { nums, B, J, P } from '../concepts/kit.js';
+import { picSVG } from '../pics.js';
+import { figOf, FIGK } from '../figs.js';
 
 // 시간 두 칸(큰 단위 · 작은 단위) — 단위 이름표 하나로 시 · 분과 분 · 초를 같이 씀
 const TU = {
@@ -159,54 +161,57 @@ const genBigCalc = (u) => (r) => {
 // ── 4-1-2 각도 — 각도도 수처럼 더하고 뺌 · 직선 180° · 한 바퀴 360° · 삼각형 세 각 180° · 사각형 네 각 360°(조사 E5 단계 2 · A4 180/360 섞임)
 //   각은 5° 단위 · 직선의 각을 90°로 보는 답은 한 각이 90°보다 작을 때만 셈
 const deg = (x) => `${x}°`;
+/* 문제 속 도형 그림(engine/figs.js) — 각도 · 길이를 그림에서 읽음(구하는 각은 ㉠) · 그림에 적힌 수는 alt로 글에도 남음 · 못 그리는 수면 null → 글 문제 그대로 */
+const figTok = (id, p) => { const f = figOf(id, p), svg = f ? picSVG(f.spec, FIGK) : ''; return svg ? { svg, alt: f.alt, fig: 1 } : null; };
 const m5 = (r, lo, hi) => r.int(lo / 5, hi / 5) * 5;
 function angMake(p) {
   if (p.v === 'add') return nums([`${deg(p.a)} + ${deg(p.b)} = `, B(0), '°'], p.a + p.b, {});
   if (p.v === 'sub') return nums([`${deg(p.a)} − ${deg(p.b)} = `, B(0), '°'], p.a - p.b, {});
-  if (p.v === 'line') return nums([`직선을 두 각으로 나누었어요. 한 각이 ${deg(p.a)}이면 다른 한 각은 `, B(0), '°예요.'], 180 - p.a, {
+  const f = figTok('4-1-2:5', p);
+  if (p.v === 'line') return nums(f ? [f, '직선을 두 각으로 나누었어요. ㉠은 ', B(0), '°예요.'] : [`직선을 두 각으로 나누었어요. 한 각이 ${deg(p.a)}이면 다른 한 각은 `, B(0), '°예요.'], 180 - p.a, {
     bugs: [{ test: (v) => p.a < 90 && v[0] === 90 - p.a, name: '직선이 이루는 각을 90°로 봄', to: null }, { test: (v) => v[0] === 360 - p.a, name: '직선이 이루는 각을 360°로 봄', to: null }],
   });
-  return nums([`한 점을 둘러싼 한 바퀴를 두 각으로 나누었어요. 한 각이 ${deg(p.a)}이면 다른 한 각은 `, B(0), '°예요.'], 360 - p.a, {
+  return nums(f ? [f, '한 바퀴를 두 각으로 나누었어요. ㉠은 ', B(0), '°예요.'] : [`한 점을 둘러싼 한 바퀴를 두 각으로 나누었어요. 한 각이 ${deg(p.a)}이면 다른 한 각은 `, B(0), '°예요.'], 360 - p.a, {
     bugs: [{ test: (v) => p.a < 180 && v[0] === 180 - p.a, name: '한 바퀴를 180°로 봄', to: null }],
   });
 }
 function triMake(p) {
-  const s = p.a + p.b;
-  return nums([`삼각형의 두 각이 ${deg(p.a)}, ${deg(p.b)}${P(deg(p.b), '이에요', '예요')}. 나머지 한 각은 `, B(0), '°예요.'], 180 - s, {
+  const s = p.a + p.b, f = figTok('4-1-2:7', p);
+  return nums(f ? [f, '삼각형에서 ㉠은 ', B(0), '°예요.'] : [`삼각형의 두 각이 ${deg(p.a)}, ${deg(p.b)}${P(deg(p.b), '이에요', '예요')}. 나머지 한 각은 `, B(0), '°예요.'], 180 - s, {
     bugs: [{ test: (v) => v[0] === 360 - s, name: '삼각형의 세 각의 합을 360°로 봄', to: null },
       { test: (v) => v[0] === s, name: '두 각을 더하기만 함', to: null },
       { test: (v) => v[0] === 180 - p.a || v[0] === 180 - p.b, name: '한 각만 뺌', to: null }],
   });
 }
 function quadMake(p) {
-  const s = p.a + p.b + p.c;
-  return nums([`사각형의 세 각이 ${deg(p.a)}, ${deg(p.b)}, ${deg(p.c)}${P(deg(p.c), '이에요', '예요')}. 나머지 한 각은 `, B(0), '°예요.'], 360 - s, {
+  const s = p.a + p.b + p.c, f = figTok('4-1-2:8', p);
+  return nums(f ? [f, '사각형에서 ㉠은 ', B(0), '°예요.'] : [`사각형의 세 각이 ${deg(p.a)}, ${deg(p.b)}, ${deg(p.c)}${P(deg(p.c), '이에요', '예요')}. 나머지 한 각은 `, B(0), '°예요.'], 360 - s, {
     bugs: [{ test: (v) => v[0] === s, name: '세 각을 더하기만 함', to: null },
       { test: (v) => v[0] === s - 180, name: '사각형의 네 각의 합을 삼각형처럼 180°로 봄', to: '4-1-2:7' }],
   });
 }
 // ── 5-1-6:6 평행사변형 · 5-1-6:7 삼각형의 넓이 — 높이 대신 다른 한 변을 곱함(Ar4) · 평행사변형에 ÷2 · 삼각형에 ÷2 빠뜨림(Ar5) — 조사 E5 단계 1-7
 function paraMake(p) {
-  const ans = p.a * p.h;
-  return nums([`밑변이 ${p.a} cm, 높이가 ${p.h} cm, 다른 한 변이 ${p.s} cm인 평행사변형의 넓이는 `, B(0), ' cm²예요.'], ans, {
+  const ans = p.a * p.h, f = figTok('5-1-6:6', p);
+  return nums(f ? [f, '평행사변형의 넓이는 ', B(0), ' cm²예요.'] : [`밑변이 ${p.a} cm, 높이가 ${p.h} cm, 다른 한 변이 ${p.s} cm인 평행사변형의 넓이는 `, B(0), ' cm²예요.'], ans, {
     bugs: [{ test: (v) => v[0] === p.a * p.s, name: '높이 대신 다른 한 변을 곱함', to: null },
       { test: (v) => v[0] * 2 === ans, name: '삼각형처럼 2로 나눔', to: null },
       { test: (v) => v[0] === 2 * (p.a + p.s), name: '넓이 대신 둘레를 구함', to: '5-1-6:4' }],
   });
 }
 function triAreaMake(p) {
-  const ans = (p.a * p.h) / 2;
-  return nums([`밑변이 ${p.a} cm, 높이가 ${p.h} cm${p.s ? `, 다른 한 변이 ${p.s} cm` : ''}인 삼각형의 넓이는 `, B(0), ' cm²예요.'], ans, {
+  const ans = (p.a * p.h) / 2, f = figTok('5-1-6:7', p);
+  return nums(f ? [f, '삼각형의 넓이는 ', B(0), ' cm²예요.'] : [`밑변이 ${p.a} cm, 높이가 ${p.h} cm${p.s ? `, 다른 한 변이 ${p.s} cm` : ''}인 삼각형의 넓이는 `, B(0), ' cm²예요.'], ans, {
     bugs: [{ test: (v) => v[0] === p.a * p.h, name: '2로 나누지 않음', to: '5-1-6:6' },
       { test: (v) => !!p.s && (v[0] === (p.a * p.s) / 2 || v[0] === p.a * p.s), name: '높이 대신 다른 한 변을 씀', to: null }],
   });
 }
 // ── 6-1-6 직육면체의 부피 · 겉넓이 — 같은 상자에 두 속성(V2 부피 ↔ 겉넓이 · 세 면만 · 한 면 × 6) — 조사 E5 단계 1-8
 const boxOf = (p) => ({ V: p.a * p.b * p.c, S: 2 * (p.a * p.b + p.b * p.c + p.a * p.c) });
-const boxHead = (p, what) => `가로 ${p.a} cm, 세로 ${p.b} cm, 높이 ${p.c} cm인 직육면체의 ${what}${P(what, '은', '는')} `;
+const boxHead = (id, p, what) => { const f = figTok(id, p); return f ? [f, `직육면체의 ${what}${P(what, '은', '는')} `] : [`가로 ${p.a} cm, 세로 ${p.b} cm, 높이 ${p.c} cm인 직육면체의 ${what}${P(what, '은', '는')} `]; };
 function volMake(p) {
   const { V, S } = boxOf(p);
-  return nums([boxHead(p, '부피'), B(0), ' cm³예요.'], V, {
+  return nums([...boxHead('6-1-6:3', p, '부피'), B(0), ' cm³예요.'], V, {
     bugs: [{ test: (v) => v[0] === S, name: '부피 대신 겉넓이를 구함', to: null },
       { test: (v) => v[0] === p.a + p.b + p.c, name: '세 모서리를 더함', to: null },
       { test: (v) => v[0] === p.a * p.b || v[0] === p.b * p.c || v[0] === p.a * p.c, name: '한 면의 넓이만 구함', to: '5-1-6:4' }],
@@ -214,7 +219,7 @@ function volMake(p) {
 }
 function surfMake(p) {
   const { V, S } = boxOf(p);
-  return nums([boxHead(p, '겉넓이'), B(0), ' cm²예요.'], S, {
+  return nums([...boxHead('6-1-6:5', p, '겉넓이'), B(0), ' cm²예요.'], S, {
     bugs: [{ test: (v) => v[0] === V, name: '겉넓이 대신 부피를 구함', to: null },
       { test: (v) => v[0] * 2 === S, name: '세 면만 더함(마주 보는 면을 빠뜨림)', to: null },
       { test: (v) => v[0] === 6 * p.a * p.b, name: '한 면의 넓이에 6을 곱함', to: null }],
@@ -380,7 +385,7 @@ export default {
     {
       id: '6-1-6:3', name: '직육면체의 부피', kid: '직육면체의 부피', s: 'ME', sec: 25,
       gen: genBox, make: volMake,
-      steps: (p) => [{ c: 'MUL', p: { a: p.a, b: p.b }, why: '먼저 밑면의 넓이(가로 × 세로)를 구해요.' }, { c: 'MUL', p: { a: p.a * p.b, b: p.c }, why: '밑면 위에 높이만큼 쌓여 있어요. 밑면의 넓이 × 높이를 구해요.' }],
+      steps: (p) => [{ c: 'MUL', p: { a: p.a, b: p.b }, why: '먼저 맨 아래 한 층에 놓인 쌓기나무 수(가로 × 세로)를 구해요.' }, { c: 'MUL', p: { a: p.a * p.b, b: p.c }, why: '이런 층이 높이만큼 쌓여 있어요. 한 층의 수 × 높이를 구해요.' }],
       prev: null, pre: ['3-1-4:5', '3-2-1:4'],
       hint: '부피는 1 cm³ 쌓기나무가 몇 개 들어가는지예요. 가로 × 세로 × 높이로 구해요. 가로 5 cm, 세로 3 cm, 높이 4 cm면 5 × 3 × 4 = 60 cm³예요.',
       tip: '쌓기나무로 한 층(가로 × 세로)을 만들고 높이만큼 쌓아 보여 줘요. 겉넓이를 구하거나 세 모서리를 더하는지 봐요.',
@@ -389,9 +394,9 @@ export default {
       id: '6-1-6:5', name: '직육면체의 겉넓이', kid: '직육면체의 겉넓이', s: 'ME', sec: 35,
       gen: genBox, make: surfMake,
       steps: (p) => [
-        { c: 'MUL', p: { a: p.a, b: p.b }, why: '가로 × 세로인 면의 넓이를 구해요.' },
-        { c: 'MUL', p: { a: p.b, b: p.c }, why: '세로 × 높이인 면의 넓이를 구해요.' },
-        { c: 'MUL', p: { a: p.a, b: p.c }, why: '가로 × 높이인 면의 넓이를 구해요.' },
+        { c: 'MUL', p: { a: p.a, b: p.b }, why: '윗면(가로 × 세로)의 넓이를 구해요.' },
+        { c: 'MUL', p: { a: p.b, b: p.c }, why: '옆면(세로 × 높이)의 넓이를 구해요.' },
+        { c: 'MUL', p: { a: p.a, b: p.c }, why: '앞면(가로 × 높이)의 넓이를 구해요.' },
         { c: 'ADD', p: { a: p.a * p.b, b: p.b * p.c }, why: '서로 다른 세 면의 넓이를 더해요. 먼저 두 면을 더해요.' },
         { c: 'ADD', p: { a: p.a * p.b + p.b * p.c, b: p.a * p.c }, why: '세 번째 면도 더해요.' },
         { c: 'MUL', p: { a: p.a * p.b + p.b * p.c + p.a * p.c, b: 2 }, why: '마주 보는 면이 하나씩 더 있어요. 세 면의 합을 2배 해요.' },

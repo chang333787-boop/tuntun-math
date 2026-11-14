@@ -1,5 +1,5 @@
 {
- "v": "05430b0cacb0",
+ "v": "ebf19331cef1",
  "files": [
   "css/app.css",
   "js/ai.js",
@@ -44,6 +44,7 @@
   "../engine/concepts/ratio.js",
   "../engine/engine.js",
   "../engine/errors.js",
+  "../engine/figs.js",
   "../engine/hints/index.js",
   "../engine/hints/mdf.js",
   "../engine/hints/me.js",

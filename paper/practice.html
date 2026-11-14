@@ -32,6 +32,13 @@ body{margin:0;background:#e9e4dc;color:#1f1b16;font:12pt/1.5 'Noto Sans KR','App
 .ch .on{border:1.6px solid var(--c);border-radius:99px;padding:0 2.5mm}
 .pic{display:flex;justify-content:center}.pic svg{max-height:calc(20mm * var(--k,1));max-width:100%;height:auto;width:auto}
 .pic .dot{fill:#444}.pic .grp{fill:none;stroke:#555;stroke-width:2;stroke-dasharray:4 3}.pic .cell{fill:#fff;stroke:#222;stroke-width:2}.pic .cell.on{fill:#9a9a9a}
+/* 문제 속 도형 그림(측정) · 선 · 점선(높이) · 가는 선(직각 표시 · 각 표시) · 글자 — 흑백으로 · 칸이 넘치면 다른 것과 같이 줄어듦(--k) */
+.pic .p-ln{fill:none;stroke:#222;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.pic .p-ln.th{stroke-width:1.2}.pic .p-ln.da{stroke:#555;stroke-width:1.6;stroke-dasharray:3 3}.pic .p-t{fill:#111}.pic.fig svg{height:auto;max-height:none;max-width:100%}
+/* 도형 그림이 든 칸 — 번호 · 글은 왼쪽, 그림은 오른쪽(칸 높이를 다 씀) · 확인 동그라미가 있으면 그림을 그 아래로 */
+.q.qf{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto minmax(0,1fr);grid-template-areas:"n f" "t f";column-gap:3mm;align-items:center}
+.q.qf .n{grid-area:n;align-self:start}.q.qf .qt{grid-area:t;display:flex;flex-direction:column;gap:calc(2mm * var(--k,1));min-width:0}.q.qf>.pic{grid-area:f}
+.q.qf .ck~.pic{align-self:end}
+.ex.exf>.pic{margin-left:auto}
 .tx.kr{letter-spacing:-.2px}
 /* 분수 · 대분수(11-07 — 이 쪽엔 빠져 있어 5/8이 '58'로 인쇄되던 것 · 점검지 paper.css와 같은 모양) */
 .fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 1mm;line-height:1.05}.fr-t{border-bottom:1.6px solid currentColor;padding:0 1.2mm .6mm;min-width:5mm;text-align:center}.fr-b{padding:.6mm 1.2mm 0;min-width:5mm;text-align:center}

@@ -3,7 +3,7 @@
 //   {f:[위, 아래]}    분수 — 위·아래는 수 또는 {b:i}(빈칸)
 //   {m:[자연수, 위, 아래]} 대분수
 //   {b:i}             수 빈칸 (i번째 답)
-//   {svg:'<svg…>'}    그림
+//   {svg:'<svg…>'}    그림 — alt: 그림에 적힌 수를 글로(글로만 보는 곳 · 읽어 주기) · fig: 문제의 일부인 도형 그림(크게 · 도움 그림이 그 자리에서 바뀜)
 //   {br:1}            줄 바꿈
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -51,7 +51,7 @@ function tokHTML(t, opt) {
   if ('f' in t) return `<span class="fr"><span class="fr-t">${partHTML(t.f[0], opt)}</span><span class="fr-b">${partHTML(t.f[1], opt)}</span></span>`;
   if ('m' in t) return `<span class="mx">${partHTML(t.m[0], opt)}<span class="fr"><span class="fr-t">${partHTML(t.m[1], opt)}</span><span class="fr-b">${partHTML(t.m[2], opt)}</span></span></span>`;
   if ('b' in t) return blankHTML(t.b, opt, t.ph);
-  if ('svg' in t) return `<div class="pic">${t.svg}</div>`;
+  if ('svg' in t) return `<div class="pic${t.fig ? ' fig' : ''}">${t.svg}</div>`;
   if ('br' in t) return '<span class="br"></span>';
   return '';
 }
@@ -69,7 +69,7 @@ export function toText(tokens, vals) {
     if ('f' in t) return `${partText(t.f[0], vals)}/${partText(t.f[1], vals)}`;
     if ('m' in t) return `${partText(t.m[0], vals)} ${partText(t.m[1], vals)}/${partText(t.m[2], vals)}`;
     if ('b' in t) return partText(t, vals);
-    if ('svg' in t) return '[그림]';
+    if ('svg' in t) return t.alt ? `[그림] ${t.alt}. ` : '[그림]';
     if ('br' in t) return ' ';
     return '';
   }).join('').replace(/\s+/g, ' ').trim();

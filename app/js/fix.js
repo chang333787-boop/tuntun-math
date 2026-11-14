@@ -44,7 +44,13 @@ function example(F, r) {
   F.used.push(JSON.stringify([it.prompt, it.choices || null]));
   return { c: F.c, p: it.p, prompt: it.prompt, sol: it.sol, choices: it.choices || null };
 }
-export function stepsOf(it) { try { return workedSteps(it.c, it.p).map((s) => ({ why: s.why, c: s.c, prompt: s.item.prompt, sol: s.sol, p: s.item.p })); } catch (e) { return []; } }
+/* 단계 문제가 부모 문제와 똑같은 그림을 또 싣고 있으면(색칠하지 않은 부분 → 첫 단계 '색칠한 부분은 전체의 □/□') 단계에서는 뺌 — 단계는 부모 문제 바로 아래에 보이므로 같은 그림이 두 번 나와 크롬북 768에서 답 칸이 화면 밖으로 밀렸음 · 부모 문제 글(it.prompt)을 넘긴 곳에서만 */
+export function stepsOf(it) {
+  try {
+    const seen = new Set((it.prompt || []).filter((t) => t && t.svg).map((t) => t.svg));
+    return workedSteps(it.c, it.p).map((s) => ({ why: s.why, c: s.c, prompt: seen.size ? s.item.prompt.filter((t) => !(t && t.svg && seen.has(t.svg))) : s.item.prompt, sol: s.sol, p: s.item.p }));
+  } catch (e) { return []; }
+}
 export const hintOf = (c) => (byId[c] && (byId[c].hint || byId[c].tip)) || '';
 // 판자를 이름 대신 예시 문제로 부르기('10에서 빼기' 대신 '10 − 6 = □ 같은 문제' · 낮은 학년 이름이 크게 보이지 않게 · 혹평 11-01)
 //  같은 칸은 늘 같은 예(씨앗 고정) · 짧고 그림 없는 것 · 34자를 넘거나 그림뿐이면 '' (부르는 쪽이 이름으로)

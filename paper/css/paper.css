@@ -27,6 +27,8 @@
 .paper .mx{display:inline-flex;align-items:center;gap:.5mm}
 .paper .pic{display:flex;justify-content:center;margin:.5mm 0 1mm}.paper .pic svg{max-width:100%;width:auto;height:auto;max-height:15mm}.paper .ch .pic svg{max-height:11mm}
 .paper .pic .dot{fill:#555}.paper .pic .grp{fill:none;stroke:#555;stroke-width:2;stroke-dasharray:4 3}.paper .pic .cell{fill:#fff;stroke:#222;stroke-width:2}.paper .pic .cell.on{fill:#9a9a9a}
+/* 문제 속 도형 그림(측정 — engine/figs.js) · 선 · 점선(높이) · 가는 선(직각 표시 · 각 표시) · 글자 — 흑백으로 */
+.paper .pic .p-ln{fill:none;stroke:#222;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.paper .pic .p-ln.th{stroke-width:1.2}.paper .pic .p-ln.da{stroke:#555;stroke-width:1.6;stroke-dasharray:3 3}.paper .pic .p-t{fill:#111;font-family:'Jua','Noto Sans KR',sans-serif}.paper .pic.fig svg{max-height:26mm}
 .paper .ch{display:flex;gap:5mm;flex-wrap:wrap;margin-top:1mm;font-size:13pt}
 .paper .q.f-v,.paper .q.f-d,.paper .q.f-w{justify-content:flex-start;padding-top:3mm}
 .paper .vt{border-collapse:collapse;font-family:'Jua',sans-serif;font-size:17pt;margin:0 auto}

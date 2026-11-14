@@ -1,5 +1,5 @@
 // 그림 틀 — 문제의 수로 그리는 작은 SVG(방향 11-10 차례 1 · docs/direction_1110.md '그림 틀이 공통 병목')
-//  틀 여덟: split 가르기 띠 · tiles 똑같은 칸 · array 배열 · share 똑같이 나눈 묶음 · bars 분수 띠 · line 눈금(수직선 · 뛰어 세기) · clock 시계 · grid 모눈
+//  틀: split 가르기 띠 · tiles 똑같은 칸 · array 배열 · share 똑같이 나눈 묶음 · bars 분수 띠 · line 눈금(수직선 · 뛰어 세기) · clock 시계 · grid 모눈
 //  규칙: 그림은 읽거나 셀 수 있지만 답을 글자로 적지 않는다(10칸 틀과 같은 기준 — 마친 단계의 답만 그 칸에) · 색은 CSS 클래스(.p-* · .cell)로 · 폭 440 · 높이 170 안
 //  쓰는 곳: engine/hints/pics.js(차시 → 그림 설명 spec) → app/js/hint.js(도움 사다리). 여기는 spec → SVG 글자만(순수 함수 · DOM X)
 const X = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -206,9 +206,183 @@ export function eqbox({ heads = [], ops = [], vals = [], on = -1, label = '' }) 
   return wrap(x + 2, y + bh + 2, label, s);
 }
 
-const KINDS = { split, tiles, array, share, bars, line, clock, grid, place, eqbox };
+// ── 도형 그림(측정) ── 각 · 삼각형 · 사각형 · 넓이 도형 · 상자 — 문제 속 그림으로도 씀(engine/lessons/me.js · 길이와 각도를 그림에서 읽음)
+//  각도는 그 크기대로 그림 · 길이는 어림(큰 수일수록 길게 — 꼭 맞는 비율은 아님) · 도움 사다리에서는 같은 그림에 색만 얹음
+const RAD = Math.PI / 180, clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const pt = (p) => `${r1(p[0])} ${r1(p[1])}`;
+const polyD = (ps) => `M${ps.map(pt).join(' L')} Z`;
+/* 꼭짓점 V의 각 — 두 변 쪽 점 P · N 사이에 작은 호 + 각 안쪽에 글(좁은 각일수록 글이 멀리) · fill = 부채꼴 칠 */
+const cornerOf = (V, P, N) => {
+  const a1 = Math.atan2(P[1] - V[1], P[0] - V[0]), a2 = Math.atan2(N[1] - V[1], N[0] - V[0]);
+  let da = a2 - a1; while (da <= -Math.PI) da += 2 * Math.PI; while (da > Math.PI) da -= 2 * Math.PI;
+  return { a1, a2, da, at: (ang, len) => [V[0] + len * Math.cos(ang), V[1] + len * Math.sin(ang)] };
+};
+const cornerLab = (c, lab, r = 16) => c.at(c.a1 + c.da / 2, clamp((tw(lab, 15) / 2 + 6) / Math.tan(Math.min(Math.abs(c.da) / 2, 1.5)), r + 13, 82));
+function corner(V, P, N, lab, { r = 16, fill = '' } = {}) {
+  const c = cornerOf(V, P, N), { a1, a2, da, at } = c, arc = `${pt(at(a1, r))} A${r} ${r} 0 0 ${da > 0 ? 1 : 0} ${pt(at(a2, r))}`;
+  const sq = !fill && Math.abs(Math.abs(da) - Math.PI / 2) < 0.01, q1 = at(a1, 11), q2 = at(a2, 11);   /* 직각은 호 대신 네모 표시 */
+  let s = (fill ? `<path d="M${pt(V)} L${arc} Z" class="${fill}"/>` : '') + (sq ? `<path d="M${pt(q1)} L${pt([q1[0] + q2[0] - V[0], q1[1] + q2[1] - V[1]])} L${pt(q2)}" class="p-ln th"/>` : `<path d="M${arc}" class="p-ln th"/>`);
+  if (lab) { const [x, y] = cornerLab(c, lab, r); s += T(x, y + 5.5, lab, 15, '', 'middle', true); }
+  return s;
+}
+/* 각의 크기(도)로 삼각형 · 사각형 꼭짓점 — 밑변 1 · y는 위쪽 · 차례는 왼쪽 아래부터 시계 반대 방향 */
+function polyPts(angs) {
+  const [A, B, C] = angs.map((v) => v * RAD);
+  if (angs.length === 3) { const b = Math.sin(B) / Math.sin(C); return [[0, 0], [1, 0], [b * Math.cos(A), b * Math.sin(A)]]; }
+  let best = null;
+  for (let t = 0.3; t <= 3.01; t += 0.05) {   /* 오른쪽 변 길이를 바꿔 가며 네 변이 고른 모양을 고름 */
+    const e1 = 1 - t * Math.cos(B), e2 = t * Math.sin(B), det = Math.sin(A + B + C), sd = (e1 * Math.sin(B + C) + e2 * Math.cos(B + C)) / det, rd = (Math.cos(A) * e2 - Math.sin(A) * e1) / det;
+    if (!(sd > 0.2) || !(rd > 0.2)) continue;
+    const ps = [[0, 0], [1, 0], [1 - t * Math.cos(B), t * Math.sin(B)], [sd * Math.cos(A), sd * Math.sin(A)]], xs = ps.map((q) => q[0]), ys = ps.map((q) => q[1]);
+    const sc = Math.min(1, t, sd, rd) / Math.max(Math.max(...xs) - Math.min(...xs), (Math.max(...ys) - Math.min(...ys)) * 2);
+    if (!best || sc > best.sc) best = { sc, ps };
+  }
+  return best && best.ps;
+}
+const fitPts = (m, mw, mh, ox = 6, oy = 6) => {
+  const xs = m.map((q) => q[0]), ys = m.map((q) => q[1]), x0 = Math.min(...xs), y1 = Math.max(...ys), w = Math.max(...xs) - x0, h = y1 - Math.min(...ys), sc = Math.min(mw / w, mh / h);
+  return { ps: m.map(([x, y]) => [ox + (x - x0) * sc, oy + (y1 - y) * sc]), w: w * sc, h: h * sc };
+};
+
+// ── 각 ── kind 'line' = 직선을 두 각으로 · 'round' = 한 바퀴를 두 각으로 · a = 첫 각(도) · labs = 두 각에 적는 글 · whole = 두 각의 호 대신 직선 · 한 바퀴 전체를 도는 굵은 호 하나
+export function ang({ kind = 'line', a = 60, labs = [], whole = false, label = '' }) {
+  const round = kind === 'round';
+  if (!(a > 5) || a >= (round ? 355 : 175)) return '';
+  const L = round ? 66 : 96, dir = (deg, len) => [len * Math.cos(deg * RAD), -len * Math.sin(deg * RAD)], pts = [[0, 0], dir(0, round ? L : 118), dir(a, L)];
+  if (!round) pts.push(dir(180, 118));
+  const parts = [], arcOf = (from, span, r, cls) => `<path d="M${pt(dir(from, r))} A${r} ${r} 0 ${span > 180 ? 1 : 0} 0 ${pt(dir(from + span, r))}" class="${cls}"/>`;
+  const mark = (from, span, r, text) => {
+    if (!whole) parts.push(arcOf(from, span, r, 'p-ln th'));
+    if (!text) return;
+    const [x, y] = dir(from + span / 2, clamp((tw(text, 15) / 2 + 6) / Math.tan(Math.min(span / 2, 85) * RAD), (whole ? 32 : r) + 14, 84)), hw = tw(text, 15) / 2 + 2;
+    parts.push(T(x, y + 5.5, text, 15, '', 'middle', true)); pts.push([x - hw, y - 10], [x + hw, y + 10]);
+  };
+  mark(0, a, 22, labs[0] || ''); mark(a, (round ? 360 : 180) - a, round ? 31 : 15, labs[1] || '');
+  if (round) pts.push([-33, -33], [33, 33]);
+  if (whole) parts.push(round ? '<circle cx="0" cy="0" r="27" class="p-arc"/>' : arcOf(0, 180, 27, 'p-arc'));
+  const xs = pts.map((q) => q[0]), ys = pts.map((q) => q[1]), x0 = Math.min(...xs) - 6, y0 = Math.min(...ys) - 6, W = Math.max(...xs) - x0 + 6, H = Math.max(...ys) - y0 + 8;
+  const ray = (q) => `<path d="M0 0 L${pt(q)}" class="p-ln"/>`;
+  const body = (round ? ray(dir(0, L)) : `<path d="M${pt(dir(180, 118))} L${pt(dir(0, 118))}" class="p-ln"/>`) + ray(dir(a, L)) + parts.join('') + '<circle cx="0" cy="0" r="3" class="p-t"/>';
+  return wrap(W, H, label || `${round ? '한 바퀴를' : '직선을'} 두 각으로 나눈 그림${labs.filter(Boolean).length ? ` — ${labs.filter(Boolean).join(', ')}` : ''}`, `<g transform="translate(${r1(-x0)} ${r1(-y0)})">${body}</g>`);
+}
+
+/* 삼각형 · 사각형을 몇 번째 각부터 그릴지 — k0부터 차례로 돌려 보고, 납작하지 않고 각 글이 서로 · 변에 안 닿는 첫 자리(없으면 가장 나은 자리) · 문제와 도움 그림이 같은 자리를 씀 */
+const turned = (xs, k) => xs.map((_, i) => xs[(i + k) % xs.length]);
+function polyBad(angs) {
+  const m = polyPts(angs); if (!m) return 1e6;
+  const n = angs.length, { ps, w } = fitPts(m, 250, 122), side = (k) => Math.hypot(ps[(k + 1) % n][0] - ps[k][0], ps[(k + 1) % n][1] - ps[k][1]);
+  let bad = Math.max(0, 118 - w) * 2 + Math.max(0, 54 - Math.min(...ps.map((_, k) => side(k)))) * 2;
+  const bx = ps.map((V, k) => { const [x, y] = cornerLab(cornerOf(V, ps[(k + n - 1) % n], ps[(k + 1) % n]), '140°'); return [x - 19, y - 10, x + 19, y + 10]; });
+  const inside = ([x, y]) => ps.every((A, k) => { const B = ps[(k + 1) % n]; return (B[0] - A[0]) * (y - A[1]) - (B[1] - A[1]) * (x - A[0]) < 0.5; });   /* 화면 좌표(y 아래쪽)에서 시계 반대 방향 꼭짓점 → 안쪽은 음수 */
+  bx.forEach((b, i) => {
+    if (![[b[0], b[1]], [b[2], b[1]], [b[0], b[3]], [b[2], b[3]]].every(inside)) bad += 40;
+    for (let j = i + 1; j < n; j++) if (b[0] < bx[j][2] && bx[j][0] < b[2] && b[1] < bx[j][3] && bx[j][1] < b[3]) bad += 100;
+  });
+  return bad;
+}
+export function polyTurn(angs, k0 = 0) {
+  const n = angs.length; let best = 0, bv = Infinity;
+  for (let i = 0; i < n; i++) { const k = (k0 + i) % n, v = polyBad(turned(angs, k)); if (v === 0) return k; if (v < bv) { bv = v; best = k; } }
+  return best;
+}
+export const polyTurned = turned;
+// ── 삼각형 · 사각형(각) ── angs = 각의 크기(왼쪽 아래부터 시계 반대 방향) · labs = 각마다 적는 글 · diag = 사각형을 대각선으로 나눈 두 삼각형(두 색 · 각 글은 그대로)
+export function poly({ angs = [], labs = [], diag = false, label = '' }) {
+  const n = angs.length;
+  if ((n !== 3 && n !== 4) || Math.abs(angs.reduce((x, y) => x + y, 0) - (n - 2) * 180) > 0.5 || angs.some((v) => !(v > 5 && v < 175))) return '';
+  const m = polyPts(angs); if (!m) return '';
+  const { ps, w, h } = fitPts(m, 250, 122);
+  let s = '';
+  if (diag && n === 4) s += `<path d="${polyD([ps[0], ps[1], ps[2]])}" class="p-f2"/><path d="${polyD([ps[0], ps[2], ps[3]])}" class="p-f1"/>`;
+  s += `<path d="${polyD(ps)}" class="p-ln"/>`;
+  if (diag && n === 4) {   /* 대각선 점선은 두 끝의 각 글을 피해 가운데만(두 삼각형은 색으로 보임) */
+    const len = Math.hypot(ps[2][0] - ps[0][0], ps[2][1] - ps[0][1]), at = (t) => [ps[0][0] + (ps[2][0] - ps[0][0]) * t, ps[0][1] + (ps[2][1] - ps[0][1]) * t];
+    const gap = (k) => { if (!labs[k]) return 0; const [x, y] = cornerLab(cornerOf(ps[k], ps[(k + 3) % 4], ps[(k + 1) % 4]), labs[k]); return (Math.hypot(x - ps[k][0], y - ps[k][1]) + 15) / len; };
+    const t0 = gap(0), t1 = 1 - gap(2);
+    if (t1 - t0 > 0.15) s += `<path d="M${pt(at(t0))} L${pt(at(t1))}" class="p-ln da"/>`;
+  }
+  ps.forEach((V, k) => { s += corner(V, ps[(k + n - 1) % n], ps[(k + 1) % n], labs[k] || ''); });
+  const said = labs.filter(Boolean).length ? ` — 각 ${labs.filter(Boolean).join(', ')}` : '';
+  return wrap(w + 12, h + 12, label || `${n === 3 ? '삼각형' : '사각형'}${diag ? ' — 대각선으로 삼각형 두 개로 나눔' : ''}${said}`, s);
+}
+
+// ── 세 각 모으기 ── 삼각형의 세 각(색칠한 부채꼴)을 한 점에 모으면 직선 — 왼쪽 삼각형 → 오른쪽 모은 모습 · labs = 각마다 적는 글
+export function gather({ angs = [], labs = [], label = '' }) {
+  if (angs.length !== 3 || Math.abs(angs[0] + angs[1] + angs[2] - 180) > 0.5 || angs.some((v) => !(v > 5 && v < 175))) return '';
+  const F = ['p-f1', 'p-f2', 'p-f3'], { ps, w, h } = fitPts(polyPts(angs), 150, 80, 6, 0), top = 96 - h;
+  const tp = ps.map(([x, y]) => [x, y + top]);
+  let s = `<path d="${polyD(tp)}" class="p-ln"/>`;
+  tp.forEach((V, k) => { s += corner(V, tp[(k + 2) % 3], tp[(k + 1) % 3], '', { r: 19, fill: F[k] }); });
+  s += `<path d="${polyD(tp)}" class="p-ln"/>`;
+  const ax = w + 22, cx = ax + 44 + 88, cy = 96, R = 58, dir = (deg, len) => [cx + len * Math.cos(deg * RAD), cy - len * Math.sin(deg * RAD)];
+  s += `<path d="M${ax} 56 H${ax + 28} M${ax + 20} 49 L${ax + 28} 56 L${ax + 20} 63" class="p-arc"/>`;
+  let from = 0;
+  [0, 2, 1].forEach((k) => {   /* 직선 위에 왼쪽 아래 각 · 위 각 · 오른쪽 아래 각 차례로 */
+    const v = angs[k];
+    s += `<path d="M${cx} ${cy} L${pt(dir(from, R))} A${R} ${R} 0 0 0 ${pt(dir(from + v, R))} Z" class="${F[k]} ol"/>`;
+    if (labs[k]) { const [x, y] = dir(from + v / 2, R + 6 + tw(labs[k], 14) / 2); s += T(x, Math.min(y + 5, cy - 4), labs[k], 14, '', 'middle', true); }
+    from += v;
+  });
+  s += `<path d="M${cx - 88} ${cy} H${cx + 88}" class="p-ln"/>`;
+  return wrap(cx + 96, cy + 8, label || '삼각형의 세 각을 한 점에 모으면 직선이 되는 그림', s);
+}
+
+// ── 넓이 도형 ── shape 'para' 평행사변형 · 'tri' 삼각형 · a 밑변 · h 높이(점선 + 직각 표시) · s 다른 한 변(없으면 0)
+//  hi = 밑변과 높이를 굵게(다른 한 변의 글은 흐리게) · move = 평행사변형의 왼쪽 삼각형을 오른쪽으로 옮김 · twin = 똑같은 삼각형을 하나 더 붙임
+export function areaf({ shape = 'para', a = 1, h = 1, s = 0, hi = false, move = false, twin = false, label = '' }) {
+  const tri = shape === 'tri';
+  if (!(a > 0) || !(h > 0)) return '';
+  const sl = s ? `${s} cm` : '', LX = sl ? tw(sl, 15) + 14 : 6, T0 = 6, H = clamp(40 + h * 6, tri ? 80 : 58, tri ? 110 : 104);
+  const fx = clamp(s > h ? Math.sqrt(s * s - h * h) / a : tri ? 0.42 : 0.3, tri ? 0.2 : 0.16, tri ? 0.8 : 0.5);
+  /* 그림 폭 한도 — 옮기기 · 붙이기 그림은 432, 그 밖은 280(밑변이 긴 평행사변형이 370까지 넓어져 종이 칸에서 길이 글자가 5pt로 줄었음) */
+  const W = Math.min(clamp(70 + a * 9, tri ? 170 : 110, tri ? 230 : 210), twin || move ? (424 - LX) / (1 + fx) : (272 - LX) / (tri ? 1 : 1 + fx)), dx = fx * W;
+  const yb = T0 + H, A = [LX, yb], B = [LX + W, yb], Cq = tri ? [LX + dx, T0] : [LX + W + dx, T0], D = [LX + dx, T0], F = [LX + dx, yb];
+  const right = !tri || W - dx >= dx, e = hi ? 'p-edge' : 'p-ln';
+  let g = '';
+  if (move && !tri) g += `<path d="${polyD([A, F, D])}" class="p-f1"/><path d="${polyD([B, [B[0] + dx, yb], Cq])}" class="p-f1 gh"/>`;
+  if (twin && tri) g += `<path d="${polyD([B, [B[0] + dx, T0], Cq])}" class="p-f2 gh"/>`;
+  g += `<path d="${polyD(tri ? [A, B, Cq] : [A, B, Cq, D])}" class="p-ln"/>`;
+  g += `<path d="M${pt(D)} L${pt(F)}" class="p-ln da${hi ? ' hi' : ''}"/><path d="M${r1(F[0] + (right ? 8 : -8))} ${yb} v-8 H${r1(F[0])}" class="p-ln th"/>`;
+  if (hi) g += `<path d="M${pt(A)} L${pt(B)}" class="${e}"/>`;
+  if (move && !tri) { const y = T0 + H * 0.45, x0 = LX + dx * 0.55, x1 = B[0] + dx * 0.45; g += `<path d="M${r1(x0)} ${r1(y)} Q${r1((x0 + x1) / 2)} ${r1(y - 34)} ${r1(x1)} ${r1(y)} M${r1(x1 - 9)} ${r1(y - 7)} L${r1(x1)} ${r1(y)} L${r1(x1 - 10)} ${r1(y + 3)}" class="p-arc"/>`; }
+  g += T((A[0] + B[0]) / 2, yb + 19, `${a} cm`, 15, hi ? 'ac' : '', 'middle', true);
+  g += T(F[0] + (right ? 12 : -12), tri ? yb - 14 : T0 + H * 0.52 + 5, `${h} cm`, 15, hi ? 'ac' : '', right ? 'start' : 'end', true);
+  if (sl) g += T((A[0] + D[0]) / 2 - 10, (A[1] + D[1]) / 2 - 3, sl, 15, hi ? 'mu' : '', 'end', true);
+  const WW = Math.max(B[0], Cq[0], twin || move ? B[0] + dx : 0) + 8;
+  return wrap(WW, yb + 26, label || `${tri ? '삼각형' : '평행사변형'} — 밑변 ${a} cm, 높이 ${h} cm${sl ? `, 다른 한 변 ${sl}` : ''}`, g);
+}
+
+// ── 상자 ── 직육면체 · a 가로 · b 세로(뒤로 들어가는 모서리) · c 높이 · faces = 칠할 면('top' · 'side' · 'front' — 차례대로 다른 색) · one = 한 색으로만
+//  cubes = 쌓기나무 금 · layer = 맨 아래 한 층을 칠함
+export function box({ a = 1, b = 1, c = 1, faces = [], one = false, cubes = false, layer = false, label = '' }) {
+  if (!(a > 0) || !(b > 0) || !(c > 0)) return '';
+  const wa = clamp(40 + (a - 2) * 12, 40, 170), hc = clamp(34 + (c - 2) * 8, 34, 90), dxx = clamp(20 + (b - 2) * 4.5, 20, 54), dyy = dxx * 0.55;
+  const la = `${a} cm`, lb = `${b} cm`, lc = `${c} cm`, x = tw(lc, 15) + 12, y = 6 + dyy;
+  const f = [[x, y + hc], [x + wa, y + hc], [x + wa, y], [x, y]], k = f.map(([px, py]) => [px + dxx, py - dyy]);
+  const FACE = { front: [f[0], f[1], f[2], f[3]], top: [f[3], f[2], k[2], k[3]], side: [f[1], k[1], k[2], f[2]] }, TONE = { top: 'p-f2', side: 'p-f3', front: 'p-f1' };
+  let s = '';
+  faces.forEach((n) => { if (FACE[n]) s += `<path d="${polyD(FACE[n])}" class="${one ? 'p-f1' : TONE[n]}"/>`; });
+  if (layer && cubes) { const yy = hc / c; s += `<path d="${polyD([f[0], f[1], [f[1][0], f[1][1] - yy], [f[0][0], f[0][1] - yy]])}" class="p-f1"/><path d="${polyD([f[1], k[1], [k[1][0], k[1][1] - yy], [f[1][0], f[1][1] - yy]])}" class="p-f1"/>`; }
+  if (cubes && a <= 14 && b <= 10 && c <= 10) {
+    let d = '';
+    for (let i = 1; i < a; i++) { const px = x + (wa * i) / a; d += `M${r1(px)} ${r1(y + hc)} V${r1(y)} l${r1(dxx)} ${r1(-dyy)}`; }
+    for (let j = 1; j < c; j++) { const py = y + (hc * j) / c; d += `M${r1(x)} ${r1(py)} H${r1(x + wa)} l${r1(dxx)} ${r1(-dyy)}`; }
+    for (let q = 1; q < b; q++) { const ox = (dxx * q) / b, oy = (dyy * q) / b; d += `M${r1(x + ox)} ${r1(y - oy)} H${r1(x + wa + ox)} V${r1(y + hc - oy)}`; }
+    s += `<path d="${d}" class="p-ln th mu"/>`;
+  }
+  if (!cubes && (one || faces.length < 2)) s += `<path d="M${pt(f[0])} L${pt(k[0])} L${pt(k[1])} M${pt(k[0])} L${pt(k[3])}" class="p-ln da"/>`;   /* 가려진 모서리 — 쌓기나무 · 세 면을 칠한 그림은 속이 찬 덩어리라 안 그림 */
+  s += `<path d="${polyD(FACE.front)} ${polyD(FACE.top)} ${polyD(FACE.side)}" class="p-ln"/>`;
+  s += T(x + wa / 2, y + hc + 19, la, 15, '', 'middle', true) + T(x - 7, y + hc / 2 + 5, lc, 15, '', 'end', true) + T((f[1][0] + k[1][0]) / 2 + 8, (f[1][1] + k[1][1]) / 2 + 14, lb, 15, '', 'start', true);
+  return wrap(x + wa + Math.max(dxx + 4, dxx / 2 + 10 + tw(lb, 15)) + 4, y + hc + 26, label || `직육면체 — 가로 ${la}, 세로 ${lb}, 높이 ${lc}`, s);
+}
+
+const KINDS = { split, tiles, array, share, bars, line, clock, grid, place, eqbox, ang, poly, gather, areaf, box };
 /* spec = { t: 틀 이름, …그 틀의 값 } → SVG 글자(틀이 없거나 그릴 수 없으면 '') */
-export function picSVG(spec) {
+//  k = 화면에 그리는 배율(문제 속 그림은 도움 그림보다 크게 — 좌표는 그대로 · width · height만)
+export function picSVG(spec, k = 1) {
   if (!spec || !KINDS[spec.t]) return '';
-  try { return KINDS[spec.t](spec) || ''; } catch (e) { return ''; }
+  try {
+    const svg = KINDS[spec.t](spec) || '';
+    return k === 1 ? svg : svg.replace(/ width="([\d.]+)" height="([\d.]+)"/, (m, w, h) => ` width="${r1(w * k)}" height="${r1(h * k)}"`);
+  } catch (e) { return ''; }
 }

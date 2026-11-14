@@ -180,6 +180,8 @@ export function draw(root, { prompt, sol = null, choices = null, tag = '', act =
   }));
   const ik = root.querySelector('#idk');
   if (ik) ik.addEventListener('click', (e) => { if (!early(e)) onAnswer({ idk: true }, 0, Math.round(performance.now() - t0)); });
+  /* 위에 '같이 풀 문제'(hl-ctx)를 얹은 단계 화면 — 위 문제 그림과 단계 그림이 같이 있으면 크롬북 768에서 답 칸이 화면 밖으로 밀림 → 넘칠 때만 위 문제를 작게(tfit1) · 그래도 넘치면 단계 그림 · 글도 작게(tfit2) · 넓은 배치에서만(좁으면 원래 내려 읽음) */
+  if (extra && innerWidth >= 761 && root.querySelector('.hl-ctx')) { for (let lv = 1; lv <= 2 && document.documentElement.scrollHeight - innerHeight > 0; lv++) card.classList.add('tfit' + lv); }
   if (open[0]) open[0].focus();
 }
 
@@ -211,7 +213,22 @@ export const staticHTML = (prompt, vals, marks) => `<span class="math">${toHTML(
 //  it = { sol, choices? } (문항 · snap 둘 다) · ansHTML = 굵게 쓸 답 · ansSay = '답은 ○○이에요/예요'(받침 맞춤)
 const ansPlain = (it) => (it.choices ? toText(it.choices[Number(it.sol[0])] || []) : (it.sol || []).join(', '));
 export const ansHTML = (it) => (it.choices ? toHTML(it.choices[Number(it.sol[0])] || [], { static: true }) : esc((it.sol || []).join(', ')));
+/* 빈칸이 여럿인 답 — 칸마다 같은 수면 한 번만('6, 6' → '6') · 칸이 모두 분수 · 대분수 한 덩이 안이면 그 모양 그대로('3, 22, 35' → 대분수 모양 · 읽을 때 끝말은 분자) · 그 밖은 null(쉼표로 늘어놓음) */
+function ansMulti(it) {
+  const sol = it.sol || [];
+  if (it.choices || sol.length < 2) return null;
+  const isB = (x) => x && typeof x === 'object' && 'b' in x;
+  const fr = (it.prompt || []).filter((t) => t && typeof t === 'object' && (t.f || t.m) && (t.f || t.m).some(isB));
+  const all = (it.prompt || []).reduce((n, t) => n + (isB(t) ? 1 : t && typeof t === 'object' && (t.f || t.m) ? (t.f || t.m).filter(isB).length : 0), 0);
+  if (fr.length === 1 && (fr[0].f || fr[0].m).filter(isB).length === all && all === sol.length) {
+    const top = fr[0].f ? fr[0].f[0] : fr[0].m[1];
+    return { html: `<span class="math ansm">${toHTML([fr[0]], { static: true, vals: sol })}</span>`, plain: String(isB(top) ? sol[top.b] : top) };
+  }
+  return it.prompt && !fr.length && sol.every((v) => String(v) === String(sol[0])) ? { html: esc(sol[0]), plain: String(sol[0]) } : null;   /* 문제 글을 모르면(sol만 받음) 분수인지 알 수 없어 그대로 늘어놓음 */
+}
 export function ansSay(it, lead = '답은') {
+  const m = ansMulti(it);
+  if (m) return `${lead} <b>${m.html}</b>${P(m.plain, '이에요', '예요')}.`;
   const t = ansPlain(it).trim(), word = /[가-힣]$/.test(t);
   return `${lead} <b>${word ? `‘${ansHTML(it)}’` : ansHTML(it)}</b>${P(t, '이에요', '예요')}.`;   /* 글 답도 받침대로('서른이에요' · '아흔이에요') */
 }

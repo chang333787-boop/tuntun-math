@@ -8,7 +8,11 @@
 //    · 묶음이 곧 답인 그림(나눗셈 묶음)은 단계에서부터 · 고르기(크기 비교)는 다른 수로 그린 보기 그림
 //    · 그릴 수 없는 수(너무 큼 · 모양이 안 맞음)는 null — 화면은 그림 없이 글만
 //  검사: tests/pics.test.mjs(모든 단계에서 그려지나 · 답이 글자로 새지 않나 · 차시마다 그림이 나오는 비율)
+import { figOf } from '../figs.js';
+
 const fin = Number.isFinite, int = Number.isInteger;
+/* 문제 속 도형 그림(engine/figs.js)에 표시만 얹음 — 자리 · 방향 · 적힌 수가 문제의 그림과 같음(화면은 문제의 그림 자리에서 바꿔 그림) */
+const fg = (id, p, more) => { const f = figOf(id, p); return f ? { ...f.spec, ...more } : null; };
 const famOf = (s) => (s && s.p && s.p.fam) || '';
 const cur = (steps, i) => (i >= 0 && i < steps.length ? steps[i] : null);
 const seg = (n, k = 'a') => ({ n, k });
@@ -247,5 +251,20 @@ const PICS = {
   /* 직사각형 둘레와 넓이 — 둘레 단계에서는 테두리 · 넓이 단계에서는 칸 */
   '5-1-6:4': (p, { i, steps }) => (int(p.a) && int(p.b) && p.a >= 1 && p.b >= 1 && p.a <= 20 && p.b <= 12
     ? { t: 'grid', w: p.a, h: p.b, wl: `${p.a} cm`, hl: `${p.b} cm`, mode: i < 0 || i >= steps.length ? 'plain' : i === steps.length - 1 ? 'area' : 'peri' } : null),
+  // ── 문제에 도형 그림이 있는 차시 ── 같은 그림에 생각 하나만 얹음 · null이면 화면은 문제의 그림 그대로
+  /* 직선 · 한 바퀴 — 두 각을 합친 전체에 굵은 호(직선 = 반 바퀴 · 한 바퀴) */
+  '4-1-2:5': (p, { i, steps }) => ((p.v === 'line' || p.v === 'round') && i < steps.length ? fg('4-1-2:5', p, { whole: true }) : null),
+  /* 삼각형 — 세 각을 한 점에 모으면 직선(떠올리기 · 180에서 빼는 단계) · 두 각을 더하는 단계는 문제의 그림 */
+  '4-1-2:7': (p, { i, steps }) => { const f = i === 0 || i >= steps.length ? null : figOf('4-1-2:7', p); return f ? { t: 'gather', angs: f.spec.angs, labs: f.spec.labs } : null; },
+  /* 사각형 — 대각선으로 삼각형 둘(떠올리기 · 360에서 빼는 단계) */
+  '4-1-2:8': (p, { i, steps }) => (i < 0 || i === steps.length - 1 ? fg('4-1-2:8', p, { diag: true }) : null),
+  /* 평행사변형 — 떠올리기: 왼쪽 삼각형을 오른쪽으로 옮김 · 단계: 밑변과 높이를 굵게(다른 한 변은 흐리게) */
+  '5-1-6:6': (p, { i, steps }) => (i < 0 ? fg('5-1-6:6', p, { move: true }) : i < steps.length ? fg('5-1-6:6', p, { hi: true }) : null),
+  /* 삼각형 넓이 — 똑같은 삼각형을 하나 더 붙임 · 곱하는 단계에서는 밑변과 높이도 굵게 */
+  '5-1-6:7': (p, { i, steps }) => (i < steps.length ? fg('5-1-6:7', p, { twin: true, hi: i === 0 }) : null),
+  /* 부피 — 쌓기나무 금 · 맨 아래 한 층을 칠함(한 층의 수를 구하는 단계까지) */
+  '6-1-6:3': (p, { i, steps }) => (i < steps.length ? fg('6-1-6:3', p, { cubes: true, layer: i < 1 }) : null),
+  /* 겉넓이 — 넓이를 구하는 면 하나만 칠함(윗면 · 옆면 · 앞면) · 떠올리기와 더하는 단계는 세 면 모두 */
+  '6-1-6:5': (p, { i, steps }) => (i >= steps.length ? null : fg('6-1-6:5', p, { faces: i >= 0 && i < 3 ? [['top', 'side', 'front'][i]] : ['top', 'side', 'front'] })),
 };
 export default PICS;
