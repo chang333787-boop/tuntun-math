@@ -38,6 +38,12 @@ export async function pull(me) {
   const K = load(me);
   let srv = null;
   try { srv = await db.get(base(me)); } catch (e) { return { K, ok: false, err: e }; }
+  absorb(K, srv);
+  save(me, K);
+  return { K, ok: true };
+}
+// 서버 칸(k/<반>/<번호>/<핀>)을 기록 모음 K에 합침 — 아이 기기(pull)와 선생님 기기(종이 결과를 넣은 뒤 요약 다시 · summaryFromRaw)가 같은 규칙
+export function absorb(K, srv) {
   if (srv && srv.r) for (const [id, s] of Object.entries(srv.r)) { const o = db.dec(s); if (o && !K.recs[id]) K.recs[id] = o; }
   if (srv) for (const [id, x] of Object.entries(K.recs)) if (x && x.s && x.s.src === 'paper' && !(srv.r && db.dec(srv.r[id]))) delete K.recs[id];   /* 예전에 남은 글자 "null"도 없는 것으로 */
   // 다른 기기에서 쓴 상태 되살리기 — 요약(st)의 준비 다리 끝 · 고친 판자 · 도움이 이 기기보다 새로우면(새 크롬북에서 들어오면 선생님 띠에서 사라지던 것 · 회귀 10-31)
@@ -54,8 +60,14 @@ export async function pull(me) {
   if (srv && srv.rv) { const rv = db.dec(srv.rv); if (rv) for (const [c, x] of Object.entries(rv)) if (!K.rv[c] || (x.t || 0) > (K.rv[c].t || 0)) K.rv[c] = x; }
   if (srv && srv.mx) { const mx = db.dec(srv.mx); K.mx = K.mx || {}; if (mx && Array.isArray(mx._jog)) K.jog = [...new Set([...(K.jog || []), ...mx._jog.filter((d) => typeof d === 'string')])].sort().slice(-60); if (mx && mx._tools && typeof mx._tools === 'object') { K.tools = K.tools || {}; for (const [t, v] of Object.entries(mx._tools)) if (v && (!K.tools[t] || (v.self || 0) > (K.tools[t].self || 0))) K.tools[t] = v; } if (mx && typeof mx === 'object') for (const [c, x] of Object.entries(mx)) { if (c === '_jog' || c === '_tools') continue; const a = K.mx[c]; if (x && (!a || (x.tier || 0) > (a.tier || 0) || ((x.tier || 0) === (a.tier || 0) && (x.runs || []).length > (a.runs || []).length))) K.mx[c] = x; } }
   K.inbox = srv && srv.in ? Object.fromEntries(Object.entries(srv.in).map(([id, s]) => [id, db.dec(s)])) : {};
-  save(me, K);
-  return { K, ok: true };
+  return K;
+}
+// 선생님 기기 — 아이가 앱을 열지 않아도 종이 결과가 반 표에 바로(비판 C10): 서버 칸 + 방금 넣은 기록(add) − 뺀 기록(drop)으로 요약을 다시 만듦
+export function summaryFromRaw(raw, { add = [], drop = [] } = {}) {
+  const K = absorb({ recs: {}, rv: {}, fixed: {}, log: [] }, raw);
+  for (const id of drop) delete K.recs[id];
+  for (const rec of add) if (rec && rec.s && rec.s.id) K.recs[rec.s.id] = rec;
+  return summaryOf(K);
 }
 
 // 다 푼 묶음 하나 넣기 → 이 기기 저장 → 서버(줄에 넣어 보냄) → 요약 다시
@@ -113,6 +125,7 @@ export function calOf(K, since = 0) {
 export function summaryOf(K) {
   const rep = reportOf(K);
   const L = Object.fromEntries(Object.values(rep.L).map((x) => [x.c, x.st]));
+  const Lt = Object.fromEntries(Object.values(rep.L).filter((x) => x.recs && x.recs.length).map((x) => [x.c, Math.max(...x.recs.map((r) => r.made || 0))]));   /* 판정 날짜(비판 C2) = 그 차시를 마지막으로 푼 때 · 반 표 칸에 */
   const cal = calOf(K);
   const now = Date.now();
   const due = Object.entries(K.rv).filter(([, x]) => x.n < REVIEW_DAYS.length && x.due <= now).map(([c]) => c);
@@ -141,7 +154,7 @@ export function summaryOf(K) {
   const gap = {};
   for (const c of new Set([...rep.start.map((s) => s.c), ...Object.keys(L).filter((c) => L[c] === 'stuck'), ...Object.keys(K.fixed || {})])) { const x = rep.L[c], ts = x && x.recs ? x.recs.filter((r) => !r.ok && Number.isFinite(r.made)).map((r) => r.made) : []; if (ts.length) gap[c] = Math.min(...ts); }
   const bk = K.back && K.back.text ? { x: String(K.back.text).slice(0, 24), c: K.back.c || '', p: K.back.p || null, r: K.back.root || '', t: K.back.t || 0, s: K.back.solved || 0 } : null;   /* 거꾸로 찾기 — 아이가 직접 넣은 막힌 문제 · 찾은 곳 · 다시 풀었나(선생님 아이 자세히 · 11-08) */
-  return { t: now, last, mis, L, rv, gap, sw14, rush14, prep, bk, wp: wipOf(K), start: rep.start.map((s) => s.c), below: rep.below.map((b) => b.c), under: rep.under.map((u) => u.c), sw: cal.sureWrong, cal: { n: cal.n, m: cal.match }, fixed: K.fixed, due, help: K.help || {}, rush: K.rush || 0, jog: (K.jog || []).slice(-14), tools: K.tools || {}, ck, cko, gv, lad, story: storySum(K), wk: weeksOf(K.recs).slice(-12).map((w) => [w.wk, w.ok, w.n, w.term]), mx: Object.fromEntries(Object.entries(K.mx || {}).filter(([c]) => c !== '_jog' && c !== '_tools').map(([c, x]) => [c, x.tier || 0])) };
+  return { t: now, last, mis, L, Lt, rv, gap, sw14, rush14, prep, bk, wp: wipOf(K), start: rep.start.map((s) => s.c), below: rep.below.map((b) => b.c), under: rep.under.map((u) => u.c), sw: cal.sureWrong, cal: { n: cal.n, m: cal.match }, fixed: K.fixed, due, help: K.help || {}, rush: K.rush || 0, jog: (K.jog || []).slice(-14), tools: K.tools || {}, ck, cko, gv, lad, story: storySum(K), wk: weeksOf(K.recs).slice(-12).map((w) => [w.wk, w.ok, w.n, w.term]), mx: Object.fromEntries(Object.entries(K.mx || {}).filter(([c]) => c !== '_jog' && c !== '_tools').map(([c, x]) => [c, x.tier || 0])) };
 }
 export function pushSummary(me, K) { clearTimeout(wipT); wipLast = null; db.queuePut(`${base(me)}/st`, db.enc(summaryOf(K))); }
 // 하던 판(이어서) — 점검(prep) · 배우기 걸음(fx) · 선생님 문제(gv)를 요약(st.wp)에 실어 다른 기기 · 다음 날에도 그 자리부터(교사 11-07 밤 '다시 들어와도 이어서' · 심판 차례 1)

@@ -437,5 +437,14 @@ ok(D.sheet.items.length === n && new Set(D.sheet.items.map((it) => JSON.stringif
   const sm = KSc.summaryOf(K);
   ok(sm.rv && sm.rv[c] && sm.rv[c][0] === 2 && sm.gap && sm.gap[c] === t0, `요약에 다시 보기 [${sm.rv && sm.rv[c]}] · 처음 틀린 날 ${sm.gap && sm.gap[c] === t0 ? '맞음' : sm.gap && sm.gap[c]}`);
 }
+// ⑯ 종이 결과 → 반 표 바로(비판 C10) — 선생님 기기가 서버 칸 + 넣은 기록으로 요약을 다시 만듦(아이 기기 pull과 같은 absorb)
+{
+  const KSd = await import('../js/kidstore.js'), LSd = await import('../../engine/lessons/index.js'), MTd = await import('../../engine/math.js');
+  const c = '2-1-6:3', mk = (id, made, ok1) => { const its = [0, 1, 2].map((k) => [k, c, LSd.byId[c].gen(MTd.rng(3 + k)), 0, 'a']); return { s: { id, kind: 'paper', src: 'paper', made, it: its }, r: { done: { a: true }, it: Object.fromEntries(its.map(([k]) => [k, { s: ok1 ? 'ok' : 'x', a: ok1 ? [] : ['1'] }])) }, cf: {}, ms: {} }; };
+  const enc = (v) => JSON.stringify(v), old = mk('pOLD', 1000, true);
+  const raw = { r: { pOLD: enc(old) }, st: enc({ fixed: { [c]: 900 } }), rv: enc({ [c]: { n: 1, t: 950, due: 2000 } }) };
+  const a = KSd.summaryFromRaw(raw, { add: [mk('pNEW', 5000, false)] }), b = KSd.summaryFromRaw(raw, { drop: ['pOLD'] }), z = KSd.summaryFromRaw(null, { add: [mk('pNEW', 5000, false)] });
+  ok(a.L[c] && a.L[c] !== 'ok' && a.fixed[c] === 900 && a.rv[c] && a.rv[c][0] === 1 && !b.L[c] && z.L[c], `종이 결과 넣은 뒤 요약 — 새 기록 반영(${a.L[c]}) · 배운 칸 · 다시 보기 그대로 · 뺀 기록은 빠짐 · 앱을 안 연 아이도`);
+}
 console.log(fail ? `FAIL ${fail}` : 'PASS');
 process.exitCode = fail ? 1 : 0;

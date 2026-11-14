@@ -123,7 +123,7 @@ export function checkView(root, C) {
       const n = Number(x.n), g = S ? progressOf(K, S, id, n) : null, who = (xs, cnt) => xs.map((no) => `${esc(nm(K, no))}${cnt ? ` ${(S[no].st.ck || {})[id] || 0}/${n}` : ''}`).join(' · ');
       return `<tr><td class="ck-d">${esc(day(Number(x.t) || Date.now()))}<span class="small muted">${esc(id)}</span></td><td>${x.lab ? `<span class="pill ck-lab">${x.lab === 'pre' ? '사전' : '사후'}</span>` : ''}<span class="ck-rgt">${esc(gl(x.from))} ~ ${esc(gl(x.to))}</span><span class="small muted">${n}문제</span></td>
         <td class="ck-n">${g ? `<b>${g.done.length}</b>/${K.n}` : '…'}</td><td class="ck-n">${g ? `<b>${g.doing.length}</b>${g.doing.length ? `<span class="small muted">${who(g.doing, true)}</span>` : ''}` : '…'}</td><td class="ck-n">${g ? `<b>${g.none.length}</b>${g.none.length && g.none.length < K.n ? `<span class="small muted">${who(g.none)}</span>` : ''}` : '…'}</td>
-        <td><a class="btn ck-pr" href="#/t/c/${esc(C)}/check/${esc(id)}/print">같은 문제 인쇄</a></td></tr>`;
+        <td><a class="btn ck-pr" href="#/t/c/${esc(C)}/check/${esc(id)}/print">같은 문제 인쇄</a>${x.cut ? ' <span class="small muted">거둠</span>' : g && (g.doing.length || g.none.length) ? ` <button type="button" class="btn mini" data-cut="${esc(id)}" title="아직 다 안 푼 아이의 처음 화면에서 이 점검지를 거둬요(다 푼 아이 결과는 남아요)">거두기</button>` : ''}</td></tr>`;
     }).join('');
     root.innerHTML = `<div class="ck-bar"><a class="btn" href="#/t/c/${esc(C)}">반 화면으로</a><h2 class="sec">점검 내기 <small>${esc(C)} · ${esc(gl(K.g))} · ${K.n}명</small></h2></div>
     ${list.length ? '' : '<p class="ck-first">처음이면 <b>② 점검지</b>부터 내 보세요. 앞 학년 칸 가운데 흔들리는 후보가 보이고, 정확히 어디서부터인지는 이어지는 확인지 · 오늘 단원 점검이 좁혀요. ①은 수업 시작 5~10분에, ③은 저절로 떠요.</p>'}
@@ -168,6 +168,7 @@ export function checkView(root, C) {
     root.querySelector('#lab').addEventListener('change', (e) => { lab = e.target.value; });
     root.querySelector('#give').addEventListener('click', give);
     root.querySelector('#re').addEventListener('click', refresh);
+    root.querySelectorAll('[data-cut]').forEach((b) => b.addEventListener('click', () => cut(b.dataset.cut)));
   }
   async function openToday() {
     const msg = root.querySelector('#m1'), b = root.querySelector('#open'); msg.textContent = '여는 중…'; b.disabled = true;
@@ -194,6 +195,16 @@ export function checkView(root, C) {
       if (!alive) return;
       render(); root.querySelector('#m2').textContent = `냈어요! 아이들 처음 화면에 '선생님이 낸 점검지'로 떠요(${task.n}문제).`;
     } catch (e) { msg.textContent = `내지 못했어요: ${e.message}`; b.disabled = false; }
+  }
+  /* 거두기(비판 C7) — 잘못 낸 점검지를 아직 다 안 푼 아이의 처음 화면에서 뺌 · 다 푼 아이가 있으면 결과를 남기고(cut 표시) · 없으면 선생님 기록도 지움 */
+  async function cut(id) {
+    const x = (K.checks || {})[id], g = x && S ? progressOf(K, S, id, Number(x.n)) : null; if (!g) return;
+    const left = [...g.doing, ...g.none];
+    if (!left.length || !confirm(`아직 다 안 푼 ${left.length}명의 처음 화면에서 이 점검지를 거둘까요?${g.done.length ? ` 다 푼 ${g.done.length}명의 결과는 남아요.` : ''}${g.doing.length ? ' 푸는 중이던 아이가 푼 문제도 기록에 남아요.' : ''}`)) return;
+    const up = {}; for (const no of left) if (K.pins[no]) up[`k/${C}/${no}/${K.pins[no]}/in/${id}`] = null;
+    up[`tc/${C}/${K.T}/tasks/${id}`] = g.done.length ? db.enc({ ...x, cut: Date.now() }) : null;
+    try { await db.patch('', up); putCls(C, (k) => { if (g.done.length) k.checks[id] = { ...x, cut: Date.now() }; else delete k.checks[id]; }); K = cls(C) || K; render(); }
+    catch (e) { alert(`거두지 못했어요: ${e.message}`); }
   }
   async function refresh() {
     if (!alive) return;
