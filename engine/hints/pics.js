@@ -266,5 +266,30 @@ const PICS = {
   '6-1-6:3': (p, { i, steps }) => (i < steps.length ? fg('6-1-6:3', p, { cubes: true, layer: i < 1 }) : null),
   /* 겉넓이 — 넓이를 구하는 면 하나만 칠함(윗면 · 옆면 · 앞면) · 떠올리기와 더하는 단계는 세 면 모두 */
   '6-1-6:5': (p, { i, steps }) => (i >= steps.length ? null : fg('6-1-6:5', p, { faces: i >= 0 && i < 3 ? [['top', 'side', 'front'][i]] : ['top', 'side', 'front'] })),
+  /* 시계 — 처음엔 짧은바늘이 지나온 숫자 칸(색칠한 부채꼴) · 단계에선 긴바늘이 숫자 한 칸씩 뛴 자국(5분씩 · 자국이 시계 밖으로 나가 반지름을 조금 줄임) */
+  '1-2-3:5': (p, { i }) => (p.m && i < 0 ? fg('1-2-3:5', p, { gap: true }) : null),
+  '2-2-4:2': (p, { i, steps }) => (i >= steps.length ? null : fg('2-2-4:2', p, i < 0 && steps.length ? { gap: true } : { gap: i < 0, jumps: true, r: 68 })),
+  /* 자 — 처음엔 1 cm 칸을 나눠 그림 · 빼기 단계에선 시작 눈금과 끝 눈금 숫자를 칠함 */
+  '2-1-4:5': (p, { i, steps }) => (i < 0 ? fg('2-1-4:5', p, { cells: true }) : i < steps.length ? fg('2-1-4:5', p, { hi: true }) : null),
+  /* 원 — 준 쪽 말고 다른 쪽(지름 = 반지름 두 개)을 진하게 · 컴퍼스 문제는 벌린 길이를 반지름으로 그림 */
+  '3-2-3:3': (p, { i, steps }) => (i >= steps.length ? null : p.v === 'comp' ? (Number.isInteger(p.r) && p.r > 0 ? { t: 'circle', r: p.r, both: true } : null) : fg('3-2-3:3', p, { both: true })),
+  /* 1 m² — 한 변이 100 cm인 정사각형 하나(모눈 10000칸은 그리지 않음) */
+  '5-1-6:5': (p, { i, steps }) => (i < steps.length ? { t: 'grid', w: 1, h: 1, size: 84, wl: '100 cm', hl: '100 cm', mid: '1 m²', mode: 'plain', label: '한 변이 100 cm인 정사각형, 넓이 1 m²' } : null),
+  /* 마름모 — 둘러싼 직사각형 · 곱하기 단계에선 그 직사각형을 칠함 */
+  '5-1-6:8': (p, { i, steps }) => (i < steps.length ? fg('5-1-6:8', p, { boxed: true, hi: i === 0 }) : null),
+  /* 사다리꼴 — 거꾸로 붙인 같은 사다리꼴(평행사변형) · 더하기 단계 = 윗변 + 아랫변 칠함 · 곱하기 단계 = 높이 칠함 */
+  '5-1-6:9': (p, { i, steps }) => (i >= steps.length ? null : fg('5-1-6:9', p, { twin: true, ...(i >= 0 && i < 2 ? { hi: ['ab', 'h'][i] } : {}) })),
+  /* 원주 — 반지름을 주면 지름(반지름 두 개)부터 · × 3.14 단계는 한 바퀴 굴린 길이 */
+  '6-2-5:3': (p, { i, steps }) => {
+    if (i >= steps.length) return null;
+    const d = p.v === 'd' ? p.d : 2 * p.r;
+    if (!Number.isInteger(d) || d <= 0) return null;
+    return p.v !== 'd' && i < steps.length - 1 ? { t: 'circle', r: p.r, both: true } : p.v !== 'd' && !steps.length ? { t: 'circle', r: p.r, both: true } : { t: 'circle', roll: true, ...(p.v === 'd' ? { d } : {}) };
+  },
+  /* 원의 넓이 — 반지름 × 반지름 정사각형 · 지름을 주면 먼저 반지름(지름의 반)을 진하게 */
+  '6-2-5:5': (p, { i, steps }) => {
+    if (i >= steps.length || !(Number.isInteger(p.r) && p.r > 0)) return null;
+    return p.v === 'd' && (i < 0 || (i === 0 && steps.length)) ? { t: 'circle', d: 2 * p.r, both: true } : { t: 'circle', r: p.r, sq: true };
+  },
 };
 export default PICS;

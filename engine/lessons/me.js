@@ -1,7 +1,8 @@
 // 측정(도형과 측정 영역) — 1단계: 시간(60진법)과 큰 단위 바꾸기
 //   근거와 오답 꼴은 docs/research/E5_measure.md(조사 11-08) — 시간 계산 오답은 수와 연산 받아올림 · 받아내림 오답의 60진법판
 //   가려내는 수: 시간 뺄셈은 분의 차가 30이 아니게(큰 수 − 작은 수와 시 안 줄임이 같은 답) · km는 m를 한 자리로(두 자리면 이어 쓰기 = 1 km를 100 m로)
-import { nums, B, J, P } from '../concepts/kit.js';
+import { nums, pick, B, J, P } from '../concepts/kit.js';
+import { near } from '../math.js';
 import { picSVG } from '../pics.js';
 import { figOf, FIGK } from '../figs.js';
 
@@ -237,10 +238,206 @@ function rectMake(p) {
   });
 }
 
+// ── 측정 2단계(11-14) — 시계 · 자 · 길이의 합과 차 · 원 · 넓이의 단위 · 마름모 · 사다리꼴 · 원주 · 원의 넓이
+//   오답 꼴은 docs/research/E5_measure.md §4 단계 2(R1 · R2 · C1 · C2 · M2 · O1 · Ar6 · Ar7 · Ci1 · Ci2)
+/* 문제 맨 앞의 그림 — 못 그리면 그림에 적힌 것을 옮긴 글 */
+const figLead = (id, p) => { const f = figTok(id, p); if (f) return [f]; const g = figOf(id, p); return g ? [`${g.alt}. `] : []; };
+/* 식 고르기 — 보기의 차례 넷(정답인 0번 식이 네 자리에 한 번씩) · wrong = 1 ~ 3번 식의 오답 이름 */
+const ORD4 = [[0, 1, 2, 3], [1, 0, 3, 2], [2, 3, 0, 1], [3, 2, 1, 0]];
+function exprPick(head, exprs, wrong, ord) {
+  const order = ORD4[ord % 4];
+  return pick(head, order.map((i) => [exprs[i]]), order.indexOf(0), { bugs: Object.fromEntries(wrong.map((b, j) => [order.indexOf(j + 1), b])) });
+}
+const pickOr = (r, rate) => (r.chance(rate) ? { pick: 1, ord: r.int(0, 3) } : {});
+
+// ── 1-2-3:5 몇 시 · 몇 시 30분 · 2-2-4:2 몇 시 몇 분 — 시계 그림 읽기(짧은바늘이 지나온 숫자가 시 · 긴바늘은 숫자 한 칸에 5분, 작은 눈금 한 칸에 1분)
+const clockMake = (id) => (p) => {
+  const lead = figLead(id, p), nx = (p.h % 12) + 1, k = Math.floor(p.m / 5), rest = p.m % 5;
+  if (!p.m) return nums([...lead, '시계가 나타내는 시각은 ', B(0), '시예요.'], p.h, { bugs: [{ test: (v) => p.h !== 12 && v[0] === 12, name: '긴바늘이 가리키는 숫자를 시로 읽음', to: null }] });
+  return nums([...lead, '시계가 나타내는 시각은 ', B(0), '시 ', B(1), '분이에요.'], [p.h, p.m], {
+    bugs: [
+      { test: (v) => v[0] === nx && v[1] === p.m, name: '짧은바늘이 지나온 숫자가 아니라 다음 숫자를 시로 읽음', to: id === '2-2-4:2' ? '1-2-3:5' : null },
+      { test: (v) => v[1] === (k || 12), name: '긴바늘이 가리키는 숫자를 그대로 분으로 읽음', to: null },
+      { test: (v) => rest > 0 && k >= 1 && v[1] === 5 * k, name: '작은 눈금을 세지 않음', to: null },
+      { test: (v) => k >= 1 && k !== p.h && v[0] === k, name: '긴바늘과 짧은바늘을 바꿔 읽음', to: null },
+    ],
+  });
+};
+/* 단계 — 숫자 1 ~ 9는 5단(2학년) · 10 · 11은 5 × 10이 3학년이라 숫자 9까지(5 × 9) 구하고 남은 칸을 5분씩 더함 */
+const clockSteps = (p) => {
+  const k = Math.floor(p.m / 5), rest = p.m % 5, far = k >= 10;
+  return [
+    k >= 1 ? { c: 'MUL', p: { a: 5, b: far ? 9 : k }, why: far ? '긴바늘이 숫자 9를 지났어요. 숫자 한 칸은 5분이에요.' : `긴바늘이 숫자 ${k}${P(k, '을', '를')} ${rest ? '지났어요' : '가리켜요'}. 숫자 한 칸은 5분이에요.` } : null,
+    far ? { c: 'ADD', p: { a: 45, b: 5 * (k - 9) }, why: `숫자 ${k}${P(k, '은', '는')} 9에서 ${k - 9}칸 더 간 곳이에요. 한 칸에 5분씩 더해요.` } : null,
+    rest && k >= 1 ? { c: 'ADD', p: { a: 5 * k, b: rest }, why: `작은 눈금 한 칸은 1분이에요. 긴바늘이 숫자 ${k}에서 ${rest}칸을 더 갔어요.` } : null,
+  ].filter(Boolean);
+};
+const genClock = (r) => { const h = r.int(1, 12); return { h, m: r.chance(0.55) ? r.int(1, 11) * 5 : r.int(0, 11) * 5 + r.int(1, 4) }; };
+
+// ── 2-1-4:5 자로 길이 재기 — 눈금 0에서 시작하지 않는 테이프(끝 눈금을 그대로 읽는지) · 눈금 1에서 시작하는 것은 뺌(끝 숫자 읽기와 선 세기가 같은 답)
+function rulerMake(p) {
+  const len = p.b - p.a;
+  return nums([...figLead('2-1-4:5', p), '색 테이프의 길이는 ', B(0), ' cm예요.'], len, {
+    bugs: [{ test: (v) => p.a > 0 && v[0] === p.b, name: '끝 눈금의 숫자를 그대로 읽음', to: null },
+      { test: (v) => v[0] === len + 1, name: '칸이 아니라 눈금 선을 셈', to: null }],
+  });
+}
+const genRuler = (r) => { const a = r.chance(0.25) ? 0 : r.int(2, 5); return { a, b: a + r.int(2, Math.min(8, 10 - a)) }; };
+
+// ── 2-2-3:4 길이의 합과 차(m와 cm) — 합은 100 cm를 1 m로 · 차는 cm끼리 뺄 수 있는 것만(1 m를 100 cm로 받아내리면 세 자리 뺄셈 = 3학년) · 합이 꼭 100 cm인 것은 뺌
+const mcm = (a, b) => (a ? `${a} m ${b} cm` : `${b} cm`);
+function lenCalcMake(p) {
+  const tail = [B(0), ' m ', B(1), ' cm'];
+  if (p.op === '+') {
+    const s = p.b1 + p.b2, up = s >= 100 ? 1 : 0, A = p.a1 + p.a2 + up;
+    return nums([`${mcm(p.a1, p.b1)} + ${mcm(p.a2, p.b2)} = `, ...tail], [A, s % 100], {
+      bugs: up ? [
+        { test: (v) => v[0] === p.a1 + p.a2 && v[1] === s, name: '100 cm가 넘어도 1 m로 바꾸지 않음(꼴)', to: null },   /* 양은 맞고 꼴만 — 시간 · 들이 덧셈과 같게 개념 빈칸으로 보내지 않음 */
+        { test: (v) => v[0] === A && v[1] === s, name: '1 m를 올리고 100 cm를 빼지 않음', to: '2-2-3:2' },
+        { test: (v) => v[0] === p.a1 + p.a2 && v[1] === s - 100, name: '받아올린 1 m를 더하지 않음', to: null },
+      ] : [],
+    });
+  }
+  return nums([`${mcm(p.a1, p.b1)} − ${mcm(p.a2, p.b2)} = `, ...tail], [p.a1 - p.a2, p.b1 - p.b2], {});
+}
+const lenCalcSteps = (p) => {
+  const s = p.b1 + p.b2;
+  if (p.op !== '+') return [{ c: 'SUB', p: { a: p.b1, b: p.b2 }, why: 'cm끼리 빼요.' }];
+  return [
+    { c: 'ADD', p: { a: p.b1, b: p.b2 }, why: 'cm끼리 더해요.' },
+    s > 100 ? { c: '2-2-3:2', p: { v: 'rev', m: 1, cm: s - 100 }, why: `${s} cm는 몇 m 몇 cm인가요? (1 m는 100 cm예요)` } : null,
+  ].filter(Boolean);
+};
+const genLenCalc = (r) => {
+  const op = r.pick(['+', '+', '−']), step = r.pick([10, 10, 5]), b = (r) => r.int(1, Math.floor(95 / step)) * step, short = r.chance(0.25);
+  if (op === '+') { const want = r.chance(0.5); return until(r, (r) => ({ op, a1: r.int(1, 5), a2: short ? 0 : r.int(1, 3), b1: b(r), b2: b(r) }), (p) => (want ? p.b1 + p.b2 > 100 : p.b1 + p.b2 < 100)); }
+  return until(r, (r) => { const a1 = r.int(2, 6); return { op, a1, a2: short ? 0 : r.int(1, a1 - 1), b1: b(r), b2: b(r) }; }, (p) => p.b1 > p.b2);
+};
+
+// ── 3-2-3:3 원의 반지름과 지름 — 지름 = 반지름 두 개(둘을 바꿔 생각하는지 · 같다고 보는지) · comp = 컴퍼스를 벌린 길이가 반지름(그림 없이 글로)
+function circMake(p) {
+  const lead = figLead('3-2-3:3', p), flip = { name: '반지름과 지름을 거꾸로 생각함', to: null }, same = { name: '반지름과 지름이 같다고 봄', to: null };
+  if (p.v === 'd2r') return nums([...lead, '이 원의 반지름은 ', B(0), ' cm예요.'], p.r, { bugs: [{ test: (v) => v[0] === 4 * p.r, ...flip }, { test: (v) => v[0] === 2 * p.r, ...same }] });
+  return nums(p.v === 'comp' ? [`컴퍼스를 ${p.r} cm만큼 벌려서 원을 그렸어요. 이 원의 지름은 `, B(0), ' cm예요.'] : [...lead, '이 원의 지름은 ', B(0), ' cm예요.'], 2 * p.r, {
+    bugs: [{ test: (v) => v[0] === p.r, ...same }, { test: (v) => v[0] * 2 === p.r, ...flip }],
+  });
+}
+
+// ── 5-1-6:5 1 m² = 10000 cm² — 1 m = 100 cm에서 미루어 100 cm²로 보는지 · cm² → m²는 2 m²부터(1 m²는 도움말이 답을 말하게 됨)
+function m2Make(p) {
+  const big = p.n * 10000, as100 = { name: '1 m²를 100 cm²로 봄', to: null }, zeros = { name: '0의 개수를 잘못 셈', to: '4-1-1:2' };
+  if (p.v === 'cm2m') return nums([`${big} cm² = `, B(0), ' m²'], p.n, { bugs: [{ test: (v) => v[0] === p.n * 100, ...as100 }, { test: (v) => v[0] === p.n * 10 || v[0] === p.n * 1000, ...zeros }] });
+  return nums([`${p.n} m² = `, B(0), ' cm²'], big, { bugs: [{ test: (v) => v[0] === p.n * 100, ...as100 }, { test: (v) => v[0] === p.n * 1000 || v[0] === p.n * 100000, ...zeros }] });
+}
+
+// ── 5-1-6:8 마름모 · 5-1-6:9 사다리꼴의 넓이 — 마름모는 둘러싼 직사각형의 반 · 사다리꼴은 두 개를 붙인 평행사변형의 반
+//   가려내는 수: 마름모는 넓이 = 두 대각선의 합인 크기 피함 · 사다리꼴은 윗변 ≠ 아랫변(같으면 '한 변 × 높이'가 정답과 같음) · 높이 3 이상(2면 괄호를 빠뜨린 식이 같은 값)
+function rhomMake(p) {
+  return nums([...figLead('5-1-6:8', p), '마름모의 넓이는 ', B(0), ' cm²예요.'], (p.a * p.b) / 2, {
+    bugs: [{ test: (v) => v[0] === p.a * p.b, name: '2로 나누지 않음', to: '5-1-6:7' },
+      { test: (v) => v[0] === p.a + p.b, name: '두 대각선을 더함', to: null }],
+  });
+}
+function trapMake(p) {
+  const { a, b, h } = p, lead = figLead('5-1-6:9', p), half = { name: '2로 나누지 않음', to: '5-1-6:7' }, paren = { name: '윗변과 아랫변을 먼저 더하지 않음(괄호)', to: null };
+  if (p.pick) return exprPick([...lead, '사다리꼴의 넓이를 구하는 식을 고르세요.'], [`(${a} + ${b}) × ${h} ÷ 2`, `${a} + ${b} × ${h} ÷ 2`, `(${a} + ${b}) × ${h}`, `${a} × ${b} × ${h} ÷ 2`], [paren, half, { name: '윗변과 아랫변을 곱함', to: null }], p.ord);
+  return nums([...lead, '사다리꼴의 넓이는 ', B(0), ' cm²예요.'], ((a + b) * h) / 2, {
+    bugs: [{ test: (v) => v[0] === (a + b) * h, ...half },
+      { test: (v) => v[0] === a + (b * h) / 2, ...paren },
+      { test: (v) => v[0] === (b * h) / 2 || v[0] === (a * h) / 2, name: '윗변과 아랫변 가운데 하나만 씀', to: null },
+      { test: (v) => v[0] === b * h || v[0] === a * h, name: '평행사변형처럼 한 변 × 높이로 구함', to: '5-1-6:6' }],
+  });
+}
+const trapSteps = (p) => (p.pick ? [] : [
+  { c: 'ADD', p: { a: p.a, b: p.b }, why: '똑같은 사다리꼴 두 개를 붙이면 평행사변형이 돼요. 그 밑변은 윗변 + 아랫변이에요.' },
+  { c: 'MUL', p: { a: p.a + p.b, b: p.h }, why: '붙여 만든 평행사변형의 넓이는 밑변 × 높이예요.' },
+  { c: 'DIV', p: { a: (p.a + p.b) * p.h, b: 2 }, why: '사다리꼴은 그 평행사변형의 반이에요. 2로 나눠요.' },
+]);
+
+// ── 6-2-5:3 원주 · 6-2-5:5 원의 넓이(원주율 3.14) — 반지름 ↔ 지름을 바꿔 쓰는지 · 원주 식과 넓이 식을 섞는지
+//   가려내는 수: 원주는 지름 2 · 4 · 8 피함(지름 4 = 넓이와 원주가 같은 값 · 2와 8 = 오답 둘이 같은 값) · 반지름은 3부터(2면 반지름 × 반지름 = 반지름 × 2)
+//   × 3.14 단계는 (자연수) × (소수 두 자리) 차시 5-2-4:5로 바로(MUL로 찾으면 3.14를 자연수로 읽음)
+//   답 칸에 '(소수)' 표시를 붙이지 않음(noFrac X) — 문제에 원주율 3.14가 있어 소수로 쓰는 것이 보이고, 숫자판의 '.'도 그래서 나옴(app/js/item.js dec)
+const x314 = (n) => Math.round(n * 314) / 100, is314 = (v, n) => near(v * 100, n * 314), by314 = (n) => ({ c: '5-2-4:5', p: { a: n, ad: 0, b: 314, bd: 2 } });
+function circumMake(p) {
+  const lead = figLead('6-2-5:3', p), r = p.r, d = p.v === 'd' ? p.d : 2 * r, toD = { to: '3-2-3:3' };
+  if (p.pick) {
+    const head = [...lead, '원주를 구하는 식을 고르세요. (원주율: 3.14)'];
+    return p.v === 'd'
+      ? exprPick(head, [`${d} × 3.14`, `${d} × 2 × 3.14`, `${d} ÷ 2 × 3.14`, `${d} × ${d} × 3.14`], [{ name: '지름을 두 배 함', ...toD }, { name: '지름을 반으로 나눠 곱함', ...toD }, { name: '지름을 두 번 곱함', to: null }], p.ord)
+      : exprPick(head, [`${r} × 2 × 3.14`, `${r} × 3.14`, `${r} × ${r} × 3.14`, `${r} ÷ 2 × 3.14`], [{ name: '반지름에 원주율을 곱함(지름으로 바꾸지 않음)', ...toD }, { name: '원주 대신 원의 넓이를 구함', to: null }, { name: '반지름을 반으로 나눠 곱함', ...toD }], p.ord);
+  }
+  return nums([...lead, '이 원의 원주는 ', B(0), ' cm예요. (원주율: 3.14)'], x314(d), {
+    bugs: p.v === 'd' ? [
+      { test: (v) => is314(v[0], 2 * d), name: '지름을 두 배 함', ...toD },
+      { test: (v) => is314(v[0], d / 2), name: '지름을 반으로 나눠 곱함', ...toD },
+      { test: (v) => is314(v[0], (d * d) / 4), name: '원주 대신 원의 넓이를 구함', to: null },
+    ] : [
+      { test: (v) => is314(v[0], r), name: '반지름에 원주율을 곱함(지름으로 바꾸지 않음)', ...toD },
+      { test: (v) => is314(v[0], r * r), name: '원주 대신 원의 넓이를 구함', to: null },
+    ],
+  });
+}
+const circumSteps = (p) => (p.pick ? [] : p.v === 'd' ? [{ ...by314(p.d), why: '원주는 지름 × 원주율이에요.' }] : [
+  { c: 'MUL', p: { a: p.r, b: 2 }, why: '원주는 지름으로 구해요. 지름은 반지름의 2배예요.' },
+  { ...by314(2 * p.r), why: '원주는 지름 × 원주율이에요.' },
+]);
+function circAreaMake(p) {
+  const lead = figLead('6-2-5:5', p), r = p.r, d = 2 * r, ans = x314(r * r), toC = { to: '6-2-5:3' };
+  if (p.pick) {
+    const head = [...lead, '원의 넓이를 구하는 식을 고르세요. (원주율: 3.14)'];
+    return p.v === 'd'
+      ? exprPick(head, [`${r} × ${r} × 3.14`, `${d} × ${d} × 3.14`, `${d} × 3.14`, `${r} × 3.14`], [{ name: '지름을 반지름으로 바꾸지 않고 그대로 씀', to: '3-2-3:3' }, { name: '넓이 대신 원주를 구함', ...toC }, { name: '반지름을 한 번만 곱함', to: null }], p.ord)
+      : exprPick(head, [`${r} × ${r} × 3.14`, `${r} × 2 × 3.14`, `${r} × 3.14`, `${d} × ${d} × 3.14`], [{ name: '넓이 대신 원주를 구함', ...toC }, { name: '반지름을 한 번만 곱함', to: null }, { name: '반지름 대신 지름을 두 번 곱함', to: '3-2-3:3' }], p.ord);
+  }
+  return nums([...lead, '이 원의 넓이는 ', B(0), ' cm²예요. (원주율: 3.14)'], ans, {
+    bugs: [
+      { test: (v) => is314(v[0], d * d), name: p.v === 'd' ? '지름을 반지름으로 바꾸지 않고 그대로 씀' : '반지름 대신 지름을 두 번 곱함', to: '3-2-3:3' },
+      { test: (v) => is314(v[0], d), name: '넓이 대신 원주를 구함', ...toC },
+      { test: (v) => is314(v[0], r), name: '반지름을 한 번만 곱함', to: null },
+    ],
+  });
+}
+const circAreaSteps = (p) => (p.pick ? [] : [
+  p.v === 'd' ? { c: 'DIV', p: { a: 2 * p.r, b: 2 }, why: '넓이는 반지름으로 구해요. 반지름은 지름의 반이에요.' } : null,
+  { c: 'MUL', p: { a: p.r, b: p.r }, why: '반지름 × 반지름을 먼저 구해요.' },
+  { ...by314(p.r * p.r), why: '원의 넓이는 반지름 × 반지름 × 원주율이에요.' },
+].filter(Boolean));
+
 export default {
   FAMS: [],
   LESSONS: [
+    // ── 1-2-3 모양과 시각
+    {
+      id: '1-2-3:5', name: '몇 시, 몇 시 30분', kid: '몇 시, 몇 시 30분 읽기', s: 'ME', sec: 12,
+      gen: (r) => ({ h: r.int(1, 12), m: r.chance(0.4) ? 0 : 30 }),
+      make: clockMake('1-2-3:5'), prev: null, pre: ['1-1-5:3', '1-1-5:5'],
+      hint: "긴바늘이 맨 위를 가리키면 '몇 시'예요. 이때는 짧은바늘이 가리키는 숫자를 읽어요. 긴바늘이 6을 가리키면 '몇 시 30분'이에요. 짧은바늘이 두 숫자 사이에 있으면 지나온 숫자가 '시'예요.",   /* 문장마다 따로 읽혀도 되게 — 시범 말은 예로 든 숫자(12 · 6 · 30)가 든 문장을 뺌(app/js/fix.js ruleFor) */
+      tip: "'몇 시 30분'에서 짧은바늘이 다음 숫자에 가까워 보여 그 숫자를 시로 읽는 아이가 많아요. 모형 시계의 긴바늘을 12에서 6까지 돌리며 짧은바늘이 숫자 사이로 조금씩 가는 것을 보여 줘요.",
+    },
+    // ── 2-1-4 길이 재기
+    {
+      id: '2-1-4:5', name: '자로 길이 재기', kid: '자로 길이 재기', s: 'ME', sec: 15,
+      gen: genRuler, make: rulerMake,
+      steps: (p) => (p.a > 0 ? [{ c: 'SUB', p: { a: p.b, b: p.a }, why: `색 테이프가 눈금 ${p.a}에서 눈금 ${p.b}까지 있어요. 끝 눈금에서 시작 눈금을 빼면 1 cm 칸의 수가 나와요.` }] : []),
+      prev: null, pre: ['1-1-3:10', '1-2-4:5'],
+      hint: '길이는 1 cm 칸이 몇 번 들어가는지예요. 테이프가 눈금 2에서 눈금 7까지 있으면 1 cm 칸이 5번 들어가서 5 cm예요. 끝 눈금의 숫자 7을 그대로 읽으면 안 돼요.',
+      tip: "끝 눈금의 숫자를 그대로 읽는 아이는 자의 숫자를 '칸의 수'가 아니라 '이름표'로 봐요. 눈금 0에 맞추지 않은 물건을 재며 1 cm 칸을 손가락으로 하나씩 세게 해요.",
+    },
+    // ── 2-2-3 길이 재기
+    {
+      id: '2-2-3:4', name: '길이의 합과 차', kid: '길이 더하기와 빼기 (m와 cm)', s: 'ME', sec: 30,
+      gen: genLenCalc, make: lenCalcMake, steps: lenCalcSteps, prev: '2-2-3:2', pre: ['2-1-3:4', '2-1-3:7'],
+      hint: 'm는 m끼리, cm는 cm끼리 계산해요. 1 m 70 cm + 1 m 50 cm에서 cm끼리 더하면 120 cm예요. 100 cm는 1 m라서 120 cm는 1 m 20 cm이고, 답은 3 m 20 cm예요.',
+      tip: 'cm의 합이 100을 넘어도 그대로 쓰는지(2 m 120 cm) 봐요. 양은 맞지만 꼴을 바꾸지 않은 답이에요. 100 cm = 1 m를 줄자로 다시 확인해요.',
+    },
     // ── 2-2-4 시각과 시간
+    {
+      id: '2-2-4:2', name: '몇 시 몇 분', kid: '몇 시 몇 분 읽기', s: 'ME', sec: 20,
+      gen: genClock, make: clockMake('2-2-4:2'), steps: clockSteps, prev: null, pre: ['1-2-3:5', '2-2-2:3'],
+      hint: "짧은바늘이 지나온 숫자가 '시'예요. 긴바늘은 숫자 한 칸에 5분씩 가서 숫자 3은 15분이에요. 작은 눈금 한 칸은 1분이에요. 긴바늘이 3에서 작은 눈금 두 칸을 더 가면 17분이에요.",
+      tip: '긴바늘이 가리키는 숫자를 그대로 분으로 읽거나(3 → 3분) 짧은바늘이 다음 숫자에 가까울 때 그 숫자를 시로 읽는지 봐요. 긴바늘을 12에서부터 5분씩 뛰어 세게 해요.',
+    },
     {
       id: '2-2-4:4', name: '1시간 = 60분', kid: '몇 시간은 몇 분', s: 'ME', sec: 12,
       gen: (r) => ({ v: r.pick(['h2m', 'h2m', 'm2h']), h: r.int(1, 5) }),
@@ -287,6 +484,14 @@ export default {
       make: subMake, steps: subSteps, prev: '3-1-5:6', pre: ['2-2-4:5', '2-1-3:7'],
       hint: '분끼리 뺄 수 없으면 1시간을 60분으로 바꿔 분에 더한 뒤 빼요. 5시간 20분 − 2시간 45분은 4시간 80분 − 2시간 45분이라서 2시간 35분이에요.',
       tip: '100분을 받아내리거나(2시간 75분), 분끼리 큰 수에서 작은 수를 빼는(3시간 25분) 실수를 봐요. 받아내림 뺄셈의 60진법판이에요.',
+    },
+    // ── 3-2-3 원
+    {
+      id: '3-2-3:3', name: '원의 반지름과 지름', kid: '원의 반지름과 지름', s: 'ME', sec: 12,
+      gen: (r) => ({ v: r.pick(['r2d', 'r2d', 'd2r', 'd2r', 'comp']), r: r.int(2, 12) }),
+      make: circMake, prev: null, pre: ['2-2-2:2', '3-1-3:6'],
+      hint: '반지름은 원의 중심에서 원 위의 한 점까지 이은 선분이에요. 지름은 원의 중심을 지나 원 위의 두 점을 이은 선분이에요. 지름은 반지름 두 개를 이은 길이예요. 반지름이 5 cm면 지름은 10 cm예요.',
+      tip: '반지름과 지름을 바꿔 생각하는지 봐요. 컴퍼스를 벌린 길이가 반지름이라는 것을 원을 직접 그리며 확인해요.',
     },
     // ── 3-2-5 들이와 무게
     {
@@ -364,6 +569,13 @@ export default {
       tip: '모눈종이에 직사각형을 그리고 테두리를 따라 세기(둘레)와 칸 세기(넓이)를 따로 해 봐요. 둘을 바꿔 쓰거나 둘레를 가로 + 세로로만 쓰는지 봐요.',
     },
     {
+      id: '5-1-6:5', name: '1 m² = 10000 cm²', kid: 'm²와 cm² 바꾸기', s: 'ME', sec: 15,
+      gen: (r) => { const v = r.pick(['m2cm', 'm2cm', 'cm2m']); return { v, n: r.int(v === 'cm2m' ? 2 : 1, 12) }; },
+      make: m2Make, prev: '5-1-6:4', pre: ['4-1-1:2', '4-1-1:4'],
+      hint: '1 m²는 한 변이 1 m인 정사각형의 넓이예요. 1 m는 100 cm라서 가로 100 cm, 세로 100 cm인 정사각형이에요. 그래서 1 m² = 100 × 100 = 10000 cm²예요.',
+      tip: '1 m = 100 cm에서 미루어 1 m² = 100 cm²라고 답하는 아이가 많아요. 한 변이 1 m인 정사각형을 바닥에 그리고 1 cm² 칸이 가로로 100개, 세로로 100줄 들어가는 것을 떠올리게 해요.',
+    },
+    {
       id: '5-1-6:6', name: '평행사변형의 넓이', kid: '평행사변형의 넓이', s: 'ME', sec: 25,
       gen: (r) => until(r, (r) => { const h = r.int(3, 12); return { a: r.int(4, 15), h, s: h + r.int(1, 5) }; }, (p) => p.a * p.h !== 2 * (p.a + p.s) && p.a !== p.s),
       make: paraMake,
@@ -380,6 +592,22 @@ export default {
       prev: '5-1-6:6', pre: ['3-2-2:5'],
       hint: '똑같은 삼각형 두 개를 붙이면 평행사변형이 돼요. 그래서 삼각형의 넓이는 밑변 × 높이 ÷ 2예요. 밑변 6 cm, 높이 4 cm면 6 × 4 ÷ 2 = 12 cm²예요.',
       tip: '2로 나누는 것을 빠뜨리거나 높이 대신 다른 변을 쓰는지 봐요. 둔각삼각형은 높이가 삼각형 바깥에 있을 수 있어요.',
+    },
+    {
+      id: '5-1-6:8', name: '마름모의 넓이', kid: '마름모의 넓이', s: 'ME', sec: 25,
+      gen: (r) => until(r, (r) => ({ a: r.int(4, 16), b: r.int(3, 12) }), (p) => (p.a * p.b) % 2 === 0 && p.a !== p.b && p.a * p.b !== 2 * (p.a + p.b)),
+      make: rhomMake,
+      steps: (p) => [{ c: 'MUL', p: { a: p.a, b: p.b }, why: '마름모를 둘러싼 직사각형을 그려요. 가로와 세로는 두 대각선의 길이예요.' }, { c: 'DIV', p: { a: p.a * p.b, b: 2 }, why: '마름모는 그 직사각형의 반이에요. 2로 나눠요.' }],
+      prev: '5-1-6:7', pre: ['3-2-2:5'],
+      hint: '마름모를 둘러싼 직사각형을 그리면 가로와 세로가 두 대각선의 길이예요. 마름모는 그 직사각형의 반이에요. 그래서 마름모의 넓이는 한 대각선 × 다른 대각선 ÷ 2예요.',
+      tip: '2로 나누는 것을 빠뜨리는지 봐요. 색종이로 마름모를 접어 둘러싼 직사각형의 반이 되는 것을 보여 줘요.',
+    },
+    {
+      id: '5-1-6:9', name: '사다리꼴의 넓이', kid: '사다리꼴의 넓이', s: 'ME', sec: 35,
+      gen: (r) => ({ ...until(r, (r) => ({ a: r.int(3, 12), b: r.int(4, 16), h: r.int(3, 10) }), (p) => Math.abs(p.a - p.b) >= 2 && Math.min(p.a, p.b) / Math.max(p.a, p.b) >= 0.3 && ((p.a + p.b) * p.h) % 2 === 0), ...pickOr(r, 0.25) }),
+      make: trapMake, steps: trapSteps, prev: '5-1-6:8', pre: ['3-1-4:5', '3-2-2:5'],
+      hint: '똑같은 사다리꼴 두 개를 거꾸로 붙이면 평행사변형이 돼요. 그 밑변은 윗변 + 아랫변이에요. 그래서 사다리꼴의 넓이는 (윗변 + 아랫변) × 높이 ÷ 2예요.',
+      tip: '윗변과 아랫변을 먼저 더하지 않거나 2로 나누는 것을 빠뜨리는지 봐요. 식에 괄호가 왜 필요한지 붙여 만든 평행사변형의 밑변으로 설명해요.',
     },
     // ── 6-1-6 직육면체의 부피와 겉넓이
     {
@@ -404,6 +632,21 @@ export default {
       prev: '6-1-6:3', pre: ['5-1-6:4', '3-1-1:4'],
       hint: '겉넓이는 여섯 면의 넓이를 모두 더한 것이에요. 마주 보는 두 면은 똑같아서 서로 다른 세 면의 넓이를 더해 2배 해요.',
       tip: '상자를 펼친 전개도로 여섯 면을 보여 줘요. 부피를 구하거나 세 면만 더하는지 봐요.',
+    },
+    // ── 6-2-5 원의 둘레와 넓이
+    {
+      id: '6-2-5:3', name: '원주 구하기', kid: '원주 구하기', s: 'ME', sec: 40,
+      gen: (r) => ({ ...(r.chance(0.6) ? { v: 'd', d: r.pick([3, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15]) } : { v: 'r', r: r.int(3, 10) }), ...pickOr(r, 0.35) }),
+      make: circumMake, steps: circumSteps, prev: null, pre: ['5-2-4:5', '3-2-3:3'],
+      hint: '원주는 원의 둘레예요. 원주는 지름 × 원주율이에요. 반지름을 알면 먼저 반지름 두 개를 이어 지름을 구해요. 지름이 10 cm면 원주는 10 × 3.14 = 31.4 cm예요.',
+      tip: '반지름에 바로 원주율을 곱하는지(지름으로 바꾸지 않음), 원의 넓이 식과 섞는지 봐요. 원 모양 물건을 한 바퀴 굴려 지름의 세 배보다 조금 더 가는 것을 보여 줘요.',
+    },
+    {
+      id: '6-2-5:5', name: '원의 넓이 구하기', kid: '원의 넓이 구하기', s: 'ME', sec: 50,
+      gen: (r) => { const v = r.pick(['r', 'r', 'd']), rad = r.int(3, 10); return { v, r: rad, ...(v === 'd' ? { d: 2 * rad } : {}), ...pickOr(r, 0.35) }; },
+      make: circAreaMake, steps: circAreaSteps, prev: '6-2-5:3', pre: ['5-2-4:5', '3-2-3:3'],
+      hint: '원의 넓이는 반지름 × 반지름 × 원주율이에요. 지름을 알면 먼저 반으로 나눠 반지름을 구해요. 반지름이 10 cm면 넓이는 10 × 10 × 3.14 = 314 cm²예요.',
+      tip: '지름을 그대로 두 번 곱하거나 원주 식(지름 × 원주율)을 쓰는지 봐요. 원을 잘게 잘라 이어 붙이면 가로가 원주의 반, 세로가 반지름인 직사각형에 가까워지는 것을 보여 줘요.',
     },
   ],
 };

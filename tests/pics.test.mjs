@@ -1,7 +1,7 @@
 // 그림 틀 검사(engine/pics.js · engine/hints/pics.js) — 차시마다 문제 40개 × 모든 단계(떠올리기 −1 · 단계 0…n−1 · 처음 문제로 n)
 //  ① 그려지나(SVG 꼴 · NaN · undefined 없음 · 폭 446 · 높이 200 안)
 //  ② 답이 글자로 새지 않나 — 그림 속 글자에 '문제의 답'(처음 문제로 돌아오기 전) · '지금 단계의 답'이 있으면 실패
-//     (문제 · 지금까지 단계의 식에 이미 있는 수와 마친 단계의 답은 됨 · 가르기 띠는 뒤 단계 식의 수도 됨 · 눈금의 0 · 동전의 10 · 100은 됨 · 시계 숫자판은 뺌 · 세어서 아는 것은 됨)
+//     (문제 · 지금까지 단계의 식에 이미 있는 수와 마친 단계의 답은 됨 · 가르기 띠는 뒤 단계 식의 수도 됨 · 눈금의 0 · 동전의 10 · 100은 됨 · 시계 숫자판 · 자 눈금은 뺌 · 세어서 아는 것은 됨)
 //  ③ 차시마다 그림이 나오는 비율 — 표에 넣었는데 거의 안 나오면(25% 아래) 실패
 //  ④ 문제 속 도형 그림(engine/figs.js) — 그림을 그릴 수 있는 문제면 문제에 그림 조각(fig)이 꼭 하나 · 그림 글자에 답이 없음(그림에 준 수와 같은 답은 됨) · 좌표 폭 280 · 높이 160 안(종이 칸 · 크롬북 화면)
 //  node tests/pics.test.mjs      V=1이면 차시마다 비율을 다 보임
@@ -14,6 +14,8 @@ import { rng } from '../engine/math.js';
 import { toText } from '../engine/tokens.js';
 
 const N = 40, V = !!process.env.V;
+/* 원래 숫자가 적힌 그림(시계 숫자판 · 자 눈금) — 그 숫자는 답이 새는 것으로 세지 않음(읽는 것이 문제) */
+const SCALE = new Set(['clock', 'ruler']);
 const nums = (t) => (String(t).match(/\d+(?:\.\d+)?/g) || []).map(Number);
 const texts = (svg) => [...svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((m) => m[1]);
 /* 화면이 쓰는 단계 꼴(app/js/fix.js stepsOf와 같음) */
@@ -41,7 +43,7 @@ for (const c of PIC_IDS) {
       const m = svg.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/), w = m ? Number(m[1]) : 0, h = m ? Number(m[2]) : 0;
       maxW = Math.max(maxW, w); maxH = Math.max(maxH, h);
       if (!(w > 20) || !(h > 20) || w > 446 || h > 200) bad.push(`${at} 크기 ${w} × ${h}`);
-      if (spec.t === 'clock') continue;
+      if (SCALE.has(spec.t)) continue;
       const ok = new Set([...own, 0]);
       if (spec.unit > 1) ok.add(spec.unit);   /* 동전에 적힌 10 · 100 */
       /* 가르기 띠의 칸 글은 단계의 식(떠올리기 말이 이미 말하는 가르기) — 뒤 단계의 식에 있는 수도 됨 */
@@ -76,6 +78,7 @@ for (const c of FIG_IDS) {
     if (!svg.startsWith('<svg') || /NaN|undefined|Infinity/.test(svg)) bad.push(`${at} 문제 그림이 깨졌어요`);
     if (!(w > 20) || !(h > 20) || w > 280 || h > 160) bad.push(`${at} 문제 그림 크기 ${w} × ${h}`);
     if (!toks[0].alt) bad.push(`${at} 문제 그림에 옮긴 글(alt)이 없어요`);
+    if (SCALE.has(f.spec.t)) continue;
     const given = new Set(nums(JSON.stringify(f.spec))), seen = texts(svg).flatMap(nums).filter((v) => !given.has(v) && (it.sol || []).map(Number).includes(v));
     if (seen.length) leak.push(`${at} 문제 그림에 답 ${[...new Set(seen)].join(', ')}`);
     /* 그림에 준 수가 아닌 글자(㉠ · 단위 말고)가 있으면 실패 — 그림은 준 것만 적음 */

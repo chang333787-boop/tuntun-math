@@ -141,27 +141,52 @@ export function line({ min = 0, max, ticks = [], marks = [], arcs = [], gap = nu
   return wrap(w, y + 36, label || `${min}부터 ${max}까지 수직선${marks.length ? ` — ${marks.map((m) => (m.lab != null ? m.lab : m.v)).join(', ')} 표시` : ''}${arcs.length ? ` · ${arcs.filter((a) => !a.da).length}번 뛰어 세기` : ''}`, s);
 }
 
-// ── 시계 ── h시 m분 · sweep = 긴바늘이 한 바퀴 도는 화살표(1시간 = 60분)
-export function clock({ h = 12, m = 0, sweep = false, r = 60, label = '' }) {
-  const c = r + (sweep ? 18 : 6), pt = (deg, len) => [c + len * Math.sin((deg * Math.PI) / 180), c - len * Math.cos((deg * Math.PI) / 180)];
+// ── 시계 ── h시 m분 · sweep = 긴바늘이 한 바퀴 도는 화살표(1시간 = 60분) · gap = 짧은바늘이 있는 두 숫자 사이를 칠함(지나온 숫자가 '시')
+//   jumps = 12에서 긴바늘까지 숫자 한 칸씩 뛰는 화살(두 칸부터 첫 칸에 '5분') + 숫자를 지나 더 간 작은 눈금을 굵게
+export function clock({ h = 12, m = 0, sweep = false, gap = false, jumps = false, r = 60, label = '' }) {
+  const c = r + (jumps ? 30 : sweep ? 18 : 6), pt = (deg, len) => [c + len * Math.sin((deg * Math.PI) / 180), c - len * Math.cos((deg * Math.PI) / 180)];
+  const k5 = Math.floor(m / 5), xy = (deg, len) => { const [x, y] = pt(deg, len); return `${r1(x)} ${r1(y)}`; };
   let s = `<circle cx="${c}" cy="${c}" r="${r}" class="p-box"/>`;
-  for (let k = 0; k < 60; k++) { const big = k % 5 === 0, [xa, ya] = pt(k * 6, r - (big ? 8 : 4)), [xb, yb] = pt(k * 6, r - 1); s += `<path d="M${r1(xa)} ${r1(ya)} L${r1(xb)} ${r1(yb)}" class="p-ln${big ? '' : ' th'}"/>`; }
+  if (gap) s += `<path d="M${c} ${c} L${xy((h % 12) * 30, r - 2)} A${r - 2} ${r - 2} 0 0 1 ${xy((h % 12) * 30 + 30, r - 2)} Z" class="p-f1"/>`;
+  for (let k = 0; k < 60; k++) {
+    const big = k % 5 === 0, on = jumps && k > k5 * 5 && k <= m;
+    s += `<path d="M${xy(k * 6, r - (big || on ? 8 : 4))} L${xy(k * 6, r - 1)}" class="${on ? 'p-arc' : `p-ln${big ? '' : ' th'}`}"/>`;
+  }
   for (let k = 1; k <= 12; k++) { const [x, yy] = pt(k * 30, r - 19); s += T(x, yy + 5, k, 13); }
-  const [hx, hy] = pt(((h % 12) + m / 60) * 30, r * 0.5), [mx, my] = pt(m * 6, r * 0.78);
-  s += `<path d="M${c} ${c} L${r1(hx)} ${r1(hy)}" class="p-hand"/><path d="M${c} ${c} L${r1(mx)} ${r1(my)}" class="p-hand min"/><circle cx="${c}" cy="${c}" r="3.5" class="p-pt"/>`;
+  s += `<path d="M${c} ${c} L${xy(((h % 12) + m / 60) * 30, r * 0.5)}" class="p-hand"/><path d="M${c} ${c} L${xy(m * 6, r * 0.84)}" class="p-hand min"/><circle cx="${c}" cy="${c}" r="3.5" class="p-pt"/>`;
+  if (jumps) {
+    for (let j = 1; j <= k5; j++) s += `<path d="M${xy(j * 30 - 27, r + 4)} Q${xy(j * 30 - 15, r + 17)} ${xy(j * 30 - 3, r + 4)}" class="p-arc"/>`;
+    if (k5 >= 2) { const [x, y] = pt(15, r + 21); s += T(x, y + 4, '5분', 12, 'ac', 'middle', true); }
+  }
   if (sweep) { const R = r + 9, [ax, ay] = pt(8, R), [bx, by] = pt(352, R); s += `<path d="M${r1(ax)} ${r1(ay)} A${R} ${R} 0 1 1 ${r1(bx)} ${r1(by)}" class="p-arc"/><path d="M${r1(bx + 9)} ${r1(by - 5)} L${r1(bx)} ${r1(by)} L${r1(bx + 2)} ${r1(by + 10)}" class="p-arc"/>`; }
   return wrap(2 * c, 2 * c, label || `${h}시${m ? ` ${m}분을` : '를'} 가리키는 시계${sweep ? ' — 긴바늘이 한 바퀴 돎' : ''}`, s);
 }
 
+// ── 자 ── 0~max cm 눈금 자에 색 테이프를 올림(a 눈금부터 b 눈금까지) · cells = 테이프를 1 cm 칸으로 나눔(칸을 셈) · hi = 양 끝 눈금의 숫자를 진하게
+export function ruler({ a = 0, b = 5, max = 10, cells = false, hi = false, label = '' }) {
+  if (!(b > a) || a < 0 || b > max || max > 12) return '';
+  const u = Math.min(24, 252 / max), x0 = 14, xv = (v) => r1(x0 + v * u), W = x0 + max * u + 14, yt = 6, ht = 24, yr = 32, hr = 40;
+  let s = `<rect x="${xv(a)}" y="${yt}" width="${r1((b - a) * u)}" height="${ht}" class="p-f1 ol"/>`;
+  if (cells) for (let k = a + 1; k < b; k++) s += `<path d="M${xv(k)} ${yt} v${ht}" class="p-ln th"/>`;
+  s += `<rect x="2" y="${yr}" width="${r1(W - 4)}" height="${hr}" rx="3" class="p-box"/>`;
+  for (let k = 0; k <= max; k++) {
+    const on = hi && (k === a || k === b);
+    s += `<path d="M${xv(k)} ${yr} v13" class="p-ln th"/>` + (k < max ? `<path d="M${xv(k + 0.5)} ${yr} v7" class="p-ln th"/>` : '') + T(x0 + k * u, yr + 30, k, 13, on ? 'ac' : '', 'middle', on);
+  }
+  return wrap(W, yr + hr + 4, label || `자 위의 색 테이프 — 왼쪽 끝은 눈금 ${a}, 오른쪽 끝은 눈금 ${b}`, s);
+}
+
 // ── 모눈 ── 가로 w칸 · 세로 h칸 직사각형 · mode 'area' = 칸을 칠함(넓이) · 'peri' = 테두리를 굵게(둘레) · wl · hl = 변에 적는 글
-export function grid({ w, h, mode = 'area', wl = '', hl = '', label = '' }) {
+//  size = 한 칸의 크기를 정해 줌(칸 하나를 크게 — 1 m² 정사각형) · mid = 가운데에 적는 글
+export function grid({ w, h, mode = 'area', wl = '', hl = '', size = 0, mid = '', label = '' }) {
   if (!(w >= 1) || !(h >= 1) || w > 30 || h > 20) return '';
-  const cs = Math.max(8, Math.min(28, Math.floor(280 / w), Math.floor(118 / h))), LX = hl ? tw(hl, 14) + 12 : 4, TY = wl ? 22 : 4;
+  const cs = size > 0 ? Math.min(size, Math.floor(280 / w), Math.floor(118 / h)) : Math.max(8, Math.min(28, Math.floor(280 / w), Math.floor(118 / h))), LX = hl ? tw(hl, 14) + 12 : 4, TY = wl ? 22 : 4;
   let s = '';
   for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) s += `<rect x="${LX + i * cs}" y="${TY + j * cs}" width="${cs}" height="${cs}" class="cell${mode === 'area' ? ' on' : ''} thin"/>`;
   s += `<rect x="${LX}" y="${TY}" width="${w * cs}" height="${h * cs}" class="${mode === 'peri' ? 'p-edge' : 'p-ln'}"/>`;
   if (wl) s += T(LX + (w * cs) / 2, 15, wl, 14, '', 'middle', true);
   if (hl) s += T(LX - 6, TY + (h * cs) / 2 + 5, hl, 14, '', 'end', true);
+  if (mid) s += T(LX + (w * cs) / 2, TY + (h * cs) / 2 + 6, mid, 16, '', 'middle', true);
   return wrap(LX + w * cs + 4, TY + h * cs + 4, label || `가로 ${w}칸, 세로 ${h}칸 모눈 직사각형${mode === 'peri' ? ' — 테두리 표시' : ''}`, s);
 }
 
@@ -376,7 +401,61 @@ export function box({ a = 1, b = 1, c = 1, faces = [], one = false, cubes = fals
   return wrap(x + wa + Math.max(dxx + 4, dxx / 2 + 10 + tw(lb, 15)) + 4, y + hc + 26, label || `직육면체 — 가로 ${la}, 세로 ${lb}, 높이 ${lc}`, s);
 }
 
-const KINDS = { split, tiles, array, share, bars, line, clock, grid, place, eqbox, ang, poly, gather, areaf, box };
+// ── 원 ── r = 반지름 · d = 지름(준 쪽만 긋고 길이를 적음 · 둘 다 없으면 '반지름' 글자) · both = 다른 쪽을 진하게(지름 = 반지름 두 개)
+//   sq = 반지름 × 반지름 정사각형을 칠함(원의 넓이) · roll = 한 바퀴 굴린 길이(원주 — 지름의 세 배보다 조금 더 · 굴린 길이에 수는 적지 않음 · d를 주면 원의 지름에 길이를 적음 — 문제 그림 자리에 그려도 준 수가 보이게)
+export function circle({ r = 0, d = 0, both = false, sq = false, roll = false, label = '' }) {
+  if (roll) {
+    const R = 38, D = 2 * R, L = 3.14 * D, x0 = R + 8, cy = 8 + R, yl = cy + R + 2;
+    let g = `<circle cx="${r1(x0 + L)}" cy="${cy}" r="${R}" class="p-ring"/><circle cx="${x0}" cy="${cy}" r="${R}" class="p-edge"/><path d="M${x0 - R} ${cy} H${x0 + R}" class="p-ln"/>` + T(x0, cy - 7, d ? `${d} cm` : '지름', 13);
+    g += `<path d="M${x0} ${yl} H${r1(x0 + L)}" class="p-edge"/>`;
+    for (let j = 0; j <= 3; j++) g += `<path d="M${x0 + j * D} ${yl - 6} v12" class="p-ln"/>`;
+    g += `<path d="M${r1(x0 + L)} ${yl - 6} v12" class="p-ln"/>`;
+    for (let j = 0; j < 3; j++) g += T(x0 + (j + 0.5) * D, yl + 22, '지름', 14, 'ac', 'middle', true);
+    return wrap(x0 + L + R + 8, yl + 30, label || `${d ? `지름 ${d} cm인 ` : ''}원을 한 바퀴 굴린 길이 — 지름의 세 배보다 조금 더 김`, g);
+  }
+  const R = 54, cx = 8 + R, cy = 8 + R, sqt = '반지름 × 반지름';
+  let g = sq ? `<path d="${polyD([[cx, cy], [cx + R, cy], [cx + R, cy - R], [cx, cy - R]])}" class="p-f1"/>` : '';
+  g += `<circle cx="${cx}" cy="${cy}" r="${R}" class="p-ln"/>`;
+  if (d) {
+    g += `<path d="M${cx - R} ${cy} H${cx + R}" class="p-ln"/>` + (both ? `<path d="M${cx} ${cy} H${cx + R}" class="p-edge"/>` : '') + T(cx, cy - 9, `${d} cm`, 15, '', 'middle', true);
+  } else {
+    g += (both ? `<path d="M${cx - R} ${cy} H${cx}" class="p-edge"/>` : '') + `<path d="M${cx} ${cy} H${cx + R}" class="p-ln"/>` + T(cx + R / 2, cy - 9, r ? `${r} cm` : '반지름', 15, '', 'middle', true);
+  }
+  g += `<circle cx="${cx}" cy="${cy}" r="3" class="p-pt"/>`;
+  if (sq) g += T(cx + R + 10, cy - R / 2 + 5, sqt, 15, 'ac', 'start', true);
+  return wrap(2 * R + 16 + (sq ? tw(sqt, 15) + 14 : 0), 2 * R + 16, label || (d ? `원 — 지름 ${d} cm` : r ? `원 — 반지름 ${r} cm` : '원'), g);
+}
+
+// ── 마름모 ── a = 가로 대각선 · b = 세로 대각선(긴 쪽을 길게 — 꼭 맞는 비율은 아님) · 길이는 도형 밖 꺾쇠에 · boxed = 둘러싼 직사각형(점선) + 마름모 칠 · hi = 길이 글을 진하게
+export function rhom({ a = 1, b = 1, boxed = false, hi = false, label = '' }) {
+  if (!(a > 0) || !(b > 0)) return '';
+  const k = Math.min(200 / a, 110 / b), W = Math.max(96, a * k), H = Math.max(64, b * k), bl = `${b} cm`, LX = tw(bl, 15) + 22, T0 = 6;
+  const cx = LX + W / 2, cy = T0 + H / 2, Q = [[LX, cy], [cx, T0], [LX + W, cy], [cx, T0 + H]], yb = T0 + H + 9, xl = LX - 9;
+  let g = boxed ? `<rect x="${r1(LX)}" y="${T0}" width="${r1(W)}" height="${r1(H)}" class="p-ln da"/>` : '';
+  g += `<path d="${polyD(Q)}" class="${boxed ? 'p-f1 ol' : 'p-ln'}"/><path d="M${pt(Q[0])} L${pt(Q[2])} M${pt(Q[1])} L${pt(Q[3])}" class="p-ln da"/>`;
+  g += `<path d="M${r1(LX)} ${r1(yb - 4)} V${r1(yb)} H${r1(LX + W)} V${r1(yb - 4)}" class="p-ln th mu"/>` + T(cx, yb + 17, `${a} cm`, 15, hi ? 'ac' : '', 'middle', true);
+  g += `<path d="M${r1(xl + 4)} ${T0} H${r1(xl)} V${r1(T0 + H)} H${r1(xl + 4)}" class="p-ln th mu"/>` + T(xl - 5, cy + 5, bl, 15, hi ? 'ac' : '', 'end', true);
+  return wrap(LX + W + 8, yb + 23, label || `마름모 — 한 대각선 ${a} cm, 다른 대각선 ${b} cm`, g);
+}
+
+// ── 사다리꼴 ── a = 윗변 · b = 아랫변 · h = 높이 · twin = 똑같은 것을 거꾸로 붙임(평행사변형 — 밑변이 아랫변 + 윗변) · hi 'ab' = 윗변 · 아랫변을 진하게 · 'h' = 높이를 진하게
+export function trap({ a = 1, b = 1, h = 1, twin = false, hi = '', label = '' }) {
+  if (!(a > 0) || !(b > 0) || !(h > 0)) return '';
+  const big = Math.max(a, b), LX = 8, T0 = 24, H = clamp(40 + h * 6, 58, 100), yb = T0 + H;
+  const k = Math.min(clamp(70 + big * 8, 120, 200) / big, twin ? 400 / (a + b + 0.35 * Math.abs(a - b)) : 999);
+  const wa = a * k, wb = b * k, off = Math.abs(wb - wa) * 0.35, down = wb >= wa, Lt = LX + (down ? off : 0), Lb = LX + (down ? 0 : off), hx = LX + off;
+  const A = [Lb, yb], B = [Lb + wb, yb], C = [Lt + wa, T0], D = [Lt, T0], A2 = [Lt + wa + wb, T0], D2 = [Lb + wb + wa, yb], ab = hi === 'ab';
+  let g = twin ? `<path d="${polyD([C, A2, D2, B])}" class="p-f2 gh"/>` : '';
+  g += `<path d="${polyD([A, B, C, D])}" class="p-ln"/>`;
+  g += `<path d="M${r1(hx)} ${T0} V${yb}" class="p-ln da${hi === 'h' ? ' hi' : ''}"/><path d="M${r1(hx + 8)} ${down ? yb : T0} v${down ? -8 : 8} H${r1(hx)}" class="p-ln th"/>`;
+  if (ab) g += `<path d="M${pt(D)} L${pt(C)}" class="p-edge"/><path d="M${pt(A)} L${pt(twin ? D2 : B)}" class="p-edge"/>`;
+  g += T((D[0] + C[0]) / 2, T0 - 7, `${a} cm`, 15, ab ? 'ac' : '', 'middle', true) + T((A[0] + B[0]) / 2, yb + 19, `${b} cm`, 15, ab ? 'ac' : '', 'middle', true);
+  if (twin) g += T(B[0] + wa / 2, yb + 19, `${a} cm`, 15, ab ? 'ac' : 'mu', 'middle', true);
+  g += T(hx + 10, T0 + H * 0.52 + 5, `${h} cm`, 15, hi === 'h' ? 'ac' : '', 'start', true);
+  return wrap(Math.max(B[0], C[0], twin ? A2[0] : 0, twin ? D2[0] : 0) + 8, yb + 26, label || `사다리꼴 — 윗변 ${a} cm, 아랫변 ${b} cm, 높이 ${h} cm`, g);
+}
+
+const KINDS = { split, tiles, array, share, bars, line, clock, ruler, grid, place, eqbox, ang, poly, gather, areaf, box, circle, rhom, trap };
 /* spec = { t: 틀 이름, …그 틀의 값 } → SVG 글자(틀이 없거나 그릴 수 없으면 '') */
 //  k = 화면에 그리는 배율(문제 속 그림은 도움 그림보다 크게 — 좌표는 그대로 · width · height만)
 export function picSVG(spec, k = 1) {
