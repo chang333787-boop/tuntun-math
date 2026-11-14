@@ -153,7 +153,7 @@ export function clock({ h = 12, m = 0, sweep = false, gap = false, jumps = false
     const big = k % 5 === 0, on = jumps && k > k5 * 5 && k <= m;
     s += `<path d="M${xy(k * 6, r - (big || on ? 8 : 4))} L${xy(k * 6, r - 1)}" class="${on ? 'p-arc' : `p-ln${big ? '' : ' th'}`}"/>`;
   }
-  s += `<path d="M${c} ${c} L${xy(((h % 12) + m / 60) * 30, r * 0.5)}" class="p-hand"/><path d="M${c} ${c} L${xy(m * 6, r * 0.84)}" class="p-hand min"/><circle cx="${c}" cy="${c}" r="3.5" class="p-pt"/>`;
+  s += `<path d="M${c} ${c} L${xy(m * 6, r * 0.84)}" class="p-hand min"/><path d="M${c} ${c} L${xy(((h % 12) + m / 60) * 30, r * 0.5)}" class="p-hand"/><circle cx="${c}" cy="${c}" r="3.5" class="p-pt"/>`;   /* 짧은바늘을 긴바늘 위에(겹치는 시각에 짧은바늘이 가려지지 않게) */
   /* 숫자는 바늘 위에 흰 테를 둘러 그림(긴바늘이 7 · 6을 덮던 것) · gap이면 짧은바늘이 지나온 숫자를 진하게 */
   for (let k = 1; k <= 12; k++) { const [x, yy] = pt(k * 30, r - 19), on = gap && k === ((h - 1) % 12) + 1; s += T(x, yy + 5, k, on ? 15 : 13, on ? 'ac halo' : 'halo', 'middle', on); }
   if (jumps) {
@@ -421,7 +421,8 @@ export function circle({ r = 0, d = 0, both = false, sq = false, roll = false, l
   if (d) {
     g += `<path d="M${cx - R} ${cy} H${cx + R}" class="p-ln"/>` + (both ? `<path d="M${cx} ${cy} H${cx + R}" class="p-edge"/>` + T(cx, cy + 22, `지름 ${d} cm`, 14, '', 'middle', true) + T(cx + R / 2, cy - 9, '반지름', 13, 'ac', 'middle', true) : T(cx, cy - 9, `${d} cm`, 15, '', 'middle', true));
   } else {
-    g += (both ? `<path d="M${cx - R} ${cy} H${cx + R}" class="p-edge"/>` + T(cx, cy + 22, '지름', 14, 'ac', 'middle', true) : `<path d="M${cx} ${cy} H${cx + R}" class="p-ln"/>`) + T(cx + R / 2, cy - 9, r ? `${r} cm` : '반지름', 15, '', 'middle', true);
+    g += both ? `<path d="M${cx - R} ${cy} H${cx + R}" class="p-edge"/>` + T(cx, cy + 22, '지름 □ cm', 14, 'ac', 'middle', true) + T(cx + R / 2, cy - 9, r ? `반지름 ${r} cm` : '반지름', 13, '', 'middle', true)
+      : `<path d="M${cx} ${cy} H${cx + R}" class="p-ln"/>` + T(cx + R / 2, cy - 9, r ? `${r} cm` : '반지름', 15, '', 'middle', true);
   }
   g += `<circle cx="${cx}" cy="${cy}" r="3" class="p-pt"/>`;
   if (sq) g += T(cx + R + 10, cy - R / 2 + 5, sqt, 15, 'ac', 'start', true);

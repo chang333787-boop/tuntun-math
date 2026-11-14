@@ -9,13 +9,13 @@
 //  기록(판정)은 부르는 쪽이 첫 답으로 이미 적음 — 여기서 고친 것은 판정에 넣지 않고 스스로 고친 횟수로만(recall · steps) · 점검(진단)에서는 쓰지 않음
 import { bridgeOf } from '../../engine/bridges.js';
 import { byId, makeItem } from '../../engine/lessons/index.js';
-import { cueOf, planOf, picOf, picSpec } from '../../engine/hints/index.js';
+import { cueOf, planOf, picOf, picSpec, sayOf } from '../../engine/hints/index.js';
 import { picSVG } from '../../engine/pics.js';
 import { FIGK } from '../../engine/figs.js';
 import { toText } from '../../engine/tokens.js';
 import { readExpr } from '../../engine/errors.js';
 import { draw, staticHTML, ansSay, fbSlot, nbsp } from './item.js';
-import { stepsOf } from './fix.js';
+import { stepsOf, ruleFor } from './fix.js';
 import { colOf, colView, tenFrameHTML, regroupHTML, rgLag } from './model.js';
 import { esc } from './local.js';
 import { P } from '../../engine/concepts/kit.js';
@@ -118,7 +118,8 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
     b.addEventListener('click', (e) => { if (e.detail > 0 && performance.now() - born < 400) return; if (onEnd) onEnd({ how }); });   /* '다 풀었어요'를 두 번 누른 손가락이 '다음'으로 칭찬을 건너뛰지 않게 */
   };
   /* 같이 봐요 — 답 + 풀이 순서(이름이 있으면)를 평서문으로 · 물음 X · 지킬 수 있는 말만(again) */
-  const seeIt = () => finish(false, 'shown', `<b>같이 봐요.</b> ${ansSay(it)}${names ? `<br><span class="small">풀이 순서: ${names.map(esc).join(' → ')}</span>` : ''}${againLine ? `<br><span class="small">${esc(againLine)}</span>` : ''}`, true);
+  const why0 = steps.length ? '' : (() => { try { return (sayOf(c, it.p, true) || [ruleFor(c, it)]).filter(Boolean).join(' '); } catch (e) { return ''; } })();   /* 단계가 없는 문제 — 답만 보이던 것(처음 보는 눈 4차) */
+  const seeIt = () => finish(false, 'shown', `<b>같이 봐요.</b> ${why0 ? `${nbsp(esc(why0))} ` : ''}${ansSay(it)}${names ? `<br><span class="small">풀이 순서: ${names.map(esc).join(' → ')}</span>` : ''}${againLine ? `<br><span class="small">${esc(againLine)}</span>` : ''}`, true);
   const toSteps = () => {
     if (!steps.length || (budget && budget.left <= 0)) return seeIt();   /* 단계가 없거나 한 판에 여는 수를 넘음(조사 R — 단계 풀이는 푸는 문제 수를 줄임) */
     if (budget) budget.left--;

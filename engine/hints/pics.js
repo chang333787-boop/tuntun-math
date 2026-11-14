@@ -195,7 +195,11 @@ function roundPic(p, { i, steps }) {
   const r = (p.m === 'up' ? (low ? base + unit : base) : p.m === 'half' && half ? base + unit : base) / 10 ** dp;
   const tx = new Set([...cols, ...s].map(Number));
   if (tx.has(r) || tx.has(base / 10 ** dp)) return null;
-  const cut = steps.findIndex((st) => /아래 (?:수|숫자)를 (?:버려|떼어)/.test(st.why || '')), gone = cut >= 0 && i > cut;
+  const cut = steps.findIndex((st) => /아래 (?:수|숫자)를 (?:모두 0으로|지워|버려|떼어)/.test(st.why || '')), gone = cut >= 0 && i > cut;
+  if (i >= steps.length && steps.length && r !== base / 10 ** dp) {   /* 처음 문제로 돌아옴 — 올린 뒤의 수(9000 → 10000이면 만의 자리 칸이 생김) */
+    const rs = String(Math.round(r * 10 ** dp)).padStart(dp + 1, '0'), rn = rs.length, rtop = rn - 1 - dp, rcols = rep(rn, (j) => name(rtop - j));
+    return { t: 'place', cols: rcols, rows: [{ ds: rs.split(''), on: rcols.indexOf(name(p.pk)) }] };
+  }
   const lows = rep(n - tgt - 1, (k) => tgt + 1 + k), on = gone ? tgt : p.m === 'half' && (cut < 0 || i < cut) ? tgt + 1 : lows;   /* 반올림 — 볼 숫자 한 칸 → 떼어 낼 때 아래 자리 모두 → 올릴 자리 */
   return { t: 'place', cols, rows: [{ ds: rep(n, (j) => (gone && j > tgt ? '0' : s[j])), on }] };
 }

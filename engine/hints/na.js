@@ -349,14 +349,14 @@ function roundSteps(p) {
     if (!below || !pl) return [];
     if (p.m === 'half') {   /* 소수 반올림 — 바로 아래 숫자가 5 이상인가를 고르고 버리기 · 올리기(11-14 처음 보는 눈 3차 '같이 보기가 답만') */
       const d = Math.floor(p.xi / (u / 10)) % 10, nx = { '-1': '소수 둘째 자리', '-2': '소수 셋째 자리' }[p.pk];
-      return [{ c: '5-2-1:2', p: { v: 'is', d }, why: `바로 아래 ${nx} 숫자를 봐요. 5 이상이면 올리고, 5보다 작으면 버려요.`, n: '올릴지 버릴지 고르기' }, { c: 'g4_DECAS', p: { op: '-', a: p.xi, ka: p.dp, b: below, kb: p.dp }, why: `${pl} 아래 숫자를 버려요.`, n: '아래 자리 버리기' }, ...(d >= 5 ? [{ c: 'g4_DECAS', p: { op: '+', a: floor, ka: p.dp, b: u, kb: p.dp }, why: `${pl} 숫자를 하나 올려요.`, n: '그 자리 숫자 하나 올리기' }] : [])];
+      return [{ c: '5-2-1:2', p: { v: 'is', d }, why: `바로 아래 ${nx} 숫자를 봐요. 5 이상이면 올리고, 5보다 작으면 버려요.`, n: '올릴지 버릴지 고르기' }, { c: 'g4_DECAS', p: { op: '-', a: p.xi, ka: p.dp, b: below, kb: p.dp }, why: `${pl} 아래 숫자를 지워요.`, n: '아래 자리 지우기' }, ...(d >= 5 ? [{ c: 'g4_DECAS', p: { op: '+', a: floor, ka: p.dp, b: u, kb: p.dp }, why: `${pl} 숫자를 하나 올려요.`, n: '그 자리 숫자 하나 올리기' }] : [])];
     }
-    const cutD = { c: 'g4_DECAS', p: { op: '-', a: p.xi, ka: p.dp, b: below, kb: p.dp }, why: `${pl} 아래 숫자를 버려요.`, n: '아래 자리 버리기' };
+    const cutD = { c: 'g4_DECAS', p: { op: '-', a: p.xi, ka: p.dp, b: below, kb: p.dp }, why: `${pl} 아래 숫자를 지워요.`, n: '아래 자리 지우기' };
     return p.m === 'down' ? [cutD] : [cutD, { c: 'g4_DECAS', p: { op: '+', a: floor, ka: p.dp, b: u, kb: p.dp }, why: `${pl} 숫자를 하나 올려요.`, n: '그 자리 숫자 하나 올리기' }];
   }
   const n = p.xi, u = 10 ** p.pk, below = n % u, floor = n - below, pl = RPL[p.pk];
   if (!below) return [];
-  const cut = { c: 'SUB', p: { a: n, b: below }, why: `${pl} 아래 수를 버려서 0으로 만들어요.`, n: '아래 자리 버리기' };
+  const cut = { c: 'SUB', p: { a: n, b: below }, why: `${pl} 아래 수를 모두 0으로 바꿔요.`, n: '아래 자리 비우기' };
   const add = { c: 'ADD', p: { a: floor, b: u }, why: `${pl} 숫자를 하나 올려요.`, n: '그 자리 숫자 하나 올리기' };
   if (p.m === 'down') return [cut];
   if (p.m === 'up') return [cut, add];
