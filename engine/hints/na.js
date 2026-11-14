@@ -357,7 +357,7 @@ function roundSteps(p) {
   }
   const n = p.xi, u = 10 ** p.pk, below = n % u, floor = n - below, pl = RPL[p.pk];
   if (!below) return [];
-  const cut = { c: 'SUB', p: { a: n, b: below }, why: `가린 ${pl} 아래 수를 모두 0으로 바꿔요.`, n: '가린 자리 바꾸기' };
+  const cut = { c: 'SUB', p: { a: n, b: below }, why: `가린 ${pl} 아래 수를 모두 0으로 바꿔요.`, n: '아래 자리를 영으로 바꾸기' };
   const add = { c: 'ADD', p: { a: floor, b: u }, why: `${pl} 숫자를 하나 올려요.`, n: '그 자리 숫자 하나 올리기' };
   if (p.m === 'down') return [cut];
   if (p.m === 'up') return [cut, add];

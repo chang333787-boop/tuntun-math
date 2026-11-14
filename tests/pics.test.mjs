@@ -19,7 +19,7 @@ const SCALE = new Set(['clock', 'ruler']);
 const nums = (t) => (String(t).match(/\d+(?:\.\d+)?/g) || []).map(Number);
 const texts = (svg) => [...svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((m) => m[1]);
 /* 화면이 쓰는 단계 꼴(app/js/fix.js stepsOf와 같음) */
-const stepsOf = (c, p) => { try { return workedSteps(c, p).map((s) => ({ why: s.why, c: s.c, prompt: s.item.prompt, sol: s.sol, p: s.item.p })); } catch (e) { return []; } };
+const stepsOf = (c, p) => { try { return workedSteps(c, p).map((s) => ({ why: s.why, c: s.c, prompt: s.item.prompt, sol: s.sol, p: s.item.p, ch: !!s.item.choices })); } catch (e) { return []; } };
 const bad = [], leak = [], low = [], rows = [];
 let drawn = 0, maxW = 0, maxH = 0;
 for (const c of PIC_IDS) {
@@ -51,7 +51,8 @@ for (const c of PIC_IDS) {
       steps.slice(0, Math.max(i, 0)).forEach((s) => (s.sol || []).forEach((v) => ok.add(Number(v))));
       const no = new Set();
       if (i < steps.length && !it.choices) (it.sol || []).map(Number).filter((v) => Number.isFinite(v) && !ok.has(v)).forEach((v) => no.add(v));
-      if (i >= 0 && i < steps.length) (steps[i].sol || []).map(Number).filter((v) => Number.isFinite(v) && !ok.has(v)).forEach((v) => no.add(v));
+      if (i >= 0 && i < steps.length && !steps[i].ch) (steps[i].sol || []).map(Number)   /* 고르기 단계의 답은 보기 번호(그림의 수가 아님) */
+        .filter((v) => Number.isFinite(v) && !ok.has(v)).forEach((v) => no.add(v));
       const seen = texts(svg).flatMap(nums).filter((v) => no.has(v));
       if (seen.length) leak.push(`${at} 그림에 답 ${[...new Set(seen)].join(', ')} · 글자: ${texts(svg).join(' | ')}`);
     }

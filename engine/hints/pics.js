@@ -187,7 +187,7 @@ function rangePic(p, { i, steps }) {
 function roundPic(p, { i, steps }) {
   if (p.v !== 'val' || i > steps.length || !int(p.xi) || p.xi < 1) return null;   /* 처음 문제로 돌아와서도(i = n) 남김 — 단서가 마지막에 사라지지 않게 */
   const dp = p.dp || 0, s = String(p.xi).padStart(dp + 1, '0'), n = s.length, top = n - 1 - dp;
-  if (n > 6 || /자리 숫자를 봐요|5 이상이면/.test((cur(steps, i) || {}).why || '')) return null;
+  if (n > 6 || /자리 숫자를 봐요/.test((cur(steps, i) || {}).why || '')) return null;
   const pw = (j) => top - j, name = (e) => (e >= 0 ? String(10 ** e) : `0.${'0'.repeat(-e - 1)}1`);
   const cols = rep(n, (j) => name(pw(j))), tgt = rep(n, (j) => j).find((j) => pw(j) === p.pk);
   if (tgt == null || tgt >= n - 1) return null;

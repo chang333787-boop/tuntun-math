@@ -119,18 +119,18 @@ export function bars({ rows = [], top = '', label = '' }) {
     K = Math.min(K, Math.max(...n));
     /* 줄이 많으면 띠를 낮게(도움 화면에서 그림이 커져 단계 칸이 크롬북 768 밑으로 밀리지 않게) */
     const NL = linesOf(K), rh = NL <= 2 ? 30 : NL <= 3 ? 22 : 18, LH = rh + (NL <= 2 ? 10 : 6), ww = wOf(K), bx = 2 + LW;
-    let s = '', y = 2;
+    let s = '', y = LW ? 6 : 2;
     rows.forEach((q, r) => {
-      const ks = kindsOf(q), pre = q.pre || 0, gone = (i) => i >= pre - (q.preX || 0);
-      s += labAt(q, y + rh / 2);
+      const ks = kindsOf(q), pre = q.pre || 0, gone = (i) => i >= pre - (q.preX || 0), bh = Math.max(Math.ceil(n[r] / K) * LH - (LH - rh), q.lab != null ? 36 : 0);
+      s += labAt(q, y + bh / 2);
       for (let t = 0; t < n[r]; t++) {
         const x = bx + (t % K) * (ww + 8), yy = y + Math.floor(t / K) * LH;
         if (t < pre) s += bar(q, x, yy, ww, rh, () => 'a') + (gone(t) ? cross(x, yy, ww, rh) : '');
         else { const w = t - pre; s += bar(q, x, yy, ww, rh, (i) => ks[w * q.d + i]); }
       }
-      y += Math.ceil(n[r] / K) * LH + (r < rows.length - 1 ? GAP : 0);
+      y += bh + (r < rows.length - 1 ? GAP + (LH - rh) : 0);
     });
-    return wrap(bx + K * (ww + 8) - 6, y - (LH - rh) + 2, label || rows.map(say).join(' · '), s);
+    return wrap(bx + K * (ww + 8) - 6, y + 6, label || rows.map(say).join(' · '), s);
   }
   const rh = rows.length >= 3 ? 28 : 34, ww = Math.min(Wn > 1 ? 210 : 290, Math.floor((AW - 8 * (Wn - 1)) / Wn)), y0 = top ? 42 : 2, bx = 2 + LW;
   let s = top ? brace(bx, bx + ww, 18, top) : '';
