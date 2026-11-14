@@ -437,7 +437,7 @@ function fmixSteps(p, op) {
     return [
       head,
       { c: 'g4_FMIX', p: { op: '=', w: p.w1, n: N1, d: L }, why: `${N1}/${L}에서 ${N2}/${L}${P(N2, '을', '를')} 뺄 수 없어요. 자연수에서 1을 ${RO(`${L}/${L}`)} 바꿔 분수 부분에 보태요.` },
-      p.w2 && p.w1 - 1 > p.w2 ? { c: 'SUB', p: { a: p.w1 - 1, b: p.w2 }, why: `자연수 ${p.w1}에서 1을 분수 쪽으로 보냈어요. 남은 ${p.w1 - 1}에서 ${p.w2}${P(p.w2, '을', '를')} 빼요.` } : null,
+      p.w2 && p.w1 - 1 >= p.w2 ? { c: 'SUB', p: { a: p.w1 - 1, b: p.w2 }, why: `자연수 ${p.w1}에서 1을 분수 쪽으로 보냈어요. 남은 ${p.w1 - 1}에서 ${p.w2}${P(p.w2, '을', '를')} 빼요.` } : null,
       { c: 'F6', p: { op: '-', a: L + N1, b: N2, d: L }, why: '분수 부분끼리 빼요.' },
     ].filter(Boolean);
   }

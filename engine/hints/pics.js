@@ -167,7 +167,7 @@ function rangePic(p, { i, steps }) {
     if (!int(p.b2) || p.b2 - p.b < 2 || p.b2 - p.b > 16) return null;
     const lo = p.b - 2, hi = p.b2 + 2, on = (v) => v === p.b || v === p.b2;
     /* 떠올리기 · 처음 문제로 돌아왔을 때 눈금마다 수를 적어 칠한 곳을 셀 수 있게 — 단계 중엔 두 기준 수만(끝 수 · 뺄셈 단계의 답이 글자로 새지 않게) · 개수(답)가 눈금 수와 같아지면 떠올리기에서도 두 기준 수만 */
-    const n = p.b2 - (OPEN[p.m2] ? 1 : 0) - (p.b + (OPEN[p.m] ? 1 : 0)) + 1, all = i >= steps.length || (i < 0 && (n < lo || n > hi));
+    const n = p.b2 - (OPEN[p.m2] ? 1 : 0) - (p.b + (OPEN[p.m] ? 1 : 0)) + 1, all = i >= steps.length || (i < 0 && (n < lo || n > hi || n === p.b || n === p.b2));
     return { t: 'line', min: lo, max: hi, ticks: I(lo, hi).map((v) => ({ v, big: on(v), lab: on(v) || (all && v > lo && v < hi) ? v : null })), marks: [dot(p.b, p.m), dot(p.b2, p.m2)], gap: [p.b, p.b2] };
   }
   if (p.v === 'cnt' && Array.isArray(p.list) && p.list.every(int)) {

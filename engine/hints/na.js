@@ -310,6 +310,19 @@ function rangeCue(p) {
   if (p.v === 'edge') return `수직선의 ●는 그 수가 들어가고 ○는 들어가지 않아요. 칠한 쪽에서 가장 ${p.m === 'ge' || p.m === 'gt' ? '작은' : '큰'} 자연수는 무엇일까요?`;
   return `●는 기준 수가 들어가고 ○는 들어가지 않아요. 선이 ${p.b}보다 큰 쪽으로 가는지 작은 쪽으로 가는지도 보세요.`;
 }
+/* 같이 보기 · 시범 · 함께 말(이 문제의 수로) — 두 수 사이는 '몇부터 몇까지 → 하나씩 세면' · 위의 수는 칠한 쪽에 있는 수를 늘어놓고 셈 */
+function rangeSay(p, full) {
+  const inR = (x) => (p.m === 'ge' ? x >= p.b : p.m === 'le' ? x <= p.b : p.m === 'gt' ? x > p.b : x < p.b);
+  if (p.v === 'span') {
+    const lo = opened(p.m) ? p.b + 1 : p.b, hi = opened(p.m2) ? p.b2 - 1 : p.b2;
+    return full ? [`칠한 곳에 있는 자연수는 ${lo}부터 ${hi}까지예요.`, `하나씩 세면 ${hi - lo + 1}개예요.`] : [`칠한 곳에 있는 자연수를 ${lo}부터 하나씩 세어 봐요.`];
+  }
+  if (p.v === 'cnt' && Array.isArray(p.list)) {
+    const xs = p.list.filter(inR);
+    return full ? [xs.length ? `칠한 쪽에 있는 위의 수는 ${xs.join(', ')}${P(xs[xs.length - 1], '이에요', '예요')}.` : '칠한 쪽에 있는 위의 수는 없어요.', `모두 ${xs.length}개예요.`] : ['수직선에서 칠한 쪽에 있는 위의 수를 찾아 세어 봐요.'];
+  }
+  return null;
+}
 // 끝 수 — 초과는 바로 뒤의 수 · 미만은 바로 앞의 수(이상 · 이하는 기준 수 그대로라 단계 없음)
 const edgeStep = (m, b) => (m === 'gt'
   ? { c: 'g1_SEQ', p: { v: 'next', n: b, d: 1 }, why: `${b}${P(b, '은', '는')} 들어가지 않아요. 들어가는 가장 작은 자연수를 찾아요.`, n: '들어가는 가장 작은 자연수 찾기' }
@@ -317,13 +330,7 @@ const edgeStep = (m, b) => (m === 'gt'
 function rangeSteps(p) {
   if (p.v === 'edge') return opened(p.m) ? [edgeStep(p.m, p.b)] : [];
   if (p.v === 'cnt') return [];   /* 위의 수 세기 — 수직선 그림에서 칠한 쪽의 수를 셈('가장 작은 수' 단계는 위의 수와 상관없고 초과의 뜻을 비틂 · 처음 보는 눈 5차) */
-  if (p.v !== 'span') return [];
-  const lo = p.m === 'gt' ? p.b + 1 : p.b, hi = p.m2 === 'lt' ? p.b2 - 1 : p.b2, out = [];
-  if (opened(p.m)) out.push(edgeStep(p.m, p.b));
-  if (opened(p.m2)) out.push(edgeStep(p.m2, p.b2));
-  out.push({ c: 'SUB', p: { a: hi, b: lo }, why: '가장 큰 수에서 가장 작은 수를 빼요.', n: '가장 큰 수에서 가장 작은 수 빼기' });
-  out.push({ c: 'ADD', p: { a: hi - lo, b: 1 }, why: '빼기만 하면 맨 앞의 수가 빠져요. 양 끝 수를 모두 세려면 1을 더해요.', n: '양 끝 수까지 세려고 하나 더하기' });
-  return out;
+  return [];   /* 두 수 사이(span) — 수직선 눈금마다 수를 적고 칠한 곳을 셈('빼고 1 더하기' 공식은 떠올리기 말 '세어요'와 어긋나던 것 · 처음 보는 눈 9차) · 같이 보기 · 시범 말은 rangeSay */
 }
 
 // ── 올림 · 버림 · 반올림(g5_ROUND)
@@ -629,8 +636,8 @@ const H = {
   '5-1-2:4': { cue: (p) => `${J(p.a, '과', '와')} ${p.b}의 약수를 각각 늘어놓아 볼까요? 두 줄에 모두 있는 수가 공약수${p.v === 'cnt' ? '인데, 1도 빠뜨리지 말고 세어요.' : '이고, 그중 가장 큰 수가 최대공약수예요.'}`, plan: () => ['첫째 수의 약수 늘어놓기', '둘째 수의 약수 늘어놓기'] },
   '5-1-2:6': { cue: (p) => `큰 수 ${Math.max(p.a, p.b)}의 배수를 차례로 늘어놓아 볼까요? 작은 수로 나누어떨어지는 첫 수를 찾${p.v === 'cms' ? '고, 그 수를 2배, 3배 해 봐요' : '아요'}.`, plan: (p) => (Math.max(p.a, p.b) % Math.min(p.a, p.b) === 0 ? ['큰 수가 나누어떨어지는지 보기'] : ['큰 수의 배수 늘어놓기', '나누어떨어지는지 확인하기']) },
   // 5-2-1 수의 범위와 어림하기
-  '5-2-1:2': { cue: rangeCue, steps: rangeSteps },
-  '5-2-1:3': { cue: rangeCue, steps: rangeSteps },
+  '5-2-1:2': { cue: rangeCue, steps: rangeSteps, say: rangeSay, noSteps: '한 걸음 문제(수직선에서 칠한 곳의 수를 세거나 기준 수를 그대로 씀 — 같이 보기 · 시범은 이 문제의 수로 rangeSay)' },
+  '5-2-1:3': { cue: rangeCue, steps: rangeSteps, say: rangeSay },
   '5-2-1:5': { cue: roundCue, steps: roundSteps },
   '5-2-1:6': { cue: roundCue, steps: roundSteps },
   '5-2-1:7': { cue: roundCue, steps: roundSteps },
