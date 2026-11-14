@@ -197,6 +197,10 @@ function roundPic(p, { i, steps }) {
   return { t: 'place', cols, rows: [{ ds: rep(n, (j) => (gone && j > tgt ? '0' : s[j])), on }] };
 }
 
+// ── 분수의 나눗셈 · 비 ── 같은 띠에 g칸씩 묶어 번갈아 칠함(묶음 수 = 몫 · 띠는 다섯까지) · 분모가 같은 두 분수를 위아래로
+const groupBar = (d, total, g) => (int(d) && d >= 2 && d <= 24 && int(total) && int(g) && g >= 1 && total >= g && total % g === 0 && Math.ceil(total / d) <= 5 && total / g <= 30 ? bar1({ d, segs: rep(total / g, (j) => seg(g, j % 2 ? 'b' : 'a')) }) : null);
+const sameRows = (a, b, d) => (int(d) && d >= 2 && d <= 24 && int(a) && int(b) && a >= 1 && b >= 1 && a <= 2 * d && b <= 2 * d ? { t: 'bars', rows: [{ d, segs: [seg(a)], lab: [a, d] }, { d, segs: [seg(b, 'b')], lab: [b, d] }] } : null);
+
 const MULS = ['3-1-4:3', '3-1-4:4', '3-1-4:5', '3-1-4:6', '3-2-1:2', '3-2-1:3', '3-2-1:4', '3-2-1:6', '3-2-1:7', '3-2-1:8', '4-1-3:3'];
 const DIVS = ['3-2-2:3', '3-2-2:4', '3-2-2:5', '3-2-2:7'];
 const FACTS = ['2-2-2:2', '2-2-2:3', '2-2-2:4', '2-2-2:5', '2-2-2:6', '2-2-2:7'];
@@ -394,5 +398,26 @@ const PICS = {
   '5-2-1:5': roundPic,
   '5-2-1:6': roundPic,
   '5-2-1:7': roundPic,
+  /* 몫을 분수로 — a ÷ b = 1/b가 a개(띠 하나를 b칸으로 · a칸 칠함 · 1보다 크면 띠가 이어짐) */
+  '6-1-1:2': (p, { i, steps }) => (i < steps.length && okD(p.b) && int(p.a) && p.a >= 1 && p.a < p.b ? bar1({ d: p.b, segs: [seg(p.a)] }) : null),
+  '6-1-1:3': (p, { i, steps }) => (i < steps.length && okD(p.b) && int(p.a) && p.a > p.b && p.a <= 4 * p.b ? bar1({ d: p.b, segs: [seg(p.a)] }) : null),
+  /* (분수) ÷ (자연수) — 칠한 칸을 k묶음으로 똑같이(번갈아 두 색) · 한 묶음이 몫 · 대분수는 가분수로 바꾼 뒤부터 */
+  '6-1-1:4': (p, { i, steps }) => (i < steps.length && int(p.k) && p.k >= 2 && p.n % p.k === 0 ? groupBar(p.d, p.n, p.n / p.k) : null),
+  '6-1-1:6': (p, { i, steps }) => (i >= steps.length || !okD(p.d) || !int(p.n) || p.n > 4 * p.d ? null : i < 1 ? bar1({ d: p.d, segs: [seg(p.n)] }) : p.v === 'div' && p.n % p.k === 0 ? groupBar(p.d, p.n, p.n / p.k) : null),
+  /* (분수) ÷ (분수) — 나누는 분수만큼씩 묶어 몇 묶음인지 · 나누어떨어지지 않으면 두 분수를 위아래로 · 분모가 다르면 통분 띠부터 */
+  '6-2-1:2': (p, { i, steps }) => (i < steps.length ? groupBar(p.d, p.a, p.b) : null),
+  '6-2-1:3': (p, { i, steps }) => (i < steps.length ? sameRows(p.a, p.b, p.d) : null),
+  '6-2-1:4': (p, { i, steps }) => {
+    if (i >= steps.length) return null;
+    if (i < 1) return twoRows(p, i === 0);
+    const { L, a, b } = tb(p);
+    return twoRows(p, true) ? sameRows(a, b, L) : null;
+  },
+  /* (자연수) ÷ (단위분수) — 온전한 하나마다 d칸 · 한 칸씩 번갈아 칠함(1/d이 몇 개) · 2/3처럼 분자가 1이 아니면 단계가 다른 생각(1/3이 얼마)이라 그리지 않음 */
+  '6-2-1:5': (p, { i, steps }) => (i < steps.length && p.n === 1 && int(p.N) && p.N >= 1 && p.N <= 5 ? groupBar(p.d, p.N * p.d, 1) : null),
+  /* 비율 — 기준량만큼 칸을 나눈 띠에 비교하는 양만큼 칠함 */
+  '6-1-4:4': (p, { i, steps }) => (i < steps.length && int(p.a) && int(p.b) && p.b >= 2 && p.b <= 25 && p.a >= 1 && p.a <= p.b ? bar1({ d: p.b, segs: [seg(p.a)] }) : null),
+  /* 비례배분 — 전체를 (앞 + 뒤) 조각으로 나눈 띠 하나(앞 · 뒤 두 색) · 위에 전체 */
+  '6-2-4:7': (p, { i, steps }) => (i < steps.length && int(p.a) && int(p.b) && p.a >= 1 && p.b >= 1 && p.a + p.b <= 24 && int(p.N) ? { t: 'bars', top: String(p.N), rows: [{ d: p.a + p.b, segs: [seg(p.a), seg(p.b, 'b')] }] } : null),
 };
 export default PICS;
