@@ -276,7 +276,7 @@ const clockSteps = (p) => {
   ].filter(Boolean);
 };
 const apart = (p) => { const a = Math.abs((((p.h % 12) + p.m / 60) * 30) - p.m * 6) % 360; return Math.min(a, 360 - a) >= 15; };   /* 두 바늘이 겹쳐 보이는 시각(4시 22분)은 뺌 */
-const genClock = (r) => until(r, (r) => { const h = r.int(1, 12); return { h, m: r.chance(0.55) ? r.int(1, 11) * 5 : r.int(0, 11) * 5 + r.int(1, 4) }; }, apart);
+const genClock = (r) => until(r, (r) => { const h = r.int(1, 12); return { h, m: r.chance(0.35) ? r.pick([5, 10, 15, 20, 25, 35, 40, 45, 50, 55]) : r.int(0, 11) * 5 + r.int(1, 4) }; }, apart);   /* 작은 눈금이 있는 시각을 셋에 둘 · 30분(1학년)은 뺌 */
 
 // ── 2-1-4:5 자로 길이 재기 — 눈금 0에서 시작하지 않는 테이프(끝 눈금을 그대로 읽는지) · 눈금 1에서 시작하는 것은 뺌(끝 숫자 읽기와 선 세기가 같은 답)
 function rulerMake(p) {

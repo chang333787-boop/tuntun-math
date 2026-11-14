@@ -197,7 +197,7 @@ button:focus-visible,.btn:focus-visible,a:focus-visible,summary:focus-visible,.b
 /* 보기 — 잠김 = 납작한 회색(턱 없음) · 맞음 ✓ · 지운 보기 */
 .choices{display:flex;flex-wrap:wrap;gap:12px}
 .choices button{flex:1 1 140px;min-height:76px;border-radius:16px;font-size:clamp(24px,3.2cqi,32px);padding:8px 18px;font-weight:600}
-.choices button .math{font-size:inherit}
+.choices button .math{font-size:inherit}.choices button[data-ck]{padding-left:40px}.choices button .math.one{flex-wrap:nowrap;white-space:nowrap}.choices.long{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.choices.long button .math{font-size:.86em}   /* 번호 동그라미가 식 첫 글자에 붙지 않게 · 식 보기(5 × 2 × 3.14)는 두 칸씩 한 줄로(처음 보는 눈 5차) */
 .choices button.gone:disabled{background:transparent;border-style:dashed;border-color:var(--line2);text-decoration:line-through;color:var(--off-ink)}
 .choices.static button:disabled{background:var(--panel);border-color:var(--line2);border-style:dashed;color:var(--ink);cursor:default;box-shadow:none;transform:none}   /* 시범의 보기는 누르는 단추로 보이지 않게(처음 보는 눈 11-07) */
 .choices.static button.right{border-color:var(--ok);background:var(--ok-t)}

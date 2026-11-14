@@ -16,6 +16,17 @@ const UNIT = ['1', '0.1', '0.01', '0.001'];
 const PLACE = ['소수 셋째 자리', '소수 둘째 자리', '소수 첫째 자리', '일의 자리'];
 const gcd = (a, b) => (b ? gcd(b, a % b) : Math.abs(a));
 // 떠올리기 말 고르기 — bad(답 수 가운데 문제 글에 없는 수)가 하나도 들지 않은 첫 말 · 모두 걸리면 마지막 말(수 없는 말로 둠)
+/* 계산하지 말고 크기만(5-2-2:4 × · 6-2-1:5 ÷ — engine/concepts/kit.js sizeAsk) — 같이 보기 · 시범에 까닭(답만 말하던 것 · 처음 보는 눈 5차) · 함께는 볼 곳만 */
+function sizeSay(p, op, full) {
+  const mul = op === '×';
+  if (!full) return [mul ? '곱하는 분수가 1보다 작은지, 같은지, 큰지 먼저 봐요.' : '나누는 분수가 1보다 작은지, 같은지, 큰지 먼저 봐요.'];
+  if (mul && p.sz === 'frac') return [`자연수 ${p.N}${P(p.N, '을', '를')} 곱하면 그 분수를 ${p.N}번 더한 것과 같아요.`, '여러 번 더하면 처음 분수보다 커져요.'];
+  if (mul && p.sz === 'swap') return ['곱하는 두 수의 순서를 바꿔도 곱은 같아요.'];
+  const lt = p.n < p.d, eq = p.n === p.d, what = mul ? '곱하는' : '나누는';
+  const one = lt ? `${what} 분수는 분자가 분모보다 작아서 1보다 작아요.` : eq ? `${what} 분수는 분자와 분모가 같아서 1이에요.` : `${what} 분수는 분자가 분모보다 커서 1보다 커요.`;
+  const res = eq ? `1${mul ? '을 곱하면' : '로 나누면'} ${p.N} 그대로예요.` : mul ? `1보다 ${lt ? '작은' : '큰'} 수를 곱하면 ${p.N}보다 ${lt ? '작아져요' : '커져요'}.` : `1보다 ${lt ? '작은' : '큰'} 수로 나누면 몫이 ${p.N}보다 ${lt ? '커요' : '작아요'}.`;
+  return [one, res];
+}
 const NUM = /\d+(?:\.\d+)?/g;
 const numsIn = (t) => (String(t).match(NUM) || []).map(Number);
 function safe(ans, own, ...cands) {
@@ -492,6 +503,7 @@ const HINTS_MDF = {
   },
   '5-2-2:3': { cue: (p) => { const w = Math.floor(p.n / p.d), r = p.n % p.d; return `자연수 부분 ${w}${P(w, '과', '와')} 분수 부분 ${fr(r, p.d)}에 각각 ${eul(p.k)} 곱해 더해 볼까요? 가분수로 바꿔 곱해도 돼요.`; } },
   '5-2-2:4': {
+    say: (p, full) => (p.dir || p.sz ? sizeSay(p, '×', full) : null),
     cue: (p) => {
       if (p.sz === 'frac') return `${p.N} × ${eun(fr(p.n, p.d))} ${eul(fr(p.n, p.d))} ${p.N}번 더한 것과 같아요. 여러 번 더하면 어떻게 될까요?`;
       if (p.sz === 'swap') return '곱하는 두 수의 순서를 바꾸면 곱이 달라질까요? 자연수의 곱셈에서 떠올려 봐요.';
@@ -535,6 +547,7 @@ const HINTS_MDF = {
   '6-2-1:3': { cue: (p) => `분모가 같으면 분자끼리 나눈 것과 같아요. ${p.a} ÷ ${p.b}의 몫을 분수로 써 볼까요?` },
   '6-2-1:4': { cue: (p) => `먼저 ${p.d1}${P(p.d1, '과', '와')} ${p.d2}의 공배수로 통분해 볼까요? 분모가 같아지면 분자끼리 나눠요.` },
   '6-2-1:5': {
+    say: (p, full) => (p.v === 'dir' || p.v === 'size' ? sizeSay(p, '÷', full) : null),
     cue: (p) => {
       if (p.v === 'one') return p.n === 1 ? `하나 안에 1/${p.d}이 몇 번 들어갈까요? 하나를 ${p.d}조각으로 나눈 것을 떠올려 봐요.` : `하나 안에 ${ga(fr(p.n, p.d))} 몇 번 들어갈까요? 하나는 1/${p.d}이 ${p.d}개예요.`;
       if (p.v === 'n' && p.n > 1) return `어떤 수의 ${ga(fr(p.n, p.d))} ${p.N}${P(p.N, '이라고', '라고')} 생각해 봐요. 1/${p.d}${P(1, '은', '는')} 얼마이고, 전체 1은 얼마일까요?`;

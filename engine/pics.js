@@ -418,15 +418,17 @@ export function circle({ r = 0, d = 0, both = false, sq = false, roll = false, l
   const R = 54, cx = 8 + R, cy = 8 + R, sqt = '반지름 × 반지름';
   let g = sq ? `<path d="${polyD([[cx, cy], [cx + R, cy], [cx + R, cy - R], [cx, cy - R]])}" class="p-f1"/>` : '';
   g += `<circle cx="${cx}" cy="${cy}" r="${R}" class="p-ln"/>`;
+  /* both(도움 그림) = 진한 반쪽이 반지름 · 지름은 원 아래 괄호에 따로 — 선 하나에 '반지름' · '지름'이 같이 붙어 헷갈리던 것(처음 보는 눈 5차) */
+  const yb = cy + R + 7, brace = (t) => `<path d="M${cx - R} ${yb} v6 H${cx + R} v-6" class="p-ln th mu"/>` + T(cx, yb + 22, t, 14, '', 'middle', true);
   if (d) {
-    g += `<path d="M${cx - R} ${cy} H${cx + R}" class="p-ln"/>` + (both ? `<path d="M${cx} ${cy} H${cx + R}" class="p-edge"/>` + T(cx, cy + 22, `지름 ${d} cm`, 14, '', 'middle', true) + T(cx + R / 2, cy - 9, '반지름', 13, 'ac', 'middle', true) : T(cx, cy - 9, `${d} cm`, 15, '', 'middle', true));
+    g += `<path d="M${cx - R} ${cy} H${cx + R}" class="p-ln"/>` + (both ? `<path d="M${cx} ${cy} H${cx + R}" class="p-edge"/>` + T(cx + R / 2, cy - 9, '반지름', 13, 'ac', 'middle', true) + brace(`지름 ${d} cm`) : T(cx, cy - 9, `${d} cm`, 15, '', 'middle', true));
   } else {
-    g += both ? `<path d="M${cx - R} ${cy} H${cx + R}" class="p-edge"/>` + T(cx, cy + 22, '지름 □ cm', 14, 'ac', 'middle', true) + T(cx + R / 2, cy - 9, r ? `반지름 ${r} cm` : '반지름', 13, '', 'middle', true)
+    g += both ? `<path d="M${cx - R} ${cy} H${cx}" class="p-ln th"/><path d="M${cx} ${cy} H${cx + R}" class="p-edge"/>` + T(cx + R / 2, cy - 9, r ? `${r} cm` : '반지름', 15, 'ac', 'middle', true) + brace('지름 □ cm')
       : `<path d="M${cx} ${cy} H${cx + R}" class="p-ln"/>` + T(cx + R / 2, cy - 9, r ? `${r} cm` : '반지름', 15, '', 'middle', true);
   }
   g += `<circle cx="${cx}" cy="${cy}" r="3" class="p-pt"/>`;
   if (sq) g += T(cx + R + 10, cy - R / 2 + 5, sqt, 15, 'ac', 'start', true);
-  return wrap(2 * R + 16 + (sq ? tw(sqt, 15) + 14 : 0), 2 * R + 16, label || (d ? `원 — 지름 ${d} cm` : r ? `원 — 반지름 ${r} cm` : '원'), g);
+  return wrap(2 * R + 16 + (sq ? tw(sqt, 15) + 14 : 0), 2 * R + 16 + (both ? 32 : 0), label || (d ? `원 — 지름 ${d} cm` : r ? `원 — 반지름 ${r} cm` : '원'), g);
 }
 
 // ── 마름모 ── a = 가로 대각선 · b = 세로 대각선(비율대로 — 짧은 쪽이 아주 짧으면 44까지만 줄임) · 길이는 도형 밖 꺾쇠에 · boxed = 둘러싼 직사각형(점선) + 마름모 칠 · hi = 길이 글을 진하게

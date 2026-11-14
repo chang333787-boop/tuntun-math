@@ -312,10 +312,11 @@ function rangeCue(p) {
 }
 // 끝 수 — 초과는 바로 뒤의 수 · 미만은 바로 앞의 수(이상 · 이하는 기준 수 그대로라 단계 없음)
 const edgeStep = (m, b) => (m === 'gt'
-  ? { c: 'g1_SEQ', p: { v: 'next', n: b, d: 1 }, why: `${b}${P(b, '은', '는')} 들어가지 않아요. 들어가는 가장 작은 수를 찾아요.`, n: '들어가는 가장 작은 수 찾기' }
-  : { c: 'g1_SEQ', p: { v: 'next', n: b, d: -1 }, why: `${b}${P(b, '은', '는')} 들어가지 않아요. 들어가는 가장 큰 수를 찾아요.`, n: '들어가는 가장 큰 수 찾기' });
+  ? { c: 'g1_SEQ', p: { v: 'next', n: b, d: 1 }, why: `${b}${P(b, '은', '는')} 들어가지 않아요. 들어가는 가장 작은 자연수를 찾아요.`, n: '들어가는 가장 작은 자연수 찾기' }
+  : { c: 'g1_SEQ', p: { v: 'next', n: b, d: -1 }, why: `${b}${P(b, '은', '는')} 들어가지 않아요. 들어가는 가장 큰 자연수를 찾아요.`, n: '들어가는 가장 큰 자연수 찾기' });
 function rangeSteps(p) {
-  if (p.v === 'edge' || p.v === 'cnt') return opened(p.m) ? [edgeStep(p.m, p.b)] : [];
+  if (p.v === 'edge') return opened(p.m) ? [edgeStep(p.m, p.b)] : [];
+  if (p.v === 'cnt') return [];   /* 위의 수 세기 — 수직선 그림에서 칠한 쪽의 수를 셈('가장 작은 수' 단계는 위의 수와 상관없고 초과의 뜻을 비틂 · 처음 보는 눈 5차) */
   if (p.v !== 'span') return [];
   const lo = p.m === 'gt' ? p.b + 1 : p.b, hi = p.m2 === 'lt' ? p.b2 - 1 : p.b2, out = [];
   if (opened(p.m)) out.push(edgeStep(p.m, p.b));
@@ -356,7 +357,7 @@ function roundSteps(p) {
   }
   const n = p.xi, u = 10 ** p.pk, below = n % u, floor = n - below, pl = RPL[p.pk];
   if (!below) return [];
-  const cut = { c: 'SUB', p: { a: n, b: below }, why: `${pl} 아래 수를 모두 0으로 바꿔요.`, n: '아래 자리 비우기' };
+  const cut = { c: 'SUB', p: { a: n, b: below }, why: `가린 ${pl} 아래 수를 모두 0으로 바꿔요.`, n: '가린 자리 바꾸기' };
   const add = { c: 'ADD', p: { a: floor, b: u }, why: `${pl} 숫자를 하나 올려요.`, n: '그 자리 숫자 하나 올리기' };
   if (p.m === 'down') return [cut];
   if (p.m === 'up') return [cut, add];

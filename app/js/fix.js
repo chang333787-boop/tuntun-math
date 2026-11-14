@@ -206,13 +206,13 @@ function startItem(F) {
 export function assistOf(it, c, r = rng(1)) {
   if (it.choices && it.choices.length >= 3) {
     const s = Number(it.sol[0]), wrong = it.choices.map((_, k) => k).filter((k) => k !== s), keep = wrong[Math.floor(r.next() * wrong.length)];
-    return { kind: 'pick', hide: wrong.filter((k) => k !== keep), say: [ruleFor(c, it, { noAns: true })].filter(Boolean) };
+    return { kind: 'pick', hide: wrong.filter((k) => k !== keep), say: sayOf(c, it.p, false) || [ruleFor(c, it, { noAns: true })].filter(Boolean) };
   }
   const nb = it.choices ? 0 : blankCount(it.prompt), last = it.sol ? String(it.sol[nb - 1]) : '';
   if (nb >= 2 && !it.sol.slice(0, nb - 1).some((v) => String(v) === last)) {   /* 앞 빈칸 답이 마지막 답과 같으면 베끼기가 되니 X */
     const given = {}; for (let i = 0; i < nb - 1; i++) given[i] = it.sol[i];
     const say = [...Object.keys(given).map((i) => blankTalk(it, Number(i))), blankTalk(it, nb - 1, false)].filter(Boolean);
-    return { kind: 'given', given, say: say.length ? say : [ruleFor(c, it, { noAns: true })].filter(Boolean) };
+    return { kind: 'given', given, say: say.length ? say : sayOf(c, it.p, false) || [ruleFor(c, it, { noAns: true })].filter(Boolean) };
   }
   return { kind: 'start', say: talkOf(it, c).slice(0, 1) };
 }
