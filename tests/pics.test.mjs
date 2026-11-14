@@ -46,6 +46,7 @@ for (const c of PIC_IDS) {
       if (SCALE.has(spec.t)) continue;
       const ok = new Set([...own, 0]);
       if (spec.unit > 1) ok.add(spec.unit);   /* 동전에 적힌 10 · 100 */
+      if (spec.t === 'bars' && (spec.rows || []).some((q) => q.pre)) ok.add(1);   /* 분수 띠의 온전한 하나 네모에 적힌 1 */
       /* 가르기 띠의 칸 글은 단계의 식(떠올리기 말이 이미 말하는 가르기) — 뒤 단계의 식에 있는 수도 됨 */
       steps.slice(0, spec.t === 'split' ? steps.length : Math.min(i, steps.length - 1) + 1).forEach((s) => nums(toText(s.prompt)).forEach((v) => ok.add(v)));
       steps.slice(0, Math.max(i, 0)).forEach((s) => (s.sol || []).forEach((v) => ok.add(Number(v))));

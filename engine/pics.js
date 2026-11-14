@@ -105,7 +105,7 @@ export function bars({ rows = [], top = '', label = '' }) {
     else if (q.lab != null) s += T(24, cy + 5, q.lab, 14);
     for (let i = 0; i < (q.pre || 0); i++) {
       const x = 2 + LW + i * (tl + 4), gone = i >= (q.pre || 0) - (q.preX || 0);
-      s += `<rect x="${x}" y="${y}" width="${tl}" height="${rh}" class="cell on"/>${gone ? cross(x, y, tl, rh) : ''}`;
+      s += `<rect x="${x}" y="${y}" width="${tl}" height="${rh}" class="cell on"/>${tl >= 16 ? T(x + tl / 2, y + rh / 2 + 5, 1, 14, '', 'middle', true) : ''}${gone ? cross(x, y, tl, rh) : ''}`;   /* 온전한 하나에 '1' — 분수 띠 한 칸과 크기가 달라도 1로 읽히게 */
     }
     const kinds = []; (q.segs || []).forEach((sg) => { for (let i = 0; i < sg.n; i++) kinds.push(sg.k); });
     for (let w = 0; w < wholes(q); w++) for (let i = 0; i < q.d; i++) {
@@ -421,7 +421,7 @@ export function circle({ r = 0, d = 0, both = false, sq = false, roll = false, l
   if (d) {
     g += `<path d="M${cx - R} ${cy} H${cx + R}" class="p-ln"/>` + (both ? `<path d="M${cx} ${cy} H${cx + R}" class="p-edge"/>` + T(cx, cy + 22, `지름 ${d} cm`, 14, '', 'middle', true) + T(cx + R / 2, cy - 9, '반지름', 13, 'ac', 'middle', true) : T(cx, cy - 9, `${d} cm`, 15, '', 'middle', true));
   } else {
-    g += (both ? `<path d="M${cx - R} ${cy} H${cx}" class="p-edge"/>` + T(cx, cy + 22, '지름', 14, 'ac', 'middle', true) : '') + `<path d="M${cx} ${cy} H${cx + R}" class="p-ln"/>` + T(cx + R / 2, cy - 9, r ? `${r} cm` : '반지름', 15, '', 'middle', true);
+    g += (both ? `<path d="M${cx - R} ${cy} H${cx + R}" class="p-edge"/>` + T(cx, cy + 22, '지름', 14, 'ac', 'middle', true) : `<path d="M${cx} ${cy} H${cx + R}" class="p-ln"/>`) + T(cx + R / 2, cy - 9, r ? `${r} cm` : '반지름', 15, '', 'middle', true);
   }
   g += `<circle cx="${cx}" cy="${cy}" r="3" class="p-pt"/>`;
   if (sq) g += T(cx + R + 10, cy - R / 2 + 5, sqt, 15, 'ac', 'start', true);

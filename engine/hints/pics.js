@@ -166,7 +166,9 @@ function rangePic(p, { i, steps }) {
   if (p.v === 'span') {
     if (!int(p.b2) || p.b2 - p.b < 2 || p.b2 - p.b > 16) return null;
     const lo = p.b - 2, hi = p.b2 + 2, on = (v) => v === p.b || v === p.b2;
-    return { t: 'line', min: lo, max: hi, ticks: I(lo, hi).map((v) => ({ v, big: on(v), lab: on(v) ? v : null })), marks: [dot(p.b, p.m), dot(p.b2, p.m2)], gap: [p.b, p.b2] };
+    /* 떠올리기 · 처음 문제로 돌아왔을 때 눈금마다 수를 적어 칠한 곳을 셀 수 있게 — 단계 중엔 두 기준 수만(끝 수 · 뺄셈 단계의 답이 글자로 새지 않게) · 개수(답)가 눈금 수와 같아지면 떠올리기에서도 두 기준 수만 */
+    const n = p.b2 - (OPEN[p.m2] ? 1 : 0) - (p.b + (OPEN[p.m] ? 1 : 0)) + 1, all = i >= steps.length || (i < 0 && (n < lo || n > hi));
+    return { t: 'line', min: lo, max: hi, ticks: I(lo, hi).map((v) => ({ v, big: on(v), lab: on(v) || (all && v > lo && v < hi) ? v : null })), marks: [dot(p.b, p.m), dot(p.b2, p.m2)], gap: [p.b, p.b2] };
   }
   if (p.v === 'cnt' && Array.isArray(p.list) && p.list.every(int)) {
     const lo = Math.min(p.b, ...p.list) - 1, hi = Math.max(p.b, ...p.list) + 1, inL = new Set(p.list), on = (v) => inL.has(v) || v === p.b;
@@ -350,7 +352,7 @@ const PICS = {
   /* 원 — 준 쪽 말고 다른 쪽(지름 = 반지름 두 개)을 진하게 · 컴퍼스 문제는 벌린 길이를 반지름으로 그림 */
   '3-2-3:3': (p, { i, steps }) => (i >= steps.length ? null : p.v === 'comp' ? (Number.isInteger(p.r) && p.r > 0 ? { t: 'circle', r: p.r, both: true } : null) : fg('3-2-3:3', p, { both: true })),
   /* 1 m² — 한 변이 100 cm인 정사각형 하나(모눈 10000칸은 그리지 않음) */
-  '5-1-6:5': (p, { i, steps }) => (i < steps.length ? { t: 'grid', w: 1, h: 1, size: 84, wl: '100 cm', hl: '100 cm', mid: '1 m²', mode: 'plain', label: '한 변이 100 cm인 정사각형, 넓이 1 m²' } : null),
+  '5-1-6:5': (p, { i, steps }) => (i <= steps.length ? { t: 'grid', w: 1, h: 1, size: 84, wl: '100 cm', hl: '100 cm', mid: '1 m²', mode: 'plain', label: '한 변이 100 cm인 정사각형, 넓이 1 m²' } : null),
   /* 마름모 — 둘러싼 직사각형 · 곱하기 단계에선 그 직사각형을 칠함 */
   '5-1-6:8': (p, { i, steps }) => (i < steps.length ? fg('5-1-6:8', p, { boxed: true, hi: i === 0 }) : null),
   /* 사다리꼴 — 거꾸로 붙인 같은 사다리꼴(평행사변형) · 더하기 단계 = 윗변 + 아랫변 칠함 · 곱하기 단계 = 높이 칠함 */

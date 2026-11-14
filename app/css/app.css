@@ -346,7 +346,7 @@ div.cmpc{box-shadow:none}
 .math.ansm{display:inline-flex;flex-wrap:nowrap;font-size:1.45em;vertical-align:middle;margin:0 .12em;line-height:1.25}.math.ansm .blank-s{min-width:0;padding:0 .08em;border-bottom-color:transparent}
 /* 단계 화면 맞춤(item.js draw) — 넘칠 때만: tfit1 위 문제의 그림 · 글 · 여백을 작게 · tfit2 단계 그림 · 글도 작게 */
 .qcard.tfit1 .qmain{gap:8px}.qcard.tfit1 .hl-ctx{gap:4px;margin-bottom:4px;padding:8px 14px}.qcard.tfit1 .hl-ctx .pic{margin:0}.qcard.tfit1 .hl-ctx .pic svg{max-height:96px;width:auto}.qcard.tfit1 .hl-ctx>.math{font-size:20px}
-.qcard.tfit2 .qmain>#q{font-size:clamp(28px,4.2cqi,42px);min-height:0}.qcard.tfit2 .qmain>#q .pic svg{max-height:84px;width:auto}
+.qcard.tfit2 .qmain>#q{font-size:clamp(28px,4.2cqi,42px);min-height:0}.qcard.tfit2 .qmain>#q .pic svg{max-height:84px;width:auto}.qcard.tfit2 .qmain>#q .pic.fig svg{max-height:128px}   /* 시계 · 도형은 그림이 곧 문제라 덜 줄임(처음 문제로 돌아올 때 지름 80px이던 것) */
 .hl-col{display:flex;justify-content:flex-start;padding:2px 0 4px}.hl-col .vcol{font-size:40px}   /* 세로셈이 단계의 그림(받아내림 빗금 · 지금 풀 자리 띠 · 11-13 묶음 3) — 30 → 40 */
 .hl-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 .hl-steps li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;align-items:center;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:6px 12px}

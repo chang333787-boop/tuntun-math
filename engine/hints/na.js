@@ -344,9 +344,13 @@ function roundCue(p) {
 function roundSteps(p) {
   if (p.v !== 'val') return [];
   if (p.dp) {   /* 소수 올림 · 버림(11-07 '단계 없음'이던 꼴) — 1.504 → 1.504 − 0.004 = 1.5 → 1.5 + 0.01 = 1.51 · 반올림 소수는 그대로 */
-    if (p.m === 'half' || p.pk >= 0 || p.dp + p.pk < 1) return [];
+    if (p.pk >= 0 || p.dp + p.pk < 1) return [];
     const u = 10 ** (p.dp + p.pk), below = p.xi % u, floor = p.xi - below, pl = { '-1': '소수 첫째 자리', '-2': '소수 둘째 자리' }[p.pk];
     if (!below || !pl) return [];
+    if (p.m === 'half') {   /* 소수 반올림 — 바로 아래 숫자가 5 이상인가를 고르고 버리기 · 올리기(11-14 처음 보는 눈 3차 '같이 보기가 답만') */
+      const d = Math.floor(p.xi / (u / 10)) % 10, nx = { '-1': '소수 둘째 자리', '-2': '소수 셋째 자리' }[p.pk];
+      return [{ c: '5-2-1:2', p: { v: 'is', d }, why: `바로 아래 ${nx} 숫자를 봐요. 5 이상이면 올리고, 5보다 작으면 버려요.`, n: '올릴지 버릴지 고르기' }, { c: 'g4_DECAS', p: { op: '-', a: p.xi, ka: p.dp, b: below, kb: p.dp }, why: `${pl} 아래 숫자를 버려요.`, n: '아래 자리 버리기' }, ...(d >= 5 ? [{ c: 'g4_DECAS', p: { op: '+', a: floor, ka: p.dp, b: u, kb: p.dp }, why: `${pl} 숫자를 하나 올려요.`, n: '그 자리 숫자 하나 올리기' }] : [])];
+    }
     const cutD = { c: 'g4_DECAS', p: { op: '-', a: p.xi, ka: p.dp, b: below, kb: p.dp }, why: `${pl} 아래 숫자를 버려요.`, n: '아래 자리 버리기' };
     return p.m === 'down' ? [cutD] : [cutD, { c: 'g4_DECAS', p: { op: '+', a: floor, ka: p.dp, b: u, kb: p.dp }, why: `${pl} 숫자를 하나 올려요.`, n: '그 자리 숫자 하나 올리기' }];
   }

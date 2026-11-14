@@ -34,7 +34,7 @@ export function cueFor(c, p) {
 // 풀이 순서(교사 11-07 '알고리즘적 사고 — 아이한테 알고리즘이란 말은 안 하지만 단계적으로 하나씩') — 아이 말로는 '풀이 순서'
 //  names = 숫자 없는 단계 이름(engine/hints plan) · 없으면 단계 글에서 숫자를 ○로 가림(아직 안 한 단계의 숫자 = 앞 단계 답이 샘)
 export const planNames = (c, p, steps) => planOf(c, p, steps.length);
-export function planHTML(steps, names, cur, shown = new Set(), lastLabel = '전체 문제의 답 쓰기') {
+export function planHTML(steps, names, cur, shown = new Set(), lastLabel = '이 문제의 답 쓰기') {
   const nm = (i) => (names ? names[i] : i <= cur ? steps[i].why : String(steps[i].why).replace(/\d+(?:\.\d+)?/g, '○'));   /* 이름이 있으면 늘 짧은 이름(지금 단계 글은 말풍선에 — 같은 글 두 번 X · 11-07) */
   const li = (cls, mark, t) => `<li class="${cls}"><i>${mark}</i><span>${esc(t)}</span></li>`;
   return `<div class="plan"><p class="plan-h">풀이 순서</p><ol>${steps.map((s, i) => li(i < cur ? (shown.has(i) ? 'done shown' : 'done') : i === cur ? 'now' : 'yet', i < cur ? '✓' : String(i + 1), nm(i))).join('')}${li(cur >= steps.length ? 'now' : 'yet', String(steps.length + 1), lastLabel)}</ol></div>`;
@@ -44,7 +44,7 @@ export function planHTML(steps, names, cur, shown = new Set(), lastLabel = '전�
 //  배우기 '같이 풀기'도 같은 모양(kid.js)
 //  세로셈이 있으면(11-13 묶음 3) 세로셈이 지금 풀 자리와 받아내림을 보여 주므로 — 채운 단계는 글 없이 식만 한 줄로(같은 말이 그림 · 줄 · 말풍선에 세 번 나오던 것)
 //  q = 문제 속 도형 그림을 이 단계 그림으로 바꾼 문제 조각(figSwap — 없으면 문제 그대로)
-export function stepCtx(it, steps, upto, { shown = new Set(), C = null, label = '전체 문제', head = true, pic = '', fresh = -1, lag = null, q = null } = {}) {
+export function stepCtx(it, steps, upto, { shown = new Set(), C = null, label = '이 문제', head = true, pic = '', fresh = -1, lag = null, q = null } = {}) {
   const eq = !!C || steps.length >= 5 || (steps.length >= 4 && steps.some((s) => (s.prompt || []).some((t) => t && typeof t === 'object' && ('f' in t || 'm' in t))));   /* 다섯 단계가 넘는 문제(겉넓이 여섯 단계) · 분수 단계가 넷인 문제(대분수 받아내림)는 마친 단계를 식만 한 줄로 — 크롬북 768에서 답 칸이 화면 밖으로 밀리지 않게(단계 이름은 옆 풀이 순서에 그대로) */
   const list = upto ? `<ol class="hl-steps${eq ? ' eq' : ''}">${steps.slice(0, upto).map((s, i) => `<li class="${shown.has(i) ? 'shown' : 'ok'}${i === fresh ? ' nw' : ''}"><span class="hl-n">${i + 1}</span>${eq ? '' : `<span class="why">${esc(s.why)}</span>`}${staticHTML(s.prompt, s.sol)}</li>`).join('')}</ol>` : '';
   const col = C ? `<div class="hl-col">${colView(C, upto, lag, { peek: true }).html}</div>` : '';
@@ -86,7 +86,7 @@ export function ladder(root, { it, c = it.c, raws = null, tag = '', act = '', do
   const base = { tag, act, dots, conf: false, idk: false };
   const head = (k, html, pose = 'think', after = '') => `<div class="hl hl-${k}"><div class="say">${mascot(pose, 60)}<div class="bub">${html}</div></div>${after}</div>`;
   const last = steps.length - 1;
-  const pt = toText(it.prompt).replace(/\s*=\s*□.*$/, '').replace(/\s+/g, ' ').trim(), qName = pt && pt.length <= 16 && !/□/.test(pt) ? `${pt}의 답` : '이 문제의 답';   /* '처음 문제'를 '1번 문제'로 읽던 것 — 짧은 식이면 식 그대로(11-07 처음 쓰는 아이) */
+  const pt = toText(it.prompt).replace(/\s*=\s*□.*$/, '').replace(/\s+/g, ' ').trim(), qName = pt && pt.length <= 16 && !/□/.test(pt) && /[+−×÷]/.test(pt) && !/\//.test(pt) ? `${pt}의 답` : '이 문제의 답';   /* 식일 때만(빗금 분수 · '40000 cm²의 답'은 X — 처음 보는 눈 3차) */   /* '처음 문제'를 '1번 문제'로 읽던 것 — 짧은 식이면 식 그대로(11-07 처음 쓰는 아이) */
   const names = steps.length ? planNames(c, it.p, steps) : null;
   /* 그림 — 10칸 틀(한 자리 10 만들기 · 10에서 빼기): 마지막 단계는 옮긴 모습(방금 앞 단계를 마쳤으면 옮기는 모습 한 번) · 그 앞은 한 번 틀렸을 때만 처음 모습
      묶음 바꾸기(받아올림 · 받아내림 — model.js regroupHTML · docs/motion.md ① ②): 움직임은 이 사다리에서 한 번만(seen) · 다시 보기 단추는 늘

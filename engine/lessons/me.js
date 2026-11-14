@@ -275,7 +275,8 @@ const clockSteps = (p) => {
     rest && k >= 1 ? { c: 'ADD', p: { a: 5 * k, b: rest }, why: `작은 눈금 한 칸은 1분이에요. 긴바늘이 숫자 ${k}에서 ${rest}칸을 더 갔어요.` } : null,
   ].filter(Boolean);
 };
-const genClock = (r) => { const h = r.int(1, 12); return { h, m: r.chance(0.55) ? r.int(1, 11) * 5 : r.int(0, 11) * 5 + r.int(1, 4) }; };
+const apart = (p) => { const a = Math.abs((((p.h % 12) + p.m / 60) * 30) - p.m * 6) % 360; return Math.min(a, 360 - a) >= 15; };   /* 두 바늘이 겹쳐 보이는 시각(4시 22분)은 뺌 */
+const genClock = (r) => until(r, (r) => { const h = r.int(1, 12); return { h, m: r.chance(0.55) ? r.int(1, 11) * 5 : r.int(0, 11) * 5 + r.int(1, 4) }; }, apart);
 
 // ── 2-1-4:5 자로 길이 재기 — 눈금 0에서 시작하지 않는 테이프(끝 눈금을 그대로 읽는지) · 눈금 1에서 시작하는 것은 뺌(끝 숫자 읽기와 선 세기가 같은 답)
 function rulerMake(p) {
@@ -566,7 +567,7 @@ export default {
       id: '5-1-6:5', name: '1 m² = 10000 cm²', kid: 'm²와 cm² 바꾸기', s: 'ME', sec: 15,
       gen: (r) => { const v = r.pick(['m2cm', 'm2cm', 'cm2m']); return { v, n: r.int(v === 'cm2m' ? 2 : 1, 12) }; },
       make: m2Make,
-      steps: (p) => (p.v === 'cm2m' ? [{ c: 'DIV', p: { a: p.n * 10000, b: 10000 }, why: '1 m²는 10000 cm²예요. 10000 cm²가 몇 번 들어가는지 나눠요.' }] : p.n > 1 ? [{ c: 'MUL', p: { a: p.n, b: 10000 }, why: `1 m²는 10000 cm²예요. ${p.n} m²는 그 ${p.n}배예요.` }] : []),
+      steps: (p) => [{ c: 'MUL', p: { a: 100, b: 100 }, why: '1 m²는 한 변이 100 cm인 정사각형의 넓이예요. 가로 × 세로를 구해요.' }, ...(p.v === 'cm2m' ? [{ c: 'DIV', p: { a: p.n * 10000, b: 10000 }, why: '그 넓이가 1 m²예요. 몇 번 들어가는지 나눠요.' }] : p.n > 1 ? [{ c: 'MUL', p: { a: p.n, b: 10000 }, why: `그 넓이가 1 m²예요. ${p.n} m²는 그 ${p.n}배예요.` }] : [])],
       prev: '5-1-6:4', pre: ['4-1-1:2', '4-1-1:4'],
       hint: '1 m²는 한 변이 1 m인 정사각형의 넓이예요. 1 m는 100 cm라서 이 정사각형은 가로 100 cm, 세로 100 cm예요. 100 cm × 100 cm = 10000 cm²라서 1 m² = 10000 cm²예요.',
       tip: '1 m = 100 cm에서 미루어 1 m² = 100 cm²라고 답하는 아이가 많아요. 한 변이 1 m인 정사각형을 바닥에 그리고 1 cm² 칸이 가로로 100개, 세로로 100줄 들어가는 것을 떠올리게 해요.',
